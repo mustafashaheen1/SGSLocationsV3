@@ -1,0 +1,139 @@
+'use client';
+
+import Link from 'next/link';
+import { Search, Camera, Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+
+export function Navbar() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const pathname = usePathname();
+  const router = useRouter();
+  const isHomepage = pathname === '/';
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery('');
+    }
+  };
+
+  const navItems = [
+    { label: 'SEARCH', href: '/search' },
+    { label: 'PORTFOLIO', href: '/portfolio' },
+    { label: 'LOCATION LIBRARY', href: '/search' },
+    { label: 'ABOUT US', href: '/about' },
+    { label: 'CONTACT', href: '/contact' },
+    { label: 'LIST YOUR PROPERTY', href: '/list-property' },
+    { label: 'ARTICLES', href: '/articles' },
+    { label: 'LOGIN', href: '/login' },
+    { label: 'REGISTER', href: '/register' },
+  ];
+
+  return (
+    <nav
+      className={`w-full ${
+        isHomepage ? 'absolute top-0 left-0 right-0 z-50 text-white' : 'bg-white border-b border-gray-200 text-gray-900'
+      }`}
+    >
+      <div className="mx-auto px-4">
+        <div className="flex items-center justify-between h-[60px]">
+          <Link href="/" className="flex items-center gap-2">
+            <Camera className="w-8 h-8 text-[#dc2626]" />
+            <span className="text-xl font-bold tracking-tight">
+              SGS LOCATIONS<sup className="text-xs">®</sup>
+            </span>
+          </Link>
+
+          <div className="hidden lg:flex items-center gap-3">
+            <form onSubmit={handleSearch} className="flex items-center">
+              <Input
+                type="text"
+                placeholder="Search locations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-[350px] ${isHomepage ? 'bg-white/90 text-gray-900' : 'bg-white'}`}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="ml-2 bg-[#dc2626] hover:bg-[#b91c1c]"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            </form>
+          </div>
+
+          <button
+            className="lg:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+
+        <div className="hidden lg:flex items-center justify-center h-[50px] border-t border-opacity-20 border-current">
+          <div className="flex items-center gap-1 text-xs tracking-widest font-medium">
+            {navItems.map((item, index) => (
+              <div key={item.href} className="flex items-center">
+                {index > 0 && <span className="mx-2 opacity-50">|</span>}
+                <Link
+                  href={item.href}
+                  className="hover:text-[#dc2626] transition-colors px-1"
+                >
+                  {item.label}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-gray-900">
+          <div className="flex justify-end p-4">
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-white"
+              aria-label="Close menu"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex flex-col items-center gap-6 px-4 py-8">
+            <form onSubmit={handleSearch} className="w-full max-w-md flex gap-2">
+              <Input
+                type="text"
+                placeholder="Search locations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="submit"
+                className="bg-[#dc2626] hover:bg-[#b91c1c]"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            </form>
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-white text-sm tracking-widest hover:text-[#dc2626] transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
