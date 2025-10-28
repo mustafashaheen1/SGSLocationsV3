@@ -8,12 +8,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export type Property = {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   address: string;
   city: string;
-  county: string;
-  zipcode: string;
-  property_type: 'Residential' | 'Commercial' | 'Natural' | 'Industrial' | 'Historical';
+  county: string | null;
+  zipcode: string | null;
+  property_type: string;
   square_footage: number | null;
   lot_size: number | null;
   bedrooms: number | null;
@@ -27,10 +27,7 @@ export type Property = {
   daily_rate: number;
   images: string[];
   primary_image: string | null;
-  status: 'active' | 'pending' | 'inactive';
-  is_featured: boolean;
-  is_exclusive: boolean;
-  view_count: number;
+  status: string;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
@@ -39,12 +36,11 @@ export type Property = {
 export type User = {
   id: string;
   email: string;
-  full_name: string;
+  full_name: string | null;
   phone: string | null;
-  user_type: 'production' | 'property_owner' | 'admin';
+  user_type: string;
   company_name: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type Booking = {
@@ -53,9 +49,8 @@ export type Booking = {
   user_id: string;
   start_date: string;
   end_date: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: string;
   total_cost: number;
   notes: string | null;
   created_at: string;
-  updated_at: string;
 };
