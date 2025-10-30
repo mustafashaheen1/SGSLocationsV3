@@ -117,7 +117,7 @@ export default function LocationLibraryPage() {
     let query = supabase.from('properties').select('*').eq('status', 'active');
 
     if (category === 'exclusives') {
-      query = query.in('categories', ['Luxury']);
+      query = query.eq('is_exclusive', true);
     } else if (category === 'new') {
       query = query.order('created_at', { ascending: false }).limit(20);
     } else if (category === 'most-viewed') {
