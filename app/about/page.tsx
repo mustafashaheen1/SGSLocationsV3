@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { Camera } from 'lucide-react';
 
 export default function AboutPage() {
   return (
@@ -37,14 +38,12 @@ export default function AboutPage() {
             />
           </div>
           <div className="col-md-6 w-full md:w-1/2 py-12 px-8 md:py-16 md:px-12">
-            <Image
-              src="https://via.placeholder.com/300x100/DC2626/FFFFFF?text=SGS+Locations"
-              alt="SGS Locations Logo"
-              width={300}
-              height={100}
-              className="mb-6"
-              style={{ maxWidth: '300px', height: 'auto' }}
-            />
+            <div className="flex items-center gap-3 mb-6">
+              <Camera className="w-10 h-10 md:w-8 md:h-8 text-red-600" />
+              <span className="text-3xl md:text-2xl font-bold text-gray-900">
+                SGS LOCATIONS<sup className="text-sm">®</sup>
+              </span>
+            </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">The Art of Locations™</h1>
             <h2 className="text-xl font-semibold text-gray-800 mb-6">
               SGS Locations: Your Premier Destination for Exclusive Filming Locations in Dallas-Fort Worth
@@ -265,15 +264,11 @@ export default function AboutPage() {
               Professional Filmmakers Code of Conduct PDF →
             </Link>
 
-            <div className="mb-8">
-              <Image
-                src="https://via.placeholder.com/250x80/DC2626/FFFFFF?text=SGS+Locations"
-                alt="SGS Locations Logo"
-                width={250}
-                height={80}
-                className="mx-auto"
-                style={{ maxWidth: '250px', height: 'auto' }}
-              />
+            <div className="flex items-center justify-center gap-3 my-8">
+              <Camera className="w-10 h-10 md:w-8 md:h-8 text-red-600" />
+              <span className="text-3xl md:text-2xl font-bold text-gray-900">
+                SGS LOCATIONS<sup className="text-sm">®</sup>
+              </span>
             </div>
 
             <div className="flex items-center justify-center gap-3 text-2xl text-gray-900">
