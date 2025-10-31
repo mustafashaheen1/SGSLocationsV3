@@ -29,10 +29,11 @@ export default function AboutPage() {
         <div className="row flex flex-col md:flex-row mb-0">
           <div className="col-md-6 w-full md:w-1/2 p-0 relative h-[400px] md:h-auto md:min-h-[800px]">
             <Image
-              src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200"
-              alt="Office Building"
+              src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800"
+              alt="SGS Locations Office Building"
               fill
               className="object-cover"
+              priority
             />
           </div>
           <div className="col-md-6 w-full md:w-1/2 py-12 px-8 md:py-16 md:px-12">
@@ -90,13 +91,14 @@ export default function AboutPage() {
 
         {/* SECTION 3: Image Left, Content Right */}
         <section className="row flex flex-col md:flex-row mb-0">
-          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center border border-gray-300 p-12">
+          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center bg-gray-50 p-12">
             <Image
-              src="https://via.placeholder.com/600x400/000000/FFFFFF?text=Dallas+Business+Journal"
+              src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400"
               alt="Dallas Business Journal"
-              width={600}
-              height={400}
-              className="w-full h-auto"
+              width={300}
+              height={200}
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+              loading="lazy"
             />
           </div>
           <div className="col-md-6 w-full md:w-1/2 flex flex-col justify-center px-8 py-12 md:px-12">
@@ -122,26 +124,28 @@ export default function AboutPage() {
               We are committed to upholding the highest professional standards in the location services industry. Our membership demonstrates our dedication to excellence, ethical business practices, and collaboration with fellow industry professionals to support the growth of film and television production in Texas.
             </p>
           </div>
-          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center border border-gray-300 p-12 m-order-0">
+          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center bg-gray-50 p-12 m-order-0">
             <Image
-              src="https://via.placeholder.com/400x400/FDB515/000000?text=LMGI"
-              alt="LMGI Logo"
-              width={400}
-              height={400}
-              className="w-full h-auto"
+              src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400"
+              alt="LMGI Member"
+              width={300}
+              height={200}
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+              loading="lazy"
             />
           </div>
         </section>
 
         {/* SECTION 5: Image Left, Content Right */}
         <section className="row flex flex-col md:flex-row mb-0">
-          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center border border-gray-300 p-12">
+          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center bg-gray-50 p-12">
             <Image
-              src="https://via.placeholder.com/600x400/003DA5/FFFFFF?text=Texas+Film+Commission"
+              src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400"
               alt="Texas Film Commission"
-              width={600}
-              height={400}
-              className="w-full h-auto"
+              width={300}
+              height={200}
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+              loading="lazy"
             />
           </div>
           <div className="col-md-6 w-full md:w-1/2 flex flex-col justify-center px-8 py-12 md:px-12">
@@ -167,26 +171,28 @@ export default function AboutPage() {
               Visit DFWFC Website →
             </Link>
           </div>
-          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center border border-gray-300 p-12 m-order-0">
+          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center bg-gray-50 p-12 m-order-0">
             <Image
-              src="https://via.placeholder.com/600x400/000000/FFFFFF?text=AICP"
-              alt="AICP Logo"
-              width={600}
-              height={400}
-              className="w-full h-auto"
+              src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400"
+              alt="AICP Dallas-Fort Worth Film Commission Partner"
+              width={300}
+              height={200}
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+              loading="lazy"
             />
           </div>
         </section>
 
         {/* SECTION 7: Image Left, Content Right */}
         <section className="row flex flex-col md:flex-row mb-0">
-          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center border border-gray-300 p-12">
+          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center bg-gray-50 p-12">
             <Image
-              src="https://via.placeholder.com/600x400/000000/FFFFFF?text=LA+Times"
-              alt="LA Times Logo"
-              width={600}
-              height={400}
-              className="w-full h-auto"
+              src="https://images.unsplash.com/photo-1495020689067-958852a7765e?w=400"
+              alt="Featured in Local Media"
+              width={300}
+              height={200}
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+              loading="lazy"
             />
           </div>
           <div className="col-md-6 w-full md:w-1/2 flex flex-col justify-center px-8 py-12 md:px-12">
@@ -215,26 +221,28 @@ export default function AboutPage() {
               View Recognition →
             </Link>
           </div>
-          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center border border-gray-300 p-12 m-order-0">
+          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center bg-gray-50 p-12 m-order-0">
             <Image
-              src="https://via.placeholder.com/400x300/C82021/FFFFFF?text=Featured+on+Redfin"
+              src="https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=400"
               alt="Redfin Featured Badge"
-              width={400}
-              height={300}
-              className="w-full h-auto"
+              width={300}
+              height={200}
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+              loading="lazy"
             />
           </div>
         </section>
 
         {/* SECTION 9: Image Left, Content Right */}
         <section className="row flex flex-col md:flex-row mb-0">
-          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center border border-gray-300 p-12">
+          <div className="col-md-6 w-full md:w-1/2 flex justify-center items-center bg-gray-50 p-12">
             <Image
-              src="https://via.placeholder.com/600x800/F5F5F5/333333?text=Business+License"
-              alt="Business License"
-              width={600}
-              height={800}
-              className="w-full h-auto"
+              src="https://images.unsplash.com/photo-1554224311-beee460c201f?w=400"
+              alt="Licensed and Insured Business"
+              width={300}
+              height={200}
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+              loading="lazy"
             />
           </div>
           <div className="col-md-6 w-full md:w-1/2 flex flex-col justify-center px-8 py-12 md:px-12">
