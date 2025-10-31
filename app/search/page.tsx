@@ -238,6 +238,25 @@ function SearchContent() {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      console.log('Image uploaded:', file);
+    }
+  };
+
+  const handleImageDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      console.log('Image dropped:', file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
   return (
     <>
       <style jsx global>{`
@@ -289,6 +308,40 @@ function SearchContent() {
           background: #c01419;
         }
 
+        /* Image search box */
+        .image-search-container {
+          background: white;
+          padding: 3rem 0;
+        }
+
+        .image-search-box {
+          border: 4px dashed #5B9BD5;
+          background-color: #EBF3FB;
+          border-radius: 0.5rem;
+          padding: 3rem;
+          text-align: center;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .image-search-box:hover {
+          background-color: #D6E8F7;
+        }
+
+        .image-search-title {
+          font-size: 1.5rem;
+          font-weight: 300;
+          color: #2E5C8A;
+          margin-bottom: 0.75rem;
+          letter-spacing: -0.02em;
+        }
+
+        .image-search-text {
+          font-size: 1rem;
+          font-weight: 300;
+          color: #6c757d;
+        }
+
         /* Filter dropdowns */
         .filter-bar {
           background: white;
@@ -301,16 +354,16 @@ function SearchContent() {
           align-items: center;
           gap: 0.5rem;
           padding: 0.5rem 1rem;
-          border: 1px solid #d1d5db;
+          border: 1px solid #ced4da;
           background: white;
           font-weight: 300;
-          font-size: 0.875rem;
+          font-size: 1rem;
           cursor: pointer;
           border-radius: 0;
         }
 
         .filter-button:hover {
-          background: #f9fafb;
+          background: #f8f9fa;
         }
 
         .filter-dropdown {
@@ -337,7 +390,7 @@ function SearchContent() {
 
         .filter-option label {
           font-weight: 300;
-          font-size: 0.875rem;
+          font-size: 1rem;
           cursor: pointer;
           flex: 1;
           display: flex;
@@ -438,6 +491,32 @@ function SearchContent() {
           </div>
         </div>
 
+        {/* Image search box */}
+        <div className="image-search-container">
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem' }}>
+            <div
+              className="image-search-box"
+              onClick={() => document.getElementById('imageUploadInput')?.click()}
+              onDrop={handleImageDrop}
+              onDragOver={handleDragOver}
+            >
+              <h2 className="image-search-title">
+                Search a Location Using An Image As Reference
+              </h2>
+              <p className="image-search-text">
+                Drag & Drop an image here or click here to select a file
+              </p>
+              <input
+                id="imageUploadInput"
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleImageUpload}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Horizontal filter dropdowns */}
         <div className="filter-bar" ref={dropdownRef}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -465,7 +544,9 @@ function SearchContent() {
                           <Switch
                             checked={selectedFilters[key]?.includes(option.name)}
                             onCheckedChange={() => toggleFilter(key, option.name)}
-                            className="data-[state=checked]:bg-[#e11921]"
+                            style={{
+                              backgroundColor: selectedFilters[key]?.includes(option.name) ? '#e11921' : undefined
+                            }}
                           />
                         </div>
                       ))}
