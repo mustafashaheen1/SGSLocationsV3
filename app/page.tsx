@@ -87,10 +87,10 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 tracking-tight">
+          <h1 className="text-6xl md:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
             Dallas Fort Worth's Largest<br />Location Database
           </h1>
-          <p className="text-2xl md:text-3xl mb-12 font-light">
+          <p className="text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
             65+ filming locations across North and Central Texas
           </p>
 
@@ -98,7 +98,7 @@ export default function HomePage() {
             <Button
               onClick={() => router.push('/search')}
               size="lg"
-              className="bg-[#dc2626] hover:bg-[#b91c1c] text-lg px-8 py-6"
+              className="bg-[#e11921] hover:bg-[#bf151c] text-lg rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
             >
               Search Locations
             </Button>
@@ -106,7 +106,7 @@ export default function HomePage() {
               onClick={() => router.push('/list-property')}
               size="lg"
               variant="outline"
-              className="text-lg px-8 py-6 bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900"
+              className="text-lg bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
             >
               List Your Property
             </Button>
@@ -124,7 +124,7 @@ export default function HomePage() {
               <Button
                 type="submit"
                 size="lg"
-                className="bg-[#dc2626] hover:bg-[#b91c1c]"
+                className="bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
               >
                 <Search className="w-5 h-5 mr-2" />
                 Search
@@ -135,8 +135,8 @@ export default function HomePage() {
       </section>
 
       <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">Featured Locations</h2>
+        <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
+          <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100, color: '#212529'}}>Featured Locations</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredProperties.map((property) => (
               <Link
@@ -153,8 +153,8 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{property.name}</h3>
-                  <p className="text-sm text-gray-600 flex items-center gap-1">
+                  <h3 className="text-xl mb-1" style={{fontWeight: 300, color: '#212529'}}>{property.name}</h3>
+                  <p className="text-sm flex items-center gap-1" style={{fontWeight: 300, color: '#6c757d'}}>
                     <MapPin className="w-4 h-4" />
                     {property.city}, Texas
                   </p>
@@ -166,8 +166,8 @@ export default function HomePage() {
       </section>
 
       <section className="py-24 bg-[#f8f9fa]">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">Browse by Category</h2>
+        <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
+          <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100, color: '#212529'}}>Browse by Category</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
               <Link
@@ -183,8 +183,8 @@ export default function HomePage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <h3 className="font-semibold text-lg mb-1">{category.name}</h3>
-                  <p className="text-sm opacity-90">{category.count} Locations</p>
+                  <h3 className="text-lg mb-1" style={{fontWeight: 400}}>{category.name}</h3>
+                  <p className="text-sm opacity-90" style={{fontWeight: 300}}>{category.count} Locations</p>
                 </div>
               </Link>
             ))}
@@ -193,14 +193,14 @@ export default function HomePage() {
       </section>
 
       <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-4 text-gray-900">Featured in Major Productions</h2>
-          <p className="text-center text-gray-600 mb-16 text-lg">
+        <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
+          <h2 className="text-4xl text-center mb-4" style={{fontWeight: 100, color: '#212529'}}>Featured in Major Productions</h2>
+          <p className="text-center mb-16 text-lg" style={{fontWeight: 300, color: '#6c757d'}}>
             Trusted by leading production companies and streaming platforms
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center opacity-60">
             {clients.map((client) => (
-              <div key={client} className="text-2xl font-bold text-gray-800 hover:opacity-100 transition-opacity">
+              <div key={client} className="text-2xl hover:opacity-100 transition-opacity" style={{fontWeight: 300, color: '#212529'}}>
                 {client}
               </div>
             ))}
@@ -209,18 +209,18 @@ export default function HomePage() {
       </section>
 
       <section className="py-24 bg-[#1a3a5a] text-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">Our Services</h2>
+        <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
+          <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100}}>Our Services</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {services.map((service) => {
               const Icon = service.icon;
               return (
                 <div key={service.title} className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-[#dc2626] rounded-full mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-[#e11921] rounded-full mb-6">
                     <Icon className="w-8 h-8" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4">{service.title}</h3>
-                  <p className="text-gray-300 leading-relaxed">{service.description}</p>
+                  <h3 className="text-2xl mb-4" style={{fontWeight: 300}}>{service.title}</h3>
+                  <p className="text-gray-300 leading-relaxed" style={{fontWeight: 300}}>{service.description}</p>
                 </div>
               );
             })}
@@ -228,24 +228,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-16 bg-[#dc2626] text-white">
-        <div className="max-w-7xl mx-auto px-4">
+      <section className="py-16 bg-[#e11921] text-white">
+        <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-5xl font-bold mb-2">20+</div>
-              <div className="text-lg">Years Experience</div>
+              <div className="text-5xl mb-2" style={{fontWeight: 100}}>20+</div>
+              <div className="text-lg" style={{fontWeight: 300}}>Years Experience</div>
             </div>
             <div>
-              <div className="text-5xl font-bold mb-2">65+</div>
-              <div className="text-lg">Locations</div>
+              <div className="text-5xl mb-2" style={{fontWeight: 100}}>65+</div>
+              <div className="text-lg" style={{fontWeight: 300}}>Locations</div>
             </div>
             <div>
-              <div className="text-5xl font-bold mb-2">10+</div>
-              <div className="text-lg">Cities Covered</div>
+              <div className="text-5xl mb-2" style={{fontWeight: 100}}>10+</div>
+              <div className="text-lg" style={{fontWeight: 300}}>Cities Covered</div>
             </div>
             <div>
-              <div className="text-5xl font-bold mb-2">500+</div>
-              <div className="text-lg">Productions Served</div>
+              <div className="text-5xl mb-2" style={{fontWeight: 100}}>500+</div>
+              <div className="text-lg" style={{fontWeight: 300}}>Productions Served</div>
             </div>
           </div>
         </div>
@@ -262,14 +262,14 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-10 text-center text-white">
             <Camera className="w-16 h-16 mx-auto mb-6" />
-            <h3 className="text-3xl font-bold mb-4">For Production Professionals</h3>
-            <p className="mb-6 text-lg">
+            <h3 className="text-3xl mb-4" style={{fontWeight: 100}}>For Production Professionals</h3>
+            <p className="mb-6 text-lg" style={{fontWeight: 300}}>
               Find the perfect location for your next project
             </p>
             <Button
               onClick={() => router.push('/search')}
               size="lg"
-              className="bg-[#dc2626] hover:bg-[#b91c1c]"
+              className="bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
             >
               Start Searching
             </Button>
@@ -285,15 +285,15 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-10 text-center text-white">
             <Briefcase className="w-16 h-16 mx-auto mb-6" />
-            <h3 className="text-3xl font-bold mb-4">For Property Owners</h3>
-            <p className="mb-6 text-lg">
+            <h3 className="text-3xl mb-4" style={{fontWeight: 100}}>For Property Owners</h3>
+            <p className="mb-6 text-lg" style={{fontWeight: 300}}>
               Turn your property into a filming location
             </p>
             <Button
               onClick={() => router.push('/list-property')}
               size="lg"
               variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-gray-900"
+              className="border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded" style={{fontWeight: 300}}
             >
               List Your Property
             </Button>

@@ -45,8 +45,8 @@ export function Navbar() {
       <div className="mx-auto px-4">
         <div className="flex items-center justify-between h-[60px]">
           <Link href="/" className="flex items-center gap-2">
-            <Camera className="w-8 h-8 text-[#dc2626]" />
-            <span className="text-xl font-bold tracking-tight">
+            <Camera className="w-8 h-8 text-[#e11921]" />
+            <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
               SGS LOCATIONS<sup className="text-xs">®</sup>
             </span>
           </Link>
@@ -63,7 +63,7 @@ export function Navbar() {
               <Button
                 type="submit"
                 size="sm"
-                className="ml-2 bg-[#dc2626] hover:bg-[#b91c1c]"
+                className="ml-2 bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
               >
                 <Search className="w-4 h-4" />
               </Button>
@@ -80,21 +80,21 @@ export function Navbar() {
         </div>
 
         <div className="hidden lg:flex items-center justify-center h-[50px] border-t border-opacity-20 border-current">
-          <div className="flex items-center gap-1 text-xs tracking-widest font-medium">
+          <div className="flex items-center gap-1 text-xs tracking-widest" style={{fontWeight: 300}}>
             {navItems.map((item, index) => (
               <div key={item.href} className="flex items-center">
                 {index > 0 && <span className="mx-2 opacity-50">|</span>}
                 {item.isButton ? (
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
-                    className="hover:text-[#dc2626] transition-colors px-1"
+                    className="hover:text-[#e11921] transition-colors px-1"
                   >
                     {item.label}
                   </button>
                 ) : (
                   <Link
                     href={item.href}
-                    className="hover:text-[#dc2626] transition-colors px-1"
+                    className="hover:text-[#e11921] transition-colors px-1"
                   >
                     {item.label}
                   </Link>
@@ -127,7 +127,7 @@ export function Navbar() {
               />
               <Button
                 type="submit"
-                className="bg-[#dc2626] hover:bg-[#b91c1c]"
+                className="bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
               >
                 <Search className="w-4 h-4" />
               </Button>
@@ -140,7 +140,7 @@ export function Navbar() {
                     setMobileMenuOpen(false);
                     setIsLoginModalOpen(true);
                   }}
-                  className="text-white text-sm tracking-widest hover:text-[#dc2626] transition-colors"
+                  className="text-white text-sm tracking-widest hover:text-[#e11921] transition-colors" style={{fontWeight: 300}}
                 >
                   {item.label}
                 </button>
@@ -149,7 +149,7 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-white text-sm tracking-widest hover:text-[#dc2626] transition-colors"
+                  className="text-white text-sm tracking-widest hover:text-[#e11921] transition-colors" style={{fontWeight: 300}}
                 >
                   {item.label}
                 </Link>
