@@ -3,25 +3,25 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Camera } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { toast } = useToast();
-  const [userType, setUserType] = useState('production');
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    companyName: '',
-    phone: '',
+  });
+  const [errors, setErrors] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    form: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -29,19 +29,71 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const validateForm = () => {
+    const newErrors = {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      form: '',
+    };
+    let isValid = true;
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+      isValid = false;
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+      isValid = false;
+    }
+
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+      isValid = false;
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+      isValid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match',
-        variant: 'destructive',
-      });
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
+    setErrors({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      form: '',
+    });
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email,
@@ -49,11 +101,7 @@ export default function RegisterPage() {
     });
 
     if (authError) {
-      toast({
-        title: 'Error',
-        description: authError.message,
-        variant: 'destructive',
-      });
+      setErrors((prev) => ({ ...prev, form: authError.message }));
       setLoading(false);
       return;
     }
@@ -62,23 +110,13 @@ export default function RegisterPage() {
       const { error: profileError } = await supabase.from('users').insert({
         id: authData.user.id,
         email: formData.email,
-        full_name: formData.fullName,
-        phone: formData.phone,
-        user_type: userType,
-        company_name: formData.companyName,
+        full_name: `${formData.firstName} ${formData.lastName}`,
+        user_type: 'production',
       });
 
       if (profileError) {
-        toast({
-          title: 'Error',
-          description: 'Failed to create profile',
-          variant: 'destructive',
-        });
+        setErrors((prev) => ({ ...prev, form: 'Failed to create profile' }));
       } else {
-        toast({
-          title: 'Success',
-          description: 'Account created successfully',
-        });
         router.push('/dashboard');
       }
     }
@@ -87,137 +125,133 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 pt-[110px]">
-      <div className="max-w-md mx-auto px-4 py-16">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          <p className="text-gray-600 mb-8">Join SGS Locations today</p>
+    <main className="min-h-screen bg-white flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full space-y-6">
+        <div className="flex flex-col items-center mb-8">
+          <Link href="/" className="flex items-center gap-2 mb-8">
+            <Camera className="w-10 h-10 text-red-600" />
+            <span className="text-2xl font-bold tracking-tight text-gray-900">
+              SGS LOCATIONS<sup className="text-xs">®</sup>
+            </span>
+          </Link>
+        </div>
 
-          <form onSubmit={handleRegister} className="space-y-6">
-            <div>
-              <Label className="mb-3 block">I am a...</Label>
-              <RadioGroup value={userType} onValueChange={setUserType}>
-                <div className="flex items-center space-x-2 mb-2">
-                  <RadioGroupItem value="production" id="production" />
-                  <Label htmlFor="production" className="cursor-pointer font-normal">
-                    Production Professional
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="property_owner" id="property_owner" />
-                  <Label htmlFor="property_owner" className="cursor-pointer font-normal">
-                    Property Owner
-                  </Label>
-                </div>
-              </RadioGroup>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
+          {errors.form && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+              {errors.form}
             </div>
+          )}
 
+          <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                name="fullName"
+              <label htmlFor="firstName" className="block text-gray-700 mb-1 text-sm">
+                First Name
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
                 type="text"
-                value={formData.fullName}
+                value={formData.firstName}
                 onChange={handleChange}
-                placeholder="John Doe"
-                required
-                className="mt-1"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                placeholder="John"
               />
+              {errors.firstName && (
+                <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="email">Email Address</Label>
-              <Input
+              <label htmlFor="lastName" className="block text-gray-700 mb-1 text-sm">
+                Last Name
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                placeholder="Doe"
+              />
+              {errors.lastName && (
+                <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-gray-700 mb-1 text-sm">
+                Email
+              </label>
+              <input
                 id="email"
                 name="email"
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
                 placeholder="your@email.com"
-                required
-                className="mt-1"
               />
+              {errors.email && (
+                <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="(214) 555-0123"
-                className="mt-1"
-              />
-            </div>
-
-            {userType === 'property_owner' && (
-              <div>
-                <Label htmlFor="companyName">Company Name (Optional)</Label>
-                <Input
-                  id="companyName"
-                  name="companyName"
-                  type="text"
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  placeholder="Your Company LLC"
-                  className="mt-1"
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
+              <label htmlFor="password" className="block text-gray-700 mb-1 text-sm">
+                Password
+              </label>
+              <input
                 id="password"
                 name="password"
                 type="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password"
-                required
-                className="mt-1"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                placeholder="Minimum 8 characters"
               />
+              {errors.password && (
+                <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
+              <label htmlFor="confirmPassword" className="block text-gray-700 mb-1 text-sm">
+                Confirm Password
+              </label>
+              <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm your password"
-                required
-                className="mt-1"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                placeholder="Re-enter your password"
               />
+              {errors.confirmPassword && (
+                <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>
+              )}
             </div>
 
-            <div className="flex items-start space-x-2">
-              <Checkbox id="terms" required />
-              <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer">
-                I agree to the Terms of Service and Privacy Policy
-              </label>
+            <div className="border border-gray-300 rounded bg-gray-50 p-4 text-center text-gray-500 text-sm">
+              reCAPTCHA verification
             </div>
 
-            <Button
+            <div className="text-center text-sm text-gray-700">
+              <Link href="/login" className="text-red-600 hover:text-red-700 font-medium">
+                Already registered?
+              </Link>
+            </div>
+
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#dc2626] hover:bg-[#b91c1c]"
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-8 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </Button>
+              {loading ? 'Creating Account...' : 'Register'}
+            </button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href="/login" className="text-[#dc2626] hover:underline font-medium">
-              Sign in
-            </Link>
-          </div>
         </div>
       </div>
     </main>
