@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import LoginModal from '@/components/LoginModal';
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const isHomepage = pathname === '/';
@@ -30,7 +32,7 @@ export function Navbar() {
     { label: 'CONTACT', href: '/contact' },
     { label: 'LIST YOUR PROPERTY', href: '/list-your-property' },
     { label: 'ARTICLES', href: '/articles' },
-    { label: 'LOGIN', href: '/login' },
+    { label: 'LOGIN', href: '/login', isButton: true },
     { label: 'REGISTER', href: '/register' },
   ];
 
@@ -82,12 +84,21 @@ export function Navbar() {
             {navItems.map((item, index) => (
               <div key={item.href} className="flex items-center">
                 {index > 0 && <span className="mx-2 opacity-50">|</span>}
-                <Link
-                  href={item.href}
-                  className="hover:text-[#dc2626] transition-colors px-1"
-                >
-                  {item.label}
-                </Link>
+                {item.isButton ? (
+                  <button
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="hover:text-[#dc2626] transition-colors px-1"
+                  >
+                    {item.label}
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="hover:text-[#dc2626] transition-colors px-1"
+                  >
+                    {item.label}
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -122,18 +133,33 @@ export function Navbar() {
               </Button>
             </form>
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-white text-sm tracking-widest hover:text-[#dc2626] transition-colors"
-              >
-                {item.label}
-              </Link>
+              item.isButton ? (
+                <button
+                  key={item.href}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsLoginModalOpen(true);
+                  }}
+                  className="text-white text-sm tracking-widest hover:text-[#dc2626] transition-colors"
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-sm tracking-widest hover:text-[#dc2626] transition-colors"
+                >
+                  {item.label}
+                </Link>
+              )
             ))}
           </div>
         </div>
       )}
+
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </nav>
   );
 }

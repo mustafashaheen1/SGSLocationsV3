@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import LoginModal from '@/components/LoginModal';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -125,7 +127,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white flex items-center justify-center py-12 px-4">
+    <main className="min-h-screen bg-white flex items-start justify-center py-8 px-4">
       <div className="max-w-md w-full space-y-6">
         <div className="flex flex-col items-center mb-8">
           <Link href="/" className="flex items-center gap-2 mb-8">
@@ -234,14 +236,38 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <div className="border border-gray-300 rounded bg-gray-50 p-4 text-center text-gray-500 text-sm">
-              reCAPTCHA verification
+            <div className="border border-gray-300 rounded bg-gray-50 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="w-6 h-6 accent-red-600 cursor-pointer"
+                    required
+                  />
+                  <span className="text-sm text-gray-700">I'm not a robot</span>
+                </div>
+                <div className="text-right">
+                  <div className="flex flex-col items-end">
+                    <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" fill="#4285F4"/>
+                      <path d="M8 12l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <p className="text-xs text-gray-500 mt-1">
+                      reCAPTCHA
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="text-center text-sm text-gray-700">
-              <Link href="/login" className="text-red-600 hover:text-red-700 font-medium">
+              <button
+                type="button"
+                onClick={() => setIsLoginModalOpen(true)}
+                className="text-red-600 hover:text-red-700 font-medium"
+              >
                 Already registered?
-              </Link>
+              </button>
             </div>
 
             <button
@@ -254,6 +280,8 @@ export default function RegisterPage() {
           </form>
         </div>
       </div>
+
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </main>
   );
 }
