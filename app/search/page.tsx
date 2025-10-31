@@ -4,11 +4,39 @@ import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { ChevronDown, Upload, X, MapPin } from 'lucide-react';
+import { ChevronDown, Search, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
+
+function PropertyCard({ property }: { property: Property }) {
+  const images = property.images.length > 0 ? property.images : [property.primary_image || ''];
+
+  return (
+    <div className="bg-white overflow-hidden hover:shadow-md transition-shadow">
+      <Link href={`/property/${property.id}`}>
+        <div className="relative w-full property-image-container">
+          <Image
+            src={images[0]}
+            alt={property.name}
+            width={400}
+            height={300}
+            className="property-image w-full"
+            style={{ objectFit: 'cover' }}
+          />
+        </div>
+        <div className="p-3">
+          <h5 className="text-lg font-light text-gray-900 mb-1 property-title">
+            {property.name}
+          </h5>
+          <p className="text-sm font-light text-gray-600">
+            {property.city}
+          </p>
+        </div>
+      </Link>
+    </div>
+  );
+}
 
 function SearchContent() {
   const router = useRouter();
@@ -16,6 +44,7 @@ function SearchContent() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
     categories: [],
@@ -82,8 +111,6 @@ function SearchContent() {
         { name: 'Garage', count: 480 },
         { name: 'Elevator', count: 220 },
         { name: 'Parking', count: 650 },
-        { name: 'Gated Entry', count: 320 },
-        { name: 'Loading Dock', count: 180 },
       ],
     },
     floors: {
@@ -95,18 +122,15 @@ function SearchContent() {
         { name: 'Concrete', count: 340 },
         { name: 'Marble', count: 210 },
         { name: 'Laminate', count: 290 },
-        { name: 'Vinyl', count: 180 },
-        { name: 'Stone', count: 240 },
       ],
     },
     patioBalconies: {
-      label: 'Patio Balconies',
+      label: 'Patio/Balconies',
       options: [
         { name: 'Patio', count: 450 },
         { name: 'Balcony', count: 380 },
         { name: 'Terrace', count: 220 },
         { name: 'Deck', count: 340 },
-        { name: 'Covered Patio', count: 280 },
         { name: 'Rooftop', count: 160 },
       ],
     },
@@ -117,7 +141,6 @@ function SearchContent() {
         { name: 'Spa', count: 280 },
         { name: 'Infinity Pool', count: 150 },
         { name: 'Indoor Pool', count: 120 },
-        { name: 'Lap Pool', count: 180 },
         { name: 'Hot Tub', count: 240 },
       ],
     },
@@ -129,7 +152,6 @@ function SearchContent() {
         { name: 'Stone', count: 290 },
         { name: 'Wood Panel', count: 240 },
         { name: 'Concrete', count: 320 },
-        { name: 'Wallpaper', count: 180 },
         { name: 'Exposed Brick', count: 210 },
       ],
     },
@@ -155,6 +177,10 @@ function SearchContent() {
         ...prev,
         categories: [category],
       }));
+    }
+
+    if (query) {
+      setSearchQuery(query);
     }
 
     fetchProperties();
@@ -200,202 +226,297 @@ function SearchContent() {
     });
   };
 
-  const removeFilter = (filterType: string, value: string) => {
-    setSelectedFilters(prev => ({
-      ...prev,
-      [filterType]: (prev[filterType] || []).filter(v => v !== value),
-    }));
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
   };
 
-  const clearAllFilters = () => {
-    setSelectedFilters({
-      categories: [],
-      permits: [],
-      city: [],
-      county: [],
-      access: [],
-      floors: [],
-      patioBalconies: [],
-      pool: [],
-      walls: [],
-      yard: [],
-    });
-  };
-
-  const getActiveFiltersCount = () => {
-    return Object.values(selectedFilters).reduce((acc, curr) => acc + curr.length, 0);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   return (
-    <main className="min-h-screen bg-white pt-[110px]">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer">
-          <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-          <p className="text-lg font-medium text-gray-700 mb-1">
-            Search a Location Using An Image As Reference
-          </p>
-          <p className="text-sm text-gray-500">
-            Drag & Drop an image here or click here to select a file
-          </p>
+    <>
+      <style jsx global>{`
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+          letter-spacing: -0.02em;
+        }
+
+        .font-light {
+          font-weight: 300;
+        }
+
+        /* Search page layout */
+        .search-page-main {
+          background: #f8f9fa;
+          min-height: 100vh;
+          margin: 0;
+          padding: 0;
+        }
+
+        /* Search bar */
+        .search-bar-container {
+          background: white;
+          padding: 1.5rem;
+          border-bottom: 1px solid #dee2e6;
+        }
+
+        .search-input {
+          border: 1px solid #ced4da;
+          border-radius: 0;
+          padding: 0.375rem 0.75rem;
+          font-weight: 300;
+          width: 100%;
+        }
+
+        .search-button {
+          background: #e11921;
+          color: white;
+          border: none;
+          padding: 0.375rem 1.5rem;
+          border-radius: 0;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .search-button:hover {
+          background: #c01419;
+        }
+
+        /* Filter dropdowns */
+        .filter-bar {
+          background: white;
+          border-bottom: 1px solid #e5e7eb;
+          padding: 1rem 1.5rem;
+        }
+
+        .filter-button {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          border: 1px solid #d1d5db;
+          background: white;
+          font-weight: 300;
+          font-size: 0.875rem;
+          cursor: pointer;
+          border-radius: 0;
+        }
+
+        .filter-button:hover {
+          background: #f9fafb;
+        }
+
+        .filter-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 0.25rem;
+          background: white;
+          border: 1px solid #ced4da;
+          box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.13);
+          min-width: 300px;
+          max-height: 400px;
+          overflow-y: auto;
+          padding: 1rem;
+          z-index: 50;
+        }
+
+        .filter-option {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.5rem 0;
+        }
+
+        .filter-option label {
+          font-weight: 300;
+          font-size: 0.875rem;
+          cursor: pointer;
+          flex: 1;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        /* Property grid */
+        .property-grid {
+          display: grid;
+          grid-template-columns: repeat(1, 1fr);
+          gap: 1rem;
+        }
+
+        @media (min-width: 576px) {
+          .property-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (min-width: 992px) {
+          .property-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        @media (min-width: 1345px) {
+          .property-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+        /* Responsive image heights */
+        .property-image-container {
+          position: relative;
+          width: 100%;
+        }
+
+        .property-image {
+          width: 100%;
+          height: auto;
+        }
+
+        @media (min-width: 1345px) {
+          .property-image {
+            height: 230px;
+          }
+        }
+
+        @media (min-width: 992px) and (max-width: 1344px) {
+          .property-image {
+            height: 17vw;
+          }
+        }
+
+        @media (min-width: 768px) and (max-width: 991px) {
+          .property-image {
+            height: 23vw;
+          }
+        }
+
+        @media (min-width: 576px) and (max-width: 767px) {
+          .property-image {
+            height: 35vw;
+          }
+        }
+
+        @media (max-width: 575px) {
+          .property-image {
+            height: 60vw;
+          }
+        }
+
+        .property-title {
+          font-weight: 300;
+        }
+
+        .property-title:hover {
+          color: #e11921;
+        }
+      `}</style>
+
+      <main className="search-page-main">
+        {/* Search bar */}
+        <div className="search-bar-container">
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '0.5rem' }}>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search locations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <button className="search-button" onClick={handleSearch}>
+              <Search style={{ width: '1.25rem', height: '1.25rem' }} />
+            </button>
+          </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2" ref={dropdownRef}>
-          {Object.entries(filterDefinitions).map(([key, { label }]) => (
-            <div key={key} className="relative">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveFilter(activeFilter === key ? null : key)}
-                className="text-xs px-3 py-2 h-auto whitespace-nowrap"
-              >
-                {label} <ChevronDown className="w-3 h-3 ml-1" />
-              </Button>
+        {/* Horizontal filter dropdowns */}
+        <div className="filter-bar" ref={dropdownRef}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+            {Object.entries(filterDefinitions).map(([key, { label, options }]) => (
+              <div key={key} style={{ position: 'relative' }}>
+                <button
+                  className="filter-button"
+                  onClick={() => setActiveFilter(activeFilter === key ? null : key)}
+                >
+                  <span>{label}</span>
+                  <ChevronDown style={{ width: '1rem', height: '1rem' }} />
+                </button>
 
-              {activeFilter === key && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-96 overflow-y-auto">
-                  <div className="p-3">
-                    <Input
-                      placeholder="Search here..."
-                      className="mb-3 text-sm"
-                    />
-                    <div className="space-y-2">
-                      {filterDefinitions[key].options.map((option) => (
-                        <div
-                          key={option.name}
-                          className="flex items-center justify-between py-2"
-                        >
-                          <label
-                            htmlFor={`${key}-${option.name}`}
-                            className="text-sm cursor-pointer flex-1 flex items-center justify-between"
-                          >
+                {activeFilter === key && (
+                  <div className="filter-dropdown">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {options.map((option) => (
+                        <div key={option.name} className="filter-option">
+                          <label>
                             <span>{option.name}</span>
-                            <span className="text-gray-400 text-xs ml-2">({option.count})</span>
+                            <span style={{ color: '#6c757d', fontSize: '0.75rem', marginLeft: '0.5rem' }}>
+                              ({option.count})
+                            </span>
                           </label>
                           <Switch
-                            id={`${key}-${option.name}`}
                             checked={selectedFilters[key]?.includes(option.name)}
                             onCheckedChange={() => toggleFilter(key, option.name)}
-                            className="data-[state=checked]:bg-[#dc2626] ml-2"
+                            className="data-[state=checked]:bg-[#e11921]"
                           />
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {getActiveFiltersCount() > 0 && (
-          <div className="mb-6 flex flex-wrap items-center gap-2">
-            {Object.entries(selectedFilters).map(([filterType, values]) =>
-              values.map((value) => (
-                <div
-                  key={`${filterType}-${value}`}
-                  className="inline-flex items-center gap-2 bg-[#dc2626] text-white text-sm px-3 py-1 rounded-full"
-                >
-                  <span className="text-xs lowercase">{filterDefinitions[filterType].label}:</span>
-                  <span>{value}</span>
-                  <button
-                    onClick={() => removeFilter(filterType, value)}
-                    className="hover:opacity-75"
-                    aria-label="Remove filter"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearAllFilters}
-              className="text-xs text-gray-600"
-            >
-              Clear All
-            </Button>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {properties.length} Locations Found
-          </h2>
-          <select className="border border-gray-300 rounded px-3 py-2 text-sm">
-            <option>Sort by: Relevance</option>
-            <option>Price: Low to High</option>
-            <option>Price: High to Low</option>
-            <option>Newest First</option>
-          </select>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-gray-100 rounded-lg overflow-hidden animate-pulse">
-                <div className="aspect-[3/2] bg-gray-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-5 bg-gray-200 rounded w-3/4" />
-                  <div className="h-4 bg-gray-200 rounded w-1/2" />
-                </div>
+                )}
               </div>
             ))}
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {properties.map((property) => (
-                <Link
-                  key={property.id}
-                  href={`/property/${property.id}`}
-                  className="group block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all"
-                >
-                  <div className="aspect-[3/2] relative overflow-hidden">
-                    <Image
-                      src={property.primary_image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80'}
-                      alt={property.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-1">{property.name}</h3>
-                    <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
-                      <MapPin className="w-4 h-4" />
-                      {property.city}, Texas
-                    </p>
-                    <p className="text-lg font-bold text-[#dc2626]">
-                      ${property.daily_rate}/day
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+        </div>
 
-            <div className="flex items-center justify-center gap-2 pb-8">
-              <Button variant="outline" size="sm">«</Button>
-              <Button variant="outline" size="sm">‹</Button>
-              <Button variant="outline" size="sm" className="bg-[#dc2626] text-white">1</Button>
-              <Button variant="outline" size="sm">2</Button>
-              <Button variant="outline" size="sm">3</Button>
-              <Button variant="outline" size="sm">4</Button>
-              <Button variant="outline" size="sm">5</Button>
-              <Button variant="outline" size="sm">6</Button>
-              <Button variant="outline" size="sm">7</Button>
-              <Button variant="outline" size="sm">›</Button>
-              <Button variant="outline" size="sm">»</Button>
-            </div>
-          </>
-        )}
-      </div>
-    </main>
+        {/* Results area */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+          {/* Results count */}
+          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#212529' }}>
+              {properties.length} Locations Found
+            </h2>
+          </div>
+
+          {/* Property grid */}
+          <div style={{ background: 'white', padding: '1.5rem' }}>
+            {loading ? (
+              <div className="property-grid">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} style={{ background: '#f3f4f6', overflow: 'hidden' }}>
+                    <div style={{ aspectRatio: '4/3', background: '#e5e7eb' }} />
+                    <div style={{ padding: '1rem' }}>
+                      <div style={{ height: '1.25rem', background: '#e5e7eb', width: '75%', marginBottom: '0.75rem' }} />
+                      <div style={{ height: '1rem', background: '#e5e7eb', width: '50%' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="property-grid">
+                {properties.map(property => (
+                  <PropertyCard key={property.id} property={property} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </>
   );
 }
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white pt-[110px]">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white">Loading...</div>}>
       <SearchContent />
     </Suspense>
   );
