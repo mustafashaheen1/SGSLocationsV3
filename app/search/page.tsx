@@ -311,33 +311,33 @@ function SearchContent() {
         /* Image search box */
         .image-search-container {
           background: white;
-          padding: 3rem 0;
+          padding: 2rem 0;
         }
 
         .image-search-box {
-          border: 4px dashed #5B9BD5;
-          background-color: #EBF3FB;
+          border: 4px dashed #000000;
+          background-color: transparent;
           border-radius: 0.5rem;
-          padding: 3rem;
+          padding: 2rem 3rem;
           text-align: center;
           cursor: pointer;
-          transition: background-color 0.2s;
+          transition: border-color 0.2s;
         }
 
         .image-search-box:hover {
-          background-color: #D6E8F7;
+          border-color: #5B9BD5;
         }
 
         .image-search-title {
-          font-size: 1.5rem;
+          font-size: 1.25rem;
           font-weight: 300;
-          color: #2E5C8A;
+          color: #212529;
           margin-bottom: 0.75rem;
           letter-spacing: -0.02em;
         }
 
         .image-search-text {
-          font-size: 1rem;
+          font-size: 0.875rem;
           font-weight: 300;
           color: #6c757d;
         }
@@ -476,7 +476,7 @@ function SearchContent() {
       <main className="search-page-main">
         {/* Search bar */}
         <div className="search-bar-container">
-          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '0.5rem' }}>
+          <div style={{ width: '100%', padding: '0 3rem', display: 'flex', gap: '0.5rem' }}>
             <input
               type="text"
               className="search-input"
@@ -493,7 +493,7 @@ function SearchContent() {
 
         {/* Image search box */}
         <div className="image-search-container">
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem' }}>
+          <div style={{ width: '100%', padding: '0 3rem' }}>
             <div
               className="image-search-box"
               onClick={() => document.getElementById('imageUploadInput')?.click()}
@@ -519,7 +519,7 @@ function SearchContent() {
 
         {/* Horizontal filter dropdowns */}
         <div className="filter-bar" ref={dropdownRef}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ width: '100%', padding: '0 3rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
             {Object.entries(filterDefinitions).map(([key, { label, options }]) => (
               <div key={key} style={{ position: 'relative' }}>
                 <button
@@ -559,7 +559,7 @@ function SearchContent() {
         </div>
 
         {/* Results area */}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+        <div style={{ width: '100%', padding: '2rem 3rem' }}>
           {/* Results count */}
           <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#212529' }}>
