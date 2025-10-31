@@ -28,7 +28,7 @@ export function Navbar() {
     { label: 'LOCATION LIBRARY', href: '/location-library' },
     { label: 'ABOUT US', href: '/about' },
     { label: 'CONTACT', href: '/contact' },
-    { label: 'LIST YOUR PROPERTY', href: '/list-property' },
+    { label: 'LIST YOUR PROPERTY', href: '/list-your-property' },
     { label: 'ARTICLES', href: '/articles' },
     { label: 'LOGIN', href: '/login' },
     { label: 'REGISTER', href: '/register' },
