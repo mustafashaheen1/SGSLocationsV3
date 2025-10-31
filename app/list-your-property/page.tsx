@@ -135,8 +135,8 @@ export default function ListYourPropertyPage() {
 
   return (
     <main className="min-h-screen bg-white pt-[110px]">
-      <div className="max-w-6xl mx-auto px-4 pt-6 pb-8">
-        <div className="mb-8">
+      <div className="max-w-7xl mx-auto px-6 pt-4 pb-8">
+        <div className="mb-6">
           <h1 className="text-4xl font-bold text-red-600 mb-2">List Your Property</h1>
           <p className="text-lg text-gray-600">
             Be a part of the largest location database in the Dallas-Fort Worth area
