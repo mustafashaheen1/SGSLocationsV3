@@ -4,89 +4,33 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 
 function PropertyCard({ property }: { property: Property }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isHovering, setIsHovering] = useState(false);
-
   const images = property.images.length > 0 ? property.images : [property.primary_image || ''];
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
   return (
-    <div className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
-      <div
-        className="relative aspect-[4/3] overflow-hidden"
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-      >
-        <Link href={`/property/${property.id}`}>
+    <li className="col-sm-6 col-lg-4 col-xl-3 px-2 mb-3">
+      <Link href={`/property/${property.id}`} className="property-card">
+        <div className="order-first">
           <Image
-            src={images[currentImageIndex]}
+            src={images[0]}
             alt={property.name}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            width={400}
+            height={300}
+            className="property-image"
+            style={{ objectFit: 'cover' }}
           />
-        </Link>
-
-        {images.length > 1 && isHovering && (
-          <>
-            <button
-              onClick={prevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all z-10"
-              aria-label="Previous image"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-800" />
-            </button>
-            <button
-              onClick={nextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all z-10"
-              aria-label="Next image"
-            >
-              <ChevronRight className="w-5 h-5 text-gray-800" />
-            </button>
-          </>
-        )}
-
-        {images.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
-            {images.map((_, index) => (
-              <div
-                key={index}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${
-                  index === currentImageIndex ? 'bg-white w-3' : 'bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <button
-        className="absolute top-3 right-3 w-8 h-8 bg-white border-2 border-[#dc2626] rounded-full flex items-center justify-center hover:bg-[#dc2626] hover:border-[#dc2626] transition-all z-20 group/btn"
-        aria-label="Add to favorites"
-      >
-        <Plus className="w-4 h-4 text-[#dc2626] group-hover/btn:text-white" />
-      </button>
-
-      <div className="p-4">
-        <Link href={`/property/${property.id}`}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1 hover:text-[#dc2626] transition-colors">
-            {property.name}
-          </h3>
-        </Link>
-        <p className="text-sm text-gray-600">{property.city}, Texas</p>
-      </div>
-    </div>
+        </div>
+        <h5 className="mb-0 w-100 mt-2 pr-md-5 font-weight-light text-dark property-title">
+          {property.name}
+        </h5>
+        <p className="small mb-2 w-100 property-city">
+          {property.city}
+        </p>
+      </Link>
+    </li>
   );
 }
 
@@ -149,120 +93,344 @@ export default function LocationLibraryPage() {
   };
 
   const CategoryButton = ({ category }: { category: typeof categories[0] }) => (
-    <button
+    <h6
       onClick={() => handleCategoryChange(category.id)}
-      className={`w-full text-left py-4 px-6 text-sm font-normal transition-colors ${
-        activeCategory === category.id
-          ? 'bg-[#dc2626] text-white'
-          : 'bg-white text-gray-700 hover:bg-gray-100'
-      }`}
+      className={`category-button ${activeCategory === category.id ? 'active' : ''}`}
+      style={{ cursor: 'pointer' }}
     >
       {category.label}
-    </button>
+    </h6>
   );
 
   return (
-    <main className="min-h-screen bg-[#f8f9fa] pt-[110px]">
-      <div className="flex">
-        <aside className="hidden lg:block w-[200px] bg-white border-r border-gray-200 min-h-[calc(100vh-110px)] sticky top-[110px]">
-          <nav className="flex flex-col">
-            {categories.map(category => (
-              <CategoryButton key={category.id} category={category} />
-            ))}
-          </nav>
-        </aside>
+    <>
+      <style jsx global>{`
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+          letter-spacing: -0.02em;
+        }
 
-        <div className="flex-1">
-          <div className="lg:hidden bg-white border-b border-gray-200 p-4">
-            <Button
-              variant="outline"
-              onClick={() => setMobileMenuOpen(true)}
-              className="w-full justify-start"
-            >
-              <Menu className="w-4 h-4 mr-2" />
-              Filter by Category
-            </Button>
-          </div>
+        .font-weight-light {
+          font-weight: 300;
+        }
 
-          {mobileMenuOpen && (
-            <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-              <div className="fixed left-0 top-0 bottom-0 w-64 bg-white shadow-xl">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h2 className="text-lg font-semibold">Categories</h2>
-                  <button onClick={() => setMobileMenuOpen(false)}>
-                    <X className="w-5 h-5" />
-                  </button>
+        /* Sidebar */
+        .sidebar {
+          width: 200px;
+          background: white;
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          overflow-y: auto;
+        }
+
+        .category-button {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          font-size: 0.75rem;
+          letter-spacing: 0.05rem;
+          text-align: left;
+          background: white;
+          color: #212529;
+          margin: 0;
+          border: none;
+          transition: all 0.2s;
+          font-weight: 400;
+        }
+
+        .category-button.active {
+          background: #e11921;
+          color: white;
+        }
+
+        .category-button:not(.active):hover {
+          background: #f8f9fa;
+        }
+
+        /* Main content area */
+        .main-content {
+          width: calc(100% - 200px);
+          margin-left: 200px;
+        }
+
+        /* Breadcrumbs */
+        .breadcrumb {
+          background: transparent;
+          padding: 0;
+          margin-bottom: 0;
+        }
+
+        /* Page header */
+        .page-title {
+          font-size: 2.5rem;
+          display: inline-block;
+          width: 100%;
+          font-weight: 300;
+          letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+          font-size: 1.25rem;
+          display: inline-block;
+          width: 100%;
+          font-weight: 300;
+        }
+
+        /* Property grid */
+        .property-grid {
+          display: flex;
+          flex-wrap: wrap;
+          list-style: none;
+          padding: 0;
+          margin: 0 -15px;
+        }
+
+        .col-sm-6 {
+          position: relative;
+          width: 100%;
+          padding-right: 15px;
+          padding-left: 15px;
+        }
+
+        @media (min-width: 576px) {
+          .col-sm-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+          }
+        }
+
+        @media (min-width: 992px) {
+          .col-lg-4 {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+          }
+        }
+
+        @media (min-width: 1345px) {
+          .col-xl-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+          }
+        }
+
+        .px-2 {
+          padding-left: 15px;
+          padding-right: 15px;
+        }
+
+        .mb-3 {
+          margin-bottom: 1rem;
+        }
+
+        /* Property card */
+        .property-card {
+          display: block;
+          text-decoration: none;
+          background: transparent;
+        }
+
+        .property-image {
+          width: 100%;
+          height: auto;
+        }
+
+        /* Responsive image heights */
+        @media (min-width: 1345px) {
+          .property-image {
+            height: 230px;
+          }
+        }
+
+        @media (min-width: 992px) and (max-width: 1344px) {
+          .property-image {
+            height: 17vw;
+          }
+        }
+
+        @media (min-width: 768px) and (max-width: 991px) {
+          .property-image {
+            height: 23vw;
+          }
+        }
+
+        @media (min-width: 576px) and (max-width: 767px) {
+          .property-image {
+            height: 35vw;
+          }
+        }
+
+        @media (max-width: 575px) {
+          .property-image {
+            height: 60vw;
+          }
+        }
+
+        .property-title {
+          font-size: 1.25rem;
+          color: #212529;
+          font-weight: 300;
+        }
+
+        .property-title:hover {
+          color: #e11921;
+        }
+
+        .property-city {
+          color: #6c757d;
+          font-size: 0.875rem;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+          .sidebar {
+            position: static;
+            width: 100%;
+            height: auto;
+          }
+
+          .main-content {
+            width: 100%;
+            margin-left: 0;
+          }
+        }
+
+        /* Remove white space at top */
+        .location-library-main {
+          background: #f8f9fa;
+          min-height: 100vh;
+        }
+      `}</style>
+
+      <main className="location-library-main">
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
+          <aside className="sidebar d-none d-lg-block">
+            <nav style={{ display: 'flex', flexDirection: 'column' }}>
+              {categories.map(category => (
+                <CategoryButton key={category.id} category={category} />
+              ))}
+            </nav>
+          </aside>
+
+          <div className="main-content" style={{ flex: 1 }}>
+            <div className="d-lg-none" style={{ background: 'white', borderBottom: '1px solid #dee2e6', padding: '1rem' }}>
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 1rem',
+                  background: 'white',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '0.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  cursor: 'pointer'
+                }}
+              >
+                <Menu style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+                Filter by Category
+              </button>
+            </div>
+
+            {mobileMenuOpen && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 50 }}>
+                <div
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }}
+                  onClick={() => setMobileMenuOpen(false)}
+                />
+                <div style={{
+                  position: 'fixed',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '16rem',
+                  background: 'white',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '1rem',
+                    borderBottom: '1px solid #dee2e6'
+                  }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Categories</h2>
+                    <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <X style={{ width: '1.25rem', height: '1.25rem' }} />
+                    </button>
+                  </div>
+                  <nav style={{ display: 'flex', flexDirection: 'column' }}>
+                    {categories.map(category => (
+                      <CategoryButton key={category.id} category={category} />
+                    ))}
+                  </nav>
                 </div>
-                <nav className="flex flex-col">
-                  {categories.map(category => (
-                    <CategoryButton key={category.id} category={category} />
-                  ))}
-                </nav>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="px-6 py-8">
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                Categories / {getCategoryTitle()}
-              </p>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{getCategoryTitle()}</h1>
-              <p className="text-xl text-gray-600">Location Library</p>
-            </div>
+            <div style={{ padding: '2rem 1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <p className="breadcrumb" style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '0.5rem' }}>
+                  Categories / {getCategoryTitle()}
+                </p>
+                <h1 className="page-title">{getCategoryTitle()}</h1>
+                <h5 className="page-subtitle">Location Library</h5>
+              </div>
 
-            <div className="bg-[#4a4a4a] text-white py-3 px-6 rounded-t-lg mb-0">
-              <h2 className="text-lg font-semibold">{getSectionTitle()}</h2>
-            </div>
+              <div style={{ background: '#4a4a4a', color: 'white', padding: '0.75rem 1.5rem', marginBottom: 0 }}>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>{getSectionTitle()}</h2>
+              </div>
 
-            <div className="bg-white p-6">
-              {loading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {[...Array(12)].map((_, i) => (
-                    <div key={i} className="bg-gray-100 rounded-lg overflow-hidden animate-pulse">
-                      <div className="aspect-[4/3] bg-gray-200" />
-                      <div className="p-4 space-y-3">
-                        <div className="h-5 bg-gray-200 rounded w-3/4" />
-                        <div className="h-4 bg-gray-200 rounded w-1/2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : activeCategory === 'top-categories' ? (
-                <div className="space-y-12">
-                  {['Modern', 'Luxury', 'Historical', 'Natural'].map((cat) => {
-                    const catProperties = properties.filter(p =>
-                      p.categories.includes(cat)
-                    ).slice(0, 8);
-
-                    if (catProperties.length === 0) return null;
-
-                    return (
-                      <div key={cat}>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                          {cat} Architecture
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                          {catProperties.map(property => (
-                            <PropertyCard key={property.id} property={property} />
-                          ))}
+              <div style={{ background: 'white', padding: '1.5rem' }}>
+                {loading ? (
+                  <ul className="property-grid">
+                    {[...Array(12)].map((_, i) => (
+                      <li key={i} className="col-sm-6 col-lg-4 col-xl-3 px-2 mb-3">
+                        <div style={{ background: '#f8f9fa', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                          <div style={{ aspectRatio: '4/3', background: '#e9ecef' }} />
+                          <div style={{ padding: '1rem' }}>
+                            <div style={{ height: '1.25rem', background: '#e9ecef', borderRadius: '0.25rem', width: '75%', marginBottom: '0.75rem' }} />
+                            <div style={{ height: '1rem', background: '#e9ecef', borderRadius: '0.25rem', width: '50%' }} />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {properties.map(property => (
-                    <PropertyCard key={property.id} property={property} />
-                  ))}
-                </div>
-              )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : activeCategory === 'top-categories' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                    {['Modern', 'Luxury', 'Historical', 'Natural'].map((cat) => {
+                      const catProperties = properties.filter(p =>
+                        p.categories.includes(cat)
+                      ).slice(0, 8);
+
+                      if (catProperties.length === 0) return null;
+
+                      return (
+                        <div key={cat}>
+                          <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#212529', marginBottom: '1.5rem' }}>
+                            {cat} Architecture
+                          </h3>
+                          <ul className="property-grid">
+                            {catProperties.map(property => (
+                              <PropertyCard key={property.id} property={property} />
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <ul className="property-grid">
+                    {properties.map(property => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
