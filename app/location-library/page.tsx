@@ -11,26 +11,28 @@ function PropertyCard({ property }: { property: Property }) {
   const images = property.images.length > 0 ? property.images : [property.primary_image || ''];
 
   return (
-    <li className="col-sm-6 col-lg-4 col-xl-3 px-2 mb-3">
-      <Link href={`/property/${property.id}`} className="property-card">
-        <div className="order-first">
+    <div className="bg-white overflow-hidden">
+      <Link href={`/property/${property.id}`}>
+        <div className="relative w-full property-image-container">
           <Image
             src={images[0]}
             alt={property.name}
             width={400}
             height={300}
-            className="property-image"
+            className="property-image w-full"
             style={{ objectFit: 'cover' }}
           />
         </div>
-        <h5 className="mb-0 w-100 mt-2 pr-md-5 font-weight-light text-dark property-title">
-          {property.name}
-        </h5>
-        <p className="small mb-2 w-100 property-city">
-          {property.city}
-        </p>
+        <div className="p-3">
+          <h5 className="text-lg font-light text-gray-900 mb-1 property-title">
+            {property.name}
+          </h5>
+          <p className="text-sm text-gray-600">
+            {property.city}
+          </p>
+        </div>
       </Link>
-    </li>
+    </div>
   );
 }
 
@@ -93,140 +95,91 @@ export default function LocationLibraryPage() {
   };
 
   const CategoryButton = ({ category }: { category: typeof categories[0] }) => (
-    <h6
+    <button
       onClick={() => handleCategoryChange(category.id)}
-      className={`category-button ${activeCategory === category.id ? 'active' : ''}`}
-      style={{ cursor: 'pointer' }}
+      className={`w-full text-left py-3 px-4 text-sm font-light uppercase transition-colors ${
+        activeCategory === category.id
+          ? 'bg-[#dc2626] text-white'
+          : 'bg-white text-gray-900 hover:bg-gray-50'
+      }`}
     >
       {category.label}
-    </h6>
+    </button>
   );
 
   return (
     <>
       <style jsx global>{`
-        /* Typography */
-        h1, h2, h3, h4, h5, h6 {
-          letter-spacing: -0.02em;
+        /* Remove all margins/padding that create white space */
+        body {
+          margin: 0;
+          padding: 0;
         }
 
-        .font-weight-light {
-          font-weight: 300;
+        .location-library-main {
+          background: #f8f9fa;
+          min-height: 100vh;
+          padding-top: 110px;
+          margin: 0;
+          padding-left: 0;
+          padding-right: 0;
         }
 
-        /* Sidebar */
-        .sidebar {
+        .location-library-flex {
+          display: flex;
+          margin: 0;
+          padding: 0;
+        }
+
+        /* Sidebar - flush to left edge */
+        .location-sidebar {
           width: 200px;
           background: white;
           position: sticky;
-          top: 0;
-          height: 100vh;
+          top: 110px;
+          height: calc(100vh - 110px);
           overflow-y: auto;
-        }
-
-        .category-button {
-          width: 100%;
-          padding: 0.75rem 1rem;
-          font-size: 0.75rem;
-          letter-spacing: 0.05rem;
-          text-align: left;
-          background: white;
-          color: #212529;
           margin: 0;
-          border: none;
-          transition: all 0.2s;
-          font-weight: 400;
-        }
-
-        .category-button.active {
-          background: #e11921;
-          color: white;
-        }
-
-        .category-button:not(.active):hover {
-          background: #f8f9fa;
-        }
-
-        /* Main content area */
-        .main-content {
-          width: calc(100% - 200px);
-          margin-left: 200px;
-        }
-
-        /* Breadcrumbs */
-        .breadcrumb {
-          background: transparent;
           padding: 0;
-          margin-bottom: 0;
         }
 
-        /* Page header */
-        .page-title {
-          font-size: 2.5rem;
-          display: inline-block;
-          width: 100%;
-          font-weight: 300;
-          letter-spacing: -0.02em;
-        }
-
-        .page-subtitle {
-          font-size: 1.25rem;
-          display: inline-block;
-          width: 100%;
-          font-weight: 300;
+        /* Main content - no gaps */
+        .location-main-content {
+          flex: 1;
+          width: calc(100% - 200px);
+          margin: 0;
+          padding: 0;
         }
 
         /* Property grid */
         .property-grid {
-          display: flex;
-          flex-wrap: wrap;
-          list-style: none;
-          padding: 0;
-          margin: 0 -15px;
+          display: grid;
+          grid-template-columns: repeat(1, 1fr);
+          gap: 1rem;
         }
 
-        .col-sm-6 {
-          position: relative;
-          width: 100%;
-          padding-right: 15px;
-          padding-left: 15px;
-        }
-
-        @media (min-width: 576px) {
-          .col-sm-6 {
-            flex: 0 0 50%;
-            max-width: 50%;
+        @media (min-width: 640px) {
+          .property-grid {
+            grid-template-columns: repeat(2, 1fr);
           }
         }
 
-        @media (min-width: 992px) {
-          .col-lg-4 {
-            flex: 0 0 33.333333%;
-            max-width: 33.333333%;
+        @media (min-width: 1024px) {
+          .property-grid {
+            grid-template-columns: repeat(3, 1fr);
           }
         }
 
         @media (min-width: 1345px) {
-          .col-xl-3 {
-            flex: 0 0 25%;
-            max-width: 25%;
+          .property-grid {
+            grid-template-columns: repeat(4, 1fr);
           }
         }
 
-        .px-2 {
-          padding-left: 15px;
-          padding-right: 15px;
-        }
-
-        .mb-3 {
-          margin-bottom: 1rem;
-        }
-
-        /* Property card */
-        .property-card {
-          display: block;
-          text-decoration: none;
-          background: transparent;
+        /* Responsive image heights */
+        .property-image-container {
+          position: relative;
+          width: 100%;
         }
 
         .property-image {
@@ -234,7 +187,6 @@ export default function LocationLibraryPage() {
           height: auto;
         }
 
-        /* Responsive image heights */
         @media (min-width: 1345px) {
           .property-image {
             height: 230px;
@@ -266,44 +218,47 @@ export default function LocationLibraryPage() {
         }
 
         .property-title {
-          font-size: 1.25rem;
-          color: #212529;
           font-weight: 300;
         }
 
         .property-title:hover {
-          color: #e11921;
-        }
-
-        .property-city {
-          color: #6c757d;
-          font-size: 0.875rem;
+          color: #dc2626;
         }
 
         /* Mobile responsive */
-        @media (max-width: 768px) {
-          .sidebar {
-            position: static;
-            width: 100%;
-            height: auto;
+        @media (max-width: 1023px) {
+          .location-sidebar {
+            display: none;
           }
 
-          .main-content {
+          .location-main-content {
             width: 100%;
-            margin-left: 0;
           }
         }
 
-        /* Remove white space at top */
-        .location-library-main {
-          background: #f8f9fa;
-          min-height: 100vh;
+        /* Mobile menu */
+        .mobile-filter-button {
+          width: 100%;
+          padding: 0.5rem 1rem;
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 0.375rem;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          cursor: pointer;
+          font-size: 0.875rem;
+        }
+
+        .mobile-filter-button:hover {
+          background: #f9fafb;
         }
       `}</style>
 
       <main className="location-library-main">
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
-          <aside className="sidebar d-none d-lg-block">
+        <div className="location-library-flex">
+          {/* Sidebar - Desktop only, flush to left */}
+          <aside className="location-sidebar">
             <nav style={{ display: 'flex', flexDirection: 'column' }}>
               {categories.map(category => (
                 <CategoryButton key={category.id} category={category} />
@@ -311,27 +266,20 @@ export default function LocationLibraryPage() {
             </nav>
           </aside>
 
-          <div className="main-content" style={{ flex: 1 }}>
-            <div className="d-lg-none" style={{ background: 'white', borderBottom: '1px solid #dee2e6', padding: '1rem' }}>
+          {/* Main content */}
+          <div className="location-main-content">
+            {/* Mobile filter button - ONLY visible below lg (1024px) */}
+            <div className="lg:hidden" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '1rem' }}>
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 1rem',
-                  background: 'white',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '0.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  cursor: 'pointer'
-                }}
+                className="mobile-filter-button"
               >
                 <Menu style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
                 Filter by Category
               </button>
             </div>
 
+            {/* Mobile menu modal */}
             {mobileMenuOpen && (
               <div style={{ position: 'fixed', inset: 0, zIndex: 50 }}>
                 <div
@@ -352,10 +300,13 @@ export default function LocationLibraryPage() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '1rem',
-                    borderBottom: '1px solid #dee2e6'
+                    borderBottom: '1px solid #e5e7eb'
                   }}>
                     <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Categories</h2>
-                    <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <button
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
                       <X style={{ width: '1.25rem', height: '1.25rem' }} />
                     </button>
                   </div>
@@ -368,34 +319,42 @@ export default function LocationLibraryPage() {
               </div>
             )}
 
+            {/* Content area */}
             <div style={{ padding: '2rem 1.5rem' }}>
+              {/* Breadcrumbs and title */}
               <div style={{ marginBottom: '1rem' }}>
-                <p className="breadcrumb" style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '0.5rem' }}>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
                   Categories / {getCategoryTitle()}
                 </p>
-                <h1 className="page-title">{getCategoryTitle()}</h1>
-                <h5 className="page-subtitle">Location Library</h5>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 300, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+                  {getCategoryTitle()}
+                </h1>
+                <h5 style={{ fontSize: '1.25rem', fontWeight: 300, color: '#4b5563' }}>
+                  Location Library
+                </h5>
               </div>
 
+              {/* Section header */}
               <div style={{ background: '#4a4a4a', color: 'white', padding: '0.75rem 1.5rem', marginBottom: 0 }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>{getSectionTitle()}</h2>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
+                  {getSectionTitle()}
+                </h2>
               </div>
 
+              {/* Property grid */}
               <div style={{ background: 'white', padding: '1.5rem' }}>
                 {loading ? (
-                  <ul className="property-grid">
+                  <div className="property-grid">
                     {[...Array(12)].map((_, i) => (
-                      <li key={i} className="col-sm-6 col-lg-4 col-xl-3 px-2 mb-3">
-                        <div style={{ background: '#f8f9fa', borderRadius: '0.5rem', overflow: 'hidden' }}>
-                          <div style={{ aspectRatio: '4/3', background: '#e9ecef' }} />
-                          <div style={{ padding: '1rem' }}>
-                            <div style={{ height: '1.25rem', background: '#e9ecef', borderRadius: '0.25rem', width: '75%', marginBottom: '0.75rem' }} />
-                            <div style={{ height: '1rem', background: '#e9ecef', borderRadius: '0.25rem', width: '50%' }} />
-                          </div>
+                      <div key={i} style={{ background: '#f3f4f6', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                        <div style={{ aspectRatio: '4/3', background: '#e5e7eb' }} />
+                        <div style={{ padding: '1rem' }}>
+                          <div style={{ height: '1.25rem', background: '#e5e7eb', borderRadius: '0.25rem', width: '75%', marginBottom: '0.75rem' }} />
+                          <div style={{ height: '1rem', background: '#e5e7eb', borderRadius: '0.25rem', width: '50%' }} />
                         </div>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 ) : activeCategory === 'top-categories' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     {['Modern', 'Luxury', 'Historical', 'Natural'].map((cat) => {
@@ -407,24 +366,24 @@ export default function LocationLibraryPage() {
 
                       return (
                         <div key={cat}>
-                          <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#212529', marginBottom: '1.5rem' }}>
+                          <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '1.5rem' }}>
                             {cat} Architecture
                           </h3>
-                          <ul className="property-grid">
+                          <div className="property-grid">
                             {catProperties.map(property => (
                               <PropertyCard key={property.id} property={property} />
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <ul className="property-grid">
+                  <div className="property-grid">
                     {properties.map(property => (
                       <PropertyCard key={property.id} property={property} />
                     ))}
-                  </ul>
+                  </div>
                 )}
               </div>
             </div>
