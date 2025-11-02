@@ -21,14 +21,9 @@ import { supabase, Property } from '@/lib/supabase';
 
 function generateRandomImages(count: number = 100): string[] {
   const images: string[] = [];
-
   for (let i = 0; i < count; i++) {
-    const width = Math.floor(Math.random() * 400) + 600;
-    const height = Math.floor(Math.random() * 400) + 600;
-
-    images.push(`https://picsum.photos/${width}/${height}?random=${i}`);
+    images.push(`https://picsum.photos/seed/${i}/800/600`);
   }
-
   return images;
 }
 
@@ -138,15 +133,29 @@ export default function PropertyDetailPage() {
         <div style={{
           position: 'relative',
           width: '100%',
-          columns: '3',
-          columnGap: '2px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '3px',
           padding: '0',
-          margin: '0',
-          maxHeight: '600px',
-          overflow: 'hidden'
+          margin: '0'
         }}>
-          {images.slice(0, 9).map((img, index) => {
-            const heights = [350, 450, 300, 400, 280, 380, 420, 320, 390];
+          {images.slice(0, 12).map((img, index) => {
+            const sizes = [
+              { width: '33%', height: '300px' },
+              { width: '33%', height: '400px' },
+              { width: '33%', height: '250px' },
+              { width: '50%', height: '350px' },
+              { width: '25%', height: '200px' },
+              { width: '25%', height: '300px' },
+              { width: '40%', height: '280px' },
+              { width: '30%', height: '320px' },
+              { width: '30%', height: '250px' },
+              { width: '60%', height: '350px' },
+              { width: '20%', height: '280px' },
+              { width: '20%', height: '220px' },
+            ];
+
+            const size = sizes[index];
 
             return (
               <div
@@ -157,13 +166,11 @@ export default function PropertyDetailPage() {
                 }}
                 style={{
                   position: 'relative',
-                  width: '100%',
-                  height: `${heights[index]}px`,
-                  marginBottom: '2px',
+                  width: `calc(${size.width} - 3px)`,
+                  height: size.height,
+                  flexShrink: 0,
                   cursor: 'pointer',
-                  breakInside: 'avoid',
-                  overflow: 'hidden',
-                  display: 'block'
+                  overflow: 'hidden'
                 }}
               >
                 <Image
@@ -209,11 +216,8 @@ export default function PropertyDetailPage() {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              zIndex: 10,
-              transition: 'background 0.2s'
+              zIndex: 10
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#bf151c'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#e11921'}
           >
             <Plus style={{ width: '24px', height: '24px', color: '#fff' }} />
           </button>
