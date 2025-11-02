@@ -80,7 +80,7 @@ export default function PropertyDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white pt-[110px] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center" style={{ paddingTop: '110px' }}>
         <div className="text-xl" style={{ color: '#6b7280' }}>Loading...</div>
       </div>
     );
@@ -88,7 +88,7 @@ export default function PropertyDetailPage() {
 
   if (!property) {
     return (
-      <div className="min-h-screen bg-white pt-[110px] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center" style={{ paddingTop: '110px' }}>
         <div className="text-xl" style={{ color: '#6b7280' }}>Property not found</div>
       </div>
     );
@@ -112,7 +112,7 @@ export default function PropertyDetailPage() {
         }
       `}</style>
 
-      <main className="min-h-screen bg-white" style={{ paddingTop: '110px' }}>
+      <main className="min-h-screen bg-white">
         {/* Hero Image Gallery - FULL WIDTH */}
         <div style={{ position: 'relative', background: '#000', height: '600px' }}>
           <Image

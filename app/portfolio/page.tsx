@@ -113,8 +113,8 @@ export default function PortfolioPage() {
         }
       `}</style>
 
-      <main className="min-h-screen bg-white" style={{ paddingTop: '110px' }}>
-        <div style={{ paddingLeft: '1rem', paddingTop: '0', paddingBottom: '1rem' }}>
+      <main className="min-h-screen bg-white">
+        <div style={{ paddingLeft: '1rem', paddingTop: '1rem', paddingBottom: '1rem' }}>
           <h1 style={{ fontSize: '2.5rem', color: '#212529', margin: 0 }}>
             Recent Projects
           </h1>
