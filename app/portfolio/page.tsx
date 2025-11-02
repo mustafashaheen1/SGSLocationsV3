@@ -1,8 +1,12 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
 
 export default function PortfolioPage() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [justifiedItems, setJustifiedItems] = useState<any[]>([]);
+
   const portfolioItems = [
     { id: 1, image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80', title: 'Feature Film - Kawasaki', aspectRatio: 1.33 },
     { id: 2, image: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1200&q=80', title: 'Suits LA - NBC - Modern 310', aspectRatio: 2.0 },
@@ -36,6 +40,76 @@ export default function PortfolioPage() {
     { id: 30, image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1200&q=80', title: 'Editorial Campaign', aspectRatio: 2.4 },
   ];
 
+  // Justified gallery algorithm - fills rows completely with NO white space
+  const calculateJustifiedLayout = () => {
+    if (!containerRef.current) return;
+
+    const containerWidth = containerRef.current.offsetWidth;
+    const targetRowHeight = 400;
+    const margin = 3;
+
+    const rows: any[] = [];
+    let currentRow: any[] = [];
+    let currentRowWidth = 0;
+
+    portfolioItems.forEach((item, index) => {
+      const itemWidth = targetRowHeight * item.aspectRatio;
+
+      // Add margin to width calculation (except for first item in row)
+      const totalItemWidth = itemWidth + (currentRow.length > 0 ? margin : 0);
+
+      if (currentRowWidth + totalItemWidth <= containerWidth || currentRow.length === 0) {
+        currentRow.push(item);
+        currentRowWidth += totalItemWidth;
+      } else {
+        // Finish current row and start new one
+        rows.push([...currentRow]);
+        currentRow = [item];
+        currentRowWidth = itemWidth;
+      }
+
+      // If last item, push remaining row
+      if (index === portfolioItems.length - 1 && currentRow.length > 0) {
+        rows.push(currentRow);
+      }
+    });
+
+    // Calculate exact dimensions for each item to fill row width perfectly
+    const justified: any[] = [];
+    rows.forEach(row => {
+      // Calculate total aspect ratio for the row
+      const totalAspectRatio = row.reduce((sum: number, item: any) => sum + item.aspectRatio, 0);
+
+      // Calculate available width (accounting for margins)
+      const availableWidth = containerWidth - (margin * (row.length - 1));
+
+      // Calculate actual row height that will make items fit exactly
+      const actualRowHeight = availableWidth / totalAspectRatio;
+
+      row.forEach((item: any) => {
+        const width = actualRowHeight * item.aspectRatio;
+        justified.push({
+          ...item,
+          width: width,
+          height: actualRowHeight
+        });
+      });
+    });
+
+    setJustifiedItems(justified);
+  };
+
+  useEffect(() => {
+    calculateJustifiedLayout();
+
+    const handleResize = () => {
+      calculateJustifiedLayout();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <>
       <style jsx global>{`
@@ -48,18 +122,19 @@ export default function PortfolioPage() {
 
         .portfolio-grid {
           width: 100%;
-          overflow: hidden;
           margin: 0;
           padding: 0;
           font-family: acumin-pro-wide, sans-serif;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 3px;
         }
 
         .portfolio-item {
-          float: left;
-          margin: 3px;
           position: relative;
           overflow: hidden;
           background-color: #e9ecef;
+          flex-shrink: 0;
         }
 
         .portfolio-item img {
@@ -73,7 +148,7 @@ export default function PortfolioPage() {
         @media (max-width: 768px) {
           .portfolio-item {
             height: 250px !important;
-            width: calc(50% - 6px) !important;
+            width: calc(50% - 1.5px) !important;
           }
         }
 
@@ -81,7 +156,10 @@ export default function PortfolioPage() {
           .portfolio-item {
             height: 200px !important;
             width: 100% !important;
-            margin: 3px 0 !important;
+          }
+
+          .portfolio-grid {
+            gap: 3px 0;
           }
         }
 
@@ -112,15 +190,15 @@ export default function PortfolioPage() {
           </h1>
         </div>
 
-        {/* Portfolio Grid - FULL WIDTH */}
-        <div className="portfolio-grid">
-          {portfolioItems.map((item) => (
+        {/* Portfolio Grid - Justified Layout NO WHITE SPACE */}
+        <div className="portfolio-grid" ref={containerRef}>
+          {justifiedItems.map((item) => (
             <div
               key={item.id}
               className="portfolio-item group cursor-pointer"
               style={{
-                height: '400px',
-                width: `${item.aspectRatio * 400}px`
+                width: `${item.width}px`,
+                height: `${item.height}px`
               }}
             >
               {/* Image */}
@@ -143,9 +221,6 @@ export default function PortfolioPage() {
               </div>
             </div>
           ))}
-
-          {/* Clearfix */}
-          <div style={{ clear: 'both' }} />
         </div>
       </main>
     </>
