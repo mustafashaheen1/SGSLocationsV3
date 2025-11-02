@@ -135,29 +135,29 @@ export default function PropertyDetailPage() {
           width: '100%',
           maxHeight: '450px',
           overflow: 'hidden',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(6, 1fr)',
+          gridAutoRows: 'minmax(100px, auto)',
+          gap: '0',
           padding: '0',
-          margin: '0'
+          margin: '0',
+          background: '#000'
         }}>
           {images.slice(0, 12).map((img, index) => {
-            const sizes = [
-              { width: '33.33%', height: '140px' },
-              { width: '33.33%', height: '180px' },
-              { width: '33.34%', height: '120px' },
-              { width: '50%', height: '160px' },
-              { width: '25%', height: '110px' },
-              { width: '25%', height: '150px' },
-              { width: '40%', height: '130px' },
-              { width: '30%', height: '140px' },
-              { width: '30%', height: '120px' },
-              { width: '60%', height: '170px' },
-              { width: '20%', height: '130px' },
-              { width: '20%', height: '110px' },
+            const spans = [
+              { col: '1 / 3', row: '1 / 3' },
+              { col: '3 / 5', row: '1 / 4' },
+              { col: '5 / 7', row: '1 / 2' },
+              { col: '1 / 4', row: '3 / 5' },
+              { col: '4 / 5', row: '2 / 4' },
+              { col: '5 / 7', row: '2 / 4' },
+              { col: '1 / 3', row: '5 / 6' },
+              { col: '3 / 5', row: '4 / 6' },
+              { col: '5 / 6', row: '4 / 6' },
+              { col: '6 / 7', row: '4 / 6' },
+              { col: '1 / 3', row: '6 / 7' },
+              { col: '3 / 7', row: '6 / 7' },
             ];
-
-            const size = sizes[index];
 
             return (
               <div
@@ -167,22 +167,29 @@ export default function PropertyDetailPage() {
                   setShowLightbox(true);
                 }}
                 style={{
+                  gridColumn: spans[index].col,
+                  gridRow: spans[index].row,
                   position: 'relative',
-                  width: size.width,
-                  height: size.height,
-                  flexShrink: 0,
                   cursor: 'pointer',
                   overflow: 'hidden',
+                  display: 'block',
+                  margin: 0,
+                  padding: 0,
                   border: 'none',
-                  margin: '0',
-                  padding: '0'
+                  outline: 'none'
                 }}
               >
                 <Image
                   src={img}
                   alt={`${property.name} - Image ${index + 1}`}
                   fill
-                  style={{ objectFit: 'cover' }}
+                  style={{
+                    objectFit: 'cover',
+                    display: 'block',
+                    margin: 0,
+                    padding: 0,
+                    border: 'none'
+                  }}
                   unoptimized
                 />
               </div>
