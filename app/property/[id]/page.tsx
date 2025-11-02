@@ -14,7 +14,9 @@ import {
   FileText,
   Search,
   Phone,
-  Camera
+  Camera,
+  Plus,
+  X
 } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 
@@ -24,6 +26,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showLightbox, setShowLightbox] = useState(false);
   const [showThumbnails, setShowThumbnails] = useState(false);
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
@@ -78,6 +81,11 @@ export default function PropertyDetailPage() {
     alert('Link copied!');
   };
 
+  const openLightbox = (index: number) => {
+    setCurrentImageIndex(index);
+    setShowLightbox(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center" style={{ paddingTop: '110px' }}>
@@ -110,74 +118,60 @@ export default function PropertyDetailPage() {
           font-family: acumin-pro-wide, sans-serif;
           letter-spacing: -0.02em;
         }
+
+        .masonry-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          grid-auto-rows: 20px;
+          gap: 3px;
+          padding: 0;
+          margin: 0;
+        }
+
+        .masonry-item {
+          position: relative;
+          overflow: hidden;
+          cursor: pointer;
+          transition: opacity 0.2s;
+        }
+
+        .masonry-item:hover {
+          opacity: 0.9;
+        }
+
+        .masonry-item:nth-child(1) { grid-row-end: span 15; }
+        .masonry-item:nth-child(2) { grid-row-end: span 20; }
+        .masonry-item:nth-child(3) { grid-row-end: span 12; }
+        .masonry-item:nth-child(4) { grid-row-end: span 18; }
+        .masonry-item:nth-child(5) { grid-row-end: span 10; }
+        .masonry-item:nth-child(6) { grid-row-end: span 16; }
+        .masonry-item:nth-child(7) { grid-row-end: span 22; }
+        .masonry-item:nth-child(8) { grid-row-end: span 14; }
+        .masonry-item:nth-child(9) { grid-row-end: span 19; }
       `}</style>
 
       <main className="min-h-screen bg-white">
-        {/* Hero Image Gallery - FULL WIDTH */}
-        <div style={{ position: 'relative', background: '#000', height: '600px' }}>
-          <Image
-            src={images[currentImageIndex]}
-            alt={property.name}
-            fill
-            style={{ objectFit: 'contain' }}
-            priority
-            unoptimized
-          />
-
-          {/* Navigation Arrows */}
-          {images.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                style={{
-                  position: 'absolute',
-                  left: '1rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '48px',
-                  height: '48px',
-                  background: 'rgba(255,255,255,0.9)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#fff'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.9)'}
+        {/* Masonry Image Grid - FULL WIDTH */}
+        <div style={{ position: 'relative', width: '100%' }}>
+          <div className="masonry-grid">
+            {images.slice(0, 9).map((img, index) => (
+              <div
+                key={index}
+                className="masonry-item"
+                onClick={() => openLightbox(index)}
               >
-                <ChevronLeft style={{ width: '24px', height: '24px', color: '#000' }} />
-              </button>
+                <Image
+                  src={img}
+                  alt={`${property.name} - Image ${index + 1}`}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  unoptimized
+                />
+              </div>
+            ))}
+          </div>
 
-              <button
-                onClick={nextImage}
-                style={{
-                  position: 'absolute',
-                  right: '1rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '48px',
-                  height: '48px',
-                  background: 'rgba(255,255,255,0.9)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#fff'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.9)'}
-              >
-                <ChevronRight style={{ width: '24px', height: '24px', color: '#000' }} />
-              </button>
-            </>
-          )}
-
-          {/* Image Counter */}
+          {/* Image Counter - Bottom Right */}
           <div style={{
             position: 'absolute',
             bottom: '1rem',
@@ -186,11 +180,148 @@ export default function PropertyDetailPage() {
             color: '#fff',
             padding: '0.5rem 1rem',
             borderRadius: '0.25rem',
-            fontSize: '14px'
+            fontSize: '14px',
+            zIndex: 10
           }}>
-            {currentImageIndex + 1} / {images.length}
+            1 / {images.length}
           </div>
+
+          {/* Plus Button - Bottom Left */}
+          <button
+            onClick={() => setShowThumbnails(true)}
+            style={{
+              position: 'absolute',
+              bottom: '1rem',
+              left: '1rem',
+              width: '48px',
+              height: '48px',
+              background: '#e11921',
+              border: 'none',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10,
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#bf151c'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#e11921'}
+          >
+            <Plus style={{ width: '24px', height: '24px', color: '#fff' }} />
+          </button>
         </div>
+
+        {/* Lightbox Modal */}
+        {showLightbox && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: '#000',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {/* Close Button */}
+            <button
+              onClick={() => setShowLightbox(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'rgba(255,255,255,0.9)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '48px',
+                height: '48px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 10000
+              }}
+            >
+              <X style={{ width: '24px', height: '24px', color: '#000' }} />
+            </button>
+
+            {/* Main Image */}
+            <div style={{ position: 'relative', width: '100%', height: '100%', padding: '2rem' }}>
+              <Image
+                src={images[currentImageIndex]}
+                alt={property.name}
+                fill
+                style={{ objectFit: 'contain' }}
+                priority
+                unoptimized
+              />
+            </div>
+
+            {/* Navigation Arrows */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  style={{
+                    position: 'absolute',
+                    left: '1rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '48px',
+                    height: '48px',
+                    background: 'rgba(255,255,255,0.9)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    zIndex: 10000
+                  }}
+                >
+                  <ChevronLeft style={{ width: '24px', height: '24px', color: '#000' }} />
+                </button>
+
+                <button
+                  onClick={nextImage}
+                  style={{
+                    position: 'absolute',
+                    right: '1rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '48px',
+                    height: '48px',
+                    background: 'rgba(255,255,255,0.9)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    zIndex: 10000
+                  }}
+                >
+                  <ChevronRight style={{ width: '24px', height: '24px', color: '#000' }} />
+                </button>
+              </>
+            )}
+
+            {/* Image Counter */}
+            <div style={{
+              position: 'absolute',
+              bottom: '1rem',
+              right: '1rem',
+              background: 'rgba(0,0,0,0.7)',
+              color: '#fff',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.25rem',
+              fontSize: '14px',
+              zIndex: 10000
+            }}>
+              {currentImageIndex + 1} / {images.length}
+            </div>
+          </div>
+        )}
 
         {/* Category Tags Bar */}
         <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
@@ -358,6 +489,7 @@ export default function PropertyDetailPage() {
                     onClick={() => {
                       setCurrentImageIndex(index);
                       setShowThumbnails(false);
+                      setShowLightbox(true);
                     }}
                     style={{
                       position: 'relative',
@@ -399,42 +531,7 @@ export default function PropertyDetailPage() {
           />
         )}
 
-        {/* Footer */}
-        <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 0', textAlign: 'center' }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                background: '#e11921',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Camera style={{ width: '24px', height: '24px', color: '#fff' }} />
-              </div>
-              <span style={{ fontSize: '1.5rem', fontWeight: 300, color: '#212529' }}>IMAGE LOCATIONS</span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#4b5563' }}>
-              <Phone style={{ width: '20px', height: '20px' }} />
-              <span style={{ fontSize: '1.125rem' }}>(310) 871-8004</span>
-            </div>
-
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '0.5rem' }}>
-              American Express Preferred Partner
-            </div>
-
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '1rem' }}>
-              CalDRE #01234567
-            </div>
-
-            <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-              © {new Date().getFullYear()} Image Locations. All rights reserved.
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </main>
     </>
   );
@@ -512,8 +609,6 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
           fill
           style={{ objectFit: 'cover', transition: 'transform 0.3s' }}
           unoptimized
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         />
 
         {distance && (
@@ -545,10 +640,7 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
           justifyContent: 'center',
           opacity: 0,
           transition: 'opacity 0.3s'
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
-        >
+        }}>
           <Search style={{ width: '20px', height: '20px', color: '#fff' }} />
         </div>
       </div>
@@ -560,5 +652,45 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
         {property.city}
       </p>
     </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 0', textAlign: 'center' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            background: '#e11921',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Camera style={{ width: '24px', height: '24px', color: '#fff' }} />
+          </div>
+          <span style={{ fontSize: '1.5rem', fontWeight: 300, color: '#212529' }}>IMAGE LOCATIONS</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#4b5563' }}>
+          <Phone style={{ width: '20px', height: '20px' }} />
+          <span style={{ fontSize: '1.125rem' }}>(310) 871-8004</span>
+        </div>
+
+        <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '0.5rem' }}>
+          American Express Preferred Partner
+        </div>
+
+        <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '1rem' }}>
+          CalDRE #01234567
+        </div>
+
+        <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+          © {new Date().getFullYear()} Image Locations. All rights reserved.
+        </div>
+      </div>
+    </footer>
   );
 }
