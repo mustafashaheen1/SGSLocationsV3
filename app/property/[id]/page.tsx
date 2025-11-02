@@ -120,7 +120,7 @@ export default function PropertyDetailPage() {
 
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
 
-  const imageHeights = [350, 450, 300, 400, 280, 380, 420, 320, 390];
+  const imageHeights = [150, 200, 140, 180, 120, 160, 190, 145, 175];
 
   return (
     <>
@@ -189,7 +189,10 @@ export default function PropertyDetailPage() {
           </div>
 
           <button
-            onClick={() => setShowThumbnails(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowThumbnails(true);
+            }}
             style={{
               position: 'absolute',
               bottom: '1rem',
