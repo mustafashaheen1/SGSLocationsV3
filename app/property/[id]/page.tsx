@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -13,12 +13,14 @@ import {
   Download,
   FileText,
   Search,
-  Phone
+  Phone,
+  Camera
 } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 
 export default function PropertyDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const [property, setProperty] = useState<Property | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -57,27 +59,29 @@ export default function PropertyDetailPage() {
     fetchData();
   }, [params.id]);
 
+  const images = property?.images && property.images.length > 0
+    ? property.images
+    : property?.primary_image
+    ? [property.primary_image]
+    : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200'];
+
   const nextImage = () => {
-    if (property && property.images.length > 0) {
-      setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
-    }
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
-    if (property && property.images.length > 0) {
-      setCurrentImageIndex((prev) => (prev - 1 + property.images.length) % property.images.length);
-    }
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
-    alert('Link copied to clipboard!');
+    alert('Link copied!');
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white pt-[110px] flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+        <div className="text-xl" style={{ color: '#6b7280' }}>Loading...</div>
       </div>
     );
   }
@@ -85,13 +89,11 @@ export default function PropertyDetailPage() {
   if (!property) {
     return (
       <div className="min-h-screen bg-white pt-[110px] flex items-center justify-center">
-        <div className="text-xl text-gray-600">Property not found</div>
+        <div className="text-xl" style={{ color: '#6b7280' }}>Property not found</div>
       </div>
     );
   }
 
-  const images = property.images.length > 0 ? property.images : [property.primary_image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80'];
-  const features = property.features || [];
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
 
   return (
@@ -106,12 +108,13 @@ export default function PropertyDetailPage() {
 
         h1, h2, h3 {
           font-family: acumin-pro-wide, sans-serif;
+          letter-spacing: -0.02em;
         }
       `}</style>
 
       <main className="min-h-screen bg-white" style={{ paddingTop: '110px' }}>
         {/* Hero Image Gallery - FULL WIDTH */}
-        <div className="relative bg-black" style={{ height: '600px' }}>
+        <div style={{ position: 'relative', background: '#000', height: '600px' }}>
           <Image
             src={images[currentImageIndex]}
             alt={property.name}
@@ -122,128 +125,233 @@ export default function PropertyDetailPage() {
           />
 
           {/* Navigation Arrows */}
-          <button
-            onClick={prevImage}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 hover:bg-white rounded-full flex items-center justify-center transition-colors"
-          >
-            <ChevronLeft className="w-6 h-6 text-gray-900" />
-          </button>
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '48px',
+                  height: '48px',
+                  background: 'rgba(255,255,255,0.9)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#fff'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.9)'}
+              >
+                <ChevronLeft style={{ width: '24px', height: '24px', color: '#000' }} />
+              </button>
 
-          <button
-            onClick={nextImage}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 hover:bg-white rounded-full flex items-center justify-center transition-colors"
-          >
-            <ChevronRight className="w-6 h-6 text-gray-900" />
-          </button>
+              <button
+                onClick={nextImage}
+                style={{
+                  position: 'absolute',
+                  right: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '48px',
+                  height: '48px',
+                  background: 'rgba(255,255,255,0.9)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#fff'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.9)'}
+              >
+                <ChevronRight style={{ width: '24px', height: '24px', color: '#000' }} />
+              </button>
+            </>
+          )}
 
           {/* Image Counter */}
-          <div className="absolute bottom-4 right-4 bg-black/70 text-white px-4 py-2 rounded text-sm">
+          <div style={{
+            position: 'absolute',
+            bottom: '1rem',
+            right: '1rem',
+            background: 'rgba(0,0,0,0.7)',
+            color: '#fff',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.25rem',
+            fontSize: '14px'
+          }}>
             {currentImageIndex + 1} / {images.length}
           </div>
         </div>
 
         {/* Category Tags Bar */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="overflow-x-auto">
-            <div className="flex gap-8 px-8 py-4 min-w-max">
-              {categoryTags.map((tag) => (
-                <button
-                  key={tag}
-                  className="text-gray-500 hover:text-gray-900 transition-colors whitespace-nowrap text-sm font-light"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
+        <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', gap: '2rem', padding: '1rem 2rem', minWidth: 'max-content' }}>
+            {categoryTags.map((tag) => (
+              <button
+                key={tag}
+                style={{
+                  color: '#6b7280',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 300,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#212529'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Property Details Section */}
-        <div className="max-w-[1200px] mx-auto px-8 py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* LEFT SIDE - Property Info */}
-            <div className="lg:col-span-2">
-              <h1 className="text-5xl font-light text-gray-900 mb-2" style={{ fontWeight: 300 }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+            {/* LEFT COLUMN */}
+            <div>
+              <h1 style={{ fontSize: '3.5rem', fontWeight: 300, color: '#212529', marginBottom: '0.5rem' }}>
                 {property.name}
               </h1>
 
-              <p className="text-2xl font-light text-gray-500 mb-6" style={{ fontWeight: 300 }}>
+              <p style={{ fontSize: '1.75rem', fontWeight: 300, color: '#6b7280', marginBottom: '1.5rem' }}>
                 {property.city}
               </p>
 
               {/* Badges */}
-              <div className="flex gap-3 mb-6">
-                <span className="inline-block bg-blue-500 text-white px-4 py-1 rounded-full text-sm">
+              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                <span style={{
+                  background: '#3b82f6',
+                  color: '#fff',
+                  padding: '0.25rem 1rem',
+                  borderRadius: '9999px',
+                  fontSize: '14px'
+                }}>
                   Film
                 </span>
                 {property.permits_available && (
-                  <span className="inline-block bg-[#e11921] text-white px-4 py-1 rounded-full text-sm">
+                  <span style={{
+                    background: '#e11921',
+                    color: '#fff',
+                    padding: '0.25rem 1rem',
+                    borderRadius: '9999px',
+                    fontSize: '14px'
+                  }}>
                     Pull My Permit
                   </span>
                 )}
               </div>
 
               {/* Description */}
-              <p className="text-gray-700 leading-relaxed mb-8 font-light">
-                {property.description || 'This stunning property offers exceptional filming opportunities with versatile spaces and professional-grade amenities. Perfect for productions of all sizes.'}
+              <p style={{ color: '#4b5563', lineHeight: 1.75, fontWeight: 300, marginBottom: '2rem' }}>
+                {property.description || 'Raw industrial space with exposed brick, high ceilings, and dramatic natural light. Perfect for urban scenes and edgy productions.'}
               </p>
 
               {/* Inquire Button */}
-              <button className="bg-[#e11921] hover:bg-[#bf151c] text-white px-8 py-3 rounded text-sm font-normal uppercase tracking-wider transition-colors">
-                Inquire About {property.name}
+              <button
+                style={{
+                  background: '#e11921',
+                  color: '#fff',
+                  padding: '0.75rem 2rem',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#bf151c'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#e11921'}
+              >
+                INQUIRE ABOUT {property.name.toUpperCase()}
               </button>
             </div>
 
-            {/* RIGHT SIDE - Action Buttons */}
-            <div className="flex flex-col gap-3">
+            {/* RIGHT COLUMN - Action Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <button
                 onClick={copyLink}
-                className="flex items-center justify-center gap-2 bg-white border-2 border-[#e11921] text-[#e11921] hover:bg-[#e11921] hover:text-white px-6 py-3 rounded text-sm font-normal uppercase tracking-wider transition-colors"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  background: '#fff',
+                  border: '2px solid #e11921',
+                  color: '#e11921',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '14px',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#e11921';
+                  e.currentTarget.style.color = '#fff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#fff';
+                  e.currentTarget.style.color = '#e11921';
+                }}
               >
-                <Copy className="w-4 h-4" />
-                Copy
+                <Copy style={{ width: '16px', height: '16px' }} />
+                COPY
               </button>
 
-              <button className="flex items-center justify-center gap-2 bg-[#e11921] hover:bg-[#bf151c] text-white px-6 py-3 rounded text-sm font-normal uppercase tracking-wider transition-colors">
-                <Mail className="w-4 h-4" />
-                Contact Us
-              </button>
-
-              <button
-                onClick={() => setShowThumbnails(!showThumbnails)}
-                className="flex items-center justify-center gap-2 bg-[#e11921] hover:bg-[#bf151c] text-white px-6 py-3 rounded text-sm font-normal uppercase tracking-wider transition-colors"
-              >
-                <ImageIcon className="w-4 h-4" />
-                Thumbnails
-              </button>
-
-              <button className="flex items-center justify-center gap-2 bg-[#e11921] hover:bg-[#bf151c] text-white px-6 py-3 rounded text-sm font-normal uppercase tracking-wider transition-colors">
-                <Download className="w-4 h-4" />
-                Download Images
-              </button>
-
-              <button className="flex items-center justify-center gap-2 bg-[#e11921] hover:bg-[#bf151c] text-white px-6 py-3 rounded text-sm font-normal uppercase tracking-wider transition-colors">
-                <FileText className="w-4 h-4" />
-                Location PDF
-              </button>
+              <ActionButton icon={<Mail style={{ width: '16px', height: '16px' }} />} text="CONTACT US" />
+              <ActionButton
+                icon={<ImageIcon style={{ width: '16px', height: '16px' }} />}
+                text="THUMBNAILS"
+                onClick={() => setShowThumbnails(true)}
+              />
+              <ActionButton icon={<Download style={{ width: '16px', height: '16px' }} />} text="DOWNLOAD IMAGES" />
+              <ActionButton icon={<FileText style={{ width: '16px', height: '16px' }} />} text="LOCATION PDF" />
             </div>
           </div>
         </div>
 
-        {/* Thumbnails Grid Modal */}
+        {/* Thumbnails Modal */}
         {showThumbnails && (
-          <div className="fixed inset-0 bg-black/90 z-50 overflow-auto">
-            <div className="max-w-[1400px] mx-auto px-8 py-12">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-light text-white">All Images</h2>
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            zIndex: 9999,
+            overflowY: 'auto'
+          }}>
+            <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem 2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '2rem', fontWeight: 300, color: '#fff' }}>All Images</h2>
                 <button
                   onClick={() => setShowThumbnails(false)}
-                  className="text-white text-4xl hover:text-gray-300"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '3rem',
+                    cursor: 'pointer',
+                    lineHeight: 1
+                  }}
                 >
                   ×
                 </button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
                 {images.map((img, index) => (
                   <button
                     key={index}
@@ -251,15 +359,20 @@ export default function PropertyDetailPage() {
                       setCurrentImageIndex(index);
                       setShowThumbnails(false);
                     }}
-                    className="aspect-[4/3] relative overflow-hidden rounded hover:opacity-80 transition-opacity"
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '4/3',
+                      overflow: 'hidden',
+                      borderRadius: '0.5rem',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      transition: 'opacity 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
-                    <Image
-                      src={img}
-                      alt={`Image ${index + 1}`}
-                      fill
-                      style={{ objectFit: 'cover' }}
-                      unoptimized
-                    />
+                    <Image src={img} alt={`Image ${index + 1}`} fill style={{ objectFit: 'cover' }} unoptimized />
                   </button>
                 ))}
               </div>
@@ -267,62 +380,57 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        {/* Similar Locations Section */}
+        {/* Similar Locations */}
         {similarProperties.length > 0 && (
-          <div className="bg-gray-50 py-16">
-            <div className="max-w-[1200px] mx-auto px-8">
-              <h2 className="text-4xl font-light text-gray-900 mb-8" style={{ fontWeight: 300 }}>
-                Similar Locations
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {similarProperties.map((prop) => (
-                  <PropertyCard key={prop.id} property={prop} />
-                ))}
-              </div>
-            </div>
-          </div>
+          <LocationSection
+            title="Similar Locations"
+            properties={similarProperties}
+            bgColor="#f9fafb"
+          />
         )}
 
-        {/* Nearby Locations Section */}
+        {/* Nearby Locations */}
         {nearbyProperties.length > 0 && (
-          <div className="bg-white py-16">
-            <div className="max-w-[1200px] mx-auto px-8">
-              <h2 className="text-4xl font-light text-gray-900 mb-8" style={{ fontWeight: 300 }}>
-                Nearby Locations
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {nearbyProperties.map((prop, index) => (
-                  <PropertyCard key={prop.id} property={prop} distance={`.${index + 1}2 miles away`} />
-                ))}
-              </div>
-            </div>
-          </div>
+          <LocationSection
+            title="Nearby Locations"
+            properties={nearbyProperties}
+            bgColor="#fff"
+            showDistance
+          />
         )}
 
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 py-12">
-          <div className="max-w-[1200px] mx-auto px-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-[#e11921] rounded-full flex items-center justify-center">
-                <div className="text-white text-2xl">🎬</div>
+        <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 0', textAlign: 'center' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                background: '#e11921',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Camera style={{ width: '24px', height: '24px', color: '#fff' }} />
               </div>
-              <span className="text-2xl font-light text-gray-900">IMAGE LOCATIONS</span>
+              <span style={{ fontSize: '1.5rem', fontWeight: 300, color: '#212529' }}>IMAGE LOCATIONS</span>
             </div>
 
-            <div className="flex items-center justify-center gap-2 mb-4 text-gray-700">
-              <Phone className="w-5 h-5" />
-              <span className="text-lg">(310) 871-8004</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#4b5563' }}>
+              <Phone style={{ width: '20px', height: '20px' }} />
+              <span style={{ fontSize: '1.125rem' }}>(310) 871-8004</span>
             </div>
 
-            <div className="text-sm text-gray-500 mb-2">
+            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '0.5rem' }}>
               American Express Preferred Partner
             </div>
 
-            <div className="text-sm text-gray-500 mb-4">
+            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '1rem' }}>
               CalDRE #01234567
             </div>
 
-            <div className="text-xs text-gray-400">
+            <div style={{ fontSize: '12px', color: '#9ca3af' }}>
               © {new Date().getFullYear()} Image Locations. All rights reserved.
             </div>
           </div>
@@ -332,36 +440,125 @@ export default function PropertyDetailPage() {
   );
 }
 
-function PropertyCard({ property, distance }: { property: Property; distance?: string }) {
+function ActionButton({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
   return (
-    <Link href={`/property/${property.id}`} className="group block">
-      <div className="relative aspect-[4/3] overflow-hidden rounded mb-3">
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        background: '#e11921',
+        color: '#fff',
+        border: 'none',
+        padding: '0.75rem 1.5rem',
+        fontSize: '14px',
+        fontWeight: 400,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        cursor: 'pointer',
+        transition: 'background 0.2s'
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.background = '#bf151c'}
+      onMouseLeave={(e) => e.currentTarget.style.background = '#e11921'}
+    >
+      {icon}
+      {text}
+    </button>
+  );
+}
+
+function LocationSection({
+  title,
+  properties,
+  bgColor,
+  showDistance
+}: {
+  title: string;
+  properties: Property[];
+  bgColor: string;
+  showDistance?: boolean;
+}) {
+  return (
+    <div style={{ background: bgColor, padding: '4rem 0' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+        <h2 style={{ fontSize: '3rem', fontWeight: 300, color: '#212529', marginBottom: '2rem' }}>
+          {title}
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+          {properties.map((prop, index) => (
+            <PropertyCard key={prop.id} property={prop} distance={showDistance ? `.${index + 1}2 miles away` : undefined} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PropertyCard({ property, distance }: { property: Property; distance?: string }) {
+  const router = useRouter();
+  const image = property.primary_image || property.images?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800';
+
+  return (
+    <div
+      onClick={() => router.push(`/property/${property.id}`)}
+      style={{ cursor: 'pointer' }}
+    >
+      <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', borderRadius: '0.5rem', marginBottom: '0.75rem' }}>
         <Image
-          src={property.primary_image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800'}
+          src={image}
           alt={property.name}
           fill
-          style={{ objectFit: 'cover' }}
-          className="transition-transform duration-300 group-hover:scale-105"
+          style={{ objectFit: 'cover', transition: 'transform 0.3s' }}
           unoptimized
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         />
 
         {distance && (
-          <div className="absolute top-3 left-3 bg-white text-gray-900 px-3 py-1 rounded text-xs font-medium">
+          <div style={{
+            position: 'absolute',
+            top: '0.75rem',
+            left: '0.75rem',
+            background: '#fff',
+            color: '#212529',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '0.25rem',
+            fontSize: '12px',
+            fontWeight: 500
+          }}>
             {distance}
           </div>
         )}
 
-        <div className="absolute bottom-3 right-3 w-10 h-10 bg-[#e11921] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <Search className="w-5 h-5 text-white" />
+        <div style={{
+          position: 'absolute',
+          bottom: '0.75rem',
+          right: '0.75rem',
+          width: '40px',
+          height: '40px',
+          background: '#e11921',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: 0,
+          transition: 'opacity 0.3s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+        >
+          <Search style={{ width: '20px', height: '20px', color: '#fff' }} />
         </div>
       </div>
 
-      <h3 className="text-lg font-light text-gray-900 mb-1" style={{ fontWeight: 300 }}>
+      <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: '#212529', marginBottom: '0.25rem' }}>
         {property.name}
       </h3>
-      <p className="text-sm font-light text-gray-500" style={{ fontWeight: 300 }}>
+      <p style={{ fontSize: '0.875rem', fontWeight: 300, color: '#6b7280' }}>
         {property.city}
       </p>
-    </Link>
+    </div>
   );
 }
