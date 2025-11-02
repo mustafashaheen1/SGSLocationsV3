@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -35,6 +35,8 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showLightbox, setShowLightbox] = useState(false);
   const [showThumbnails, setShowThumbnails] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'carousel'>('grid');
+  const carouselRef = useRef<HTMLDivElement>(null);
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
 
@@ -125,90 +127,195 @@ export default function PropertyDetailPage() {
 
         h1, h2, h3 {
           font-family: acumin-pro-wide, sans-serif;
+        }
+
+        div::-webkit-scrollbar {
+          display: none;
           letter-spacing: -0.02em;
         }
       `}</style>
 
       <main className="min-h-screen bg-white">
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          maxHeight: '450px',
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(6, 1fr)',
-          gridAutoRows: 'minmax(100px, auto)',
-          gap: '0',
-          padding: '0',
-          margin: '0',
-          background: '#000'
-        }}>
-          {images.slice(0, 12).map((img, index) => {
-            const spans = [
-              { col: '1 / 3', row: '1 / 3' },
-              { col: '3 / 5', row: '1 / 4' },
-              { col: '5 / 7', row: '1 / 2' },
-              { col: '1 / 4', row: '3 / 5' },
-              { col: '4 / 5', row: '2 / 4' },
-              { col: '5 / 7', row: '2 / 4' },
-              { col: '1 / 3', row: '5 / 6' },
-              { col: '3 / 5', row: '4 / 6' },
-              { col: '5 / 6', row: '4 / 6' },
-              { col: '6 / 7', row: '4 / 6' },
-              { col: '1 / 3', row: '6 / 7' },
-              { col: '3 / 7', row: '6 / 7' },
-            ];
+        <div style={{ position: 'relative', width: '100%' }}>
 
-            return (
-              <div
-                key={index}
-                onClick={() => {
-                  setCurrentImageIndex(index);
-                  setShowLightbox(true);
-                }}
-                style={{
-                  gridColumn: spans[index].col,
-                  gridRow: spans[index].row,
-                  position: 'relative',
-                  cursor: 'pointer',
-                  overflow: 'hidden',
-                  display: 'block',
-                  margin: 0,
-                  padding: 0,
-                  border: 'none',
-                  outline: 'none'
-                }}
-              >
-                <Image
-                  src={img}
-                  alt={`${property.name} - Image ${index + 1}`}
-                  fill
+          {viewMode === 'grid' ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(6, 1fr)',
+              gridAutoRows: 'minmax(100px, auto)',
+              gap: '0',
+              maxHeight: '450px',
+              overflow: 'hidden',
+              padding: '0',
+              margin: '0'
+            }}>
+              {images.slice(0, 12).map((img, index) => {
+                const spans = [
+                  { col: '1 / 3', row: '1 / 3' },
+                  { col: '3 / 5', row: '1 / 4' },
+                  { col: '5 / 7', row: '1 / 2' },
+                  { col: '1 / 4', row: '3 / 5' },
+                  { col: '4 / 5', row: '2 / 4' },
+                  { col: '5 / 7', row: '2 / 4' },
+                  { col: '1 / 3', row: '5 / 6' },
+                  { col: '3 / 5', row: '4 / 6' },
+                  { col: '5 / 6', row: '4 / 6' },
+                  { col: '6 / 7', row: '4 / 6' },
+                  { col: '1 / 3', row: '6 / 7' },
+                  { col: '3 / 7', row: '6 / 7' },
+                ];
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setCurrentImageIndex(index);
+                      setShowLightbox(true);
+                    }}
+                    style={{
+                      gridColumn: spans[index].col,
+                      gridRow: spans[index].row,
+                      position: 'relative',
+                      cursor: 'pointer',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <Image
+                      src={img}
+                      alt={`${property.name} - Image ${index + 1}`}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      unoptimized
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div
+              ref={carouselRef}
+              style={{
+                display: 'flex',
+                height: '600px',
+                overflowX: 'auto',
+                scrollBehavior: 'smooth',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
+            >
+              {images.map((img, index) => (
+                <div
+                  key={index}
                   style={{
-                    objectFit: 'cover',
-                    display: 'block',
-                    margin: 0,
-                    padding: 0,
-                    border: 'none'
+                    position: 'relative',
+                    height: '100%',
+                    flexShrink: 0,
+                    cursor: 'pointer'
                   }}
-                  unoptimized
-                />
-              </div>
-            );
-          })}
+                  onClick={() => {
+                    setCurrentImageIndex(index);
+                    setShowLightbox(true);
+                  }}
+                >
+                  <Image
+                    src={img}
+                    alt={`${property.name} - Image ${index + 1}`}
+                    width={900}
+                    height={600}
+                    style={{
+                      height: '100%',
+                      width: 'auto',
+                      objectFit: 'cover'
+                    }}
+                    unoptimized
+                  />
 
-          <div style={{
-            position: 'absolute',
-            bottom: '1rem',
-            right: '1rem',
-            background: 'rgba(0,0,0,0.7)',
-            color: '#fff',
-            padding: '0.5rem 1rem',
-            borderRadius: '0.25rem',
-            fontSize: '14px',
-            zIndex: 10
-          }}>
-            1 / {images.length}
-          </div>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '1rem',
+                    left: '1rem',
+                    background: 'rgba(0,0,0,0.7)',
+                    color: '#fff',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.25rem',
+                    fontSize: '14px'
+                  }}>
+                    {index + 1} / {images.length}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              if (viewMode === 'carousel' && carouselRef.current) {
+                carouselRef.current.scrollBy({ left: -800, behavior: 'smooth' });
+              }
+            }}
+            style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '64px',
+              height: '64px',
+              background: 'rgba(255,255,255,0.9)',
+              border: 'none',
+              borderRadius: '50%',
+              display: viewMode === 'carousel' ? 'flex' : 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10
+            }}
+          >
+            <ChevronLeft style={{ width: '32px', height: '32px', color: '#000' }} />
+          </button>
+
+          <button
+            onClick={() => {
+              if (viewMode === 'grid') {
+                setViewMode('carousel');
+              } else if (carouselRef.current) {
+                carouselRef.current.scrollBy({ left: 800, behavior: 'smooth' });
+              }
+            }}
+            style={{
+              position: 'absolute',
+              right: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '64px',
+              height: '64px',
+              background: 'rgba(255,255,255,0.9)',
+              border: 'none',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10
+            }}
+          >
+            <ChevronRight style={{ width: '32px', height: '32px', color: '#000' }} />
+          </button>
+
+          {viewMode === 'grid' && (
+            <div style={{
+              position: 'absolute',
+              bottom: '1rem',
+              right: '1rem',
+              background: 'rgba(0,0,0,0.7)',
+              color: '#fff',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.25rem',
+              fontSize: '14px',
+              zIndex: 10
+            }}>
+              1 / {images.length}
+            </div>
+          )}
 
           <button
             onClick={(e) => {
