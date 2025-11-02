@@ -23,8 +23,8 @@ function generateRandomImages(count: number = 100): string[] {
   const images: string[] = [];
 
   for (let i = 0; i < count; i++) {
-    const width = Math.floor(Math.random() * 400) + 400;
-    const height = Math.floor(Math.random() * 400) + 400;
+    const width = Math.floor(Math.random() * 400) + 600;
+    const height = Math.floor(Math.random() * 400) + 600;
 
     images.push(`https://picsum.photos/${width}/${height}?random=${i}`);
   }
@@ -138,17 +138,15 @@ export default function PropertyDetailPage() {
         <div style={{
           position: 'relative',
           width: '100%',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-          gap: '3px',
+          columns: '3',
+          columnGap: '2px',
           padding: '0',
           margin: '0',
           maxHeight: '600px',
           overflow: 'hidden'
         }}>
           {images.slice(0, 9).map((img, index) => {
-            const aspectRatios = [1.5, 0.8, 1.2, 1.8, 1.0, 0.9, 1.4, 1.1, 1.3];
-            const aspectRatio = aspectRatios[index];
+            const heights = [350, 450, 300, 400, 280, 380, 420, 320, 390];
 
             return (
               <div
@@ -160,9 +158,12 @@ export default function PropertyDetailPage() {
                 style={{
                   position: 'relative',
                   width: '100%',
-                  aspectRatio: aspectRatio.toString(),
+                  height: `${heights[index]}px`,
+                  marginBottom: '2px',
                   cursor: 'pointer',
-                  overflow: 'hidden'
+                  breakInside: 'avoid',
+                  overflow: 'hidden',
+                  display: 'block'
                 }}
               >
                 <Image
