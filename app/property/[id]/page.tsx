@@ -19,6 +19,21 @@ import {
 } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 
+function generateRandomImages(count: number = 100): string[] {
+  const categories = [
+    'architecture', 'interior-design', 'house', 'building', 'home',
+    'modern-house', 'luxury-home', 'residential', 'property', 'real-estate',
+    'living-room', 'kitchen', 'bedroom', 'bathroom', 'pool',
+    'mansion', 'villa', 'apartment', 'loft', 'warehouse'
+  ];
+
+  return Array.from({ length: count }, (_, i) => {
+    const category = categories[i % categories.length];
+    const randomId = Math.floor(Math.random() * 10000);
+    return `https://images.unsplash.com/photo-${1600000000000 + randomId}?w=1200&q=80`;
+  });
+}
+
 export default function PropertyDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -61,14 +76,17 @@ export default function PropertyDetailPage() {
     fetchData();
   }, [params.id]);
 
-  let images = property?.images && property.images.length > 0
-    ? property.images
-    : property?.primary_image
-    ? [property.primary_image]
-    : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200'];
+  let images: string[] = [];
 
-  if (images.length === 1) {
-    images = Array(9).fill(images[0]);
+  if (property?.images && property.images.length > 0) {
+    images = [...property.images];
+  } else if (property?.primary_image) {
+    images = [property.primary_image];
+  }
+
+  const remainingCount = 100 - images.length;
+  if (remainingCount > 0) {
+    images = [...images, ...generateRandomImages(remainingCount)];
   }
 
   const nextImage = () => {
