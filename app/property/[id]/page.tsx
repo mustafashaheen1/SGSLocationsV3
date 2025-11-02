@@ -133,26 +133,28 @@ export default function PropertyDetailPage() {
         <div style={{
           position: 'relative',
           width: '100%',
+          maxHeight: '450px',
+          overflow: 'hidden',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '3px',
+          gap: '0px',
           padding: '0',
           margin: '0'
         }}>
           {images.slice(0, 12).map((img, index) => {
             const sizes = [
-              { width: '33%', height: '300px' },
-              { width: '33%', height: '400px' },
-              { width: '33%', height: '250px' },
-              { width: '50%', height: '350px' },
-              { width: '25%', height: '200px' },
-              { width: '25%', height: '300px' },
-              { width: '40%', height: '280px' },
-              { width: '30%', height: '320px' },
-              { width: '30%', height: '250px' },
-              { width: '60%', height: '350px' },
-              { width: '20%', height: '280px' },
-              { width: '20%', height: '220px' },
+              { width: '33.33%', height: '140px' },
+              { width: '33.33%', height: '180px' },
+              { width: '33.34%', height: '120px' },
+              { width: '50%', height: '160px' },
+              { width: '25%', height: '110px' },
+              { width: '25%', height: '150px' },
+              { width: '40%', height: '130px' },
+              { width: '30%', height: '140px' },
+              { width: '30%', height: '120px' },
+              { width: '60%', height: '170px' },
+              { width: '20%', height: '130px' },
+              { width: '20%', height: '110px' },
             ];
 
             const size = sizes[index];
@@ -166,11 +168,14 @@ export default function PropertyDetailPage() {
                 }}
                 style={{
                   position: 'relative',
-                  width: `calc(${size.width} - 3px)`,
+                  width: size.width,
                   height: size.height,
                   flexShrink: 0,
                   cursor: 'pointer',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  border: 'none',
+                  margin: '0',
+                  padding: '0'
                 }}
               >
                 <Image
