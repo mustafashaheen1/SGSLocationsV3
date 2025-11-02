@@ -1,8 +1,11 @@
 'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function PortfolioPage() {
+  const router = useRouter();
+
   const portfolioItems = [
     { id: 1, image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800', title: 'Feature Film - Kawasaki', aspectRatio: 1.5 },
     { id: 2, image: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=800', title: 'Suits LA - NBC - Modern 310', aspectRatio: 1.2 },
@@ -126,6 +129,7 @@ export default function PortfolioPage() {
               style={{
                 flexBasis: `${item.aspectRatio * 250}px`
               }}
+              onClick={() => router.push(`/property/${item.id}`)}
             >
               <Image
                 src={item.image}
@@ -140,7 +144,13 @@ export default function PortfolioPage() {
                 <h3 className="overlay-title text-white text-xl mb-4 px-4 text-center">
                   {item.title}
                 </h3>
-                <button className="visit-btn bg-[#e11921] text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/property/${item.id}`);
+                  }}
+                  className="visit-btn bg-[#e11921] text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors"
+                >
                   VISIT LOCATION
                 </button>
               </div>
