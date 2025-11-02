@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import {
   ChevronLeft,
   ChevronRight,
@@ -62,11 +61,15 @@ export default function PropertyDetailPage() {
     fetchData();
   }, [params.id]);
 
-  const images = property?.images && property.images.length > 0
+  let images = property?.images && property.images.length > 0
     ? property.images
     : property?.primary_image
     ? [property.primary_image]
     : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200'];
+
+  if (images.length === 1) {
+    images = Array(9).fill(images[0]);
+  }
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -79,11 +82,6 @@ export default function PropertyDetailPage() {
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     alert('Link copied!');
-  };
-
-  const openLightbox = (index: number) => {
-    setCurrentImageIndex(index);
-    setShowLightbox(true);
   };
 
   if (loading) {
@@ -104,6 +102,8 @@ export default function PropertyDetailPage() {
 
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
 
+  const imageHeights = [350, 450, 300, 400, 280, 380, 420, 320, 390];
+
   return (
     <>
       <style jsx global>{`
@@ -118,60 +118,44 @@ export default function PropertyDetailPage() {
           font-family: acumin-pro-wide, sans-serif;
           letter-spacing: -0.02em;
         }
-
-        .masonry-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          grid-auto-rows: 20px;
-          gap: 3px;
-          padding: 0;
-          margin: 0;
-        }
-
-        .masonry-item {
-          position: relative;
-          overflow: hidden;
-          cursor: pointer;
-          transition: opacity 0.2s;
-        }
-
-        .masonry-item:hover {
-          opacity: 0.9;
-        }
-
-        .masonry-item:nth-child(1) { grid-row-end: span 15; }
-        .masonry-item:nth-child(2) { grid-row-end: span 20; }
-        .masonry-item:nth-child(3) { grid-row-end: span 12; }
-        .masonry-item:nth-child(4) { grid-row-end: span 18; }
-        .masonry-item:nth-child(5) { grid-row-end: span 10; }
-        .masonry-item:nth-child(6) { grid-row-end: span 16; }
-        .masonry-item:nth-child(7) { grid-row-end: span 22; }
-        .masonry-item:nth-child(8) { grid-row-end: span 14; }
-        .masonry-item:nth-child(9) { grid-row-end: span 19; }
       `}</style>
 
       <main className="min-h-screen bg-white">
-        {/* Masonry Image Grid - FULL WIDTH */}
-        <div style={{ position: 'relative', width: '100%' }}>
-          <div className="masonry-grid">
-            {images.slice(0, 9).map((img, index) => (
-              <div
-                key={index}
-                className="masonry-item"
-                onClick={() => openLightbox(index)}
-              >
-                <Image
-                  src={img}
-                  alt={`${property.name} - Image ${index + 1}`}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  unoptimized
-                />
-              </div>
-            ))}
-          </div>
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          columns: '3',
+          columnGap: '3px',
+          padding: '0',
+          margin: '0'
+        }}>
+          {images.slice(0, 9).map((img, index) => (
+            <div
+              key={index}
+              onClick={() => {
+                setCurrentImageIndex(index);
+                setShowLightbox(true);
+              }}
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: `${imageHeights[index]}px`,
+                marginBottom: '3px',
+                cursor: 'pointer',
+                breakInside: 'avoid',
+                overflow: 'hidden'
+              }}
+            >
+              <Image
+                src={img}
+                alt={`${property.name} - Image ${index + 1}`}
+                fill
+                style={{ objectFit: 'cover' }}
+                unoptimized
+              />
+            </div>
+          ))}
 
-          {/* Image Counter - Bottom Right */}
           <div style={{
             position: 'absolute',
             bottom: '1rem',
@@ -186,7 +170,6 @@ export default function PropertyDetailPage() {
             1 / {images.length}
           </div>
 
-          {/* Plus Button - Bottom Left */}
           <button
             onClick={() => setShowThumbnails(true)}
             style={{
@@ -212,7 +195,6 @@ export default function PropertyDetailPage() {
           </button>
         </div>
 
-        {/* Lightbox Modal */}
         {showLightbox && (
           <div style={{
             position: 'fixed',
@@ -223,7 +205,6 @@ export default function PropertyDetailPage() {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            {/* Close Button */}
             <button
               onClick={() => setShowLightbox(false)}
               style={{
@@ -245,8 +226,7 @@ export default function PropertyDetailPage() {
               <X style={{ width: '24px', height: '24px', color: '#000' }} />
             </button>
 
-            {/* Main Image */}
-            <div style={{ position: 'relative', width: '100%', height: '100%', padding: '2rem' }}>
+            <div style={{ position: 'relative', width: '90%', height: '90%' }}>
               <Image
                 src={images[currentImageIndex]}
                 alt={property.name}
@@ -257,7 +237,6 @@ export default function PropertyDetailPage() {
               />
             </div>
 
-            {/* Navigation Arrows */}
             {images.length > 1 && (
               <>
                 <button
@@ -306,7 +285,6 @@ export default function PropertyDetailPage() {
               </>
             )}
 
-            {/* Image Counter */}
             <div style={{
               position: 'absolute',
               bottom: '1rem',
@@ -323,7 +301,6 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        {/* Category Tags Bar */}
         <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
           <div style={{ display: 'flex', gap: '2rem', padding: '1rem 2rem', minWidth: 'max-content' }}>
             {categoryTags.map((tag) => (
@@ -348,10 +325,8 @@ export default function PropertyDetailPage() {
           </div>
         </div>
 
-        {/* Property Details Section */}
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 2rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-            {/* LEFT COLUMN */}
             <div>
               <h1 style={{ fontSize: '3.5rem', fontWeight: 300, color: '#212529', marginBottom: '0.5rem' }}>
                 {property.name}
@@ -361,7 +336,6 @@ export default function PropertyDetailPage() {
                 {property.city}
               </p>
 
-              {/* Badges */}
               <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
                 <span style={{
                   background: '#3b82f6',
@@ -385,12 +359,10 @@ export default function PropertyDetailPage() {
                 )}
               </div>
 
-              {/* Description */}
               <p style={{ color: '#4b5563', lineHeight: 1.75, fontWeight: 300, marginBottom: '2rem' }}>
                 {property.description || 'Raw industrial space with exposed brick, high ceilings, and dramatic natural light. Perfect for urban scenes and edgy productions.'}
               </p>
 
-              {/* Inquire Button */}
               <button
                 style={{
                   background: '#e11921',
@@ -411,7 +383,6 @@ export default function PropertyDetailPage() {
               </button>
             </div>
 
-            {/* RIGHT COLUMN - Action Buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <button
                 onClick={copyLink}
@@ -456,7 +427,6 @@ export default function PropertyDetailPage() {
           </div>
         </div>
 
-        {/* Thumbnails Modal */}
         {showThumbnails && (
           <div style={{
             position: 'fixed',
@@ -512,7 +482,6 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        {/* Similar Locations */}
         {similarProperties.length > 0 && (
           <LocationSection
             title="Similar Locations"
@@ -521,7 +490,6 @@ export default function PropertyDetailPage() {
           />
         )}
 
-        {/* Nearby Locations */}
         {nearbyProperties.length > 0 && (
           <LocationSection
             title="Nearby Locations"
@@ -626,23 +594,6 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
             {distance}
           </div>
         )}
-
-        <div style={{
-          position: 'absolute',
-          bottom: '0.75rem',
-          right: '0.75rem',
-          width: '40px',
-          height: '40px',
-          background: '#e11921',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: 0,
-          transition: 'opacity 0.3s'
-        }}>
-          <Search style={{ width: '20px', height: '20px', color: '#fff' }} />
-        </div>
       </div>
 
       <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: '#212529', marginBottom: '0.25rem' }}>
