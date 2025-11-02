@@ -20,18 +20,16 @@ import {
 import { supabase, Property } from '@/lib/supabase';
 
 function generateRandomImages(count: number = 100): string[] {
-  const categories = [
-    'architecture', 'interior-design', 'house', 'building', 'home',
-    'modern-house', 'luxury-home', 'residential', 'property', 'real-estate',
-    'living-room', 'kitchen', 'bedroom', 'bathroom', 'pool',
-    'mansion', 'villa', 'apartment', 'loft', 'warehouse'
-  ];
+  const images: string[] = [];
 
-  return Array.from({ length: count }, (_, i) => {
-    const category = categories[i % categories.length];
-    const randomId = Math.floor(Math.random() * 10000);
-    return `https://images.unsplash.com/photo-${1600000000000 + randomId}?w=1200&q=80`;
-  });
+  for (let i = 0; i < count; i++) {
+    const width = Math.floor(Math.random() * 400) + 400;
+    const height = Math.floor(Math.random() * 400) + 400;
+
+    images.push(`https://picsum.photos/${width}/${height}?random=${i}`);
+  }
+
+  return images;
 }
 
 export default function PropertyDetailPage() {
@@ -120,8 +118,6 @@ export default function PropertyDetailPage() {
 
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
 
-  const imageHeights = [150, 200, 140, 180, 120, 160, 190, 145, 175];
-
   return (
     <>
       <style jsx global>{`
@@ -142,37 +138,43 @@ export default function PropertyDetailPage() {
         <div style={{
           position: 'relative',
           width: '100%',
-          columns: '3',
-          columnGap: '3px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+          gap: '3px',
           padding: '0',
-          margin: '0'
+          margin: '0',
+          maxHeight: '600px',
+          overflow: 'hidden'
         }}>
-          {images.slice(0, 9).map((img, index) => (
-            <div
-              key={index}
-              onClick={() => {
-                setCurrentImageIndex(index);
-                setShowLightbox(true);
-              }}
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: `${imageHeights[index]}px`,
-                marginBottom: '3px',
-                cursor: 'pointer',
-                breakInside: 'avoid',
-                overflow: 'hidden'
-              }}
-            >
-              <Image
-                src={img}
-                alt={`${property.name} - Image ${index + 1}`}
-                fill
-                style={{ objectFit: 'cover' }}
-                unoptimized
-              />
-            </div>
-          ))}
+          {images.slice(0, 9).map((img, index) => {
+            const aspectRatios = [1.5, 0.8, 1.2, 1.8, 1.0, 0.9, 1.4, 1.1, 1.3];
+            const aspectRatio = aspectRatios[index];
+
+            return (
+              <div
+                key={index}
+                onClick={() => {
+                  setCurrentImageIndex(index);
+                  setShowLightbox(true);
+                }}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  aspectRatio: aspectRatio.toString(),
+                  cursor: 'pointer',
+                  overflow: 'hidden'
+                }}
+              >
+                <Image
+                  src={img}
+                  alt={`${property.name} - Image ${index + 1}`}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  unoptimized
+                />
+              </div>
+            );
+          })}
 
           <div style={{
             position: 'absolute',
