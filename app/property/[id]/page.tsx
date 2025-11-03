@@ -19,10 +19,28 @@ import {
 } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 
-function generateRandomImages(count: number = 100): string[] {
-  const images: string[] = [];
+interface ImageWithCategory {
+  url: string;
+  categories: string[];
+}
+
+function generateRandomImages(count: number = 100, allCategories: string[]): ImageWithCategory[] {
+  const images: ImageWithCategory[] = [];
   for (let i = 0; i < count; i++) {
-    images.push(`https://picsum.photos/seed/${i}/800/600`);
+    const numCategories = Math.floor(Math.random() * 2) + 1;
+    const selectedCategories: string[] = [];
+
+    for (let j = 0; j < numCategories; j++) {
+      const randomCategory = allCategories[Math.floor(Math.random() * allCategories.length)];
+      if (!selectedCategories.includes(randomCategory)) {
+        selectedCategories.push(randomCategory);
+      }
+    }
+
+    images.push({
+      url: `https://picsum.photos/seed/${i}/800/600`,
+      categories: selectedCategories
+    });
   }
   return images;
 }
@@ -40,59 +58,41 @@ export default function PropertyDetailPage() {
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
-  const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
-  const categoryScrollRef = useRef<HTMLUListElement>(null);
-  const [scrollPosition, setScrollPosition] = useState({ left: 0, width: 50 });
-  const categoryRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
-  const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
-  const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [imageCategories, setImageCategories] = useState<string[]>([]);
+  const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
+  const categoryRefs = useRef<{ [key: string]: HTMLSpanElement | null }>({});
+  const categoryContainerRef = useRef<HTMLDivElement>(null);
+  const [redBarStyle, setRedBarStyle] = useState({ width: 0, left: 0 });
+  const [allImages, setAllImages] = useState<Array<{ url: string; categories: string[] }>>([]);
+  const [displayedImages, setDisplayedImages] = useState<Array<{ url: string; categories: string[] }>>([]);
 
-  const handleCategoryScroll = () => {
-    const container = categoryScrollRef.current;
-    if (!container) return;
+  const updateRedBarPosition = (category: string) => {
+    const element = categoryRefs.current[category];
+    const container = categoryContainerRef.current;
 
-    const { scrollLeft, scrollWidth, clientWidth } = container;
+    if (element && container) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const relativeLeft = elementRect.left - containerRect.left;
 
-    const visibleRatio = clientWidth / scrollWidth;
-
-    const scrollbarContainerWidth = clientWidth - 32;
-
-    const dragWidth = Math.max(scrollbarContainerWidth * visibleRatio, 30);
-
-    const maxDragScroll = scrollbarContainerWidth - dragWidth;
-
-    const maxContentScroll = scrollWidth - clientWidth;
-    const scrollPercent = maxContentScroll > 0 ? scrollLeft / maxContentScroll : 0;
-
-    const dragLeft = scrollPercent * maxDragScroll;
-
-    setScrollPosition({
-      left: dragLeft,
-      width: dragWidth
-    });
+      setRedBarStyle({
+        left: relativeLeft,
+        width: elementRect.width
+      });
+    }
   };
 
-  const handleCategoryClick = (tag: string) => {
-    setActiveCategory(tag);
+  const handleCategoryClick = (category: string) => {
+    setActiveCategory(category);
+    updateRedBarPosition(category);
 
-    const firstImageIndex = imageCategories.findIndex(cat => cat === tag);
+    const filteredImages = allImages.filter(img => img.categories.includes(category));
+    setDisplayedImages(filteredImages);
 
-    if (firstImageIndex !== -1) {
-      if (viewMode === 'carousel' && carouselRef.current) {
-        carouselRef.current.scrollTo({
-          left: firstImageIndex * 900,
-          behavior: 'smooth'
-        });
-      } else if (viewMode === 'grid') {
-        const targetImage = imageRefs.current[firstImageIndex];
-        if (targetImage) {
-          targetImage.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }
-      }
+    if (carouselRef.current) {
+      carouselRef.current.scrollTo({
+        left: 0,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -127,50 +127,45 @@ export default function PropertyDetailPage() {
     fetchData();
   }, [params.id]);
 
-  let images: string[] = [];
-
-  if (property?.images && property.images.length > 0) {
-    images = [...property.images];
-  } else if (property?.primary_image) {
-    images = [property.primary_image];
-  }
-
-  const remainingCount = 100 - images.length;
-  if (remainingCount > 0) {
-    images = [...images, ...generateRandomImages(remainingCount)];
-  }
-
   useEffect(() => {
-    const categories: string[] = [];
-    for (let i = 0; i < images.length; i++) {
-      categories.push(categoryTags[Math.floor(Math.random() * categoryTags.length)]);
+    let baseImages: string[] = [];
+
+    if (property?.images && property.images.length > 0) {
+      baseImages = [...property.images];
+    } else if (property?.primary_image) {
+      baseImages = [property.primary_image];
     }
-    setImageCategories(categories);
-  }, [images.length]);
+
+    const remainingCount = 100 - baseImages.length;
+    const generatedImages = remainingCount > 0 ? generateRandomImages(remainingCount, categoryTags) : [];
+
+    const baseImagesWithCategories: ImageWithCategory[] = baseImages.map(url => ({
+      url,
+      categories: [categoryTags[Math.floor(Math.random() * categoryTags.length)]]
+    }));
+
+    const combinedImages = [...baseImagesWithCategories, ...generatedImages];
+    setAllImages(combinedImages);
+
+    const initialFiltered = combinedImages.filter(img => img.categories.includes(activeCategory));
+    setDisplayedImages(initialFiltered);
+  }, [property, activeCategory]);
 
   useEffect(() => {
-    handleCategoryScroll();
+    updateRedBarPosition(activeCategory);
 
-    const handleResize = () => handleCategoryScroll();
+    const handleResize = () => updateRedBarPosition(activeCategory);
     window.addEventListener('resize', handleResize);
 
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    const categoryElement = categoryRefs.current[activeCategory];
-    if (categoryElement) {
-      const { offsetLeft, offsetWidth } = categoryElement;
-      setUnderlineStyle({ left: offsetLeft, width: offsetWidth });
-    }
-  }, [activeCategory]);
+  }, [activeCategory, displayedImages]);
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    setCurrentImageIndex((prev) => (prev + 1) % displayedImages.length);
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentImageIndex((prev) => (prev - 1 + displayedImages.length) % displayedImages.length);
   };
 
   const copyLink = () => {
@@ -271,7 +266,8 @@ export default function PropertyDetailPage() {
               padding: '0',
               margin: '0'
             }}>
-              {images.slice(0, 12).map((img, index) => {
+              {displayedImages.slice(0, 12).map((imgData, index) => {
+                const img = imgData.url;
                 const spans = [
                   { col: '1 / 3', row: '1 / 3' },
                   { col: '3 / 5', row: '1 / 4' },
@@ -290,7 +286,6 @@ export default function PropertyDetailPage() {
                 return (
                   <div
                     key={index}
-                    ref={(el) => { imageRefs.current[index] = el; }}
                     onClick={() => {
                       setCurrentImageIndex(index);
                       setShowLightbox(true);
@@ -325,10 +320,9 @@ export default function PropertyDetailPage() {
                 scrollBehavior: 'smooth'
               }}
             >
-              {images.map((img, index) => (
+              {displayedImages.map((imgData, index) => (
                 <div
                   key={index}
-                  ref={(el) => { imageRefs.current[index] = el; }}
                   style={{
                     position: 'relative',
                     height: '100%',
@@ -341,7 +335,7 @@ export default function PropertyDetailPage() {
                   }}
                 >
                   <Image
-                    src={img}
+                    src={imgData.url}
                     alt={`${property.name} - Image ${index + 1}`}
                     width={900}
                     height={600}
@@ -363,7 +357,7 @@ export default function PropertyDetailPage() {
                     borderRadius: '0.25rem',
                     fontSize: '14px'
                   }}>
-                    {index + 1} / {images.length}
+                    {index + 1} / {displayedImages.length}
                   </div>
                 </div>
               ))}
@@ -430,7 +424,7 @@ export default function PropertyDetailPage() {
               fontSize: '14px',
               zIndex: 10
             }}>
-              1 / {images.length}
+              1 / {displayedImages.length}
             </div>
           )}
 
@@ -459,90 +453,57 @@ export default function PropertyDetailPage() {
           </button>
         </div>
 
-        {/* Category Navigation - Exact Image Locations Match */}
+        {/* Category Navigation - Red bar ABOVE text like Image Locations */}
         <div style={{
           background: '#fff',
           borderBottom: '1px solid #e5e7eb',
           position: 'relative',
-          paddingTop: '0.75rem'
+          padding: '20px 0'
         }}>
-          {/* Scrollbar container - ABOVE categories */}
-          <div style={{
-            position: 'relative',
-            height: '4px',
-            background: '#dee2e6',
-            marginLeft: '1rem',
-            marginRight: '1rem',
-            marginBottom: '0.5rem',
-            borderRadius: '10px'
-          }}>
-            {/* Red scrollbar drag indicator */}
+          <div
+            ref={categoryContainerRef}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              gap: '30px',
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingTop: '10px'
+            }}
+          >
+            {/* Red bar positioned ABOVE the category text */}
             <div
               style={{
                 position: 'absolute',
-                left: `${scrollPosition.left}px`,
-                width: `${scrollPosition.width}px`,
-                height: '100%',
-                background: '#e11921',
-                borderRadius: '10px',
-                cursor: 'grab'
-              }}
-            />
-          </div>
-
-          {/* Category list */}
-          <div style={{ position: 'relative', padding: '0 1rem 0.75rem 1rem' }}>
-            <ul
-              ref={categoryScrollRef}
-              onScroll={handleCategoryScroll}
-              style={{
-                display: 'flex',
-                flexWrap: 'nowrap',
-                listStyle: 'none',
-                marginBottom: 0,
-                paddingLeft: 0,
-                overflowX: 'auto',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-                position: 'relative'
-              }}
-              className="category-scroll-container"
-            >
-              {categoryTags.map((tag) => (
-                <li
-                  key={tag}
-                  ref={(el) => { categoryRefs.current[tag] = el; }}
-                  onClick={() => handleCategoryClick(tag)}
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 300,
-                    marginRight: '1.5rem',
-                    cursor: 'pointer',
-                    color: activeCategory === tag ? '#212529' : '#6c757d',
-                    transition: 'color 0.3s',
-                    whiteSpace: 'nowrap',
-                    paddingBottom: '0.5rem',
-                    position: 'relative'
-                  }}
-                >
-                  {tag}
-                </li>
-              ))}
-            </ul>
-
-            {/* Red underline bar */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '0.75rem',
-                left: `${underlineStyle.left}px`,
-                width: `${underlineStyle.width}px`,
-                height: '2px',
+                top: 0,
+                left: `${redBarStyle.left}px`,
+                width: `${redBarStyle.width}px`,
+                height: '3px',
                 background: '#e11921',
                 transition: 'all 0.3s ease',
-                transform: 'translateX(0)'
+                zIndex: 1
               }}
             />
+
+            {/* Category items below the red bar */}
+            {categoryTags.map((tag) => (
+              <span
+                key={tag}
+                ref={(el) => { categoryRefs.current[tag] = el; }}
+                onClick={() => handleCategoryClick(tag)}
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 300,
+                  cursor: 'pointer',
+                  color: activeCategory === tag ? '#212529' : '#6c757d',
+                  transition: 'color 0.3s',
+                  whiteSpace: 'nowrap',
+                  position: 'relative'
+                }}
+              >
+                {tag}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -579,7 +540,7 @@ export default function PropertyDetailPage() {
 
             <div style={{ position: 'relative', width: '90%', height: '90%' }}>
               <Image
-                src={images[currentImageIndex]}
+                src={displayedImages[currentImageIndex]?.url || ''}
                 alt={property.name}
                 fill
                 style={{ objectFit: 'contain' }}
@@ -588,7 +549,7 @@ export default function PropertyDetailPage() {
               />
             </div>
 
-            {images.length > 1 && (
+            {displayedImages.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
@@ -647,7 +608,7 @@ export default function PropertyDetailPage() {
               fontSize: '14px',
               zIndex: 10000
             }}>
-              {currentImageIndex + 1} / {images.length}
+              {currentImageIndex + 1} / {displayedImages.length}
             </div>
           </div>
         )}
@@ -780,7 +741,7 @@ export default function PropertyDetailPage() {
                 </button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                {images.map((img, index) => (
+                {displayedImages.map((imgData, index) => (
                   <button
                     key={index}
                     onClick={() => {
@@ -801,7 +762,7 @@ export default function PropertyDetailPage() {
                     onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
                     onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
-                    <Image src={img} alt={`Image ${index + 1}`} fill style={{ objectFit: 'cover' }} unoptimized />
+                    <Image src={imgData.url} alt={`Image ${index + 1}`} fill style={{ objectFit: 'cover' }} unoptimized />
                   </button>
                 ))}
               </div>
