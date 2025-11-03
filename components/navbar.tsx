@@ -32,136 +32,136 @@ export function Navbar() {
     { label: 'CONTACT', href: '/contact' },
     { label: 'LIST YOUR PROPERTY', href: '/list-your-property' },
     { label: 'ARTICLES', href: '/articles' },
-    { label: 'LOGIN', href: '/login', isButton: true },
     { label: 'REGISTER', href: '/register' },
   ];
 
   return (
-    <nav
-      className={`w-full ${
-        isHomepage ? 'absolute top-0 left-0 right-0 z-50 text-white' : 'bg-white border-b border-gray-200 text-gray-900'
-      }`}
-    >
-      <div className="mx-auto px-4">
-        <div className="flex items-center justify-between h-[60px]">
-          <Link href="/" className="flex items-center gap-2">
-            <Camera className="w-8 h-8 text-[#e11921]" />
-            <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
-              SGS LOCATIONS<sup className="text-xs">®</sup>
-            </span>
-          </Link>
+    <>
+      <nav
+        className={`w-full ${
+          isHomepage ? 'absolute top-0 left-0 right-0 z-50 text-white' : 'bg-white border-b border-gray-200 text-gray-900'
+        }`}
+      >
+        <div className="mx-auto px-4">
+          <div className="flex items-center justify-between h-[60px]">
+            <Link href="/" className="flex items-center gap-2">
+              <Camera className="w-8 h-8 text-[#e11921]" />
+              <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
+                SGS LOCATIONS<sup className="text-xs">®</sup>
+              </span>
+            </Link>
 
-          <div className="hidden lg:flex items-center gap-3">
-            <form onSubmit={handleSearch} className="flex items-center">
-              <Input
-                type="text"
-                placeholder="Search locations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-[350px] ${isHomepage ? 'bg-white/90 text-gray-900' : 'bg-white'}`}
-              />
-              <Button
-                type="submit"
-                size="sm"
-                className="ml-2 bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-            </form>
-          </div>
-
-          <button
-            className="lg:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        <div className="hidden lg:flex items-center justify-center h-[50px] border-t border-opacity-20 border-current">
-          <div className="flex items-center gap-1 text-xs tracking-widest" style={{fontWeight: 300}}>
-            {navItems.map((item, index) => (
-              <div key={item.label} className="flex items-center">
-                {index > 0 && <span className="mx-2 opacity-50">|</span>}
-                {item.label === 'LOGIN' ? (
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="text-xs tracking-wider hover:text-gray-600 transition-colors"
-                    style={{ fontWeight: 300 }}
-                  >
-                    {item.label}
-                  </button>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className="text-xs tracking-wider hover:text-gray-600 transition-colors"
-                    style={{ fontWeight: 300 }}
-                  >
-                    {item.label}
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-gray-900">
-          <div className="flex justify-end p-4">
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-white"
-              aria-label="Close menu"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="flex flex-col items-center gap-6 px-4 py-8">
-            <form onSubmit={handleSearch} className="w-full max-w-md flex gap-2">
-              <Input
-                type="text"
-                placeholder="Search locations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                type="submit"
-                className="bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-            </form>
-            {navItems.map((item) => (
-              item.isButton ? (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setIsLoginModalOpen(true);
-                  }}
-                  className="text-white text-sm tracking-widest hover:text-[#e11921] transition-colors" style={{fontWeight: 300}}
+            <div className="hidden lg:flex items-center gap-3">
+              <form onSubmit={handleSearch} className="flex items-center">
+                <Input
+                  type="text"
+                  placeholder="Search locations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-[350px] ${isHomepage ? 'bg-white/90 text-gray-900' : 'bg-white'}`}
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="ml-2 bg-[#e11921] hover:bg-[#bf151c] rounded"
+                  style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
                 >
-                  {item.label}
-                </button>
-              ) : (
+                  <Search className="w-4 h-4" />
+                </Button>
+              </form>
+            </div>
+
+            <button
+              className="lg:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+
+            {/* Desktop navigation */}
+            <div className="hidden lg:flex items-center gap-6">
+              {navItems.map((item) => (
                 <Link
-                  key={item.href}
+                  key={item.label}
                   href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-white text-sm tracking-widest hover:text-[#e11921] transition-colors" style={{fontWeight: 300}}
+                  className={`text-xs tracking-wider hover:text-gray-600 transition-colors ${
+                    isHomepage && pathname !== item.href ? 'text-white hover:text-gray-300' : ''
+                  }`}
+                  style={{ fontWeight: 300 }}
                 >
                   {item.label}
                 </Link>
-              )
-            ))}
+              ))}
+
+              {/* LOGIN as button instead of link */}
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className={`text-xs tracking-wider hover:text-gray-600 transition-colors ${
+                  isHomepage ? 'text-white hover:text-gray-300' : ''
+                }`}
+                style={{ fontWeight: 300 }}
+              >
+                LOGIN
+              </button>
+            </div>
           </div>
         </div>
-      )}
 
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
-    </nav>
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className={`lg:hidden ${isHomepage ? 'bg-black/90' : 'bg-white'} border-t border-gray-200`}>
+            <div className="px-4 py-4 space-y-3">
+              <form onSubmit={handleSearch} className="mb-4">
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Search locations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 bg-white text-gray-900"
+                  />
+                  <Button type="submit" size="sm" className="bg-[#e11921] hover:bg-[#bf151c]">
+                    <Search className="w-4 h-4" />
+                  </Button>
+                </div>
+              </form>
+
+              {navItems.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`block py-2 text-sm ${
+                    isHomepage ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-600'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              {/* Mobile LOGIN button */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsLoginModalOpen(true);
+                }}
+                className={`block w-full text-left py-2 text-sm ${
+                  isHomepage ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-600'
+                }`}
+              >
+                LOGIN
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+    </>
   );
 }
