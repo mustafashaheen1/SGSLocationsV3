@@ -644,174 +644,148 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        {/* Property Details Section - Matches Image Locations */}
+        {/* Property Details Section - Two Column Layout */}
         <div style={{
-          padding: '2rem 2rem 1rem 2rem',
+          padding: '2rem',
           background: '#fff'
         }}>
           <div style={{
             display: 'flex',
-            flexWrap: 'wrap',
-            marginLeft: '-15px',
-            marginRight: '-15px'
+            gap: '3rem'
           }}>
-            {/* Left Column - Property Info */}
+            {/* LEFT COLUMN - Property Info */}
             <div style={{
-              flex: '1 1 auto',
-              paddingLeft: '15px',
-              paddingRight: '30px',
+              flex: '1 1 60%',
+              paddingRight: '2rem',
               borderRight: '1px solid #dee2e6'
             }}>
+              {/* Property Title Row */}
               <div style={{
                 display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'flex-start',
-                flexWrap: 'wrap',
-                paddingBottom: '0.25rem',
-                marginBottom: '0.25rem'
+                alignItems: 'center',
+                gap: '1rem',
+                marginBottom: '1rem'
               }}>
-                {/* Property Title */}
-                <div style={{ marginRight: '2rem' }}>
-                  <h1 style={{
-                    fontSize: '1.75rem',
-                    fontWeight: 300,
-                    marginBottom: 0,
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    color: '#212529'
-                  }}>
-                    {property.name}
-                  </h1>
-                </div>
-
-                {/* Location */}
-                <div style={{
-                  borderLeft: '1px solid #dee2e6',
-                  paddingLeft: '1rem',
-                  marginLeft: '-1px'
+                <h1 style={{
+                  fontSize: '1.75rem',
+                  fontWeight: 300,
+                  margin: 0,
+                  fontFamily: 'acumin-pro-wide, sans-serif',
+                  color: '#212529'
                 }}>
-                  <p style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 300,
-                    marginBottom: 0,
-                    lineHeight: 1,
-                    color: '#212529',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {property.city}
-                  </p>
-                </div>
+                  {property.name}
+                </h1>
 
-                {/* Film/Permit Badges */}
                 <div style={{
-                  display: 'flex',
-                  gap: '1rem',
-                  marginLeft: '1rem',
-                  alignItems: 'center'
+                  height: '24px',
+                  width: '1px',
+                  background: '#dee2e6',
+                  margin: '0 0.5rem'
+                }} />
+
+                <span style={{
+                  fontSize: '1.125rem',
+                  fontWeight: 300,
+                  color: '#212529'
                 }}>
-                  {property.permits_available && (
-                    <button
-                      style={{
-                        background: '#4a90e2',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '0.25rem',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        fontFamily: 'acumin-pro-wide, sans-serif',
-                        fontWeight: 400
-                      }}
-                    >
-                      Film
-                    </button>
-                  )}
+                  {property.city}
+                </span>
+
+                {property.permits_available && (
                   <button
                     style={{
-                      background: '#e11921',
+                      marginLeft: '1rem',
+                      background: '#4a90e2',
                       color: '#fff',
                       border: 'none',
-                      padding: '0.25rem 0.75rem',
+                      padding: '0.375rem 1rem',
                       borderRadius: '0.25rem',
                       fontSize: '14px',
                       cursor: 'pointer',
-                      fontFamily: 'acumin-pro-wide, sans-serif',
-                      fontWeight: 400
+                      fontFamily: 'acumin-pro-wide, sans-serif'
                     }}
                   >
-                    Pull My Permit
+                    Film
                   </button>
-                </div>
-              </div>
+                )}
 
-              {/* Property Description */}
-              <div style={{
-                marginTop: '1rem',
-                fontSize: '14px',
-                lineHeight: 1.6,
-                color: '#212529',
-                fontFamily: 'acumin-pro-wide, sans-serif',
-                fontWeight: 300
-              }}>
-                <p>{property.description || 'Professional filming location available for productions.'}</p>
-              </div>
-
-              {/* Inquire Button */}
-              <div style={{ marginTop: '1.5rem' }}>
                 <button
-                  onClick={() => setShowContactModal(true)}
                   style={{
                     background: '#e11921',
                     color: '#fff',
                     border: 'none',
-                    padding: '0.5rem 1.5rem',
+                    padding: '0.375rem 1rem',
+                    borderRadius: '0.25rem',
                     fontSize: '14px',
-                    fontWeight: 500,
-                    textTransform: 'uppercase',
                     cursor: 'pointer',
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '0.05em'
+                    fontFamily: 'acumin-pro-wide, sans-serif'
                   }}
                 >
-                  INQUIRE ABOUT {property.name.toUpperCase()}
+                  Pull My Permit
                 </button>
               </div>
+
+              {/* Description */}
+              <p style={{
+                fontSize: '15px',
+                lineHeight: 1.7,
+                color: '#212529',
+                fontFamily: 'acumin-pro-wide, sans-serif',
+                fontWeight: 300,
+                marginBottom: '1.5rem'
+              }}>
+                {property.description || 'Raw industrial space with exposed brick, high ceilings, and dramatic natural light. Perfect for urban scenes and edgy productions.'}
+              </p>
+
+              {/* Inquire Button */}
+              <button
+                onClick={() => setShowContactModal(true)}
+                style={{
+                  background: '#e11921',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '0.625rem 1.75rem',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  fontFamily: 'acumin-pro-wide, sans-serif',
+                  letterSpacing: '0.05em'
+                }}
+              >
+                INQUIRE ABOUT {property.name.toUpperCase()}
+              </button>
             </div>
 
-            {/* Right Column - Action Buttons */}
+            {/* RIGHT COLUMN - Buttons and Logo */}
             <div style={{
-              width: 'auto',
-              paddingLeft: '30px',
-              paddingRight: '15px',
+              width: '380px',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'flex-start',
-              justifyContent: 'flex-start'
+              gap: '1.5rem'
             }}>
-              {/* Buttons Row */}
+              {/* Action Buttons Grid */}
               <div style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: '0.5rem',
-                marginBottom: '1.5rem'
+                gap: '0.5rem'
               }}>
-                {/* Copy Link Button */}
+                {/* Copy Button - White with Red Border */}
                 <button
                   onClick={copyLink}
                   style={{
                     background: '#fff',
                     color: '#212529',
-                    border: '1px solid #e11921',
+                    border: '2px solid #e11921',
                     padding: '0.5rem 1rem',
                     fontSize: '13px',
                     fontWeight: 400,
-                    textTransform: 'uppercase',
                     cursor: 'pointer',
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    transition: 'all 0.2s',
-                    letterSpacing: '0.05em'
+                    transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#e11921';
@@ -826,7 +800,7 @@ export default function PropertyDetailPage() {
                   COPY
                 </button>
 
-                {/* Contact Us Button */}
+                {/* Other Buttons - Red Background */}
                 <button
                   onClick={() => setShowContactModal(true)}
                   style={{
@@ -836,20 +810,17 @@ export default function PropertyDetailPage() {
                     padding: '0.5rem 1rem',
                     fontSize: '13px',
                     fontWeight: 400,
-                    textTransform: 'uppercase',
                     cursor: 'pointer',
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em'
+                    gap: '0.5rem'
                   }}
                 >
                   <Mail style={{ width: '16px', height: '16px' }} />
                   CONTACT US
                 </button>
 
-                {/* Thumbnails Button */}
                 <button
                   onClick={() => setShowThumbnails(true)}
                   style={{
@@ -859,20 +830,17 @@ export default function PropertyDetailPage() {
                     padding: '0.5rem 1rem',
                     fontSize: '13px',
                     fontWeight: 400,
-                    textTransform: 'uppercase',
                     cursor: 'pointer',
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em'
+                    gap: '0.5rem'
                   }}
                 >
                   <ImageIcon style={{ width: '16px', height: '16px' }} />
                   THUMBNAILS
                 </button>
 
-                {/* Download Images Button */}
                 <button
                   onClick={handleDownloadImages}
                   style={{
@@ -882,20 +850,17 @@ export default function PropertyDetailPage() {
                     padding: '0.5rem 1rem',
                     fontSize: '13px',
                     fontWeight: 400,
-                    textTransform: 'uppercase',
                     cursor: 'pointer',
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em'
+                    gap: '0.5rem'
                   }}
                 >
                   <Download style={{ width: '16px', height: '16px' }} />
                   DOWNLOAD IMAGES
                 </button>
 
-                {/* Location PDF Button */}
                 <button
                   onClick={handleDownloadPDF}
                   style={{
@@ -905,13 +870,11 @@ export default function PropertyDetailPage() {
                     padding: '0.5rem 1rem',
                     fontSize: '13px',
                     fontWeight: 400,
-                    textTransform: 'uppercase',
                     cursor: 'pointer',
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em'
+                    gap: '0.5rem'
                   }}
                 >
                   <FileText style={{ width: '16px', height: '16px' }} />
@@ -919,50 +882,48 @@ export default function PropertyDetailPage() {
                 </button>
               </div>
 
-              {/* Image Verified Logo */}
+              {/* SGS Verified Logo - Below Buttons in Right Column */}
               <div style={{
-                marginTop: '1rem',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                gap: '0.75rem',
+                paddingTop: '0.5rem'
               }}>
                 <div style={{
-                  width: '140px',
-                  height: '50px',
+                  width: '48px',
+                  height: '48px',
+                  background: '#e11921',
+                  borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
+                  <Camera style={{
+                    width: '24px',
+                    height: '24px',
+                    color: '#fff'
+                  }} />
+                </div>
+                <div>
                   <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    color: '#212529',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    letterSpacing: '0.05em',
+                    lineHeight: 1
                   }}>
-                    <Camera style={{
-                      width: '32px',
-                      height: '32px',
-                      color: '#e11921'
-                    }} />
-                    <div>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        color: '#212529',
-                        fontFamily: 'acumin-pro-wide, sans-serif',
-                        letterSpacing: '0.05em'
-                      }}>
-                        SGS
-                      </div>
-                      <div style={{
-                        fontSize: '10px',
-                        fontWeight: 400,
-                        color: '#6b7280',
-                        fontFamily: 'acumin-pro-wide, sans-serif',
-                        letterSpacing: '0.05em'
-                      }}>
-                        VERIFIED
-                      </div>
-                    </div>
+                    SGS
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    color: '#6b7280',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    letterSpacing: '0.05em',
+                    lineHeight: 1.2
+                  }}>
+                    VERIFIED
                   </div>
                 </div>
               </div>
