@@ -410,6 +410,146 @@ export default function ContactPage() {
         .g-recaptcha {
           display: inline-block;
         }
+
+        /* Team Grid Styles */
+        .container-fluid {
+          width: 100%;
+          padding-right: 15px;
+          padding-left: 15px;
+          margin-right: auto;
+          margin-left: auto;
+        }
+
+        .il-profiles {
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 300;
+        }
+
+        .il-profile-section {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .il-image-container {
+          position: relative;
+          width: 100%;
+          height: 0;
+          padding-bottom: 71.43%;
+          overflow: hidden;
+          background: #f8f9fa;
+        }
+
+        .il-image-container img {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .il-contact-profile-pic {
+          object-fit: cover;
+        }
+
+        .il-profile-info {
+          background: white;
+          min-height: 100px;
+        }
+
+        .object-fit {
+          object-fit: cover;
+        }
+
+        .px-1 {
+          padding-left: 0.25rem !important;
+          padding-right: 0.25rem !important;
+        }
+
+        .py-1 {
+          padding-top: 0.25rem !important;
+          padding-bottom: 0.25rem !important;
+        }
+
+        .bg-primary {
+          background-color: #dc3545 !important;
+        }
+
+        .h6 {
+          font-size: 1rem;
+          font-weight: 500;
+        }
+
+        @media (min-width: 992px) {
+          .col-lg-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+          }
+        }
+
+        @media (min-width: 1200px) {
+          .col-xl-2 {
+            flex: 0 0 16.666667%;
+            max-width: 16.666667%;
+          }
+        }
+
+        .h-100 {
+          height: 100% !important;
+        }
+
+        .d-block {
+          display: block !important;
+        }
+
+        .d-flex {
+          display: flex !important;
+        }
+
+        .flex-column {
+          flex-direction: column !important;
+        }
+
+        .align-items-center {
+          align-items: center !important;
+        }
+
+        .justify-content-center {
+          justify-content: center !important;
+        }
+
+        .position-relative {
+          position: relative !important;
+        }
+
+        .p-4 {
+          padding: 1.5rem !important;
+        }
+
+        .px-3 {
+          padding-left: 1rem !important;
+          padding-right: 1rem !important;
+        }
+
+        .py-3 {
+          padding-top: 1rem !important;
+          padding-bottom: 1rem !important;
+        }
+
+        .mb-0 {
+          margin-bottom: 0 !important;
+        }
+
+        .fa-envelope-o:before {
+          content: "✉";
+          margin-right: 5px;
+        }
+
+        .fa-phone:before {
+          content: "☎";
+          margin-right: 5px;
+        }
       `}</style>
 
       <div className="contact-form bg-white" style={{ paddingTop: '60px', minHeight: '100vh' }}>
@@ -807,19 +947,104 @@ export default function ContactPage() {
             </div>
           </form>
 
-          <div className="container-fluid px-0">
-            <div className="flex flex-wrap -mx-1">
-              <div className="w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 px-1 py-1">
-                <div className="bg-[#dc3545] text-white p-4 h-full flex flex-col items-center justify-center text-center" style={{ fontSize: '14px', aspectRatio: '1/1' }}>
-                  <p>Paul@ImageLocations.com</p>
-                  <p>(310) 871-8004</p>
-                  <p>9663 Santa Monica Blvd,<br />Suite 842 Beverly Hills,<br />CA, 90210</p>
+          {/* Team/Partner Grid Section */}
+          <div className="container-fluid il-profiles" style={{ marginTop: '3rem' }}>
+            <div className="row px-1">
+              {/* Red Contact Card */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <div
+                  style={{ fontSize: '14px' }}
+                  className="text-white p-4 bg-primary text-center h-100 d-flex flex-column align-items-center justify-content-center"
+                >
+                  <p><i className="fa fa-envelope-o"></i> Paul@ImageLocations.com</p>
+                  <p><i className="fa fa-phone"></i> (310) 871-8004</p>
+                  <p>9663 Santa Monica Blvd,<br />
+                    Suite 842 Beverly Hills,<br />
+                    CA, 90210</p>
                 </div>
               </div>
 
-              {[...Array(23)].map((_, i) => (
-                <div key={i} className="w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 px-1 py-1">
-                  <div className="bg-gray-200" style={{ aspectRatio: '1/1' }}></div>
+              {/* Paul Kim */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <div className="il-image-container position-relative">
+                  <img
+                    className="w-100 h-100 object-fit il-contact-profile-pic"
+                    src="https://via.placeholder.com/231x165/808080/ffffff?text=Paul+Kim"
+                    alt="Paul Kim"
+                  />
+                </div>
+                <div className="text-center px-3 py-3 il-profile-info d-flex flex-column justify-content-center align-items-center">
+                  <p className="h6 mb-0">Paul Kim</p>
+                  <p className="h6 mb-0" style={{ fontSize: '14px', fontWeight: 500 }}>Business Development</p>
+                  <a style={{ fontSize: '14px' }} href="mailto:paul@imagelocations.com">paul@imagelocations.com</a>
+                </div>
+              </div>
+
+              {/* List Your Property - Green */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <a className="h-100 d-block" href="/list-your-property" style={{ backgroundColor: '#85c53b' }}>
+                  <div className="il-image-container position-relative w-100 h-100 d-flex align-items-center justify-content-center">
+                    <div className="text-white text-center p-4">
+                      <h3>List</h3>
+                      <p>MY HOME</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              {/* Alice Kim */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <div className="il-image-container position-relative">
+                  <img
+                    className="w-100 h-100 object-fit il-contact-profile-pic"
+                    src="https://via.placeholder.com/231x165/808080/ffffff?text=Alice+Kim"
+                    alt="Alice Kim"
+                  />
+                </div>
+                <div className="text-center px-3 py-3 il-profile-info d-flex flex-column justify-content-center align-items-center">
+                  <p className="h6 mb-0">Alice Kim</p>
+                  <p className="h6 mb-0" style={{ fontSize: '14px', fontWeight: 500 }}>Executive Location Agent</p>
+                  <a style={{ fontSize: '14px' }} href="mailto:alice@imagelocations.com">alice@imagelocations.com</a>
+                </div>
+              </div>
+
+              {/* Jason Radspinner */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <div className="il-image-container position-relative">
+                  <img
+                    className="w-100 h-100 object-fit il-contact-profile-pic"
+                    src="https://via.placeholder.com/231x165/808080/ffffff?text=Jason"
+                    alt="Jason Radspinner"
+                  />
+                </div>
+                <div className="text-center px-3 py-3 il-profile-info d-flex flex-column justify-content-center align-items-center">
+                  <p className="h6 mb-0">Jason Radspinner</p>
+                  <p className="h6 mb-0" style={{ fontSize: '14px', fontWeight: 500 }}>Executive Location Agent</p>
+                  <a style={{ fontSize: '14px' }} href="mailto:jason@imagelocations.com">jason@imagelocations.com</a>
+                </div>
+              </div>
+
+              {/* Crew Parking - Yellow */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <a className="h-100 d-block" href="https://crewparking.com/" style={{ backgroundColor: '#eed437' }}>
+                  <div className="il-image-container position-relative w-100 h-100 d-flex align-items-center justify-content-center">
+                    <div className="text-dark text-center p-4">
+                      <h3>CREW PARKING</h3>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              {/* Additional placeholder cards */}
+              {[...Array(18)].map((_, i) => (
+                <div key={i} className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                  <div className="il-image-container position-relative w-100 h-100">
+                    <img
+                      className="object-fit w-100 h-100"
+                      src={`https://via.placeholder.com/231x165/f0f0f0/666666?text=Tile+${i+7}`}
+                      alt=""
+                    />
+                  </div>
                 </div>
               ))}
             </div>
