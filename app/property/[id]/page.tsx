@@ -28,23 +28,37 @@ function generateImagesWithCategories(): ImageWithCategory[] {
   const categories = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
   const imageList: ImageWithCategory[] = [];
 
-  const unsplashImages = [
+  const workingUrls = [
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80',
+    'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80',
+    'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80',
+    'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=1200&q=80',
+    'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=1200&q=80',
+    'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1200&q=80',
+    'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
+    'https://images.unsplash.com/photo-1565953522043-baea26b83b7e?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80',
     'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
     'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80',
     'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585154221-3a7a45dd2bd3?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585154526-990dce4d33be?w=1200&q=80',
     'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=1200&q=80',
     'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585152915-d208bec867a1?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=1200&q=80',
     'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600573472591-ee6e7b9f5c73?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585154363-e5dd5e1e0345?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600607689547-7d3f2f2a0c5a?w=1200&q=80'
+    'https://images.unsplash.com/photo-1600585154526-990dce4d33be?w=1200&q=80',
+    'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1200&q=80',
+    'https://images.unsplash.com/photo-1567496898669-ee935f5f647a?w=1200&q=80',
+    'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=1200&q=80',
+    'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?w=1200&q=80',
+    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&q=80',
+    'https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=1200&q=80',
+    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80',
+    'https://images.unsplash.com/photo-1560185127-6a86733ccc14?w=1200&q=80',
+    'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=1200&q=80',
+    'https://images.unsplash.com/photo-1555636222-cae831e670b3?w=1200&q=80',
+    'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=1200&q=80',
+    'https://images.unsplash.com/photo-1556911073-52527ac43761?w=1200&q=80',
+    'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&q=80',
+    'https://images.unsplash.com/photo-1560440021-33f9b867899d?w=1200&q=80'
   ];
 
   for (let i = 0; i < 100; i++) {
@@ -59,7 +73,7 @@ function generateImagesWithCategories(): ImageWithCategory[] {
     }
 
     imageList.push({
-      url: unsplashImages[i % unsplashImages.length],
+      url: workingUrls[i % workingUrls.length],
       categories: imageCategories
     });
   }
@@ -314,11 +328,14 @@ export default function PropertyDetailPage() {
                     }}
                   >
                     <Image
-                      src={img}
+                      src={img || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
                       alt={`${property.name} - Image ${index + 1}`}
                       fill
                       style={{ objectFit: 'cover' }}
                       unoptimized
+                      onError={(e: any) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
+                      }}
                     />
                   </div>
                 );
@@ -350,7 +367,7 @@ export default function PropertyDetailPage() {
                   }}
                 >
                   <Image
-                    src={imgData.url}
+                    src={imgData.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
                     alt={`${property.name} - Image ${index + 1}`}
                     width={900}
                     height={600}
@@ -360,6 +377,9 @@ export default function PropertyDetailPage() {
                       objectFit: 'cover'
                     }}
                     unoptimized
+                    onError={(e: any) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
+                    }}
                   />
 
                   <div style={{
@@ -539,12 +559,15 @@ export default function PropertyDetailPage() {
 
             <div style={{ position: 'relative', width: '90%', height: '90%' }}>
               <Image
-                src={displayedImages[currentImageIndex]?.url || ''}
+                src={displayedImages[currentImageIndex]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
                 alt={property.name}
                 fill
                 style={{ objectFit: 'contain' }}
                 priority
                 unoptimized
+                onError={(e: any) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
+                }}
               />
             </div>
 
@@ -761,7 +784,16 @@ export default function PropertyDetailPage() {
                     onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
                     onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
-                    <Image src={imgData.url} alt={`Image ${index + 1}`} fill style={{ objectFit: 'cover' }} unoptimized />
+                    <Image
+                      src={imgData.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
+                      alt={`Image ${index + 1}`}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      unoptimized
+                      onError={(e: any) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
+                      }}
+                    />
                   </button>
                 ))}
               </div>
