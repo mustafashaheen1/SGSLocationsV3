@@ -667,11 +667,15 @@ export default function PropertyDetailPage() {
                 marginBottom: '1rem'
               }}>
                 <h1 style={{
-                  fontSize: '1.75rem',
+                  fontSize: '28px',
                   fontWeight: 300,
                   margin: 0,
                   fontFamily: 'acumin-pro-wide, sans-serif',
-                  color: '#212529'
+                  color: 'rgb(33, 37, 41)',
+                  letterSpacing: '-0.56px',
+                  lineHeight: '36.4px',
+                  display: 'block',
+                  boxSizing: 'border-box'
                 }}>
                   {property.name}
                 </h1>
@@ -684,9 +688,12 @@ export default function PropertyDetailPage() {
                 }} />
 
                 <span style={{
-                  fontSize: '1.125rem',
+                  fontSize: '18px',
                   fontWeight: 300,
-                  color: '#212529'
+                  color: 'rgb(33, 37, 41)',
+                  fontFamily: 'acumin-pro-wide, sans-serif',
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap'
                 }}>
                   {property.city}
                 </span>
@@ -701,6 +708,7 @@ export default function PropertyDetailPage() {
                       padding: '0.375rem 1rem',
                       borderRadius: '0.25rem',
                       fontSize: '14px',
+                      fontWeight: 400,
                       cursor: 'pointer',
                       fontFamily: 'acumin-pro-wide, sans-serif'
                     }}
@@ -717,8 +725,10 @@ export default function PropertyDetailPage() {
                     padding: '0.375rem 1rem',
                     borderRadius: '0.25rem',
                     fontSize: '14px',
+                    fontWeight: 400,
                     cursor: 'pointer',
-                    fontFamily: 'acumin-pro-wide, sans-serif'
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   Pull My Permit
@@ -728,10 +738,11 @@ export default function PropertyDetailPage() {
               {/* Description */}
               <p style={{
                 fontSize: '15px',
-                lineHeight: 1.7,
-                color: '#212529',
+                lineHeight: '1.7',
+                color: 'rgb(33, 37, 41)',
                 fontFamily: 'acumin-pro-wide, sans-serif',
                 fontWeight: 300,
+                marginTop: '0.5rem',
                 marginBottom: '1.5rem'
               }}>
                 {property.description || 'Raw industrial space with exposed brick, high ceilings, and dramatic natural light. Perfect for urban scenes and edgy productions.'}
@@ -750,7 +761,14 @@ export default function PropertyDetailPage() {
                   textTransform: 'uppercase',
                   cursor: 'pointer',
                   fontFamily: 'acumin-pro-wide, sans-serif',
-                  letterSpacing: '0.05em'
+                  letterSpacing: '0.05em',
+                  transition: 'background 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#bf151c';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#e11921';
                 }}
               >
                 INQUIRE ABOUT {property.name.toUpperCase()}
@@ -775,7 +793,7 @@ export default function PropertyDetailPage() {
                   onClick={copyLink}
                   style={{
                     background: '#fff',
-                    color: '#212529',
+                    color: 'rgb(33, 37, 41)',
                     border: '2px solid #e11921',
                     padding: '0.5rem 1rem',
                     fontSize: '13px',
@@ -785,7 +803,8 @@ export default function PropertyDetailPage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    letterSpacing: '0.05em'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#e11921';
@@ -793,7 +812,7 @@ export default function PropertyDetailPage() {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = '#fff';
-                    e.currentTarget.style.color = '#212529';
+                    e.currentTarget.style.color = 'rgb(33, 37, 41)';
                   }}
                 >
                   <Copy style={{ width: '16px', height: '16px' }} />
@@ -814,7 +833,15 @@ export default function PropertyDetailPage() {
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#bf151c';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e11921';
                   }}
                 >
                   <Mail style={{ width: '16px', height: '16px' }} />
@@ -834,7 +861,15 @@ export default function PropertyDetailPage() {
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#bf151c';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e11921';
                   }}
                 >
                   <ImageIcon style={{ width: '16px', height: '16px' }} />
@@ -854,7 +889,15 @@ export default function PropertyDetailPage() {
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#bf151c';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e11921';
                   }}
                 >
                   <Download style={{ width: '16px', height: '16px' }} />
@@ -874,7 +917,15 @@ export default function PropertyDetailPage() {
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#bf151c';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e11921';
                   }}
                 >
                   <FileText style={{ width: '16px', height: '16px' }} />
@@ -908,7 +959,7 @@ export default function PropertyDetailPage() {
                   <div style={{
                     fontSize: '16px',
                     fontWeight: 600,
-                    color: '#212529',
+                    color: 'rgb(33, 37, 41)',
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     letterSpacing: '0.05em',
                     lineHeight: 1
