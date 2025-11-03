@@ -41,6 +41,26 @@ export default function PropertyDetailPage() {
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [scrollIndicator, setScrollIndicator] = useState({ left: 0, width: 10 });
+
+  const handleCategoryScroll = () => {
+    const container = categoryScrollRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+
+    const dragWidthPercent = (clientWidth / scrollWidth) * 100;
+
+    const maxScroll = scrollWidth - clientWidth;
+    const scrollPercent = maxScroll > 0 ? (scrollLeft / maxScroll) : 0;
+    const dragLeftPercent = scrollPercent * (100 - dragWidthPercent);
+
+    setScrollIndicator({
+      width: dragWidthPercent,
+      left: dragLeftPercent
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -72,6 +92,10 @@ export default function PropertyDetailPage() {
     }
     fetchData();
   }, [params.id]);
+
+  useEffect(() => {
+    handleCategoryScroll();
+  }, []);
 
   let images: string[] = [];
 
@@ -378,22 +402,25 @@ export default function PropertyDetailPage() {
           </button>
         </div>
 
-        {/* Category Tags with Swiper-style Scrollbar */}
+        {/* Category Tags with Scroll-based Red Indicator */}
         <div style={{
           background: '#fff',
           borderBottom: '1px solid #e5e7eb',
           position: 'relative'
         }}>
-          {/* Category buttons */}
-          <div style={{
-            display: 'flex',
-            gap: '1.5rem',
-            padding: '0.75rem 2rem',
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}
-          className="category-scroll-container"
+          {/* Category buttons container */}
+          <div
+            ref={categoryScrollRef}
+            onScroll={handleCategoryScroll}
+            style={{
+              display: 'flex',
+              gap: '2rem',
+              padding: '1rem 2rem',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+            className="category-scroll-container"
           >
             {categoryTags.map((tag) => (
               <button
@@ -402,14 +429,13 @@ export default function PropertyDetailPage() {
                 style={{
                   color: activeCategory === tag ? '#212529' : '#6c757d',
                   background: 'none',
-                  border: activeCategory === tag ? '2px solid #007bff' : 'none',
-                  fontSize: '14px',
+                  border: 'none',
+                  fontSize: '15px',
                   fontWeight: 300,
                   cursor: 'pointer',
-                  padding: '0.375rem 0.75rem',
-                  transition: 'all 0.3s',
-                  whiteSpace: 'nowrap',
-                  borderRadius: '4px'
+                  padding: '0.5rem 0',
+                  transition: 'color 0.3s',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {tag}
@@ -417,7 +443,7 @@ export default function PropertyDetailPage() {
             ))}
           </div>
 
-          {/* Red scrollbar indicator - mimics Swiper scrollbar */}
+          {/* Scrollbar track (gray) */}
           <div style={{
             position: 'relative',
             height: '8px',
@@ -428,16 +454,16 @@ export default function PropertyDetailPage() {
             borderRadius: '10px',
             marginBottom: '0.5rem'
           }}>
-            {/* Red drag indicator */}
+            {/* Scrollbar drag (red) - dynamically sized based on scroll */}
             <div
               style={{
                 position: 'absolute',
-                left: `${(categoryTags.indexOf(activeCategory) / categoryTags.length) * 100}%`,
-                width: `${(1 / categoryTags.length) * 100}%`,
+                left: `${scrollIndicator.left}%`,
+                width: `${scrollIndicator.width}%`,
                 height: '100%',
                 background: '#e11921',
                 borderRadius: '10px',
-                transition: 'left 0.3s ease',
+                transition: 'transform 0s',
                 cursor: 'grab'
               }}
             />
