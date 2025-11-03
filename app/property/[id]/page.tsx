@@ -41,7 +41,7 @@ export default function PropertyDetailPage() {
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
-  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const categoryScrollRef = useRef<HTMLUListElement>(null);
   const [scrollPosition, setScrollPosition] = useState({ left: 0, width: 50 });
 
   const handleCategoryScroll = () => {
@@ -51,16 +51,11 @@ export default function PropertyDetailPage() {
     const { scrollLeft, scrollWidth, clientWidth } = container;
 
     const visibleRatio = clientWidth / scrollWidth;
-
-    const scrollbarContainerWidth = clientWidth - 64;
-
-    const dragWidth = Math.max(scrollbarContainerWidth * visibleRatio, 20);
-
+    const scrollbarContainerWidth = clientWidth - 32;
+    const dragWidth = Math.max(scrollbarContainerWidth * visibleRatio, 30);
     const maxDragScroll = scrollbarContainerWidth - dragWidth;
-
     const maxContentScroll = scrollWidth - clientWidth;
     const scrollPercent = maxContentScroll > 0 ? scrollLeft / maxContentScroll : 0;
-
     const dragLeft = scrollPercent * maxDragScroll;
 
     setScrollPosition({
@@ -413,7 +408,7 @@ export default function PropertyDetailPage() {
           </button>
         </div>
 
-        {/* Category Navigation with Scrollbar ABOVE */}
+        {/* Category Navigation - Exact Image Locations Match */}
         <div style={{
           background: '#fff',
           borderBottom: '1px solid #e5e7eb',
@@ -425,8 +420,8 @@ export default function PropertyDetailPage() {
             position: 'relative',
             height: '4px',
             background: '#dee2e6',
-            marginLeft: '2rem',
-            marginRight: '2rem',
+            marginLeft: '1rem',
+            marginRight: '1rem',
             marginBottom: '0.5rem',
             borderRadius: '10px'
           }}>
@@ -439,46 +434,46 @@ export default function PropertyDetailPage() {
                 height: '100%',
                 background: '#e11921',
                 borderRadius: '10px',
-                transform: 'translate3d(0, 0, 0)',
                 cursor: 'grab'
               }}
             />
           </div>
 
-          {/* Category buttons - BELOW scrollbar */}
-          <div
+          {/* Category list - BELOW scrollbar */}
+          <ul
             ref={categoryScrollRef}
             onScroll={handleCategoryScroll}
             style={{
               display: 'flex',
-              gap: '2rem',
-              padding: '0 2rem 1rem 2rem',
+              flexWrap: 'wrap',
+              listStyle: 'none',
+              marginBottom: 0,
+              paddingLeft: 0,
               overflowX: 'auto',
               scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
+              msOverflowStyle: 'none',
+              padding: '0 1rem 0.75rem 1rem'
             }}
             className="category-scroll-container"
           >
             {categoryTags.map((tag) => (
-              <button
+              <li
                 key={tag}
                 onClick={() => setActiveCategory(tag)}
                 style={{
-                  color: activeCategory === tag ? '#212529' : '#6c757d',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '15px',
+                  fontSize: '14px',
                   fontWeight: 300,
+                  marginRight: '1.5rem',
                   cursor: 'pointer',
-                  padding: '0.5rem 0',
+                  color: activeCategory === tag ? '#212529' : '#6c757d',
                   transition: 'color 0.3s',
                   whiteSpace: 'nowrap'
                 }}
               >
                 {tag}
-              </button>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
         {showLightbox && (
