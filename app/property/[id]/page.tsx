@@ -99,6 +99,7 @@ export default function PropertyDetailPage() {
   const [redBarPosition, setRedBarPosition] = useState({ left: '0px', width: '50px' });
   const [allImages, setAllImages] = useState<Array<{ url: string; categories: string[] }>>([]);
   const [displayedImages, setDisplayedImages] = useState<Array<{ url: string; categories: string[] }>>([]);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const updateRedBarPosition = (category: string) => {
     const element = categoryRefs.current[category];
@@ -199,7 +200,15 @@ export default function PropertyDetailPage() {
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
-    alert('Link copied!');
+    alert('Link copied to clipboard!');
+  };
+
+  const handleDownloadImages = () => {
+    console.log('Downloading images...');
+  };
+
+  const handleDownloadPDF = () => {
+    console.log('Generating PDF...');
   };
 
   if (loading) {
@@ -635,104 +644,328 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 2rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-            <div>
-              <h1 style={{ fontSize: '3.5rem', fontWeight: 300, color: '#212529', marginBottom: '0.5rem' }}>
-                {property.name}
-              </h1>
-
-              <p style={{ fontSize: '1.75rem', fontWeight: 300, color: '#6b7280', marginBottom: '1.5rem' }}>
-                {property.city}
-              </p>
-
-              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                <span style={{
-                  background: '#3b82f6',
-                  color: '#fff',
-                  padding: '0.25rem 1rem',
-                  borderRadius: '9999px',
-                  fontSize: '14px'
-                }}>
-                  Film
-                </span>
-                {property.permits_available && (
-                  <span style={{
-                    background: '#e11921',
-                    color: '#fff',
-                    padding: '0.25rem 1rem',
-                    borderRadius: '9999px',
-                    fontSize: '14px'
+        {/* Property Details Section - Matches Image Locations */}
+        <div style={{
+          padding: '2rem 2rem 1rem 2rem',
+          background: '#fff'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            marginLeft: '-15px',
+            marginRight: '-15px'
+          }}>
+            {/* Left Column - Property Info */}
+            <div style={{
+              flex: '1 1 auto',
+              paddingLeft: '15px',
+              paddingRight: '30px',
+              borderRight: '1px solid #dee2e6'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'flex-start',
+                flexWrap: 'wrap',
+                paddingBottom: '0.25rem',
+                marginBottom: '0.25rem'
+              }}>
+                {/* Property Title */}
+                <div style={{ marginRight: '2rem' }}>
+                  <h1 style={{
+                    fontSize: '1.75rem',
+                    fontWeight: 300,
+                    marginBottom: 0,
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    color: '#212529'
                   }}>
+                    {property.name}
+                  </h1>
+                </div>
+
+                {/* Location */}
+                <div style={{
+                  borderLeft: '1px solid #dee2e6',
+                  paddingLeft: '1rem',
+                  marginLeft: '-1px'
+                }}>
+                  <p style={{
+                    fontSize: '1.125rem',
+                    fontWeight: 300,
+                    marginBottom: 0,
+                    lineHeight: 1,
+                    color: '#212529',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {property.city}
+                  </p>
+                </div>
+
+                {/* Film/Permit Badges */}
+                <div style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  marginLeft: '1rem',
+                  alignItems: 'center'
+                }}>
+                  {property.permits_available && (
+                    <button
+                      style={{
+                        background: '#4a90e2',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '0.25rem',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        fontFamily: 'acumin-pro-wide, sans-serif',
+                        fontWeight: 400
+                      }}
+                    >
+                      Film
+                    </button>
+                  )}
+                  <button
+                    style={{
+                      background: '#e11921',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '0.25rem',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontFamily: 'acumin-pro-wide, sans-serif',
+                      fontWeight: 400
+                    }}
+                  >
                     Pull My Permit
-                  </span>
-                )}
+                  </button>
+                </div>
               </div>
 
-              <p style={{ color: '#4b5563', lineHeight: 1.75, fontWeight: 300, marginBottom: '2rem' }}>
-                {property.description || 'Raw industrial space with exposed brick, high ceilings, and dramatic natural light. Perfect for urban scenes and edgy productions.'}
-              </p>
+              {/* Property Description */}
+              <div style={{
+                marginTop: '1rem',
+                fontSize: '14px',
+                lineHeight: 1.6,
+                color: '#212529',
+                fontFamily: 'acumin-pro-wide, sans-serif',
+                fontWeight: 300
+              }}>
+                <p>{property.description || 'Professional filming location available for productions.'}</p>
+              </div>
 
-              <button
-                style={{
-                  background: '#e11921',
-                  color: '#fff',
-                  padding: '0.75rem 2rem',
-                  border: 'none',
-                  fontSize: '14px',
-                  fontWeight: 400,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#bf151c'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#e11921'}
-              >
-                INQUIRE ABOUT {property.name.toUpperCase()}
-              </button>
+              {/* Inquire Button */}
+              <div style={{ marginTop: '1.5rem' }}>
+                <button
+                  onClick={() => setShowContactModal(true)}
+                  style={{
+                    background: '#e11921',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0.5rem 1.5rem',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  INQUIRE ABOUT {property.name.toUpperCase()}
+                </button>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <button
-                onClick={copyLink}
-                style={{
+            {/* Right Column - Action Buttons */}
+            <div style={{
+              width: 'auto',
+              paddingLeft: '30px',
+              paddingRight: '15px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start'
+            }}>
+              {/* Buttons Row */}
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                marginBottom: '1.5rem'
+              }}>
+                {/* Copy Link Button */}
+                <button
+                  onClick={copyLink}
+                  style={{
+                    background: '#fff',
+                    color: '#212529',
+                    border: '1px solid #e11921',
+                    padding: '0.5rem 1rem',
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s',
+                    letterSpacing: '0.05em'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e11921';
+                    e.currentTarget.style.color = '#fff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#fff';
+                    e.currentTarget.style.color = '#212529';
+                  }}
+                >
+                  <Copy style={{ width: '16px', height: '16px' }} />
+                  COPY
+                </button>
+
+                {/* Contact Us Button */}
+                <button
+                  onClick={() => setShowContactModal(true)}
+                  style={{
+                    background: '#e11921',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  <Mail style={{ width: '16px', height: '16px' }} />
+                  CONTACT US
+                </button>
+
+                {/* Thumbnails Button */}
+                <button
+                  onClick={() => setShowThumbnails(true)}
+                  style={{
+                    background: '#e11921',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  <ImageIcon style={{ width: '16px', height: '16px' }} />
+                  THUMBNAILS
+                </button>
+
+                {/* Download Images Button */}
+                <button
+                  onClick={handleDownloadImages}
+                  style={{
+                    background: '#e11921',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  <Download style={{ width: '16px', height: '16px' }} />
+                  DOWNLOAD IMAGES
+                </button>
+
+                {/* Location PDF Button */}
+                <button
+                  onClick={handleDownloadPDF}
+                  style={{
+                    background: '#e11921',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  <FileText style={{ width: '16px', height: '16px' }} />
+                  LOCATION PDF
+                </button>
+              </div>
+
+              {/* Image Verified Logo */}
+              <div style={{
+                marginTop: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <div style={{
+                  width: '140px',
+                  height: '50px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  background: '#fff',
-                  border: '2px solid #e11921',
-                  color: '#e11921',
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '14px',
-                  fontWeight: 400,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e11921';
-                  e.currentTarget.style.color = '#fff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#fff';
-                  e.currentTarget.style.color = '#e11921';
-                }}
-              >
-                <Copy style={{ width: '16px', height: '16px' }} />
-                COPY
-              </button>
-
-              <ActionButton icon={<Mail style={{ width: '16px', height: '16px' }} />} text="CONTACT US" />
-              <ActionButton
-                icon={<ImageIcon style={{ width: '16px', height: '16px' }} />}
-                text="THUMBNAILS"
-                onClick={() => setShowThumbnails(true)}
-              />
-              <ActionButton icon={<Download style={{ width: '16px', height: '16px' }} />} text="DOWNLOAD IMAGES" />
-              <ActionButton icon={<FileText style={{ width: '16px', height: '16px' }} />} text="LOCATION PDF" />
+                  justifyContent: 'center'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <Camera style={{
+                      width: '32px',
+                      height: '32px',
+                      color: '#e11921'
+                    }} />
+                    <div>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#212529',
+                        fontFamily: 'acumin-pro-wide, sans-serif',
+                        letterSpacing: '0.05em'
+                      }}>
+                        SGS
+                      </div>
+                      <div style={{
+                        fontSize: '10px',
+                        fontWeight: 400,
+                        color: '#6b7280',
+                        fontFamily: 'acumin-pro-wide, sans-serif',
+                        letterSpacing: '0.05em'
+                      }}>
+                        VERIFIED
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
