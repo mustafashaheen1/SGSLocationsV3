@@ -24,25 +24,27 @@ interface ImageWithCategory {
   categories: string[];
 }
 
-function generateRandomImages(count: number = 100, allCategories: string[]): ImageWithCategory[] {
-  const images: ImageWithCategory[] = [];
-  for (let i = 0; i < count; i++) {
-    const numCategories = Math.floor(Math.random() * 2) + 1;
-    const selectedCategories: string[] = [];
+function generateImagesWithCategories(): ImageWithCategory[] {
+  const categories = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
+  const imageList: ImageWithCategory[] = [];
+
+  for (let i = 0; i < 100; i++) {
+    const numCategories = Math.floor(Math.random() * 3) + 1;
+    const imageCategories: string[] = [];
 
     for (let j = 0; j < numCategories; j++) {
-      const randomCategory = allCategories[Math.floor(Math.random() * allCategories.length)];
-      if (!selectedCategories.includes(randomCategory)) {
-        selectedCategories.push(randomCategory);
+      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+      if (!imageCategories.includes(randomCategory)) {
+        imageCategories.push(randomCategory);
       }
     }
 
-    images.push({
-      url: `https://picsum.photos/seed/${i}/800/600`,
-      categories: selectedCategories
+    imageList.push({
+      url: `https://images.unsplash.com/photo-${1600000000000 + i * 1000000}?w=1200&q=80`,
+      categories: imageCategories
     });
   }
-  return images;
+  return imageList;
 }
 
 export default function PropertyDetailPage() {
@@ -85,15 +87,21 @@ export default function PropertyDetailPage() {
     setActiveCategory(category);
     updateRedBarPosition(category);
 
+    setViewMode('carousel');
+
     const filteredImages = allImages.filter(img => img.categories.includes(category));
     setDisplayedImages(filteredImages);
 
-    if (carouselRef.current) {
-      carouselRef.current.scrollTo({
-        left: 0,
-        behavior: 'smooth'
-      });
-    }
+    setCurrentImageIndex(0);
+
+    setTimeout(() => {
+      if (carouselRef.current) {
+        carouselRef.current.scrollTo({
+          left: 0,
+          behavior: 'smooth'
+        });
+      }
+    }, 50);
   };
 
   useEffect(() => {
@@ -128,37 +136,25 @@ export default function PropertyDetailPage() {
   }, [params.id]);
 
   useEffect(() => {
-    let baseImages: string[] = [];
-
-    if (property?.images && property.images.length > 0) {
-      baseImages = [...property.images];
-    } else if (property?.primary_image) {
-      baseImages = [property.primary_image];
-    }
-
-    const remainingCount = 100 - baseImages.length;
-    const generatedImages = remainingCount > 0 ? generateRandomImages(remainingCount, categoryTags) : [];
-
-    const baseImagesWithCategories: ImageWithCategory[] = baseImages.map(url => ({
-      url,
-      categories: [categoryTags[Math.floor(Math.random() * categoryTags.length)]]
-    }));
-
-    const combinedImages = [...baseImagesWithCategories, ...generatedImages];
-    setAllImages(combinedImages);
-
-    const initialFiltered = combinedImages.filter(img => img.categories.includes(activeCategory));
-    setDisplayedImages(initialFiltered);
-  }, [property, activeCategory]);
+    const imagesWithCats = generateImagesWithCategories();
+    setAllImages(imagesWithCats);
+    setDisplayedImages(imagesWithCats);
+  }, []);
 
   useEffect(() => {
-    updateRedBarPosition(activeCategory);
+    if (categoryRefs.current['Pool'] && categoryContainerRef.current && allImages.length > 0) {
+      setTimeout(() => {
+        updateRedBarPosition('Pool');
+      }, 100);
+    }
+  }, [allImages]);
 
+  useEffect(() => {
     const handleResize = () => updateRedBarPosition(activeCategory);
     window.addEventListener('resize', handleResize);
 
     return () => window.removeEventListener('resize', handleResize);
-  }, [activeCategory, displayedImages]);
+  }, [activeCategory]);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % displayedImages.length);
@@ -453,52 +449,60 @@ export default function PropertyDetailPage() {
           </button>
         </div>
 
-        {/* Category Navigation - Red bar ABOVE text like Image Locations */}
+        {/* Category Navigation - Exact Image Locations Match */}
         <div style={{
+          padding: '20px 0',
           background: '#fff',
-          borderBottom: '1px solid #e5e7eb',
-          position: 'relative',
-          padding: '20px 0'
+          position: 'relative'
         }}>
+          {/* Grey horizontal line that's ALWAYS visible */}
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '90%',
+            maxWidth: '1000px',
+            height: '1px',
+            background: '#ccc',
+            zIndex: 1
+          }} />
+
+          {/* Red bar that moves along the grey line */}
+          <div style={{
+            position: 'absolute',
+            top: '9px',
+            left: `calc(50% - 500px + ${redBarStyle.left}px)`,
+            width: `${redBarStyle.width}px`,
+            height: '3px',
+            background: '#e11921',
+            transition: 'all 0.3s ease',
+            zIndex: 2
+          }} />
+
+          {/* Category items */}
           <div
             ref={categoryContainerRef}
             style={{
-              position: 'relative',
               display: 'flex',
               gap: '30px',
               justifyContent: 'center',
-              alignItems: 'center',
-              paddingTop: '10px'
+              paddingTop: '20px',
+              position: 'relative'
             }}
           >
-            {/* Red bar positioned ABOVE the category text */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: `${redBarStyle.left}px`,
-                width: `${redBarStyle.width}px`,
-                height: '3px',
-                background: '#e11921',
-                transition: 'all 0.3s ease',
-                zIndex: 1
-              }}
-            />
-
-            {/* Category items below the red bar */}
             {categoryTags.map((tag) => (
               <span
                 key={tag}
                 ref={(el) => { categoryRefs.current[tag] = el; }}
                 onClick={() => handleCategoryClick(tag)}
                 style={{
+                  cursor: 'pointer',
+                  color: activeCategory === tag ? '#e11921' : '#666',
                   fontSize: '14px',
                   fontWeight: 300,
-                  cursor: 'pointer',
-                  color: activeCategory === tag ? '#212529' : '#6c757d',
-                  transition: 'color 0.3s',
-                  whiteSpace: 'nowrap',
-                  position: 'relative'
+                  transition: 'color 0.3s ease',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {tag}
