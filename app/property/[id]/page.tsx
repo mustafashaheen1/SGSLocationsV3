@@ -43,6 +43,10 @@ export default function PropertyDetailPage() {
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
   const categoryScrollRef = useRef<HTMLUListElement>(null);
   const [scrollPosition, setScrollPosition] = useState({ left: 0, width: 50 });
+  const categoryRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
+  const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
+  const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [imageCategories, setImageCategories] = useState<string[]>([]);
 
   const handleCategoryScroll = () => {
     const container = categoryScrollRef.current;
@@ -69,17 +73,26 @@ export default function PropertyDetailPage() {
     });
   };
 
-  const handleCategoryClick = (tag: string, index: number) => {
+  const handleCategoryClick = (tag: string) => {
     setActiveCategory(tag);
 
-    if (viewMode === 'carousel' && carouselRef.current) {
-      const imagesPerCategory = Math.floor(images.length / categoryTags.length);
-      const targetImageIndex = index * imagesPerCategory;
+    const firstImageIndex = imageCategories.findIndex(cat => cat === tag);
 
-      carouselRef.current.scrollTo({
-        left: targetImageIndex * 800,
-        behavior: 'smooth'
-      });
+    if (firstImageIndex !== -1) {
+      if (viewMode === 'carousel' && carouselRef.current) {
+        carouselRef.current.scrollTo({
+          left: firstImageIndex * 900,
+          behavior: 'smooth'
+        });
+      } else if (viewMode === 'grid') {
+        const targetImage = imageRefs.current[firstImageIndex];
+        if (targetImage) {
+          targetImage.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }
     }
   };
 
@@ -128,6 +141,14 @@ export default function PropertyDetailPage() {
   }
 
   useEffect(() => {
+    const categories: string[] = [];
+    for (let i = 0; i < images.length; i++) {
+      categories.push(categoryTags[Math.floor(Math.random() * categoryTags.length)]);
+    }
+    setImageCategories(categories);
+  }, [images.length]);
+
+  useEffect(() => {
     handleCategoryScroll();
 
     const handleResize = () => handleCategoryScroll();
@@ -135,6 +156,14 @@ export default function PropertyDetailPage() {
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const categoryElement = categoryRefs.current[activeCategory];
+    if (categoryElement) {
+      const { offsetLeft, offsetWidth } = categoryElement;
+      setUnderlineStyle({ left: offsetLeft, width: offsetWidth });
+    }
+  }, [activeCategory]);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -261,6 +290,7 @@ export default function PropertyDetailPage() {
                 return (
                   <div
                     key={index}
+                    ref={(el) => { imageRefs.current[index] = el; }}
                     onClick={() => {
                       setCurrentImageIndex(index);
                       setShowLightbox(true);
@@ -298,6 +328,7 @@ export default function PropertyDetailPage() {
               {images.map((img, index) => (
                 <div
                   key={index}
+                  ref={(el) => { imageRefs.current[index] = el; }}
                   style={{
                     position: 'relative',
                     height: '100%',
@@ -460,40 +491,59 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Category list */}
-          <ul
-            ref={categoryScrollRef}
-            onScroll={handleCategoryScroll}
-            style={{
-              display: 'flex',
-              flexWrap: 'nowrap',
-              listStyle: 'none',
-              marginBottom: 0,
-              paddingLeft: 0,
-              overflowX: 'auto',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              padding: '0 1rem 0.75rem 1rem'
-            }}
-            className="category-scroll-container"
-          >
-            {categoryTags.map((tag, index) => (
-              <li
-                key={tag}
-                onClick={() => handleCategoryClick(tag, index)}
-                style={{
-                  fontSize: '14px',
-                  fontWeight: 300,
-                  marginRight: '1.5rem',
-                  cursor: 'pointer',
-                  color: activeCategory === tag ? '#212529' : '#6c757d',
-                  transition: 'color 0.3s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {tag}
-              </li>
-            ))}
-          </ul>
+          <div style={{ position: 'relative', padding: '0 1rem 0.75rem 1rem' }}>
+            <ul
+              ref={categoryScrollRef}
+              onScroll={handleCategoryScroll}
+              style={{
+                display: 'flex',
+                flexWrap: 'nowrap',
+                listStyle: 'none',
+                marginBottom: 0,
+                paddingLeft: 0,
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                position: 'relative'
+              }}
+              className="category-scroll-container"
+            >
+              {categoryTags.map((tag) => (
+                <li
+                  key={tag}
+                  ref={(el) => { categoryRefs.current[tag] = el; }}
+                  onClick={() => handleCategoryClick(tag)}
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 300,
+                    marginRight: '1.5rem',
+                    cursor: 'pointer',
+                    color: activeCategory === tag ? '#212529' : '#6c757d',
+                    transition: 'color 0.3s',
+                    whiteSpace: 'nowrap',
+                    paddingBottom: '0.5rem',
+                    position: 'relative'
+                  }}
+                >
+                  {tag}
+                </li>
+              ))}
+            </ul>
+
+            {/* Red underline bar */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '0.75rem',
+                left: `${underlineStyle.left}px`,
+                width: `${underlineStyle.width}px`,
+                height: '2px',
+                background: '#e11921',
+                transition: 'all 0.3s ease',
+                transform: 'translateX(0)'
+              }}
+            />
+          </div>
         </div>
 
         {showLightbox && (
