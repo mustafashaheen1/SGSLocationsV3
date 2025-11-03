@@ -247,33 +247,37 @@ export default function PropertyDetailPage() {
             </div>
           )}
 
-          <button
-            onClick={() => {
-              if (viewMode === 'carousel' && carouselRef.current) {
-                carouselRef.current.scrollBy({ left: -800, behavior: 'smooth' });
-              }
-            }}
-            style={{
-              position: 'absolute',
-              left: '1rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '64px',
-              height: '64px',
-              background: 'rgba(255,255,255,0.9)',
-              border: 'none',
-              borderRadius: '50%',
-              display: viewMode === 'carousel' ? 'flex' : 'none',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 10
-            }}
-          >
-            <ChevronLeft style={{ width: '32px', height: '32px', color: '#000' }} />
-          </button>
+          {viewMode === 'carousel' && (
+            <div
+              onClick={() => {
+                if (carouselRef.current) {
+                  carouselRef.current.scrollBy({ left: -800, behavior: 'smooth' });
+                }
+              }}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: '18px',
+                width: '96px',
+                background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 10
+              }}
+            >
+              <ChevronLeft style={{
+                width: '44px',
+                height: '44px',
+                color: '#fff',
+                strokeWidth: 1.5
+              }} />
+            </div>
+          )}
 
-          <button
+          <div
             onClick={() => {
               if (viewMode === 'grid') {
                 setViewMode('carousel');
@@ -283,14 +287,11 @@ export default function PropertyDetailPage() {
             }}
             style={{
               position: 'absolute',
-              right: '1rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '64px',
-              height: '64px',
-              background: 'rgba(255,255,255,0.9)',
-              border: 'none',
-              borderRadius: '50%',
+              right: 0,
+              top: 0,
+              bottom: '18px',
+              width: '96px',
+              background: 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -298,8 +299,13 @@ export default function PropertyDetailPage() {
               zIndex: 10
             }}
           >
-            <ChevronRight style={{ width: '32px', height: '32px', color: '#000' }} />
-          </button>
+            <ChevronRight style={{
+              width: '44px',
+              height: '44px',
+              color: '#fff',
+              strokeWidth: 1.5
+            }} />
+          </div>
 
           {viewMode === 'grid' && (
             <div style={{
