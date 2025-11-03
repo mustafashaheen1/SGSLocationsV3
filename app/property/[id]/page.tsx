@@ -120,6 +120,14 @@ export default function PropertyDetailPage() {
       <style jsx global>{`
         @import url('https://use.typekit.net/jhk6rqb.css');
 
+        /* Swiper Icons Font - Critical! */
+        @font-face {
+          font-family: 'swiper-icons';
+          src: url('data:application/font-woff;charset=utf-8;base64,d09GRgABAAAAAAZgABAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGRlRNAAAGRAAAABoAAAAci6qHkUdERUYAAAWgAAAAIwAAACQAYABXR1BPUwAABhQAAAAuAAAANuAY7+xHU1VCAAAFxAAAAFAAAABm2fPczU9TLzIAAAHcAAAASgAAAGBP9V5RY21hcAAAAkQAAACIAAABYt6F0cBjdnQgAAACzAAAAAQAAAAEABEBRGdhc3AAAAWYAAAACAAAAAj//wADZ2x5ZgAAAywAAADMAAAD2MHtryVoZWFkAAABbAAAADAAAAA2E2+eoWhoZWEAAAGcAAAAHwAAACQC9gDzaG10eAAAAigAAAAZAAAArgJkABFsb2NhAAAC0AAAAFoAAABaFQAUGG1heHAAAAG8AAAAHwAAACAAcABAbmFtZQAAA/gAAAE5AAACXvFonw1wb3N0AAAFNAAAAGIAAACE5s74hXjaY2BkYGAAYpf5Hu/j+W2+MnAzMYDAzaX6QjD6/4//Bxj5GA8AuRwMYGkAPywL13jaY2BkYGA8wPiBgZWBgZGBgYGBgYFBBko0AAAFYACPeNpjYGRgYNBh4GRwZgABQAD//wAAeNpjYGBgZoBgGQZGBhYGGQY2BjYGZwYHBmeGSAYXhmiGGIY4hmSGFIY0hnSGDIZMhiyGbIYchlyGPIZ8hgKGQoYihiKGEoZShjKGcoYKhkqGKoZqhhqGWoY6hnqGBoYmhmaGFoZWhjb+//4///8fPwB6XAhMAAAAeNpjYGRgYABifeZYvfH8Nl8ZuJkYQODmUn0hGP3/w/8HDHyM+4BcDgYwBQBJzwvLeNpjYGRgYNz/fwMDA+P+/wcM/IyMQBEUwAsAi9QDBN4AAAABAABkAGQAAAAAAAIAAQACAAkAAQAAAAAAAQAyAAAAAQAAAAAAAgAOACQAAQAAAAAAAwAyADIAAQAAAAAABAAyAGQAAQAAAAAABQAWAJYAAQAAAAAABgAZAKwAAQAAAAAACgA0AMUAAQAAAAAALAD5AAMAAQQJAAEAZAEpAAMAAQQJAAIAHAGNAAMAAQQJAAMAZAGpAAMAAQQJAAQAZAINAAMAAQQJAAUALAJxAAMAAQQJAAYAMgKdAAMAAQQJAAoAaALPAAMAAQQJACwACAM3c3dpcGVyLWljb25zAHMAdwBpAHAAZQByAC0AaQBjAG8AbgBzVmVyc2lvbiAxLjAAVgBlAHIAcwBpAG8AbgAgADEALgAwc3dpcGVyLWljb25zAHMAdwBpAHAAZQByAC0AaQBjAG8AbgBzc3dpcGVyLWljb25zAHMAdwBpAHAAZQByAC0AaQBjAG8AbgBzUmVndWxhcgBSAGUAZwB1AGwAYQByc3dpcGVyLWljb25zAHMAdwBpAHAAZQByAC0AaQBjAG8AbgBzRm9udCBnZW5lcmF0ZWQgYnkgSWNvTW9vbi4ARgBvAG4AdAAgAGcAZQBuAGUAcgBhAHQAZQBkACAAYgB5ACAASQBjAG8ATQBvAG8AbgAuAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==') format('woff');
+          font-weight: 400;
+          font-style: normal;
+        }
+
         body {
           font-family: acumin-pro-wide, sans-serif;
           font-weight: 300;
@@ -127,11 +135,66 @@ export default function PropertyDetailPage() {
 
         h1, h2, h3 {
           font-family: acumin-pro-wide, sans-serif;
+          letter-spacing: -0.02em;
         }
 
-        div::-webkit-scrollbar {
+        /* Arrow container with gradient background */
+        .nav-arrow-left,
+        .nav-arrow-right {
+          position: absolute;
+          top: 0;
+          bottom: 18px;
+          width: 96px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 10;
+        }
+
+        .nav-arrow-left {
+          left: 0;
+          background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+        }
+
+        .nav-arrow-right {
+          right: 0;
+          background: linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+        }
+
+        /* Arrow icon using swiper-icons font */
+        .nav-arrow-left::after,
+        .nav-arrow-right::after {
+          font-family: 'swiper-icons';
+          font-size: 44px;
+          font-weight: 300;
+          color: rgb(255, 255, 255);
+          text-transform: none;
+          letter-spacing: normal;
+          font-variant: initial;
+          line-height: 44px;
+          height: 44px;
+          display: block;
+          text-align: center;
+          cursor: pointer;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .nav-arrow-left::after {
+          content: 'prev';
+        }
+
+        .nav-arrow-right::after {
+          content: 'next';
+        }
+
+        .carousel-container::-webkit-scrollbar {
           display: none;
-          letter-spacing: -0.02em;
+        }
+
+        .carousel-container {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
 
@@ -194,13 +257,12 @@ export default function PropertyDetailPage() {
           ) : (
             <div
               ref={carouselRef}
+              className="carousel-container"
               style={{
                 display: 'flex',
                 height: '600px',
                 overflowX: 'auto',
-                scrollBehavior: 'smooth',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
+                scrollBehavior: 'smooth'
               }}
             >
               {images.map((img, index) => (
@@ -249,35 +311,17 @@ export default function PropertyDetailPage() {
 
           {viewMode === 'carousel' && (
             <div
+              className="nav-arrow-left"
               onClick={() => {
                 if (carouselRef.current) {
                   carouselRef.current.scrollBy({ left: -800, behavior: 'smooth' });
                 }
               }}
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: '18px',
-                width: '96px',
-                background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                zIndex: 10
-              }}
-            >
-              <ChevronLeft style={{
-                width: '44px',
-                height: '44px',
-                color: '#fff',
-                strokeWidth: 1.5
-              }} />
-            </div>
+            />
           )}
 
           <div
+            className="nav-arrow-right"
             onClick={() => {
               if (viewMode === 'grid') {
                 setViewMode('carousel');
@@ -285,27 +329,7 @@ export default function PropertyDetailPage() {
                 carouselRef.current.scrollBy({ left: 800, behavior: 'smooth' });
               }
             }}
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: '18px',
-              width: '96px',
-              background: 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 10
-            }}
-          >
-            <ChevronRight style={{
-              width: '44px',
-              height: '44px',
-              color: '#fff',
-              strokeWidth: 1.5
-            }} />
-          </div>
+          />
 
           {viewMode === 'grid' && (
             <div style={{
