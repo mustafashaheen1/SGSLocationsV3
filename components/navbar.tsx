@@ -82,19 +82,21 @@ export function Navbar() {
         <div className="hidden lg:flex items-center justify-center h-[50px] border-t border-opacity-20 border-current">
           <div className="flex items-center gap-1 text-xs tracking-widest" style={{fontWeight: 300}}>
             {navItems.map((item, index) => (
-              <div key={item.href} className="flex items-center">
+              <div key={item.label} className="flex items-center">
                 {index > 0 && <span className="mx-2 opacity-50">|</span>}
-                {item.isButton ? (
+                {item.label === 'LOGIN' ? (
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
-                    className="hover:text-[#e11921] transition-colors px-1"
+                    className="text-xs tracking-wider hover:text-gray-600 transition-colors"
+                    style={{ fontWeight: 300 }}
                   >
                     {item.label}
                   </button>
                 ) : (
                   <Link
                     href={item.href}
-                    className="hover:text-[#e11921] transition-colors px-1"
+                    className="text-xs tracking-wider hover:text-gray-600 transition-colors"
+                    style={{ fontWeight: 300 }}
                   >
                     {item.label}
                   </Link>

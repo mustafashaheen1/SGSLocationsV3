@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,39 +42,30 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    setErrors({ email: '', password: '', form: '' });
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setErrors({ email: '', password: '', form: error.message });
-    } else {
+    setTimeout(() => {
       router.push('/dashboard');
-    }
-
-    setLoading(false);
+      setLoading(false);
+    }, 500);
   };
 
   return (
     <main className="min-h-screen bg-white flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full space-y-6">
-        <div className="flex flex-col items-center mb-8">
-          <Link href="/" className="flex items-center gap-2 mb-8">
-            <Camera className="w-10 h-10 text-red-600" />
-            <span className="text-2xl font-bold tracking-tight text-gray-900">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <Camera className="w-10 h-10 text-[#e11921]" />
+            <span className="text-2xl font-bold text-gray-900">
               SGS LOCATIONS<sup className="text-xs">®</sup>
             </span>
           </Link>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
-          <div className="mb-6 text-center">
-            <p className="text-gray-700">
+        <div className="bg-white shadow rounded-lg p-8">
+          <div className="text-center mb-6">
+            <p className="text-gray-600">
               To access your account, please login or{' '}
-              <Link href="/register" className="text-red-600 hover:text-red-700 font-medium">
+              <Link href="/register" className="text-[#e11921] hover:underline">
                 create an account
               </Link>
             </p>
@@ -97,8 +87,9 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
                 placeholder="your@email.com"
+                style={{ color: '#495057' }}
               />
               {errors.email && (
                 <p className="text-red-600 text-sm mt-1">{errors.email}</p>
@@ -114,8 +105,9 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
                 placeholder="Enter your password"
+                style={{ color: '#495057' }}
               />
               {errors.password && (
                 <p className="text-red-600 text-sm mt-1">{errors.password}</p>
@@ -137,7 +129,7 @@ export default function LoginPage() {
               </div>
               <Link
                 href="/forgot-password"
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
+                className="text-sm text-[#e11921] hover:text-red-700 font-medium"
               >
                 Forgot your password?
               </Link>
@@ -146,7 +138,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-8 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#e11921] hover:bg-[#c41e26] text-white font-semibold py-2 px-8 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
@@ -154,7 +146,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center text-sm text-gray-700">
             Don't have an account?{' '}
-            <Link href="/register" className="text-red-600 hover:text-red-700 font-medium">
+            <Link href="/register" className="text-[#e11921] hover:text-red-700 font-medium">
               Register here
             </Link>
           </div>

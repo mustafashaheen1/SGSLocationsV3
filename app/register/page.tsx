@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import LoginModal from '@/components/LoginModal';
 import { nunito } from '@/lib/fonts';
 
@@ -89,42 +88,11 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-    setErrors({
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      form: '',
-    });
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-    });
-
-    if (authError) {
-      setErrors((prev) => ({ ...prev, form: authError.message }));
+    setTimeout(() => {
+      router.push('/dashboard');
       setLoading(false);
-      return;
-    }
-
-    if (authData.user) {
-      const { error: profileError } = await supabase.from('users').insert({
-        id: authData.user.id,
-        email: formData.email,
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        user_type: 'production',
-      });
-
-      if (profileError) {
-        setErrors((prev) => ({ ...prev, form: 'Failed to create profile' }));
-      } else {
-        router.push('/dashboard');
-      }
-    }
-
-    setLoading(false);
+    }, 500);
   };
 
   return (
