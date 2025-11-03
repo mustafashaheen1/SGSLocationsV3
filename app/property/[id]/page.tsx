@@ -39,6 +39,9 @@ export default function PropertyDetailPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('Pool');
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const categoryRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -115,6 +118,17 @@ export default function PropertyDetailPage() {
 
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
 
+  useEffect(() => {
+    const firstTag = categoryTags[0];
+    const btn = categoryRefs.current[firstTag];
+    if (btn) {
+      setIndicatorStyle({
+        left: btn.offsetLeft,
+        width: btn.offsetWidth
+      });
+    }
+  }, []);
+
   return (
     <>
       <style jsx global>{`
@@ -170,6 +184,11 @@ export default function PropertyDetailPage() {
         .carousel-container {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+
+        /* Hide scrollbar for category tags */
+        div::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
 
@@ -371,6 +390,78 @@ export default function PropertyDetailPage() {
           >
             <Plus style={{ width: '24px', height: '24px', color: '#fff' }} />
           </button>
+        </div>
+
+        {/* Category Tags with Animated Indicator */}
+        <div style={{
+          background: '#fff',
+          borderBottom: '1px solid #e5e7eb',
+          position: 'relative',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
+          <div style={{
+            display: 'flex',
+            gap: '2rem',
+            padding: '1rem 2rem',
+            position: 'relative',
+            minWidth: 'max-content'
+          }}>
+            {categoryTags.map((tag, index) => (
+              <button
+                key={tag}
+                ref={(el) => (categoryRefs.current[tag] = el)}
+                onClick={() => {
+                  setActiveCategory(tag);
+
+                  const btn = categoryRefs.current[tag];
+                  if (btn) {
+                    setIndicatorStyle({
+                      left: btn.offsetLeft,
+                      width: btn.offsetWidth
+                    });
+                  }
+
+                  if (carouselRef.current && viewMode === 'carousel') {
+                    const imageIndex = index * Math.floor(images.length / categoryTags.length);
+                    carouselRef.current.scrollTo({
+                      left: imageIndex * 800,
+                      behavior: 'smooth'
+                    });
+                  }
+                }}
+                style={{
+                  color: activeCategory === tag ? '#212529' : '#6b7280',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '16px',
+                  fontWeight: 300,
+                  cursor: 'pointer',
+                  padding: '0.5rem 0',
+                  transition: 'color 0.3s',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '4px',
+                left: `${indicatorStyle.left}px`,
+                height: '8px',
+                width: `${indicatorStyle.width}px`,
+                background: 'rgb(222, 226, 230)',
+                borderRadius: '10px',
+                transition: 'left 0.3s ease, width 0.3s ease',
+                zIndex: 50,
+                pointerEvents: 'none'
+              }}
+            />
+          </div>
         </div>
 
         {showLightbox && (
