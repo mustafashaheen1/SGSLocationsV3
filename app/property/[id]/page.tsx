@@ -28,6 +28,13 @@ function generateImagesWithCategories(): ImageWithCategory[] {
   const categories = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
   const imageList: ImageWithCategory[] = [];
 
+  const unsplashIds = [
+    '1600585154137', '1600566343118', '1600607682739', '1600573224184',
+    '1600618143224', '1600585154145', '1600594436573', '1600585154137',
+    '1600573405373', '1600469731401', '1560448311037', '1600047825456',
+    '1600210766675', '1600585154346', '1600573224944', '1600585242430'
+  ];
+
   for (let i = 0; i < 100; i++) {
     const numCategories = Math.floor(Math.random() * 3) + 1;
     const imageCategories: string[] = [];
@@ -39,8 +46,9 @@ function generateImagesWithCategories(): ImageWithCategory[] {
       }
     }
 
+    const imageId = unsplashIds[i % unsplashIds.length];
     imageList.push({
-      url: `https://images.unsplash.com/photo-${1600000000000 + i * 1000000}?w=1200&q=80`,
+      url: `https://images.unsplash.com/photo-${imageId}-${Math.floor(Math.random() * 100000)}?w=1200&q=80`,
       categories: imageCategories
     });
   }
@@ -63,22 +71,18 @@ export default function PropertyDetailPage() {
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
   const categoryRefs = useRef<{ [key: string]: HTMLSpanElement | null }>({});
   const categoryContainerRef = useRef<HTMLDivElement>(null);
-  const [redBarStyle, setRedBarStyle] = useState({ width: 0, left: 0 });
+  const [redBarPosition, setRedBarPosition] = useState({ left: '0px', width: '50px' });
   const [allImages, setAllImages] = useState<Array<{ url: string; categories: string[] }>>([]);
   const [displayedImages, setDisplayedImages] = useState<Array<{ url: string; categories: string[] }>>([]);
 
   const updateRedBarPosition = (category: string) => {
     const element = categoryRefs.current[category];
-    const container = categoryContainerRef.current;
 
-    if (element && container) {
-      const containerRect = container.getBoundingClientRect();
-      const elementRect = element.getBoundingClientRect();
-      const relativeLeft = elementRect.left - containerRect.left;
-
-      setRedBarStyle({
-        left: relativeLeft,
-        width: elementRect.width
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      setRedBarPosition({
+        left: `${rect.left}px`,
+        width: `${rect.width}px`
       });
     }
   };
@@ -139,15 +143,19 @@ export default function PropertyDetailPage() {
     const imagesWithCats = generateImagesWithCategories();
     setAllImages(imagesWithCats);
     setDisplayedImages(imagesWithCats);
-  }, []);
 
-  useEffect(() => {
-    if (categoryRefs.current['Pool'] && categoryContainerRef.current && allImages.length > 0) {
-      setTimeout(() => {
-        updateRedBarPosition('Pool');
-      }, 100);
-    }
-  }, [allImages]);
+    setTimeout(() => {
+      if (categoryRefs.current['Pool']) {
+        const element = categoryRefs.current['Pool'];
+        const rect = element.getBoundingClientRect();
+        setRedBarPosition({
+          left: `${rect.left}px`,
+          width: `${rect.width}px`
+        });
+        setActiveCategory('Pool');
+      }
+    }, 100);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => updateRedBarPosition(activeCategory);
@@ -453,48 +461,48 @@ export default function PropertyDetailPage() {
         <div style={{
           padding: '20px 0',
           background: '#fff',
-          position: 'relative'
+          position: 'relative',
+          width: '100%'
         }}>
-          {/* Grey horizontal line that's ALWAYS visible */}
+          {/* Grey horizontal line - FULL WIDTH 100% touching screen edges */}
           <div style={{
             position: 'absolute',
             top: '10px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '90%',
-            maxWidth: '1000px',
-            height: '1px',
-            background: '#ccc',
+            left: '0',
+            right: '0',
+            width: '100%',
+            height: '2px',
+            background: '#d1d5db',
             zIndex: 1
           }} />
 
-          {/* Red bar that moves along the grey line */}
+          {/* Red bar that starts at full left and moves along the grey line */}
           <div style={{
             position: 'absolute',
             top: '9px',
-            left: `calc(50% - 500px + ${redBarStyle.left}px)`,
-            width: `${redBarStyle.width}px`,
-            height: '3px',
+            left: redBarPosition.left || '0px',
+            width: redBarPosition.width || '50px',
+            height: '4px',
             background: '#e11921',
             transition: 'all 0.3s ease',
             zIndex: 2
           }} />
 
           {/* Category items */}
-          <div
-            ref={categoryContainerRef}
-            style={{
-              display: 'flex',
-              gap: '30px',
-              justifyContent: 'center',
-              paddingTop: '20px',
-              position: 'relative'
-            }}
+          <div style={{
+            display: 'flex',
+            gap: '30px',
+            justifyContent: 'center',
+            paddingTop: '20px',
+            position: 'relative'
+          }}
           >
             {categoryTags.map((tag) => (
               <span
                 key={tag}
-                ref={(el) => { categoryRefs.current[tag] = el; }}
+                ref={(el) => {
+                  if (el) categoryRefs.current[tag] = el;
+                }}
                 onClick={() => handleCategoryClick(tag)}
                 style={{
                   cursor: 'pointer',
