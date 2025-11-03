@@ -569,30 +569,6 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          <div style={{ display: 'flex', gap: '2rem', padding: '1rem 2rem', minWidth: 'max-content' }}>
-            {categoryTags.map((tag) => (
-              <button
-                key={tag}
-                style={{
-                  color: '#6b7280',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '14px',
-                  fontWeight: 300,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'color 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#212529'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 2rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
             <div>
