@@ -51,17 +51,36 @@ export default function PropertyDetailPage() {
     const { scrollLeft, scrollWidth, clientWidth } = container;
 
     const visibleRatio = clientWidth / scrollWidth;
+
     const scrollbarContainerWidth = clientWidth - 32;
+
     const dragWidth = Math.max(scrollbarContainerWidth * visibleRatio, 30);
+
     const maxDragScroll = scrollbarContainerWidth - dragWidth;
+
     const maxContentScroll = scrollWidth - clientWidth;
     const scrollPercent = maxContentScroll > 0 ? scrollLeft / maxContentScroll : 0;
+
     const dragLeft = scrollPercent * maxDragScroll;
 
     setScrollPosition({
       left: dragLeft,
       width: dragWidth
     });
+  };
+
+  const handleCategoryClick = (tag: string, index: number) => {
+    setActiveCategory(tag);
+
+    if (viewMode === 'carousel' && carouselRef.current) {
+      const imagesPerCategory = Math.floor(images.length / categoryTags.length);
+      const targetImageIndex = index * imagesPerCategory;
+
+      carouselRef.current.scrollTo({
+        left: targetImageIndex * 800,
+        behavior: 'smooth'
+      });
+    }
   };
 
   useEffect(() => {
@@ -95,14 +114,6 @@ export default function PropertyDetailPage() {
     fetchData();
   }, [params.id]);
 
-  useEffect(() => {
-    handleCategoryScroll();
-
-    const handleResize = () => handleCategoryScroll();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   let images: string[] = [];
 
   if (property?.images && property.images.length > 0) {
@@ -115,6 +126,15 @@ export default function PropertyDetailPage() {
   if (remainingCount > 0) {
     images = [...images, ...generateRandomImages(remainingCount)];
   }
+
+  useEffect(() => {
+    handleCategoryScroll();
+
+    const handleResize = () => handleCategoryScroll();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -439,13 +459,13 @@ export default function PropertyDetailPage() {
             />
           </div>
 
-          {/* Category list - BELOW scrollbar */}
+          {/* Category list */}
           <ul
             ref={categoryScrollRef}
             onScroll={handleCategoryScroll}
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
+              flexWrap: 'nowrap',
               listStyle: 'none',
               marginBottom: 0,
               paddingLeft: 0,
@@ -456,10 +476,10 @@ export default function PropertyDetailPage() {
             }}
             className="category-scroll-container"
           >
-            {categoryTags.map((tag) => (
+            {categoryTags.map((tag, index) => (
               <li
                 key={tag}
-                onClick={() => setActiveCategory(tag)}
+                onClick={() => handleCategoryClick(tag, index)}
                 style={{
                   fontSize: '14px',
                   fontWeight: 300,
