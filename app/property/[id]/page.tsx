@@ -141,11 +141,7 @@ export default function PropertyDetailPage() {
           justify-content: center;
           cursor: pointer;
           z-index: 10;
-          transition: opacity 0.3s;
-        }
-
-        .nav-arrow:hover {
-          opacity: 0.8;
+          transition: background 0.3s ease;
         }
 
         .nav-arrow-left {
@@ -153,9 +149,17 @@ export default function PropertyDetailPage() {
           background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
         }
 
+        .nav-arrow-left:hover {
+          background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+        }
+
         .nav-arrow-right {
           right: 0;
           background: linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+        }
+
+        .nav-arrow-right:hover {
+          background: linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
         }
 
         /* Hide scrollbar */
