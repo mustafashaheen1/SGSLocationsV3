@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { X, Camera } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -49,12 +50,27 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
 
     setLoading(true);
+    setErrors({ email: '', password: '', form: '' });
 
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setErrors({ email: '', password: '', form: error.message });
+        setLoading(false);
+        return;
+      }
+
       onClose();
       router.push('/dashboard');
+      router.refresh();
+    } catch (error) {
+      setErrors({ email: '', password: '', form: 'An unexpected error occurred. Please try again.' });
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
