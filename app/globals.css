@@ -194,7 +194,7 @@ a:hover {
   }
 }
 
-/* Force light mode colors for all input fields */
+/* Override dark mode for input fields - more specific selectors */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -204,61 +204,45 @@ input[type="search"],
 input[type="url"],
 textarea,
 select {
-  color: #1f2937 !important; /* Force dark gray text */
-  background-color: #ffffff !important; /* Force white background */
-  -webkit-text-fill-color: #1f2937 !important; /* Override WebKit autofill */
+  color: rgb(73, 80, 87) !important;
+  background-color: #ffffff !important;
+  -webkit-text-fill-color: rgb(73, 80, 87) !important;
 }
 
-/* Override dark mode for input fields */
+/* Fix placeholder colors */
+input::placeholder,
+textarea::placeholder {
+  color: #6c757d !important;
+  opacity: 0.7 !important;
+}
+
+/* Webkit specific placeholder */
+::-webkit-input-placeholder {
+  color: #6c757d !important;
+  opacity: 0.7 !important;
+}
+
+/* Mozilla Firefox */
+::-moz-placeholder {
+  color: #6c757d !important;
+  opacity: 0.7 !important;
+}
+
+/* Microsoft Edge */
+:-ms-input-placeholder {
+  color: #6c757d !important;
+  opacity: 0.7 !important;
+}
+
+/* Microsoft Edge */
+::-ms-input-placeholder {
+  color: #6c757d !important;
+  opacity: 0.7 !important;
+}
+
+/* Remove dark mode for inputs completely */
 @media (prefers-color-scheme: dark) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="tel"],
-  input[type="number"],
-  input[type="search"],
-  input[type="url"],
-  textarea,
-  select {
-    color: #1f2937 !important;
-    background-color: #ffffff !important;
-    -webkit-text-fill-color: #1f2937 !important;
+  input, textarea, select {
+    color-scheme: light !important;
   }
-
-  /* Fix placeholder text color in dark mode */
-  input::placeholder,
-  textarea::placeholder {
-    color: #9ca3af !important;
-    opacity: 1 !important;
-  }
-
-  /* Fix for autofill in dark mode */
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  input:-webkit-autofill:active {
-    -webkit-text-fill-color: #1f2937 !important;
-    -webkit-box-shadow: 0 0 0 30px white inset !important;
-    box-shadow: 0 0 0 30px white inset !important;
-    background-color: #ffffff !important;
-  }
-}
-
-/* Ensure LoginModal always has light theme */
-.login-modal-overlay input,
-.register-page input,
-.forgot-password-page input {
-  color: #1f2937 !important;
-  background-color: #ffffff !important;
-  -webkit-text-fill-color: #1f2937 !important;
-}
-
-/* Fix for shadcn/ui Input component */
-.bg-background {
-  background-color: #ffffff !important;
-}
-
-input.bg-background {
-  background-color: #ffffff !important;
-  color: #1f2937 !important;
 }
