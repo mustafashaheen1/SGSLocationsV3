@@ -42,6 +42,7 @@ export default function PropertyDetailPage() {
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const categoryRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
 
   useEffect(() => {
     async function fetchData() {
@@ -73,6 +74,17 @@ export default function PropertyDetailPage() {
     }
     fetchData();
   }, [params.id]);
+
+  useEffect(() => {
+    const firstTag = categoryTags[0];
+    const btn = categoryRefs.current[firstTag];
+    if (btn) {
+      setIndicatorStyle({
+        left: btn.offsetLeft,
+        width: btn.offsetWidth
+      });
+    }
+  }, [property]);
 
   let images: string[] = [];
 
@@ -115,19 +127,6 @@ export default function PropertyDetailPage() {
       </div>
     );
   }
-
-  const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
-
-  useEffect(() => {
-    const firstTag = categoryTags[0];
-    const btn = categoryRefs.current[firstTag];
-    if (btn) {
-      setIndicatorStyle({
-        left: btn.offsetLeft,
-        width: btn.offsetWidth
-      });
-    }
-  }, []);
 
   return (
     <>
