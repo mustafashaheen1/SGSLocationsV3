@@ -19,6 +19,9 @@ export default function ContactPage() {
     howDidYouHear: ''
   });
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateRange, setDateRange] = useState({ from: null as Date | null, to: null as Date | null });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
@@ -29,6 +32,14 @@ export default function ContactPage() {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const formatDate = (date: Date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month}, ${year}`;
   };
 
   return (
@@ -255,7 +266,9 @@ export default function ContactPage() {
                     className="form-control"
                     placeholder="Shooting Date"
                     value={formData.shootingDate}
-                    onChange={handleChange}
+                    onClick={() => setShowDatePicker(true)}
+                    readOnly
+                    style={{ cursor: 'pointer' }}
                   />
                 </div>
 
@@ -332,6 +345,78 @@ export default function ContactPage() {
                 </div>
               </div>
             </div>
+
+            {/* Date Picker Modal */}
+            {showDatePicker && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg shadow-xl p-6 max-w-3xl w-full">
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={dateRange.from && dateRange.to
+                        ? `${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}`
+                        : 'Select date range'
+                      }
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="font-semibold mb-2">From Date</h3>
+                      <input
+                        type="date"
+                        className="form-control"
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          setDateRange(prev => ({ ...prev, from: date }));
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold mb-2">To Date</h3>
+                      <input
+                        type="date"
+                        className="form-control"
+                        min={dateRange.from ? dateRange.from.toISOString().split('T')[0] : ''}
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          setDateRange(prev => ({ ...prev, to: date }));
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDatePicker(false);
+                        setDateRange({ from: null, to: null });
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (dateRange.from && dateRange.to) {
+                          const formattedDate = `${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}`;
+                          setFormData(prev => ({ ...prev, shootingDate: formattedDate }));
+                          setShowDatePicker(false);
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </form>
 
           <div className="container-fluid px-0">
