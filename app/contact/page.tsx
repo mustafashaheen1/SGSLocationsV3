@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -19,91 +17,24 @@ export default function ContactPage() {
     howDidYouHear: ''
   });
 
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDates, setSelectedDates] = useState<{start: Date | null, end: Date | null}>({
-    start: null,
-    end: null
-  });
+  const [selectedStart, setSelectedStart] = useState<Date | null>(null);
+  const [selectedEnd, setSelectedEnd] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
-  const calendarRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        setShowCalendar(false);
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node) &&
+          inputRef.current && !inputRef.current.contains(event.target as Node)) {
+        setShowPicker(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const formatDate = (date: Date) => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${date.getDate()} ${months[date.getMonth()]}, ${date.getFullYear()}`;
-  };
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const lastDate = new Date(year, month + 1, 0).getDate();
-    const days = [];
-
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
-
-    for (let i = 1; i <= lastDate; i++) {
-      days.push(new Date(year, month, i));
-    }
-
-    return days;
-  };
-
-  const handleDateClick = (date: Date) => {
-    if (!selectedDates.start || (selectedDates.start && selectedDates.end)) {
-      setSelectedDates({ start: date, end: null });
-    } else {
-      if (date < selectedDates.start) {
-        setSelectedDates({ start: date, end: selectedDates.start });
-      } else {
-        setSelectedDates({ start: selectedDates.start, end: date });
-      }
-
-      const range = date < selectedDates.start
-        ? `${formatDate(date)} - ${formatDate(selectedDates.start)}`
-        : `${formatDate(selectedDates.start)} - ${formatDate(date)}`;
-
-      setFormData(prev => ({ ...prev, shootingDate: range }));
-      setTimeout(() => setShowCalendar(false), 200);
-    }
-  };
-
-  const isInRange = (date: Date) => {
-    if (!selectedDates.start) return false;
-
-    const end = selectedDates.end || hoverDate;
-    if (!end) return date.getTime() === selectedDates.start.getTime();
-
-    const start = selectedDates.start;
-    const dateTime = date.getTime();
-    return dateTime >= Math.min(start.getTime(), end.getTime()) &&
-           dateTime <= Math.max(start.getTime(), end.getTime());
-  };
-
-  const getDayCount = () => {
-    if (!selectedDates.start) return 0;
-    const end = selectedDates.end || hoverDate;
-    if (!end) return 1;
-
-    const diffTime = Math.abs(end.getTime() - selectedDates.start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
-  };
-
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                      'July', 'August', 'September', 'October', 'November', 'December'];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +47,72 @@ export default function ContactPage() {
       [e.target.name]: e.target.value
     });
   };
+
+  const formatDateRange = (start: Date, end: Date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${start.getDate()} ${months[start.getMonth()]}, ${start.getFullYear()} - ${end.getDate()} ${months[end.getMonth()]}, ${end.getFullYear()}`;
+  };
+
+  const getDaysInMonth = (year: number, month: number) => {
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    const days = [];
+
+    const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+
+    for (let i = 0; i < adjustedFirstDay; i++) {
+      days.push(null);
+    }
+
+    for (let i = 1; i <= lastDate; i++) {
+      days.push(new Date(year, month, i));
+    }
+
+    return days;
+  };
+
+  const handleDateClick = (date: Date) => {
+    if (!selectedStart || (selectedStart && selectedEnd)) {
+      setSelectedStart(date);
+      setSelectedEnd(null);
+    } else {
+      if (date < selectedStart) {
+        setSelectedEnd(selectedStart);
+        setSelectedStart(date);
+      } else {
+        setSelectedEnd(date);
+      }
+
+      const start = date < selectedStart ? date : selectedStart;
+      const end = date < selectedStart ? selectedStart : date;
+
+      setFormData(prev => ({ ...prev, shootingDate: formatDateRange(start, end) }));
+      setTimeout(() => setShowPicker(false), 200);
+    }
+  };
+
+  const isSelected = (date: Date) => {
+    if (!date) return false;
+    if (selectedStart && date.toDateString() === selectedStart.toDateString()) return true;
+    if (selectedEnd && date.toDateString() === selectedEnd.toDateString()) return true;
+    return false;
+  };
+
+  const isInRange = (date: Date) => {
+    if (!date || !selectedStart) return false;
+    const end = selectedEnd || hoverDate;
+    if (!end) return false;
+    return date > selectedStart && date < end;
+  };
+
+  const isToday = (date: Date) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'];
 
   return (
     <>
@@ -154,6 +151,143 @@ export default function ContactPage() {
         textarea.form-control {
           min-height: 200px;
           resize: vertical;
+        }
+
+        .litepicker {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          font-size: 12.8px;
+          font-weight: 300;
+          line-height: 19.2px;
+          color: #212529;
+          background: white;
+          box-shadow: 0 0 5px rgba(0,0,0,.1), 0 5px 20px rgba(0,0,0,.2);
+          border-radius: 5px;
+          box-sizing: border-box;
+          z-index: 9999;
+          position: absolute;
+          display: none;
+        }
+
+        .litepicker.show-picker {
+          display: block;
+        }
+
+        .container__months {
+          display: flex;
+          flex-wrap: wrap;
+        }
+
+        .month-item {
+          padding: 5px;
+          width: 276px;
+        }
+
+        .month-item-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 5px;
+        }
+
+        .month-item-name {
+          font-size: 14px;
+          font-weight: 500;
+          margin-right: 5px;
+        }
+
+        .month-item-year {
+          font-size: 12px;
+          opacity: 0.7;
+        }
+
+        .button-previous-month,
+        .button-next-month {
+          background: none;
+          border: none;
+          padding: 5px;
+          cursor: pointer;
+          opacity: 0.5;
+          transition: opacity 0.3s;
+        }
+
+        .button-previous-month:hover,
+        .button-next-month:hover {
+          opacity: 1;
+        }
+
+        .button-previous-month svg,
+        .button-next-month svg {
+          width: 11px;
+          height: 16px;
+          fill: #333;
+        }
+
+        .month-item-weekdays-row {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          padding: 5px 0;
+          font-weight: 500;
+          font-size: 11px;
+          text-transform: uppercase;
+          opacity: 0.7;
+        }
+
+        .month-item-weekdays-row > div {
+          text-align: center;
+          padding: 5px;
+        }
+
+        .container__days {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 0;
+        }
+
+        .day-item {
+          position: relative;
+          text-align: center;
+          padding: 8px 10px;
+          cursor: pointer;
+          text-decoration: none;
+          color: #333;
+          border: 0;
+          background: transparent;
+          transition: all 0.3s;
+        }
+
+        .day-item:hover {
+          background-color: #f5f5f5;
+          border-radius: 3px;
+        }
+
+        .day-item.is-today {
+          background-color: #ffeaa7;
+          color: #333;
+          border-radius: 3px;
+        }
+
+        .day-item.is-start-date,
+        .day-item.is-end-date {
+          background-color: #007bff;
+          color: white;
+          border-radius: 3px;
+        }
+
+        .day-item.is-in-range {
+          background-color: rgba(0, 123, 255, 0.15);
+          border-radius: 0;
+        }
+
+        .day-item.is-start-date.is-end-date {
+          border-radius: 3px;
+        }
+
+        .day-item.is-start-date {
+          border-radius: 3px 0 0 3px;
+        }
+
+        .day-item.is-end-date {
+          border-radius: 0 3px 3px 0;
         }
 
         .form-group {
@@ -206,75 +340,11 @@ export default function ContactPage() {
             max-width: 100%;
           }
         }
-
-        .calendar-dropdown {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 0;
-          background: white;
-          border: 1px solid #ced4da;
-          border-top: none;
-          border-radius: 0 0 4px 4px;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-          z-index: 1000;
-          padding: 15px;
-        }
-
-        .calendar-day {
-          width: 14.28%;
-          aspect-ratio: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          font-size: 14px;
-          border: none;
-          background: transparent;
-          position: relative;
-        }
-
-        .calendar-day:hover {
-          background: #f0f0f0;
-        }
-
-        .calendar-day.selected {
-          background: #007bff;
-          color: white;
-        }
-
-        .calendar-day.in-range {
-          background: #cce5ff;
-          color: #004085;
-        }
-
-        .calendar-day.start-date,
-        .calendar-day.end-date {
-          background: #007bff;
-          color: white;
-        }
-
-        .day-count {
-          position: absolute;
-          top: -25px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #333;
-          color: white;
-          padding: 2px 8px;
-          border-radius: 3px;
-          font-size: 12px;
-          white-space: nowrap;
-        }
       `}</style>
 
       <div className="contact-form bg-white" style={{ paddingTop: '60px', minHeight: '100vh' }}>
         <div className="container mx-auto px-4 max-w-6xl">
-          <h1 className="text-4xl pt-4 pb-8" style={{
-            fontWeight: 300,
-            color: '#212529',
-            margin: 0
-          }}>
+          <h1 className="text-4xl pt-4 pb-8" style={{ fontWeight: 300, color: '#212529', margin: 0 }}>
             Book A Location
           </h1>
 
@@ -395,86 +465,147 @@ export default function ContactPage() {
                 <div className="form-group" style={{ position: 'relative' }}>
                   <label htmlFor="shooting_date" className="sr-only">Shooting Date</label>
                   <input
+                    ref={inputRef}
                     name="shootingDate"
                     id="shooting_date"
                     type="text"
                     className="form-control"
                     placeholder="Shooting Date"
                     value={formData.shootingDate}
-                    onClick={() => setShowCalendar(true)}
+                    onClick={() => setShowPicker(true)}
                     readOnly
                     style={{ cursor: 'pointer' }}
                   />
 
-                  {showCalendar && (
-                    <div ref={calendarRef} className="calendar-dropdown">
-                      <div className="mb-3 p-2 border rounded" style={{ backgroundColor: '#f8f9fa' }}>
-                        {selectedDates.start && selectedDates.end
-                          ? `${formatDate(selectedDates.start)} - ${formatDate(selectedDates.end)}`
-                          : selectedDates.start
-                          ? `${formatDate(selectedDates.start)} - Select end date`
-                          : 'Select date range'
-                        }
-                      </div>
-
-                      <div className="flex items-center justify-between mb-3">
-                        <button
-                          type="button"
-                          onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                          className="p-1"
-                        >
-                          <ChevronLeft size={20} />
-                        </button>
-
-                        <h3 className="font-semibold">
-                          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                        </h3>
-
-                        <button
-                          type="button"
-                          onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                          className="p-1"
-                        >
-                          <ChevronRight size={20} />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-0 text-center">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                          <div key={day} className="text-xs font-semibold p-2 text-gray-500">
-                            {day}
+                  <div
+                    ref={pickerRef}
+                    className={`litepicker ${showPicker ? 'show-picker' : ''}`}
+                    style={{
+                      top: '100%',
+                      left: 0,
+                      marginTop: '5px',
+                      width: '552px'
+                    }}
+                  >
+                    <div className="container__main">
+                      <div className="container__months columns-2">
+                        <div className="month-item">
+                          <div className="month-item-header">
+                            <button
+                              type="button"
+                              className="button-previous-month"
+                              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                            >
+                              <svg width="11" height="16" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7.919 0l2.748 2.667L5.333 8l5.334 5.333L7.919 16 0 8z" fillRule="nonzero"/>
+                              </svg>
+                            </button>
+                            <div>
+                              <strong className="month-item-name">{monthNames[currentMonth.getMonth()]}</strong>
+                              <span className="month-item-year">{currentMonth.getFullYear()}</span>
+                            </div>
+                            <div style={{ width: '26px' }}></div>
                           </div>
-                        ))}
 
-                        {getDaysInMonth(currentMonth).map((date, index) => (
-                          <div key={index} className="relative">
-                            {date ? (
-                              <button
-                                type="button"
-                                className={`calendar-day ${
-                                  isInRange(date) ? 'in-range' : ''
-                                } ${
-                                  selectedDates.start && date.getTime() === selectedDates.start.getTime() ? 'start-date' : ''
-                                } ${
-                                  selectedDates.end && date.getTime() === selectedDates.end.getTime() ? 'end-date' : ''
-                                }`}
-                                onClick={() => handleDateClick(date)}
-                                onMouseEnter={() => setHoverDate(date)}
-                                onMouseLeave={() => setHoverDate(null)}
-                              >
-                                {date.getDate()}
-                                {selectedDates.start && !selectedDates.end && hoverDate === date && (
-                                  <span className="day-count">{getDayCount()} days</span>
-                                )}
-                              </button>
-                            ) : (
-                              <div className="calendar-day" />
-                            )}
+                          <div className="month-item-weekdays-row">
+                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                              <div key={day} title={day}>{day}</div>
+                            ))}
                           </div>
-                        ))}
+
+                          <div className="container__days">
+                            {getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth()).map((date, idx) => (
+                              date ? (
+                                <a
+                                  key={idx}
+                                  href="#"
+                                  className={`day-item ${
+                                    isToday(date) ? 'is-today' : ''
+                                  } ${
+                                    isSelected(date) ? (selectedStart?.toDateString() === date.toDateString() ? 'is-start-date' : 'is-end-date') : ''
+                                  } ${
+                                    isInRange(date) ? 'is-in-range' : ''
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDateClick(date);
+                                  }}
+                                  onMouseEnter={() => selectedStart && !selectedEnd && setHoverDate(date)}
+                                  onMouseLeave={() => setHoverDate(null)}
+                                  data-time={date.getTime()}
+                                >
+                                  {date.getDate()}
+                                </a>
+                              ) : (
+                                <div key={idx}></div>
+                              )
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="month-item">
+                          <div className="month-item-header">
+                            <div style={{ width: '26px' }}></div>
+                            <div>
+                              <strong className="month-item-name">
+                                {monthNames[(currentMonth.getMonth() + 1) % 12]}
+                              </strong>
+                              <span className="month-item-year">
+                                {currentMonth.getMonth() === 11 ? currentMonth.getFullYear() + 1 : currentMonth.getFullYear()}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="button-next-month"
+                              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                            >
+                              <svg width="11" height="16" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.748 16L0 13.333 5.333 8 0 2.667 2.748 0l7.919 8z" fillRule="nonzero"/>
+                              </svg>
+                            </button>
+                          </div>
+
+                          <div className="month-item-weekdays-row">
+                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                              <div key={day} title={day}>{day}</div>
+                            ))}
+                          </div>
+
+                          <div className="container__days">
+                            {getDaysInMonth(
+                              currentMonth.getMonth() === 11 ? currentMonth.getFullYear() + 1 : currentMonth.getFullYear(),
+                              (currentMonth.getMonth() + 1) % 12
+                            ).map((date, idx) => (
+                              date ? (
+                                <a
+                                  key={idx}
+                                  href="#"
+                                  className={`day-item ${
+                                    isToday(date) ? 'is-today' : ''
+                                  } ${
+                                    isSelected(date) ? (selectedStart?.toDateString() === date.toDateString() ? 'is-start-date' : 'is-end-date') : ''
+                                  } ${
+                                    isInRange(date) ? 'is-in-range' : ''
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDateClick(date);
+                                  }}
+                                  onMouseEnter={() => selectedStart && !selectedEnd && setHoverDate(date)}
+                                  onMouseLeave={() => setHoverDate(null)}
+                                  data-time={date.getTime()}
+                                >
+                                  {date.getDate()}
+                                </a>
+                              ) : (
+                                <div key={idx}></div>
+                              )
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="form-group">
