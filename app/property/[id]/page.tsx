@@ -28,11 +28,23 @@ function generateImagesWithCategories(): ImageWithCategory[] {
   const categories = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
   const imageList: ImageWithCategory[] = [];
 
-  const unsplashIds = [
-    '1600585154137', '1600566343118', '1600607682739', '1600573224184',
-    '1600618143224', '1600585154145', '1600594436573', '1600585154137',
-    '1600573405373', '1600469731401', '1560448311037', '1600047825456',
-    '1600210766675', '1600585154346', '1600573224944', '1600585242430'
+  const unsplashImages = [
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600585154221-3a7a45dd2bd3?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600585154526-990dce4d33be?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600585152915-d208bec867a1?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600573472591-ee6e7b9f5c73?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600585154363-e5dd5e1e0345?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600607689547-7d3f2f2a0c5a?w=1200&q=80'
   ];
 
   for (let i = 0; i < 100; i++) {
@@ -46,9 +58,8 @@ function generateImagesWithCategories(): ImageWithCategory[] {
       }
     }
 
-    const imageId = unsplashIds[i % unsplashIds.length];
     imageList.push({
-      url: `https://images.unsplash.com/photo-${imageId}-${Math.floor(Math.random() * 100000)}?w=1200&q=80`,
+      url: unsplashImages[i % unsplashImages.length],
       categories: imageCategories
     });
   }
@@ -431,30 +442,6 @@ export default function PropertyDetailPage() {
               1 / {displayedImages.length}
             </div>
           )}
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowThumbnails(true);
-            }}
-            style={{
-              position: 'absolute',
-              bottom: '1rem',
-              left: '1rem',
-              width: '48px',
-              height: '48px',
-              background: '#e11921',
-              border: 'none',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 10
-            }}
-          >
-            <Plus style={{ width: '24px', height: '24px', color: '#fff' }} />
-          </button>
         </div>
 
         {/* Category Navigation - Exact Image Locations Match */}
@@ -800,6 +787,42 @@ export default function PropertyDetailPage() {
         )}
 
         <Footer />
+
+        {/* Plus button - Fixed at bottom left corner of viewport */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowThumbnails(true);
+          }}
+          style={{
+            position: 'fixed',
+            bottom: '2rem',
+            left: '2rem',
+            width: '56px',
+            height: '56px',
+            background: '#e11921',
+            border: 'none',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+          }}
+          aria-label="Show all thumbnails"
+        >
+          <Plus style={{ width: '28px', height: '28px', color: '#fff' }} />
+        </button>
       </main>
     </>
   );
