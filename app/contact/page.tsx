@@ -340,6 +340,76 @@ export default function ContactPage() {
             max-width: 100%;
           }
         }
+
+        /* Bootstrap grid utilities */
+        .col-12 {
+          flex: 0 0 100%;
+          max-width: 100%;
+          position: relative;
+          width: 100%;
+          padding-right: 15px;
+          padding-left: 15px;
+        }
+
+        .col-md-4 {
+          position: relative;
+          width: 100%;
+          padding-right: 15px;
+          padding-left: 15px;
+        }
+
+        .col-sm-6 {
+          position: relative;
+          width: 100%;
+          padding-right: 15px;
+          padding-left: 15px;
+        }
+
+        @media (min-width: 576px) {
+          .col-sm-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+          }
+
+          .offset-sm-3 {
+            margin-left: 25%;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .col-md-4 {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+          }
+
+          .offset-md-4 {
+            margin-left: 33.333333%;
+          }
+        }
+
+        .text-center {
+          text-align: center !important;
+        }
+
+        .d-inline-block {
+          display: inline-block !important;
+        }
+
+        .mt-2 {
+          margin-top: 0.5rem !important;
+        }
+
+        .mb-4 {
+          margin-bottom: 1.5rem !important;
+        }
+
+        .w-100 {
+          width: 100% !important;
+        }
+
+        .g-recaptcha {
+          display: inline-block;
+        }
       `}</style>
 
       <div className="contact-form bg-white" style={{ paddingTop: '60px', minHeight: '100vh' }}>
@@ -661,24 +731,78 @@ export default function ContactPage() {
                 </div>
               </div>
 
+              {/* Full Width reCAPTCHA Section - Centered */}
               <div className="col-12">
-                <div className="form-group mt-4 text-center">
-                  <div className="inline-block">
-                    <div className="border border-gray-300 p-3 rounded inline-flex items-center bg-gray-50">
-                      <input type="checkbox" className="mr-2" />
-                      <span className="text-sm">I'm not a robot</span>
-                      <span className="ml-8 text-xs text-gray-500">reCAPTCHA</span>
+                <div className="form-group mt-2 text-center">
+                  <div className="text-center">
+                    <div className="d-inline-block">
+                      <div
+                        className="g-recaptcha"
+                        style={{
+                          transform: 'scale(1)',
+                          transformOrigin: '0 0',
+                          width: '304px',
+                          height: '78px',
+                          margin: '0 auto'
+                        }}
+                      >
+                        <div style={{
+                          width: '304px',
+                          height: '78px',
+                          border: '1px solid #d3d3d3',
+                          borderRadius: '3px',
+                          backgroundColor: '#f9f9f9',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '0 13px'
+                        }}>
+                          <input type="checkbox" style={{ marginRight: '12px' }} />
+                          <label style={{
+                            flex: 1,
+                            fontSize: '14px',
+                            color: '#000',
+                            lineHeight: 'normal'
+                          }}>
+                            I'm not a robot
+                          </label>
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            fontSize: '10px',
+                            color: '#555',
+                            lineHeight: '10px'
+                          }}>
+                            <div style={{ marginBottom: '2px' }}>reCAPTCHA</div>
+                            <div style={{ fontSize: '8px' }}>
+                              <a href="#" style={{ color: '#555' }}>Privacy</a> -
+                              <a href="#" style={{ color: '#555' }}> Terms</a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="col-12 text-center">
-                <div style={{ maxWidth: '33.33%', margin: '0 auto' }}>
-                  <button type="submit" className="btn btn-primary w-full mb-8">
-                    Submit
-                  </button>
-                </div>
+              {/* Submit Button - Centered with Bootstrap offsets */}
+              <div className="col-md-4 offset-md-4 col-sm-6 offset-sm-3">
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg il-submit-btn w-100 mb-4"
+                  style={{
+                    backgroundColor: '#dc3545',
+                    borderColor: '#dc3545',
+                    fontSize: '1.25rem',
+                    padding: '0.75rem',
+                    fontWeight: 400,
+                    borderRadius: '0.3rem',
+                    width: '100%'
+                  }}
+                >
+                  Submit
+                </button>
               </div>
             </div>
           </form>
