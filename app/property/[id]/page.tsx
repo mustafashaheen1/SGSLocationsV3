@@ -788,40 +788,47 @@ export default function PropertyDetailPage() {
 
               {/* Inquire Button */}
               <div style={{ marginTop: '1.5rem' }}>
-                <button
-                  onClick={() => setShowContactModal(true)}
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowContactModal(true);
+                  }}
                   style={{
-                    appearance: 'button',
                     background: 'rgb(225, 25, 33)',
+                    backgroundColor: 'rgb(225, 25, 33)',
                     color: 'rgb(255, 255, 255)',
                     border: '1px solid rgb(225, 25, 33)',
                     borderRadius: '3.2px',
-                    padding: '8px 16px',
+                    padding: '4px 8px',
                     fontSize: '14px',
-                    fontWeight: 400,
-                    textTransform: 'uppercase',
-                    cursor: 'pointer',
+                    fontWeight: 300,
                     fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '0.7px',
-                    lineHeight: '22.4px',
-                    height: '40.3984px',
-                    width: '392.195px',
+                    lineHeight: '21px',
+                    height: '31px',
+                    width: '266.07px',
                     textAlign: 'center',
                     display: 'inline-block',
-                    transition: 'all 0.15s ease-in-out',
-                    margin: 0
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    transition: 'color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out',
+                    userSelect: 'none',
+                    verticalAlign: 'middle',
+                    boxSizing: 'border-box'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#bf151c';
+                    e.currentTarget.style.backgroundColor = '#bf151c';
                     e.currentTarget.style.borderColor = '#bf151c';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'rgb(225, 25, 33)';
+                    e.currentTarget.style.backgroundColor = 'rgb(225, 25, 33)';
                     e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
                   }}
                 >
-                  INQUIRE ABOUT {property.name.toUpperCase()}
-                </button>
+                  Inquire About {property.name}
+                </a>
               </div>
             </div>
 
