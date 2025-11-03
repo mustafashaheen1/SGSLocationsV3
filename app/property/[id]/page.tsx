@@ -40,8 +40,6 @@ export default function PropertyDetailPage() {
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
-  const categoryRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
 
   useEffect(() => {
@@ -74,17 +72,6 @@ export default function PropertyDetailPage() {
     }
     fetchData();
   }, [params.id]);
-
-  useEffect(() => {
-    const firstTag = categoryTags[0];
-    const btn = categoryRefs.current[firstTag];
-    if (btn) {
-      setIndicatorStyle({
-        left: btn.offsetLeft,
-        width: btn.offsetWidth
-      });
-    }
-  }, [property]);
 
   let images: string[] = [];
 
@@ -391,73 +378,67 @@ export default function PropertyDetailPage() {
           </button>
         </div>
 
-        {/* Category Tags with Animated Indicator */}
+        {/* Category Tags with Swiper-style Scrollbar */}
         <div style={{
           background: '#fff',
           borderBottom: '1px solid #e5e7eb',
-          position: 'relative',
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          position: 'relative'
         }}>
+          {/* Category buttons */}
           <div style={{
             display: 'flex',
-            gap: '2rem',
-            padding: '1rem 2rem',
-            position: 'relative',
-            minWidth: 'max-content'
-          }}>
-            {categoryTags.map((tag, index) => (
+            gap: '1.5rem',
+            padding: '0.75rem 2rem',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+          className="category-scroll-container"
+          >
+            {categoryTags.map((tag) => (
               <button
                 key={tag}
-                ref={(el) => (categoryRefs.current[tag] = el)}
-                onClick={() => {
-                  setActiveCategory(tag);
-
-                  const btn = categoryRefs.current[tag];
-                  if (btn) {
-                    setIndicatorStyle({
-                      left: btn.offsetLeft,
-                      width: btn.offsetWidth
-                    });
-                  }
-
-                  if (carouselRef.current && viewMode === 'carousel') {
-                    const imageIndex = index * Math.floor(images.length / categoryTags.length);
-                    carouselRef.current.scrollTo({
-                      left: imageIndex * 800,
-                      behavior: 'smooth'
-                    });
-                  }
-                }}
+                onClick={() => setActiveCategory(tag)}
                 style={{
-                  color: activeCategory === tag ? '#212529' : '#6b7280',
+                  color: activeCategory === tag ? '#212529' : '#6c757d',
                   background: 'none',
-                  border: 'none',
-                  fontSize: '16px',
+                  border: activeCategory === tag ? '2px solid #007bff' : 'none',
+                  fontSize: '14px',
                   fontWeight: 300,
                   cursor: 'pointer',
-                  padding: '0.5rem 0',
-                  transition: 'color 0.3s',
-                  whiteSpace: 'nowrap'
+                  padding: '0.375rem 0.75rem',
+                  transition: 'all 0.3s',
+                  whiteSpace: 'nowrap',
+                  borderRadius: '4px'
                 }}
               >
                 {tag}
               </button>
             ))}
+          </div>
 
+          {/* Red scrollbar indicator - mimics Swiper scrollbar */}
+          <div style={{
+            position: 'relative',
+            height: '8px',
+            background: '#dee2e6',
+            marginTop: '10px',
+            marginLeft: '2rem',
+            marginRight: '2rem',
+            borderRadius: '10px',
+            marginBottom: '0.5rem'
+          }}>
+            {/* Red drag indicator */}
             <div
               style={{
                 position: 'absolute',
-                bottom: '4px',
-                left: `${indicatorStyle.left}px`,
-                height: '8px',
-                width: `${indicatorStyle.width}px`,
-                background: 'rgb(222, 226, 230)',
+                left: `${(categoryTags.indexOf(activeCategory) / categoryTags.length) * 100}%`,
+                width: `${(1 / categoryTags.length) * 100}%`,
+                height: '100%',
+                background: '#e11921',
                 borderRadius: '10px',
-                transition: 'left 0.3s ease, width 0.3s ease',
-                zIndex: 50,
-                pointerEvents: 'none'
+                transition: 'left 0.3s ease',
+                cursor: 'grab'
               }}
             />
           </div>
