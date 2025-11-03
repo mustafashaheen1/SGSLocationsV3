@@ -550,6 +550,63 @@ export default function ContactPage() {
           content: "☎";
           margin-right: 5px;
         }
+
+        /* Profile card hover overlay styles */
+        .il-profile-card {
+          position: relative;
+          width: 100%;
+          padding-bottom: 71.43%;
+          overflow: hidden;
+          background: #f0f0f0;
+        }
+
+        .il-profile-card img {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .il-profile-info-overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: rgba(255, 255, 255, 0.95);
+          padding: 15px;
+          transform: translateY(100%);
+          transition: transform 0.3s ease;
+          text-align: center;
+        }
+
+        .il-profile-card:hover .il-profile-info-overlay {
+          transform: translateY(0);
+        }
+
+        .il-profile-info-overlay h6 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #212529;
+        }
+
+        .il-profile-info-overlay p {
+          margin: 2px 0;
+          font-size: 13px;
+          color: #666;
+        }
+
+        .il-profile-info-overlay a {
+          color: #dc3545;
+          font-size: 13px;
+          text-decoration: none;
+        }
+
+        .il-profile-info-overlay a:hover {
+          text-decoration: underline;
+        }
       `}</style>
 
       <div className="contact-form bg-white" style={{ paddingTop: '60px', minHeight: '100vh' }}>
@@ -951,42 +1008,60 @@ export default function ContactPage() {
           <div className="container-fluid il-profiles" style={{ marginTop: '3rem' }}>
             <div className="row px-1">
               {/* Red Contact Card */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
                 <div
-                  style={{ fontSize: '14px' }}
-                  className="text-white p-4 bg-primary text-center h-100 d-flex flex-column align-items-center justify-content-center"
+                  className="il-profile-card d-flex align-items-center justify-content-center"
+                  style={{
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    fontSize: '14px',
+                    textAlign: 'center'
+                  }}
                 >
-                  <p><i className="fa fa-envelope-o"></i> Paul@ImageLocations.com</p>
-                  <p><i className="fa fa-phone"></i> (310) 871-8004</p>
-                  <p>9663 Santa Monica Blvd,<br />
-                    Suite 842 Beverly Hills,<br />
-                    CA, 90210</p>
+                  <div style={{ position: 'absolute', padding: '20px' }}>
+                    <p style={{ margin: '5px 0' }}>✉ Paul@ImageLocations.com</p>
+                    <p style={{ margin: '5px 0' }}>☎ (310) 871-8004</p>
+                    <p style={{ margin: '5px 0' }}>
+                      9663 Santa Monica Blvd,<br />
+                      Suite 842 Beverly Hills,<br />
+                      CA, 90210
+                    </p>
+                  </div>
                 </div>
               </div>
 
               {/* Paul Kim */}
               <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-image-container position-relative">
+                <div className="il-profile-card">
                   <img
-                    className="w-100 h-100 object-fit il-contact-profile-pic"
-                    src="https://via.placeholder.com/231x165/808080/ffffff?text=Paul+Kim"
+                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/314885/conversions/paul-kim-medium.jpg?t=1744325466"
                     alt="Paul Kim"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Paul+Kim';
+                    }}
                   />
-                </div>
-                <div className="text-center px-3 py-3 il-profile-info d-flex flex-column justify-content-center align-items-center">
-                  <p className="h6 mb-0">Paul Kim</p>
-                  <p className="h6 mb-0" style={{ fontSize: '14px', fontWeight: 500 }}>Business Development</p>
-                  <a style={{ fontSize: '14px' }} href="mailto:paul@imagelocations.com">paul@imagelocations.com</a>
+                  <div className="il-profile-info-overlay">
+                    <h6>Paul Kim</h6>
+                    <p>Business Development</p>
+                    <a href="mailto:paul@imagelocations.com">paul@imagelocations.com</a>
+                  </div>
                 </div>
               </div>
 
               {/* List Your Property - Green */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <a className="h-100 d-block" href="/list-your-property" style={{ backgroundColor: '#85c53b' }}>
-                  <div className="il-image-container position-relative w-100 h-100 d-flex align-items-center justify-content-center">
-                    <div className="text-white text-center p-4">
-                      <h3>List</h3>
-                      <p>MY HOME</p>
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                <a href="/list-your-property" className="d-block">
+                  <div
+                    className="il-profile-card d-flex align-items-center justify-content-center"
+                    style={{
+                      backgroundColor: '#85c53b',
+                      color: 'white',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <div style={{ position: 'absolute' }}>
+                      <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>List</h3>
+                      <p style={{ fontSize: '16px', margin: 0 }}>MY HOME</p>
                     </div>
                   </div>
                 </a>
@@ -994,54 +1069,119 @@ export default function ContactPage() {
 
               {/* Alice Kim */}
               <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-image-container position-relative">
+                <div className="il-profile-card">
                   <img
-                    className="w-100 h-100 object-fit il-contact-profile-pic"
-                    src="https://via.placeholder.com/231x165/808080/ffffff?text=Alice+Kim"
+                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188750/conversions/alice-kim-medium.jpg"
                     alt="Alice Kim"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Alice+Kim';
+                    }}
                   />
-                </div>
-                <div className="text-center px-3 py-3 il-profile-info d-flex flex-column justify-content-center align-items-center">
-                  <p className="h6 mb-0">Alice Kim</p>
-                  <p className="h6 mb-0" style={{ fontSize: '14px', fontWeight: 500 }}>Executive Location Agent</p>
-                  <a style={{ fontSize: '14px' }} href="mailto:alice@imagelocations.com">alice@imagelocations.com</a>
+                  <div className="il-profile-info-overlay">
+                    <h6>Alice Kim</h6>
+                    <p>Executive Location Agent</p>
+                    <a href="mailto:alice@imagelocations.com">alice@imagelocations.com</a>
+                  </div>
                 </div>
               </div>
 
               {/* Jason Radspinner */}
               <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-image-container position-relative">
+                <div className="il-profile-card">
                   <img
-                    className="w-100 h-100 object-fit il-contact-profile-pic"
-                    src="https://via.placeholder.com/231x165/808080/ffffff?text=Jason"
+                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188751/conversions/jason-radspinner-medium.jpg"
                     alt="Jason Radspinner"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Jason';
+                    }}
                   />
-                </div>
-                <div className="text-center px-3 py-3 il-profile-info d-flex flex-column justify-content-center align-items-center">
-                  <p className="h6 mb-0">Jason Radspinner</p>
-                  <p className="h6 mb-0" style={{ fontSize: '14px', fontWeight: 500 }}>Executive Location Agent</p>
-                  <a style={{ fontSize: '14px' }} href="mailto:jason@imagelocations.com">jason@imagelocations.com</a>
+                  <div className="il-profile-info-overlay">
+                    <h6>Jason Radspinner</h6>
+                    <p>Executive Location Agent</p>
+                    <a href="mailto:jason@imagelocations.com">jason@imagelocations.com</a>
+                  </div>
                 </div>
               </div>
 
               {/* Crew Parking - Yellow */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <a className="h-100 d-block" href="https://crewparking.com/" style={{ backgroundColor: '#eed437' }}>
-                  <div className="il-image-container position-relative w-100 h-100 d-flex align-items-center justify-content-center">
-                    <div className="text-dark text-center p-4">
-                      <h3>CREW PARKING</h3>
-                    </div>
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                <a href="https://crewparking.com/" className="d-block" target="_blank" rel="noopener noreferrer">
+                  <div
+                    className="il-profile-card d-flex align-items-center justify-content-center"
+                    style={{
+                      backgroundColor: '#eed437',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <img
+                      src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188752/conversions/contact-section-5-medium.jpg"
+                      alt="Crew Parking"
+                      style={{ position: 'absolute', width: 'auto', height: '60%' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                 </a>
               </div>
 
-              {/* Additional placeholder cards */}
-              {[...Array(18)].map((_, i) => (
-                <div key={i} className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                  <div className="il-image-container position-relative w-100 h-100">
+              {/* Marisa Sullivan */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <div className="il-profile-card">
+                  <img
+                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188753/conversions/marisa-sullivan-medium.jpg"
+                    alt="Marisa Sullivan"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Marisa';
+                    }}
+                  />
+                  <div className="il-profile-info-overlay">
+                    <h6>Marisa Sullivan</h6>
+                    <p>Location Agent</p>
+                    <a href="mailto:marisa@imagelocations.com">marisa@imagelocations.com</a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Camilla More */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
+                <div className="il-profile-card">
+                  <img
+                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188754/conversions/camilla-more-medium.jpg"
+                    alt="Camilla More"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Camilla';
+                    }}
+                  />
+                  <div className="il-profile-info-overlay">
+                    <h6>Camilla More</h6>
+                    <p>Location Supervisor</p>
+                    <a href="mailto:info@imagelocations.com">info@imagelocations.com</a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sky Studio */}
+              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                <a href="/skystudio" className="d-block">
+                  <div className="il-profile-card">
                     <img
-                      className="object-fit w-100 h-100"
-                      src={`https://via.placeholder.com/231x165/f0f0f0/666666?text=Tile+${i+7}`}
+                      src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188755/conversions/contact-section-8-medium.jpg"
+                      alt="Sky Studio"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/231x165/333/ffffff?text=SKY+STUDIO';
+                      }}
+                    />
+                  </div>
+                </a>
+              </div>
+
+              {/* Additional placeholder tiles */}
+              {[...Array(15)].map((_, i) => (
+                <div key={i} className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                  <div className="il-profile-card">
+                    <img
+                      src={`https://via.placeholder.com/231x165/f0f0f0/666666?text=Tile+${i+10}`}
                       alt=""
                     />
                   </div>
