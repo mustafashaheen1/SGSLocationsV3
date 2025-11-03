@@ -644,28 +644,30 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        {/* Property Details Section - Two Column Layout */}
+        {/* Property Details Section - 50/50 Split Layout */}
         <div style={{
           padding: '2rem',
           background: '#fff'
         }}>
           <div style={{
             display: 'flex',
-            gap: '3rem'
+            gap: '2rem'
           }}>
-            {/* LEFT COLUMN - Property Info */}
+            {/* LEFT COLUMN - 50% Width */}
             <div style={{
-              flex: '1 1 60%',
+              flex: '1 1 50%',
               paddingRight: '2rem',
-              borderRight: '1px solid #dee2e6'
+              borderRight: '1px solid #e5e5e5'
             }}>
-              {/* Property Title Row */}
+              {/* Property Title Row with City and Badges */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1rem',
-                marginBottom: '1rem'
+                gap: '0.75rem',
+                marginBottom: '1rem',
+                flexWrap: 'wrap'
               }}>
+                {/* Property Name */}
                 <h1 style={{
                   fontSize: '28px',
                   fontWeight: 300,
@@ -673,62 +675,88 @@ export default function PropertyDetailPage() {
                   fontFamily: 'acumin-pro-wide, sans-serif',
                   color: 'rgb(33, 37, 41)',
                   letterSpacing: '-0.56px',
-                  lineHeight: '36.4px',
-                  display: 'block',
-                  boxSizing: 'border-box'
+                  lineHeight: '36.4px'
                 }}>
                   {property.name}
                 </h1>
 
+                {/* Vertical Separator */}
                 <div style={{
                   height: '24px',
                   width: '1px',
-                  background: '#dee2e6',
-                  margin: '0 0.5rem'
+                  background: '#e5e5e5'
                 }} />
 
-                <span style={{
-                  fontSize: '18px',
-                  fontWeight: 300,
+                {/* City Name */}
+                <p style={{
+                  margin: 0,
+                  fontSize: '16px',
+                  fontWeight: 100,
                   color: 'rgb(33, 37, 41)',
                   fontFamily: 'acumin-pro-wide, sans-serif',
-                  lineHeight: 1,
+                  letterSpacing: '-0.32px',
+                  lineHeight: '16px',
                   whiteSpace: 'nowrap'
                 }}>
                   {property.city}
-                </span>
+                </p>
 
+                {/* Film LA Logo */}
                 {property.permits_available && (
-                  <button
-                    style={{
-                      marginLeft: '1rem',
-                      background: '#4a90e2',
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: '#00a8e1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginLeft: '0.5rem'
+                  }}>
+                    <span style={{
                       color: '#fff',
-                      border: 'none',
-                      padding: '0.375rem 1rem',
-                      borderRadius: '0.25rem',
-                      fontSize: '14px',
-                      fontWeight: 400,
-                      cursor: 'pointer',
-                      fontFamily: 'acumin-pro-wide, sans-serif'
-                    }}
-                  >
-                    Film
-                  </button>
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      fontFamily: 'acumin-pro-wide, sans-serif',
+                      textAlign: 'center',
+                      lineHeight: '1.2'
+                    }}>
+                      Film<br/>LA
+                    </span>
+                  </div>
                 )}
 
+                {/* Pull My Permit Button */}
                 <button
                   style={{
-                    background: '#e11921',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.375rem 1rem',
-                    borderRadius: '0.25rem',
+                    background: 'rgb(225, 25, 33)',
+                    color: 'rgb(248, 249, 250)',
+                    border: '1px solid rgb(225, 25, 33)',
+                    borderRadius: '3.2px',
+                    padding: '4px 8px',
                     fontSize: '14px',
-                    fontWeight: 400,
-                    cursor: 'pointer',
+                    fontWeight: 300,
                     fontFamily: 'acumin-pro-wide, sans-serif',
-                    whiteSpace: 'nowrap'
+                    letterSpacing: '-0.28px',
+                    lineHeight: '21px',
+                    cursor: 'pointer',
+                    marginTop: '8px',
+                    marginBottom: '8px',
+                    marginLeft: '0.5rem',
+                    transition: 'all 0.15s ease-in-out',
+                    userSelect: 'none',
+                    verticalAlign: 'middle',
+                    textAlign: 'center',
+                    display: 'inline-block',
+                    minWidth: '114.672px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#bf151c';
+                    e.currentTarget.style.borderColor = '#bf151c';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgb(225, 25, 33)';
+                    e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
                   }}
                 >
                   Pull My Permit
@@ -736,66 +764,91 @@ export default function PropertyDetailPage() {
               </div>
 
               {/* Description */}
-              <p style={{
-                fontSize: '15px',
-                lineHeight: '1.7',
+              <div style={{
+                fontSize: '14px',
+                lineHeight: '1.6',
                 color: 'rgb(33, 37, 41)',
                 fontFamily: 'acumin-pro-wide, sans-serif',
                 fontWeight: 300,
-                marginTop: '0.5rem',
+                marginTop: '1rem',
                 marginBottom: '1.5rem'
               }}>
-                {property.description || 'Raw industrial space with exposed brick, high ceilings, and dramatic natural light. Perfect for urban scenes and edgy productions.'}
-              </p>
+                <h2 style={{
+                  fontSize: '12pt',
+                  fontWeight: 700,
+                  marginBottom: '0.5rem',
+                  fontFamily: 'acumin-pro-wide, sans-serif'
+                }}>
+                  {property.name}: An Architectural Marvel in {property.city} for Filmmakers and Photographers
+                </h2>
+                <p>
+                  {property.description || 'Nestled in the vibrant city, this location stands as a testament to innovative design and modern architecture. A unique blend of functional space and striking visual appeal, this building offers an exciting backdrop for filming, photography, and various production activities.'}
+                </p>
+              </div>
 
               {/* Inquire Button */}
-              <button
-                onClick={() => setShowContactModal(true)}
-                style={{
-                  background: '#e11921',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '0.625rem 1.75rem',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  fontFamily: 'acumin-pro-wide, sans-serif',
-                  letterSpacing: '0.05em',
-                  transition: 'background 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#bf151c';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#e11921';
-                }}
-              >
-                INQUIRE ABOUT {property.name.toUpperCase()}
-              </button>
+              <p style={{ marginTop: '1.5rem' }}>
+                <button
+                  onClick={() => setShowContactModal(true)}
+                  style={{
+                    background: 'rgb(225, 25, 33)',
+                    color: '#fff',
+                    border: '1px solid rgb(225, 25, 33)',
+                    borderRadius: '3.2px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'acumin-pro-wide, sans-serif',
+                    letterSpacing: '0.05em',
+                    transition: 'all 0.15s ease-in-out'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#bf151c';
+                    e.currentTarget.style.borderColor = '#bf151c';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgb(225, 25, 33)';
+                    e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
+                  }}
+                >
+                  Inquire About {property.name}
+                </button>
+              </p>
             </div>
 
-            {/* RIGHT COLUMN - Buttons and Logo */}
+            {/* RIGHT COLUMN - 50% Width */}
             <div style={{
-              width: '380px',
+              flex: '1 1 50%',
+              paddingLeft: '2rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '1.5rem'
+              justifyContent: 'flex-start',
+              alignItems: 'center'
             }}>
-              {/* Action Buttons Grid */}
+              {/* Action Buttons */}
               <div style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                justifyContent: 'center',
+                marginBottom: '2rem',
+                width: '100%',
+                maxWidth: '400px'
               }}>
                 {/* Copy Button - White with Red Border */}
                 <button
-                  onClick={copyLink}
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    console.log('Link copied!');
+                  }}
                   style={{
                     background: '#fff',
                     color: 'rgb(33, 37, 41)',
-                    border: '2px solid #e11921',
-                    padding: '0.5rem 1rem',
+                    border: '1px solid rgb(225, 25, 33)',
+                    borderRadius: '3.2px',
+                    padding: '8px 16px',
                     fontSize: '13px',
                     fontWeight: 400,
                     cursor: 'pointer',
@@ -803,11 +856,10 @@ export default function PropertyDetailPage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    transition: 'all 0.2s',
-                    letterSpacing: '0.05em'
+                    transition: 'all 0.15s ease-in-out'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#e11921';
+                    e.currentTarget.style.background = 'rgb(225, 25, 33)';
                     e.currentTarget.style.color = '#fff';
                   }}
                   onMouseLeave={(e) => {
@@ -819,131 +871,57 @@ export default function PropertyDetailPage() {
                   COPY
                 </button>
 
-                {/* Other Buttons - Red Background */}
-                <button
-                  onClick={() => setShowContactModal(true)}
-                  style={{
-                    background: '#e11921',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    fontSize: '13px',
-                    fontWeight: 400,
-                    cursor: 'pointer',
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em',
-                    transition: 'background 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#bf151c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#e11921';
-                  }}
-                >
-                  <Mail style={{ width: '16px', height: '16px' }} />
-                  CONTACT US
-                </button>
-
-                <button
-                  onClick={() => setShowThumbnails(true)}
-                  style={{
-                    background: '#e11921',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    fontSize: '13px',
-                    fontWeight: 400,
-                    cursor: 'pointer',
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em',
-                    transition: 'background 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#bf151c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#e11921';
-                  }}
-                >
-                  <ImageIcon style={{ width: '16px', height: '16px' }} />
-                  THUMBNAILS
-                </button>
-
-                <button
-                  onClick={handleDownloadImages}
-                  style={{
-                    background: '#e11921',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    fontSize: '13px',
-                    fontWeight: 400,
-                    cursor: 'pointer',
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em',
-                    transition: 'background 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#bf151c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#e11921';
-                  }}
-                >
-                  <Download style={{ width: '16px', height: '16px' }} />
-                  DOWNLOAD IMAGES
-                </button>
-
-                <button
-                  onClick={handleDownloadPDF}
-                  style={{
-                    background: '#e11921',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    fontSize: '13px',
-                    fontWeight: 400,
-                    cursor: 'pointer',
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    letterSpacing: '0.05em',
-                    transition: 'background 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#bf151c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#e11921';
-                  }}
-                >
-                  <FileText style={{ width: '16px', height: '16px' }} />
-                  LOCATION PDF
-                </button>
+                {/* Other Action Buttons */}
+                {[
+                  { icon: Mail, text: 'CONTACT US', onClick: () => setShowContactModal(true) },
+                  { icon: ImageIcon, text: 'THUMBNAILS', onClick: () => setShowThumbnails(true) },
+                  { icon: Download, text: 'DOWNLOAD IMAGES', onClick: handleDownloadImages },
+                  { icon: FileText, text: 'LOCATION PDF', onClick: handleDownloadPDF }
+                ].map((btn, index) => (
+                  <button
+                    key={index}
+                    onClick={btn.onClick}
+                    style={{
+                      background: 'rgb(225, 25, 33)',
+                      color: '#fff',
+                      border: '1px solid rgb(225, 25, 33)',
+                      borderRadius: '3.2px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: 400,
+                      cursor: 'pointer',
+                      fontFamily: 'acumin-pro-wide, sans-serif',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.15s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#bf151c';
+                      e.currentTarget.style.borderColor = '#bf151c';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgb(225, 25, 33)';
+                      e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
+                    }}
+                  >
+                    <btn.icon style={{ width: '16px', height: '16px' }} />
+                    {btn.text}
+                  </button>
+                ))}
               </div>
 
-              {/* SGS Verified Logo - Below Buttons in Right Column */}
+              {/* SGS Verified Logo */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                paddingTop: '0.5rem'
+                marginTop: '1rem'
               }}>
                 <div style={{
                   width: '48px',
                   height: '48px',
-                  background: '#e11921',
+                  background: 'rgb(225, 25, 33)',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
@@ -957,22 +935,20 @@ export default function PropertyDetailPage() {
                 </div>
                 <div>
                   <div style={{
-                    fontSize: '16px',
+                    fontSize: '18px',
                     fontWeight: 600,
                     color: 'rgb(33, 37, 41)',
                     fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '0.05em',
-                    lineHeight: 1
+                    letterSpacing: '0.05em'
                   }}>
                     SGS
                   </div>
                   <div style={{
                     fontSize: '12px',
-                    fontWeight: 400,
+                    fontWeight: 300,
                     color: '#6b7280',
                     fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '0.05em',
-                    lineHeight: 1.2
+                    letterSpacing: '0.02em'
                   }}>
                     VERIFIED
                   </div>
