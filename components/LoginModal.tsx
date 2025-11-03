@@ -17,27 +17,16 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
 
-    let hasErrors = false;
-    const newErrors = { email: '', password: '' };
-
-    if (!email) {
-      newErrors.email = 'Email is required';
-      hasErrors = true;
-    }
-
-    if (!password) {
-      newErrors.password = 'Password is required';
-      hasErrors = true;
-    }
-
-    if (hasErrors) {
-      setErrors(newErrors);
+    if (!email || !password) {
+      setErrors({
+        email: !email ? 'Email is required' : '',
+        password: !password ? 'Password is required' : ''
+      });
       return;
     }
 
-    window.location.href = '/dashboard';
+    window.location.replace('/dashboard');
   };
 
   return (

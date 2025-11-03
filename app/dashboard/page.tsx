@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -9,9 +8,7 @@ import {
   LogOut, Bell, TrendingUp, Eye, MapPin, Clock, DollarSign,
   CheckCircle, XCircle, Archive, Plus, Download, Share2, FolderOpen,
   Tag, AlertCircle, BarChart3, Users, FileText, Star, Filter,
-  ChevronRight, Grid, List, Map as MapIcon, SlidersHorizontal,
-  ArrowUpRight, ArrowDownRight, Minus, Edit, Trash2, ExternalLink,
-  Mail, Phone, Building, User, Lock, BellRing, Shield, ChevronDown, Copy, ImageIcon
+  ChevronRight, Grid, List, Map as MapIcon, Edit, Trash2, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,9 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { supabase } from '@/lib/supabase';
 
 const dummyProductionData = {
   user: {
@@ -148,48 +142,13 @@ const dummyOwnerData = {
 };
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
   const [userType, setUserType] = useState<'production' | 'property_owner'>('production');
-  const [loading, setLoading] = useState(true);
   const [selectedCollection, setSelectedCollection] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  useEffect(() => {
-    async function checkUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: userData } = await supabase
-        .from('users')
-        .select('user_type')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      setUser(user);
-      setUserType(userData?.user_type || 'production');
-      setLoading(false);
-    }
-
-    checkUser();
-  }, [router]);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
+  const handleSignOut = () => {
+    window.location.href = '/';
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl">Loading dashboard...</div>
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-gray-50" style={{ paddingTop: '60px' }}>
