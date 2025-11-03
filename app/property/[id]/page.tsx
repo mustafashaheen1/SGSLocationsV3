@@ -787,12 +787,13 @@ export default function PropertyDetailPage() {
               </div>
 
               {/* Inquire Button */}
-              <p style={{ marginTop: '1.5rem' }}>
+              <div style={{ marginTop: '1.5rem' }}>
                 <button
                   onClick={() => setShowContactModal(true)}
                   style={{
+                    appearance: 'button',
                     background: 'rgb(225, 25, 33)',
-                    color: '#fff',
+                    color: 'rgb(255, 255, 255)',
                     border: '1px solid rgb(225, 25, 33)',
                     borderRadius: '3.2px',
                     padding: '8px 16px',
@@ -801,8 +802,14 @@ export default function PropertyDetailPage() {
                     textTransform: 'uppercase',
                     cursor: 'pointer',
                     fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '0.05em',
-                    transition: 'all 0.15s ease-in-out'
+                    letterSpacing: '0.7px',
+                    lineHeight: '22.4px',
+                    height: '40.3984px',
+                    width: '392.195px',
+                    textAlign: 'center',
+                    display: 'inline-block',
+                    transition: 'all 0.15s ease-in-out',
+                    margin: 0
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#bf151c';
@@ -813,9 +820,9 @@ export default function PropertyDetailPage() {
                     e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
                   }}
                 >
-                  Inquire About {property.name}
+                  INQUIRE ABOUT {property.name.toUpperCase()}
                 </button>
-              </p>
+              </div>
             </div>
 
             {/* RIGHT COLUMN - 50% Width */}
