@@ -831,18 +831,16 @@ export default function PropertyDetailPage() {
               paddingLeft: '2rem',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'flex-start',
-              alignItems: 'center'
+              justifyContent: 'flex-start'
             }}>
-              {/* Action Buttons */}
+              {/* Action Buttons - Single Row */}
               <div style={{
                 display: 'flex',
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
                 gap: '0.5rem',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
                 marginBottom: '2rem',
-                width: '100%',
-                maxWidth: '400px'
+                width: '100%'
               }}>
                 {/* Copy Button - White with Red Border */}
                 <button
@@ -853,17 +851,19 @@ export default function PropertyDetailPage() {
                   style={{
                     background: '#fff',
                     color: 'rgb(33, 37, 41)',
-                    border: '1px solid rgb(225, 25, 33)',
+                    border: '2px solid rgb(225, 25, 33)',
                     borderRadius: '3.2px',
-                    padding: '8px 16px',
+                    padding: '8px 12px',
                     fontSize: '13px',
                     fontWeight: 400,
                     cursor: 'pointer',
                     fontFamily: 'acumin-pro-wide, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.15s ease-in-out'
+                    gap: '0.4rem',
+                    transition: 'all 0.15s ease-in-out',
+                    whiteSpace: 'nowrap',
+                    minWidth: 'auto'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgb(225, 25, 33)';
@@ -874,34 +874,41 @@ export default function PropertyDetailPage() {
                     e.currentTarget.style.color = 'rgb(33, 37, 41)';
                   }}
                 >
-                  <Copy style={{ width: '16px', height: '16px' }} />
+                  <Copy style={{ width: '14px', height: '14px' }} />
                   COPY
                 </button>
 
                 {/* Other Action Buttons */}
                 {[
-                  { icon: Mail, text: 'CONTACT US', onClick: () => setShowContactModal(true) },
-                  { icon: ImageIcon, text: 'THUMBNAILS', onClick: () => setShowThumbnails(true) },
-                  { icon: Download, text: 'DOWNLOAD IMAGES', onClick: handleDownloadImages },
-                  { icon: FileText, text: 'LOCATION PDF', onClick: handleDownloadPDF }
+                  { icon: Mail, text: 'CONTACT US' },
+                  { icon: ImageIcon, text: 'THUMBNAILS' },
+                  { icon: Download, text: 'DOWNLOAD IMAGES' },
+                  { icon: FileText, text: 'LOCATION PDF' }
                 ].map((btn, index) => (
                   <button
                     key={index}
-                    onClick={btn.onClick}
+                    onClick={() => {
+                      if (btn.text === 'CONTACT US') setShowContactModal(true);
+                      else if (btn.text === 'THUMBNAILS') setShowThumbnails(true);
+                      else if (btn.text === 'DOWNLOAD IMAGES') handleDownloadImages();
+                      else if (btn.text === 'LOCATION PDF') handleDownloadPDF();
+                    }}
                     style={{
                       background: 'rgb(225, 25, 33)',
                       color: '#fff',
                       border: '1px solid rgb(225, 25, 33)',
                       borderRadius: '3.2px',
-                      padding: '8px 16px',
+                      padding: '8px 12px',
                       fontSize: '13px',
                       fontWeight: 400,
                       cursor: 'pointer',
                       fontFamily: 'acumin-pro-wide, sans-serif',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      transition: 'all 0.15s ease-in-out'
+                      gap: '0.4rem',
+                      transition: 'all 0.15s ease-in-out',
+                      whiteSpace: 'nowrap',
+                      minWidth: 'auto'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = '#bf151c';
@@ -912,7 +919,7 @@ export default function PropertyDetailPage() {
                       e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
                     }}
                   >
-                    <btn.icon style={{ width: '16px', height: '16px' }} />
+                    <btn.icon style={{ width: '14px', height: '14px' }} />
                     {btn.text}
                   </button>
                 ))}
