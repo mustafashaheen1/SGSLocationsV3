@@ -42,7 +42,7 @@ export default function PropertyDetailPage() {
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room'];
   const categoryScrollRef = useRef<HTMLDivElement>(null);
-  const [scrollIndicator, setScrollIndicator] = useState({ left: 0, width: 10 });
+  const [scrollPosition, setScrollPosition] = useState({ left: 0, width: 50 });
 
   const handleCategoryScroll = () => {
     const container = categoryScrollRef.current;
@@ -50,15 +50,22 @@ export default function PropertyDetailPage() {
 
     const { scrollLeft, scrollWidth, clientWidth } = container;
 
-    const dragWidthPercent = (clientWidth / scrollWidth) * 100;
+    const visibleRatio = clientWidth / scrollWidth;
 
-    const maxScroll = scrollWidth - clientWidth;
-    const scrollPercent = maxScroll > 0 ? (scrollLeft / maxScroll) : 0;
-    const dragLeftPercent = scrollPercent * (100 - dragWidthPercent);
+    const scrollbarContainerWidth = clientWidth - 64;
 
-    setScrollIndicator({
-      width: dragWidthPercent,
-      left: dragLeftPercent
+    const dragWidth = Math.max(scrollbarContainerWidth * visibleRatio, 20);
+
+    const maxDragScroll = scrollbarContainerWidth - dragWidth;
+
+    const maxContentScroll = scrollWidth - clientWidth;
+    const scrollPercent = maxContentScroll > 0 ? scrollLeft / maxContentScroll : 0;
+
+    const dragLeft = scrollPercent * maxDragScroll;
+
+    setScrollPosition({
+      left: dragLeft,
+      width: dragWidth
     });
   };
 
@@ -95,6 +102,10 @@ export default function PropertyDetailPage() {
 
   useEffect(() => {
     handleCategoryScroll();
+
+    const handleResize = () => handleCategoryScroll();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   let images: string[] = [];
@@ -402,20 +413,46 @@ export default function PropertyDetailPage() {
           </button>
         </div>
 
-        {/* Category Tags with Scroll-based Red Indicator */}
+        {/* Category Navigation with Scrollbar ABOVE */}
         <div style={{
           background: '#fff',
           borderBottom: '1px solid #e5e7eb',
-          position: 'relative'
+          position: 'relative',
+          paddingTop: '0.75rem'
         }}>
-          {/* Category buttons container */}
+          {/* Scrollbar container - ABOVE categories */}
+          <div style={{
+            position: 'relative',
+            height: '4px',
+            background: '#dee2e6',
+            marginLeft: '2rem',
+            marginRight: '2rem',
+            marginBottom: '0.5rem',
+            borderRadius: '10px'
+          }}>
+            {/* Red scrollbar drag indicator */}
+            <div
+              style={{
+                position: 'absolute',
+                left: `${scrollPosition.left}px`,
+                width: `${scrollPosition.width}px`,
+                height: '100%',
+                background: '#e11921',
+                borderRadius: '10px',
+                transform: 'translate3d(0, 0, 0)',
+                cursor: 'grab'
+              }}
+            />
+          </div>
+
+          {/* Category buttons - BELOW scrollbar */}
           <div
             ref={categoryScrollRef}
             onScroll={handleCategoryScroll}
             style={{
               display: 'flex',
               gap: '2rem',
-              padding: '1rem 2rem',
+              padding: '0 2rem 1rem 2rem',
               overflowX: 'auto',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
@@ -441,32 +478,6 @@ export default function PropertyDetailPage() {
                 {tag}
               </button>
             ))}
-          </div>
-
-          {/* Scrollbar track (gray) */}
-          <div style={{
-            position: 'relative',
-            height: '8px',
-            background: '#dee2e6',
-            marginTop: '10px',
-            marginLeft: '2rem',
-            marginRight: '2rem',
-            borderRadius: '10px',
-            marginBottom: '0.5rem'
-          }}>
-            {/* Scrollbar drag (red) - dynamically sized based on scroll */}
-            <div
-              style={{
-                position: 'absolute',
-                left: `${scrollIndicator.left}%`,
-                width: `${scrollIndicator.width}%`,
-                height: '100%',
-                background: '#e11921',
-                borderRadius: '10px',
-                transition: 'transform 0s',
-                cursor: 'grab'
-              }}
-            />
           </div>
         </div>
 
