@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Search, ChevronDown, Plus, Upload } from 'lucide-react';
+import { X, Search, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
 interface Property {
@@ -11,84 +11,153 @@ interface Property {
   image: string;
 }
 
+interface FilterOption {
+  text: string;
+  count?: number;
+}
+
 interface ActiveFilter {
-  key: string;
-  value: string;
+  category: string;
+  values: string[];
 }
 
 export default function SearchPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [dragActive, setDragActive] = useState(false);
+  const [dropdownSearches, setDropdownSearches] = useState<{[key: string]: string}>({});
+  const [currentPage, setCurrentPage] = useState(1);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filterOptions = [
-    { label: 'Categories', key: 'categories' },
-    { label: 'Permits', key: 'permits' },
-    { label: 'City', key: 'city' },
-    { label: 'County', key: 'county' },
-    { label: 'Access', key: 'access' },
-    { label: 'Floors', key: 'floors' },
-    { label: 'Patio Balconies', key: 'patioBalconies' },
-    { label: 'Pool', key: 'pool' },
-    { label: 'Walls', key: 'walls' },
-    { label: 'Yard', key: 'yard' }
-  ];
+  const filterCategories = {
+    Categories: [
+      { text: 'Retro', count: 34 },
+      { text: 'Pool', count: 20 },
+      { text: 'Modern', count: 17 },
+      { text: 'Zen', count: 14 },
+      { text: 'Architectural', count: 13 },
+      { text: 'Americana', count: 11 },
+      { text: 'Views', count: 11 },
+      { text: 'Kitchen', count: 9 },
+      { text: 'Tropical', count: 9 },
+      { text: 'Mid-Century Modern', count: 8 },
+      { text: 'Bar', count: 7 }
+    ],
+    Permits: [
+      { text: 'Film Permit' },
+      { text: 'Photo Permit' },
+      { text: 'Event Permit' }
+    ],
+    City: [
+      { text: 'Los Angeles' },
+      { text: 'Beverly Hills' },
+      { text: 'Santa Monica' },
+      { text: 'Malibu' }
+    ],
+    County: [
+      { text: 'Los Angeles County' },
+      { text: 'Orange County' },
+      { text: 'Ventura County' }
+    ],
+    Access: [
+      { text: '24/7' },
+      { text: 'Business Hours' },
+      { text: 'By Appointment' }
+    ],
+    Floors: [
+      { text: 'wood', count: 44 },
+      { text: 'tile', count: 30 },
+      { text: 'concrete', count: 25 },
+      { text: 'dark wood', count: 17 },
+      { text: 'carpet', count: 13 },
+      { text: 'light wood', count: 8 },
+      { text: 'linoleum', count: 6 },
+      { text: 'white', count: 5 },
+      { text: 'black', count: 4 },
+      { text: 'marble', count: 4 },
+      { text: 'slate', count: 4 },
+      { text: 'cobblestone', count: 3 }
+    ],
+    'Patio Balconies': [
+      { text: 'furnished' },
+      { text: 'unfurnished' },
+      { text: 'large' },
+      { text: 'small' }
+    ],
+    Pool: [
+      { text: 'Yes' },
+      { text: 'No' },
+      { text: 'Indoor' },
+      { text: 'Outdoor' }
+    ],
+    Walls: [
+      { text: 'White' },
+      { text: 'Brick' },
+      { text: 'Glass' },
+      { text: 'Wood' }
+    ],
+    Yard: [
+      { text: 'Large' },
+      { text: 'Small' },
+      { text: 'Landscaped' }
+    ]
+  };
 
   useEffect(() => {
     const sampleProperties = Array.from({ length: 96 }, (_, i) => ({
       id: i + 1,
       title: `Club ${31 + i}`,
-      location: `Los Angeles`,
+      location: 'Los Angeles',
       image: `/api/placeholder/400/300`
     }));
     setProperties(sampleProperties);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      console.log('File dropped:', e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      console.log('File selected:', e.target.files[0]);
-    }
-  };
-
-  const handleFilterSelect = (key: string, value: string) => {
+  const toggleFilter = (category: string, value: string) => {
     setActiveFilters(prev => {
-      const existing = prev.find(f => f.key === key);
+      const existing = prev.find(f => f.category === category);
+
       if (existing) {
-        return prev.map(f => f.key === key ? { ...f, value } : f);
+        const hasValue = existing.values.includes(value);
+        if (hasValue) {
+          const newValues = existing.values.filter(v => v !== value);
+          if (newValues.length === 0) {
+            return prev.filter(f => f.category !== category);
+          }
+          return prev.map(f =>
+            f.category === category ? { ...f, values: newValues } : f
+          );
+        } else {
+          return prev.map(f =>
+            f.category === category ? { ...f, values: [...f.values, value] } : f
+          );
+        }
+      } else {
+        return [...prev, { category, values: [value] }];
       }
-      return [...prev, { key, value }];
     });
-    setOpenDropdown(null);
   };
 
-  const removeFilter = (key: string) => {
-    setActiveFilters(prev => prev.filter(f => f.key !== key));
+  const isFilterActive = (category: string, value: string) => {
+    const filter = activeFilters.find(f => f.category === category);
+    return filter ? filter.values.includes(value) : false;
+  };
+
+  const removeFilterValue = (category: string, value: string) => {
+    toggleFilter(category, value);
+  };
+
+  const getCategoryKey = (category: string) => {
+    return category.toLowerCase().replace(' ', '');
   };
 
   const getCurrentPageItems = () => {
@@ -106,66 +175,16 @@ export default function SearchPage() {
           padding-top: 60px;
         }
 
-        .image-search-container {
-          margin: 20px auto;
-          max-width: 1200px;
-          padding: 0 20px;
-        }
-
-        .image-search-box {
-          border: 2px dashed #333;
-          border-radius: 4px;
-          padding: 40px 20px;
-          text-align: center;
-          background: #f9f9f9;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        .image-search-box.drag-active {
-          background: #e8f4f8;
-          border-color: #0073e6;
-        }
-
-        .image-search-box:hover {
-          background: #f0f0f0;
-        }
-
-        .image-search-title {
-          font-size: 20px;
-          font-weight: 600;
-          margin-bottom: 15px;
-          color: #333;
-        }
-
-        .image-search-text {
-          font-size: 16px;
-          color: #666;
-        }
-
-        .image-search-link {
-          color: #0073e6;
-          text-decoration: underline;
-          cursor: pointer;
-        }
-
         .filter-bar {
-          background: #f8f9fa;
-          border-top: 1px solid #e5e5e5;
+          background: white;
           border-bottom: 1px solid #e5e5e5;
-          padding: 12px 0;
-        }
-
-        .filter-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 20px;
+          padding: 12px 20px;
         }
 
         .filter-row {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 15px;
           flex-wrap: wrap;
         }
 
@@ -177,7 +196,7 @@ export default function SearchPage() {
           display: flex;
           align-items: center;
           gap: 4px;
-          padding: 6px 12px;
+          padding: 8px 12px;
           background: white;
           border: 1px solid #ced4da;
           border-radius: 3px;
@@ -189,10 +208,9 @@ export default function SearchPage() {
 
         .dropdown-toggle:hover {
           background: #f8f9fa;
-          border-color: #adb5bd;
         }
 
-        .dropdown-toggle.active {
+        .dropdown-toggle.has-active {
           background: #6c757d;
           color: white;
           border-color: #6c757d;
@@ -205,40 +223,125 @@ export default function SearchPage() {
           background: white;
           border: 1px solid #dee2e6;
           border-radius: 4px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          min-width: 150px;
-          max-height: 300px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          min-width: 250px;
+          max-height: 400px;
           overflow-y: auto;
           z-index: 1000;
-          display: none;
         }
 
-        .dropdown-menu.show {
-          display: block;
+        .dropdown-search {
+          padding: 10px;
+          border-bottom: 1px solid #e5e5e5;
         }
 
-        .dropdown-item {
-          padding: 8px 12px;
-          cursor: pointer;
+        .dropdown-search-input {
+          width: 100%;
+          padding: 8px 12px 8px 35px;
+          border: 1px solid #ced4da;
+          border-radius: 3px;
           font-size: 14px;
+          position: relative;
+        }
+
+        .dropdown-search-icon {
+          position: absolute;
+          left: 20px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6c757d;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .dropdown-options {
+          max-height: 350px;
+          overflow-y: auto;
+        }
+
+        .dropdown-option {
+          display: flex;
+          align-items: center;
+          padding: 10px 15px;
+          cursor: pointer;
           transition: background 0.2s;
         }
 
-        .dropdown-item:hover {
+        .dropdown-option:hover {
           background: #f8f9fa;
         }
 
-        .search-button {
-          padding: 6px 12px;
-          background: white;
-          border: 1px solid #ced4da;
-          border-radius: 3px;
+        .toggle-switch {
+          width: 44px;
+          height: 24px;
+          background: #e9ecef;
+          border-radius: 12px;
+          margin-right: 12px;
+          position: relative;
+          transition: all 0.3s;
           cursor: pointer;
-          transition: all 0.2s;
         }
 
-        .search-button:hover {
+        .toggle-switch.active {
+          background: #28a745;
+        }
+
+        .toggle-switch::after {
+          content: '';
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          background: white;
+          border-radius: 50%;
+          top: 2px;
+          left: 2px;
+          transition: all 0.3s;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active::after {
+          transform: translateX(20px);
+        }
+
+        .option-text {
+          flex: 1;
+          font-size: 14px;
+          color: #333;
+        }
+
+        .option-count {
+          font-size: 13px;
+          color: #dc3545;
+          font-weight: 500;
+          background: #fce4e5;
+          padding: 2px 8px;
+          border-radius: 10px;
+        }
+
+        .main-search-container {
+          padding: 15px 20px;
           background: #f8f9fa;
+        }
+
+        .main-search-wrapper {
+          max-width: 600px;
+          position: relative;
+        }
+
+        .main-search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6c757d;
+        }
+
+        .main-search-input {
+          width: 100%;
+          padding: 10px 12px 10px 40px;
+          border: 1px solid #ced4da;
+          border-radius: 4px;
+          font-size: 16px;
         }
 
         .filter-pills {
@@ -246,19 +349,18 @@ export default function SearchPage() {
           flex-wrap: wrap;
           gap: 10px;
           padding: 15px 20px;
-          max-width: 1400px;
-          margin: 0 auto;
+          background: #f8f9fa;
         }
 
-        .filter-pill {
-          display: inline-flex;
+        .filter-pill-group {
+          display: flex;
           align-items: center;
+          gap: 5px;
         }
 
         .filter-label {
           color: #333;
           font-size: 14px;
-          margin-right: 5px;
         }
 
         .filter-value {
@@ -266,9 +368,10 @@ export default function SearchPage() {
           align-items: center;
           background: #dc3545;
           color: white;
-          padding: 4px 10px;
+          padding: 5px 10px;
           border-radius: 3px;
           font-size: 14px;
+          margin-left: 5px;
         }
 
         .filter-remove {
@@ -286,8 +389,6 @@ export default function SearchPage() {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 15px;
-          max-width: 1400px;
-          margin: 0 auto;
           padding: 20px;
         }
 
@@ -304,7 +405,6 @@ export default function SearchPage() {
         }
 
         .property-card {
-          position: relative;
           background: white;
           border: 1px solid #e5e5e5;
           overflow: hidden;
@@ -338,148 +438,99 @@ export default function SearchPage() {
           color: #666;
           margin: 0;
         }
-
-        .floating-add-button {
-          position: fixed;
-          bottom: 30px;
-          left: 30px;
-          width: 56px;
-          height: 56px;
-          background: #e11921;
-          color: white;
-          border: none;
-          border-radius: 50%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 28px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          z-index: 1000;
-          transition: all 0.3s;
-        }
-
-        .floating-add-button:hover {
-          background: #c5161d;
-          transform: scale(1.1);
-        }
-
-        .pagination {
-          display: flex;
-          justify-content: center;
-          padding: 40px 20px;
-        }
-
-        .pagination-list {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-
-        .pagination-link {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 32px;
-          height: 32px;
-          padding: 0 10px;
-          border: 1px solid #dee2e6;
-          background: white;
-          color: #495057;
-          text-decoration: none;
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .pagination-link:hover {
-          background: #f8f9fa;
-        }
-
-        .pagination-link.active {
-          background: #e11921;
-          color: white;
-          border-color: #e11921;
-        }
-
-        .pagination-link.disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
       `}</style>
 
       <div className="search-page">
-        <div className="image-search-container">
-          <div
-            className={`image-search-box ${dragActive ? 'drag-active' : ''}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <h2 className="image-search-title">Search a Location Using An Image As Reference</h2>
-            <p className="image-search-text">
-              Drag & Drop an image here or <span className="image-search-link">click here</span> to select a file
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              style={{ display: 'none' }}
-            />
-          </div>
-        </div>
-
         <div className="filter-bar" ref={dropdownRef}>
-          <div className="filter-container">
-            <div className="filter-row">
-              {filterOptions.map(filter => (
-                <div key={filter.key} className="filter-dropdown">
+          <div className="filter-row">
+            {Object.keys(filterCategories).map(category => {
+              const categoryKey = getCategoryKey(category);
+              const hasActive = activeFilters.some(f => f.category === categoryKey);
+
+              return (
+                <div key={category} className="filter-dropdown">
                   <button
-                    className={`dropdown-toggle ${activeFilters.find(f => f.key === filter.key) ? 'active' : ''}`}
-                    onClick={() => setOpenDropdown(openDropdown === filter.key ? null : filter.key)}
+                    className={`dropdown-toggle ${hasActive ? 'has-active' : ''}`}
+                    onClick={() => setOpenDropdown(openDropdown === category ? null : category)}
                   >
-                    {filter.label}
+                    {category}
                     <ChevronDown size={14} />
                   </button>
 
-                  <div className={`dropdown-menu ${openDropdown === filter.key ? 'show' : ''}`}>
-                    <div className="dropdown-item" onClick={() => handleFilterSelect(filter.key, 'Option 1')}>
-                      Option 1
-                    </div>
-                    <div className="dropdown-item" onClick={() => handleFilterSelect(filter.key, 'Option 2')}>
-                      Option 2
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  {openDropdown === category && (
+                    <div className="dropdown-menu">
+                      <div className="dropdown-search">
+                        <div style={{ position: 'relative' }}>
+                          <Search className="dropdown-search-icon" size={18} />
+                          <input
+                            type="text"
+                            className="dropdown-search-input"
+                            placeholder="Search here..."
+                            value={dropdownSearches[category] || ''}
+                            onChange={(e) => setDropdownSearches({
+                              ...dropdownSearches,
+                              [category]: e.target.value
+                            })}
+                          />
+                        </div>
+                      </div>
 
-              <button className="search-button">
-                <Search size={18} />
-              </button>
-            </div>
+                      <div className="dropdown-options">
+                        {(filterCategories[category as keyof typeof filterCategories] as FilterOption[])
+                          .filter(option =>
+                            !dropdownSearches[category] ||
+                            option.text.toLowerCase().includes(dropdownSearches[category].toLowerCase())
+                          )
+                          .map(option => (
+                            <div
+                              key={option.text}
+                              className="dropdown-option"
+                              onClick={() => toggleFilter(categoryKey, option.text)}
+                            >
+                              <div className={`toggle-switch ${isFilterActive(categoryKey, option.text) ? 'active' : ''}`} />
+                              <span className="option-text">{option.text}</span>
+                              {option.count && (
+                                <span className="option-count">{option.count}</span>
+                              )}
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="main-search-container">
+          <div className="main-search-wrapper">
+            <Search className="main-search-icon" size={20} />
+            <input
+              type="text"
+              className="main-search-input"
+              placeholder="Search locations..."
+            />
           </div>
         </div>
 
         {activeFilters.length > 0 && (
           <div className="filter-pills">
             {activeFilters.map(filter => (
-              <div key={filter.key} className="filter-pill">
-                <span className="filter-label">{filter.key}:</span>
-                <span className="filter-value">
-                  {filter.value}
-                  <button
-                    className="filter-remove"
-                    onClick={() => removeFilter(filter.key)}
-                  >
-                    <X size={14} strokeWidth={3} />
-                  </button>
-                </span>
+              <div key={filter.category} className="filter-pill-group">
+                <span className="filter-label">{filter.category}:</span>
+                {filter.values.map(value => (
+                  <span key={value} className="filter-value">
+                    {value}
+                    <button
+                      className="filter-remove"
+                      onClick={() => removeFilterValue(filter.category, value)}
+                    >
+                      <X size={14} strokeWidth={3} />
+                    </button>
+                  </span>
+                ))}
               </div>
             ))}
           </div>
@@ -504,32 +555,6 @@ export default function SearchPage() {
               </Link>
             </div>
           ))}
-        </div>
-
-        <button className="floating-add-button" title="Add to List">
-          +
-        </button>
-
-        <div className="pagination">
-          <ul className="pagination-list">
-            <li>
-              <a className={`pagination-link ${currentPage === 1 ? 'disabled' : ''}`} onClick={() => currentPage > 1 && setCurrentPage(1)}>«</a>
-            </li>
-            <li>
-              <a className={`pagination-link ${currentPage === 1 ? 'disabled' : ''}`} onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}>‹</a>
-            </li>
-            {[1, 2, 3, 4].map(page => (
-              <li key={page}>
-                <a className={`pagination-link ${currentPage === page ? 'active' : ''}`} onClick={() => setCurrentPage(page)}>{page}</a>
-              </li>
-            ))}
-            <li>
-              <a className={`pagination-link ${currentPage === 4 ? 'disabled' : ''}`} onClick={() => currentPage < 4 && setCurrentPage(currentPage + 1)}>›</a>
-            </li>
-            <li>
-              <a className={`pagination-link ${currentPage === 4 ? 'disabled' : ''}`} onClick={() => currentPage < 4 && setCurrentPage(4)}>»</a>
-            </li>
-          </ul>
         </div>
       </div>
     </>
