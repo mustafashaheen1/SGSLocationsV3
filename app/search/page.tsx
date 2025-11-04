@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Search, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
@@ -8,9 +8,7 @@ interface Property {
   id: number;
   title: string;
   location: string;
-  category: string;
   image: string;
-  slug: string;
 }
 
 interface ActiveFilter {
@@ -21,91 +19,115 @@ interface ActiveFilter {
 interface FilterOption {
   label: string;
   key: string;
-  options: string[];
+  options: any[];
 }
 
 export default function SearchPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages] = useState(4);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
-  const itemsPerPage = 24;
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filterOptions: FilterOption[] = [
-    { label: 'Categories', key: 'categories', options: ['Residential', 'Commercial', 'Industrial', 'Event Space'] },
-    { label: 'Permits', key: 'permits', options: ['Film Permit', 'Photo Permit', 'Event Permit'] },
+    { label: 'Categories', key: 'categories', options: ['Residential', 'Commercial', 'Industrial'] },
+    { label: 'Permits', key: 'permits', options: ['Film', 'Photo', 'Event'] },
     { label: 'City', key: 'city', options: ['Los Angeles', 'Beverly Hills', 'Santa Monica', 'Malibu'] },
-    { label: 'County', key: 'county', options: ['Los Angeles County', 'Orange County', 'Ventura County'] },
+    { label: 'County', key: 'county', options: ['Los Angeles', 'Orange', 'Ventura'] },
     { label: 'Access', key: 'access', options: ['24/7', 'Business Hours', 'By Appointment'] },
-    { label: 'Floors', key: 'floors', options: ['Hardwood', 'Tile', 'Carpet', 'Concrete'] },
-    { label: 'Patio Balconies', key: 'patioBalconies', options: ['furnished', 'unfurnished', 'covered', 'uncovered'] },
-    { label: 'Pool', key: 'pool', options: ['Indoor', 'Outdoor', 'Heated', 'Infinity'] },
+    {
+      label: 'Floors',
+      key: 'floors',
+      options: [
+        { text: 'wood', count: 44 },
+        { text: 'tile', count: 30 },
+        { text: 'concrete', count: 25 },
+        { text: 'dark wood', count: 17 },
+        { text: 'carpet', count: 13 },
+        { text: 'light wood', count: 8 },
+        { text: 'linoleum', count: 6 },
+        { text: 'white', count: 5 },
+        { text: 'black', count: 4 },
+        { text: 'marble', count: 4 },
+        { text: 'slate', count: 4 },
+        { text: 'cobblestone', count: 3 }
+      ]
+    },
+    { label: 'Patio Balconies', key: 'patioBalconies', options: ['furnished', 'unfurnished'] },
+    { label: 'Pool', key: 'pool', options: ['Yes', 'No', 'Indoor', 'Outdoor'] },
     { label: 'Walls', key: 'walls', options: ['White', 'Brick', 'Glass', 'Wood'] },
-    { label: 'Yard', key: 'yard', options: ['Large', 'Small', 'Landscaped', 'Natural'] }
-  ];
-
-  const searchSuggestions = [
-    { text: 'wood', count: 44 },
-    { text: 'tile', count: 30 },
-    { text: 'concrete', count: 25 },
-    { text: 'dark wood', count: 17 },
-    { text: 'carpet', count: 13 },
-    { text: 'light wood', count: 8 },
-    { text: 'linoleum', count: 6 },
-    { text: 'white', count: 5 },
-    { text: 'black', count: 4 },
-    { text: 'marble', count: 4 },
-    { text: 'slate', count: 4 },
-    { text: 'cobblestone', count: 3 }
+    { label: 'Yard', key: 'yard', options: ['Large', 'Small', 'None'] }
   ];
 
   useEffect(() => {
     const sampleProperties = Array.from({ length: 96 }, (_, i) => ({
       id: i + 1,
-      title: `Club ${i + 1}`,
+      title: `Club ${31 + i}`,
       location: `Los Angeles`,
-      category: ['Residential', 'Commercial', 'Industrial', 'Event Space'][i % 4],
-      image: `/api/placeholder/400/300`,
-      slug: `property-${i + 1}`
+      image: `/api/placeholder/400/300`
     }));
     setProperties(sampleProperties);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+        setShowSearchDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleFilterSelect = (filterKey: string, value: string) => {
-    const existingFilter = activeFilters.find(f => f.key === filterKey);
-    if (!existingFilter) {
-      setActiveFilters([...activeFilters, { key: filterKey, value }]);
-    }
+  const handleFilterSelect = (key: string, value: string) => {
+    setActiveFilters(prev => {
+      const existing = prev.find(f => f.key === key);
+      if (existing) {
+        return prev.map(f => f.key === key ? { ...f, value } : f);
+      }
+      return [...prev, { key, value }];
+    });
+    setOpenDropdown(null);
   };
 
-  const removeFilter = (filterKey: string) => {
-    setActiveFilters(activeFilters.filter(f => f.key !== filterKey));
+  const removeFilter = (key: string) => {
+    setActiveFilters(prev => prev.filter(f => f.key !== key));
+  };
+
+  const toggleDropdown = (key: string) => {
+    setOpenDropdown(openDropdown === key ? null : key);
   };
 
   const getCurrentPageItems = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return properties.slice(startIndex, endIndex);
+    const start = (currentPage - 1) * 24;
+    return properties.slice(start, start + 24);
   };
 
   return (
     <>
       <style jsx global>{`
+        .search-page {
+          font-family: acumin-pro-wide, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-weight: 300;
+          background: #fff;
+          min-height: 100vh;
+        }
+
         .filter-bar {
           background: #f8f9fa;
-          border-bottom: 1px solid #dee2e6;
-          padding: 15px 0;
+          border-bottom: 1px solid #e5e5e5;
+          padding: 12px 20px;
           position: sticky;
           top: 60px;
           z-index: 100;
         }
 
-        .filter-dropdowns {
+        .filter-row {
           display: flex;
           align-items: center;
-          gap: 15px;
+          gap: 10px;
           flex-wrap: wrap;
         }
 
@@ -113,60 +135,54 @@ export default function SearchPage() {
           position: relative;
         }
 
-        .filter-dropdown-toggle {
+        .dropdown-toggle {
           display: flex;
           align-items: center;
-          gap: 5px;
-          padding: 8px 12px;
+          gap: 4px;
+          padding: 6px 10px;
           background: white;
           border: 1px solid #ced4da;
-          border-radius: 4px;
+          border-radius: 3px;
           cursor: pointer;
           font-size: 14px;
           color: #495057;
           transition: all 0.2s;
+          font-family: inherit;
+          font-weight: 300;
         }
 
-        .filter-dropdown-toggle:hover {
+        .dropdown-toggle:hover {
           background: #f8f9fa;
-          border-color: #adb5bd;
         }
 
-        .filter-dropdown-toggle.active {
-          background: #e11921;
+        .dropdown-toggle.active {
+          background: #6c757d;
           color: white;
-          border-color: #e11921;
+          border-color: #6c757d;
         }
 
-        .filter-dropdown-menu {
+        .dropdown-menu {
           position: absolute;
-          top: 100%;
+          top: calc(100% + 5px);
           left: 0;
-          margin-top: 5px;
           background: white;
           border: 1px solid #dee2e6;
           border-radius: 4px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          min-width: 150px;
-          max-height: 300px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          min-width: 200px;
+          max-height: 400px;
           overflow-y: auto;
           z-index: 1000;
-          display: none;
         }
 
-        .filter-dropdown-menu.show {
-          display: block;
-        }
-
-        .filter-dropdown-item {
+        .dropdown-item {
           padding: 8px 12px;
           cursor: pointer;
           font-size: 14px;
-          color: #495057;
           transition: background 0.2s;
         }
 
-        .filter-dropdown-item:hover {
+        .dropdown-item:hover {
           background: #f8f9fa;
         }
 
@@ -176,42 +192,49 @@ export default function SearchPage() {
           max-width: 400px;
         }
 
-        .search-input-wrapper {
+        .search-wrapper {
           position: relative;
         }
 
         .search-input {
           width: 100%;
-          padding: 8px 12px 8px 40px;
+          padding: 6px 12px 6px 35px;
           border: 1px solid #ced4da;
-          border-radius: 4px;
+          border-radius: 3px;
           font-size: 14px;
+          font-family: inherit;
+          font-weight: 300;
+        }
+
+        .search-input:focus {
+          outline: none;
+          border-color: #80bdff;
         }
 
         .search-icon {
           position: absolute;
-          left: 12px;
+          left: 10px;
           top: 50%;
           transform: translateY(-50%);
           color: #6c757d;
+          pointer-events: none;
         }
 
-        .search-suggestions {
+        .search-dropdown {
           position: absolute;
-          top: 100%;
+          top: calc(100% + 5px);
           left: 0;
           right: 0;
-          margin-top: 5px;
           background: white;
           border: 1px solid #dee2e6;
           border-radius: 4px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
           max-height: 400px;
           overflow-y: auto;
           z-index: 1000;
         }
 
-        .search-suggestion-item {
+        .search-item {
           display: flex;
           align-items: center;
           padding: 10px 15px;
@@ -219,62 +242,62 @@ export default function SearchPage() {
           transition: background 0.2s;
         }
 
-        .search-suggestion-item:hover {
+        .search-item:hover {
           background: #f8f9fa;
         }
 
-        .search-suggestion-checkbox {
-          width: 18px;
-          height: 18px;
+        .search-checkbox {
+          width: 20px;
+          height: 20px;
           border: 2px solid #ced4da;
           border-radius: 50%;
-          margin-right: 10px;
           background: #e9ecef;
+          margin-right: 12px;
         }
 
-        .search-suggestion-text {
+        .search-text {
           flex: 1;
           font-size: 14px;
           color: #495057;
         }
 
-        .search-suggestion-count {
-          font-size: 12px;
+        .search-count {
+          font-size: 13px;
           color: #e11921;
-          font-weight: 600;
+          font-weight: 500;
+          margin-left: 10px;
         }
 
-        .filter-pills {
+        .ais-CurrentRefinements {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
-          padding: 15px 0;
-          margin-bottom: 20px;
+          padding: 15px 20px;
           min-height: 20px;
         }
 
-        .filter-pill {
+        .ais-CurrentRefinements-item {
           display: inline-flex;
           align-items: center;
         }
 
-        .filter-pill-label {
+        .ais-CurrentRefinements-label {
           color: #333;
           font-size: 14px;
           margin-right: 5px;
         }
 
-        .filter-pill-value {
+        .ais-CurrentRefinements-category {
           display: inline-flex;
           align-items: center;
           background: #dc3545;
           color: white;
-          padding: 5px 10px;
+          padding: 4px 10px;
           border-radius: 3px;
           font-size: 14px;
         }
 
-        .filter-pill-close {
+        .ais-CurrentRefinements-delete {
           background: none;
           border: none;
           color: white;
@@ -285,21 +308,23 @@ export default function SearchPage() {
           padding: 0;
         }
 
-        .property-grid {
+        .ais-Hits-list {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 20px;
-          margin-bottom: 40px;
+          gap: 15px;
+          padding: 20px;
+          list-style: none;
+          margin: 0;
         }
 
         @media (max-width: 1200px) {
-          .property-grid {
+          .ais-Hits-list {
             grid-template-columns: repeat(3, 1fr);
           }
         }
 
         @media (max-width: 768px) {
-          .property-grid {
+          .ais-Hits-list {
             grid-template-columns: repeat(2, 1fr);
           }
         }
@@ -307,14 +332,14 @@ export default function SearchPage() {
         .property-card {
           position: relative;
           background: white;
-          border: 1px solid #e0e0e0;
+          border: 1px solid #e5e5e5;
           overflow: hidden;
           cursor: pointer;
           transition: box-shadow 0.3s;
         }
 
         .property-card:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .property-image {
@@ -325,12 +350,12 @@ export default function SearchPage() {
         }
 
         .property-info {
-          padding: 15px;
+          padding: 12px;
         }
 
         .property-title {
           font-size: 18px;
-          font-weight: 600;
+          font-weight: 500;
           margin: 0 0 5px 0;
         }
 
@@ -339,27 +364,28 @@ export default function SearchPage() {
           color: #666;
         }
 
-        .add-to-list {
+        .add-button {
           position: absolute;
           top: 10px;
           left: 10px;
-          width: 40px;
-          height: 40px;
+          width: 36px;
+          height: 36px;
           background: #e11921;
           color: white;
           border: none;
-          border-radius: 4px;
+          border-radius: 3px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24px;
+          font-size: 22px;
+          font-weight: 300;
         }
 
         .ais-Pagination {
           display: flex;
           justify-content: center;
-          padding: 40px 0;
+          padding: 40px 20px;
         }
 
         .ais-Pagination-list {
@@ -371,20 +397,16 @@ export default function SearchPage() {
           padding: 0;
         }
 
-        .ais-Pagination-item {
-          display: inline-block;
-        }
-
         .ais-Pagination-link {
           display: flex;
           align-items: center;
           justify-content: center;
           min-width: 32px;
           height: 32px;
-          padding: 0 8px;
-          border: 1px solid #ddd;
+          padding: 0 10px;
+          border: 1px solid #dee2e6;
           background: white;
-          color: #333;
+          color: #495057;
           text-decoration: none;
           font-size: 14px;
           cursor: pointer;
@@ -396,9 +418,9 @@ export default function SearchPage() {
         }
 
         .ais-Pagination-item--selected .ais-Pagination-link {
-          background: #dc3545;
+          background: #e11921;
           color: white;
-          border-color: #dc3545;
+          border-color: #e11921;
         }
 
         .ais-Pagination-item--disabled .ais-Pagination-link {
@@ -409,94 +431,118 @@ export default function SearchPage() {
         .container {
           max-width: 1400px;
           margin: 0 auto;
-          padding: 0 20px;
         }
       `}</style>
 
       <div className="search-page" style={{ paddingTop: '60px' }}>
-        <div className="filter-bar">
-          <div className="container mx-auto px-4">
-            <div className="filter-dropdowns">
-              {filterOptions.map(filter => (
-                <div key={filter.key} className="filter-dropdown">
-                  <button
-                    className={`filter-dropdown-toggle ${activeFilters.find(f => f.key === filter.key) ? 'active' : ''}`}
-                    onClick={(e) => {
-                      const menu = e.currentTarget.nextElementSibling;
-                      menu?.classList.toggle('show');
-                    }}
-                  >
-                    {filter.label}
-                    <ChevronDown size={16} />
-                  </button>
-                  <div className="filter-dropdown-menu">
-                    {filter.options.map(option => (
-                      <div
-                        key={option}
-                        className="filter-dropdown-item"
-                        onClick={() => handleFilterSelect(filter.key, option)}
-                      >
-                        {option}
+        <div className="filter-bar" ref={dropdownRef}>
+          <div className="filter-row">
+            {filterOptions.map(filter => (
+              <div key={filter.key} className="filter-dropdown">
+                <button
+                  className={`dropdown-toggle ${activeFilters.find(f => f.key === filter.key) ? 'active' : ''}`}
+                  onClick={() => toggleDropdown(filter.key)}
+                >
+                  {filter.label}
+                  <ChevronDown size={14} />
+                </button>
+
+                {openDropdown === filter.key && (
+                  <div className="dropdown-menu">
+                    {filter.key === 'floors' ? (
+                      filter.options.map((option: any) => (
+                        <div
+                          key={option.text}
+                          className="search-item"
+                          onClick={() => handleFilterSelect(filter.key, option.text)}
+                        >
+                          <div className="search-checkbox"></div>
+                          <span className="search-text">{option.text}</span>
+                          <span className="search-count">{option.count}</span>
+                        </div>
+                      ))
+                    ) : (
+                      filter.options.map((option: string) => (
+                        <div
+                          key={option}
+                          className="dropdown-item"
+                          onClick={() => handleFilterSelect(filter.key, option)}
+                        >
+                          {option}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            <div className="search-container">
+              <div className="search-wrapper">
+                <Search className="search-icon" size={18} />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search here..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setShowSearchDropdown(true)}
+                />
+
+                {showSearchDropdown && (
+                  <div className="search-dropdown">
+                    {[
+                      { text: 'wood', count: 44 },
+                      { text: 'tile', count: 30 },
+                      { text: 'concrete', count: 25 },
+                      { text: 'dark wood', count: 17 },
+                      { text: 'carpet', count: 13 },
+                      { text: 'light wood', count: 8 },
+                      { text: 'linoleum', count: 6 },
+                      { text: 'white', count: 5 },
+                      { text: 'black', count: 4 },
+                      { text: 'marble', count: 4 },
+                      { text: 'slate', count: 4 },
+                      { text: 'cobblestone', count: 3 }
+                    ].map(item => (
+                      <div key={item.text} className="search-item">
+                        <div className="search-checkbox"></div>
+                        <span className="search-text">{item.text}</span>
+                        <span className="search-count">{item.count}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-              ))}
-
-              <div className="search-container">
-                <div className="search-input-wrapper">
-                  <Search className="search-icon" size={18} />
-                  <input
-                    type="text"
-                    className="search-input"
-                    placeholder="Search here..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setShowSearchSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-                  />
-                  {showSearchSuggestions && (
-                    <div className="search-suggestions">
-                      {searchSuggestions.map(suggestion => (
-                        <div key={suggestion.text} className="search-suggestion-item">
-                          <div className="search-suggestion-checkbox"></div>
-                          <span className="search-suggestion-text">{suggestion.text}</span>
-                          <span className="search-suggestion-count">{suggestion.count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4">
-          {activeFilters.length > 0 && (
-            <div className="filter-pills">
-              {activeFilters.map(filter => (
-                <div key={filter.key} className="filter-pill">
-                  <span className="filter-pill-label">{filter.key}:</span>
-                  <span className="filter-pill-value">
-                    {filter.value}
-                    <button
-                      className="filter-pill-close"
-                      onClick={() => removeFilter(filter.key)}
-                    >
-                      <X size={14} strokeWidth={3} />
-                    </button>
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+        {activeFilters.length > 0 && (
+          <div className="ais-CurrentRefinements">
+            {activeFilters.map(filter => (
+              <div key={filter.key} className="ais-CurrentRefinements-item">
+                <span className="ais-CurrentRefinements-label">{filter.key}:</span>
+                <span className="ais-CurrentRefinements-category">
+                  {filter.value}
+                  <button
+                    className="ais-CurrentRefinements-delete"
+                    onClick={() => removeFilter(filter.key)}
+                  >
+                    <X size={14} strokeWidth={3} />
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
-          <div className="property-grid">
-            {getCurrentPageItems().map(property => (
-              <div key={property.id} className="property-card">
-                <button className="add-to-list">+</button>
-                <Link href={`/property/${property.slug}`}>
+        <ul className="ais-Hits-list">
+          {getCurrentPageItems().map(property => (
+            <li key={property.id}>
+              <div className="property-card">
+                <button className="add-button">+</button>
+                <Link href={`/property/${property.id}`}>
                   <img
                     src={property.image}
                     alt={property.title}
@@ -511,66 +557,30 @@ export default function SearchPage() {
                   </div>
                 </Link>
               </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="ais-Pagination">
+          <ul className="ais-Pagination-list">
+            <li className={`ais-Pagination-item ${currentPage === 1 ? 'ais-Pagination-item--disabled' : ''}`}>
+              <a className="ais-Pagination-link" onClick={() => currentPage > 1 && setCurrentPage(1)}>«</a>
+            </li>
+            <li className={`ais-Pagination-item ${currentPage === 1 ? 'ais-Pagination-item--disabled' : ''}`}>
+              <a className="ais-Pagination-link" onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}>‹</a>
+            </li>
+            {[1, 2, 3, 4].map(page => (
+              <li key={page} className={`ais-Pagination-item ${currentPage === page ? 'ais-Pagination-item--selected' : ''}`}>
+                <a className="ais-Pagination-link" onClick={() => setCurrentPage(page)}>{page}</a>
+              </li>
             ))}
-          </div>
-
-          <div className="ais-Pagination">
-            <ul className="ais-Pagination-list">
-              <li className={`ais-Pagination-item ais-Pagination-item--firstPage ${currentPage === 1 ? 'ais-Pagination-item--disabled' : ''}`}>
-                <a
-                  className="ais-Pagination-link"
-                  onClick={() => currentPage !== 1 && setCurrentPage(1)}
-                  aria-label="First"
-                >
-                  «
-                </a>
-              </li>
-
-              <li className={`ais-Pagination-item ais-Pagination-item--previousPage ${currentPage === 1 ? 'ais-Pagination-item--disabled' : ''}`}>
-                <a
-                  className="ais-Pagination-link"
-                  onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-                  aria-label="Previous"
-                >
-                  ‹
-                </a>
-              </li>
-
-              {[1, 2, 3, 4].map(page => (
-                <li
-                  key={page}
-                  className={`ais-Pagination-item ais-Pagination-item--page ${currentPage === page ? 'ais-Pagination-item--selected' : ''}`}
-                >
-                  <a
-                    className="ais-Pagination-link"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </a>
-                </li>
-              ))}
-
-              <li className={`ais-Pagination-item ais-Pagination-item--nextPage ${currentPage === totalPages ? 'ais-Pagination-item--disabled' : ''}`}>
-                <a
-                  className="ais-Pagination-link"
-                  onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
-                  aria-label="Next"
-                >
-                  ›
-                </a>
-              </li>
-
-              <li className={`ais-Pagination-item ais-Pagination-item--lastPage ${currentPage === totalPages ? 'ais-Pagination-item--disabled' : ''}`}>
-                <a
-                  className="ais-Pagination-link"
-                  onClick={() => currentPage !== totalPages && setCurrentPage(totalPages)}
-                  aria-label="Last"
-                >
-                  »
-                </a>
-              </li>
-            </ul>
-          </div>
+            <li className={`ais-Pagination-item ${currentPage === 4 ? 'ais-Pagination-item--disabled' : ''}`}>
+              <a className="ais-Pagination-link" onClick={() => currentPage < 4 && setCurrentPage(currentPage + 1)}>›</a>
+            </li>
+            <li className={`ais-Pagination-item ${currentPage === 4 ? 'ais-Pagination-item--disabled' : ''}`}>
+              <a className="ais-Pagination-link" onClick={() => currentPage < 4 && setCurrentPage(4)}>»</a>
+            </li>
+          </ul>
         </div>
       </div>
     </>
