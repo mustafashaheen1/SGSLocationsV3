@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Search, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
 interface Property {
@@ -18,21 +18,54 @@ interface ActiveFilter {
   value: string;
 }
 
+interface FilterOption {
+  label: string;
+  key: string;
+  options: string[];
+}
+
 export default function SearchPage() {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [activeFilters] = useState<ActiveFilter[]>([
-    { key: 'city', value: 'Los Angeles' },
-    { key: 'patioBalconies', value: 'furnished' }
-  ]);
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages] = useState(4);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const itemsPerPage = 24;
+
+  const filterOptions: FilterOption[] = [
+    { label: 'Categories', key: 'categories', options: ['Residential', 'Commercial', 'Industrial', 'Event Space'] },
+    { label: 'Permits', key: 'permits', options: ['Film Permit', 'Photo Permit', 'Event Permit'] },
+    { label: 'City', key: 'city', options: ['Los Angeles', 'Beverly Hills', 'Santa Monica', 'Malibu'] },
+    { label: 'County', key: 'county', options: ['Los Angeles County', 'Orange County', 'Ventura County'] },
+    { label: 'Access', key: 'access', options: ['24/7', 'Business Hours', 'By Appointment'] },
+    { label: 'Floors', key: 'floors', options: ['Hardwood', 'Tile', 'Carpet', 'Concrete'] },
+    { label: 'Patio Balconies', key: 'patioBalconies', options: ['furnished', 'unfurnished', 'covered', 'uncovered'] },
+    { label: 'Pool', key: 'pool', options: ['Indoor', 'Outdoor', 'Heated', 'Infinity'] },
+    { label: 'Walls', key: 'walls', options: ['White', 'Brick', 'Glass', 'Wood'] },
+    { label: 'Yard', key: 'yard', options: ['Large', 'Small', 'Landscaped', 'Natural'] }
+  ];
+
+  const searchSuggestions = [
+    { text: 'wood', count: 44 },
+    { text: 'tile', count: 30 },
+    { text: 'concrete', count: 25 },
+    { text: 'dark wood', count: 17 },
+    { text: 'carpet', count: 13 },
+    { text: 'light wood', count: 8 },
+    { text: 'linoleum', count: 6 },
+    { text: 'white', count: 5 },
+    { text: 'black', count: 4 },
+    { text: 'marble', count: 4 },
+    { text: 'slate', count: 4 },
+    { text: 'cobblestone', count: 3 }
+  ];
 
   useEffect(() => {
     const sampleProperties = Array.from({ length: 96 }, (_, i) => ({
       id: i + 1,
-      title: `Property ${i + 1}`,
-      location: `Los Angeles, CA`,
+      title: `Club ${i + 1}`,
+      location: `Los Angeles`,
       category: ['Residential', 'Commercial', 'Industrial', 'Event Space'][i % 4],
       image: `/api/placeholder/400/300`,
       slug: `property-${i + 1}`
@@ -40,45 +73,198 @@ export default function SearchPage() {
     setProperties(sampleProperties);
   }, []);
 
+  const handleFilterSelect = (filterKey: string, value: string) => {
+    const existingFilter = activeFilters.find(f => f.key === filterKey);
+    if (!existingFilter) {
+      setActiveFilters([...activeFilters, { key: filterKey, value }]);
+    }
+  };
+
+  const removeFilter = (filterKey: string) => {
+    setActiveFilters(activeFilters.filter(f => f.key !== filterKey));
+  };
+
   const getCurrentPageItems = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return properties.slice(startIndex, endIndex);
   };
 
-  const removeFilter = (filterKey: string) => {
-    console.log('Remove filter:', filterKey);
-  };
-
   return (
     <>
       <style jsx global>{`
-        .search-page {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-          background: #fff;
-          min-height: 100vh;
+        .filter-bar {
+          background: #f8f9fa;
+          border-bottom: 1px solid #dee2e6;
+          padding: 15px 0;
+          position: sticky;
+          top: 60px;
+          z-index: 100;
         }
 
-        .ais-CurrentRefinements {
+        .filter-dropdowns {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          flex-wrap: wrap;
+        }
+
+        .filter-dropdown {
+          position: relative;
+        }
+
+        .filter-dropdown-toggle {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 8px 12px;
+          background: white;
+          border: 1px solid #ced4da;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #495057;
+          transition: all 0.2s;
+        }
+
+        .filter-dropdown-toggle:hover {
+          background: #f8f9fa;
+          border-color: #adb5bd;
+        }
+
+        .filter-dropdown-toggle.active {
+          background: #e11921;
+          color: white;
+          border-color: #e11921;
+        }
+
+        .filter-dropdown-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 5px;
+          background: white;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          min-width: 150px;
+          max-height: 300px;
+          overflow-y: auto;
+          z-index: 1000;
+          display: none;
+        }
+
+        .filter-dropdown-menu.show {
+          display: block;
+        }
+
+        .filter-dropdown-item {
+          padding: 8px 12px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #495057;
+          transition: background 0.2s;
+        }
+
+        .filter-dropdown-item:hover {
+          background: #f8f9fa;
+        }
+
+        .search-container {
+          position: relative;
+          flex: 1;
+          max-width: 400px;
+        }
+
+        .search-input-wrapper {
+          position: relative;
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 8px 12px 8px 40px;
+          border: 1px solid #ced4da;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6c757d;
+        }
+
+        .search-suggestions {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          margin-top: 5px;
+          background: white;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          max-height: 400px;
+          overflow-y: auto;
+          z-index: 1000;
+        }
+
+        .search-suggestion-item {
+          display: flex;
+          align-items: center;
+          padding: 10px 15px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .search-suggestion-item:hover {
+          background: #f8f9fa;
+        }
+
+        .search-suggestion-checkbox {
+          width: 18px;
+          height: 18px;
+          border: 2px solid #ced4da;
+          border-radius: 50%;
+          margin-right: 10px;
+          background: #e9ecef;
+        }
+
+        .search-suggestion-text {
+          flex: 1;
+          font-size: 14px;
+          color: #495057;
+        }
+
+        .search-suggestion-count {
+          font-size: 12px;
+          color: #e11921;
+          font-weight: 600;
+        }
+
+        .filter-pills {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
           padding: 15px 0;
           margin-bottom: 20px;
+          min-height: 20px;
         }
 
-        .ais-CurrentRefinements-item {
+        .filter-pill {
           display: inline-flex;
           align-items: center;
         }
 
-        .ais-CurrentRefinements-label {
+        .filter-pill-label {
           color: #333;
           font-size: 14px;
           margin-right: 5px;
         }
 
-        .ais-CurrentRefinements-category {
+        .filter-pill-value {
           display: inline-flex;
           align-items: center;
           background: #dc3545;
@@ -88,11 +274,7 @@ export default function SearchPage() {
           font-size: 14px;
         }
 
-        .ais-CurrentRefinements-categoryLabel {
-          display: none;
-        }
-
-        .ais-CurrentRefinements-delete {
+        .filter-pill-close {
           background: none;
           border: none;
           color: white;
@@ -103,75 +285,75 @@ export default function SearchPage() {
           padding: 0;
         }
 
-        .ais-CurrentRefinements-delete:hover {
-          opacity: 0.8;
-        }
-
-        .ais-Hits-list {
+        .property-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 20px;
-          list-style: none;
-          padding: 0;
-          margin: 0 0 40px 0;
+          margin-bottom: 40px;
         }
 
         @media (max-width: 1200px) {
-          .ais-Hits-list {
+          .property-grid {
             grid-template-columns: repeat(3, 1fr);
           }
         }
 
         @media (max-width: 768px) {
-          .ais-Hits-list {
+          .property-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
 
-        @media (max-width: 480px) {
-          .ais-Hits-list {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .ais-Hits-item {
+        .property-card {
+          position: relative;
           background: white;
           border: 1px solid #e0e0e0;
           overflow: hidden;
-          transition: box-shadow 0.3s ease;
+          cursor: pointer;
+          transition: box-shadow 0.3s;
         }
 
-        .ais-Hits-item:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        .property-card:hover {
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        .hit-image {
+        .property-image {
           width: 100%;
           height: 200px;
           object-fit: cover;
           background: #f0f0f0;
         }
 
-        .hit-content {
+        .property-info {
           padding: 15px;
         }
 
-        .hit-title {
-          font-size: 16px;
+        .property-title {
+          font-size: 18px;
           font-weight: 600;
           margin: 0 0 5px 0;
-          color: #333;
         }
 
-        .hit-location {
+        .property-location {
           font-size: 14px;
           color: #666;
-          margin: 0 0 5px 0;
         }
 
-        .hit-category {
-          font-size: 13px;
-          color: #999;
+        .add-to-list {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          width: 40px;
+          height: 40px;
+          background: #e11921;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
         }
 
         .ais-Pagination {
@@ -224,13 +406,6 @@ export default function SearchPage() {
           cursor: not-allowed;
         }
 
-        .ais-Pagination-item--firstPage .ais-Pagination-link,
-        .ais-Pagination-item--previousPage .ais-Pagination-link,
-        .ais-Pagination-item--nextPage .ais-Pagination-link,
-        .ais-Pagination-item--lastPage .ais-Pagination-link {
-          font-weight: normal;
-        }
-
         .container {
           max-width: 1400px;
           margin: 0 auto;
@@ -239,47 +414,105 @@ export default function SearchPage() {
       `}</style>
 
       <div className="search-page" style={{ paddingTop: '60px' }}>
-        <div className="container">
-          <div className="ais-CurrentRefinements">
-            {activeFilters.map(filter => (
-              <div key={filter.key} className="ais-CurrentRefinements-item">
-                <span className="ais-CurrentRefinements-label">{filter.key}:</span>
-                <span className="ais-CurrentRefinements-category">
-                  <span className="ais-CurrentRefinements-categoryLabel"></span>
-                  {filter.value}
+        <div className="filter-bar">
+          <div className="container mx-auto px-4">
+            <div className="filter-dropdowns">
+              {filterOptions.map(filter => (
+                <div key={filter.key} className="filter-dropdown">
                   <button
-                    className="ais-CurrentRefinements-delete"
-                    onClick={() => removeFilter(filter.key)}
-                    aria-label={`Remove ${filter.key} filter`}
+                    className={`filter-dropdown-toggle ${activeFilters.find(f => f.key === filter.key) ? 'active' : ''}`}
+                    onClick={(e) => {
+                      const menu = e.currentTarget.nextElementSibling;
+                      menu?.classList.toggle('show');
+                    }}
                   >
-                    <X size={14} strokeWidth={3} />
+                    {filter.label}
+                    <ChevronDown size={16} />
                   </button>
-                </span>
-              </div>
-            ))}
-          </div>
+                  <div className="filter-dropdown-menu">
+                    {filter.options.map(option => (
+                      <div
+                        key={option}
+                        className="filter-dropdown-item"
+                        onClick={() => handleFilterSelect(filter.key, option)}
+                      >
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
-          <ul className="ais-Hits-list">
+              <div className="search-container">
+                <div className="search-input-wrapper">
+                  <Search className="search-icon" size={18} />
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search here..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setShowSearchSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
+                  />
+                  {showSearchSuggestions && (
+                    <div className="search-suggestions">
+                      {searchSuggestions.map(suggestion => (
+                        <div key={suggestion.text} className="search-suggestion-item">
+                          <div className="search-suggestion-checkbox"></div>
+                          <span className="search-suggestion-text">{suggestion.text}</span>
+                          <span className="search-suggestion-count">{suggestion.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4">
+          {activeFilters.length > 0 && (
+            <div className="filter-pills">
+              {activeFilters.map(filter => (
+                <div key={filter.key} className="filter-pill">
+                  <span className="filter-pill-label">{filter.key}:</span>
+                  <span className="filter-pill-value">
+                    {filter.value}
+                    <button
+                      className="filter-pill-close"
+                      onClick={() => removeFilter(filter.key)}
+                    >
+                      <X size={14} strokeWidth={3} />
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="property-grid">
             {getCurrentPageItems().map(property => (
-              <li key={property.id} className="ais-Hits-item">
+              <div key={property.id} className="property-card">
+                <button className="add-to-list">+</button>
                 <Link href={`/property/${property.slug}`}>
                   <img
                     src={property.image}
                     alt={property.title}
-                    className="hit-image"
+                    className="property-image"
                     onError={(e) => {
                       e.currentTarget.src = `https://via.placeholder.com/400x300/808080/ffffff?text=${property.title}`;
                     }}
                   />
-                  <div className="hit-content">
-                    <h3 className="hit-title">{property.title}</h3>
-                    <p className="hit-location">{property.location}</p>
-                    <p className="hit-category">{property.category}</p>
+                  <div className="property-info">
+                    <h3 className="property-title">{property.title}</h3>
+                    <p className="property-location">{property.location}</p>
                   </div>
                 </Link>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
 
           <div className="ais-Pagination">
             <ul className="ais-Pagination-list">
