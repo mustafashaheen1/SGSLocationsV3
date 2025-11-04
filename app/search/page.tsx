@@ -284,10 +284,11 @@ export default function SearchPage() {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           background: #fff;
           min-height: 100vh;
-          padding-top: 110px;
+          padding-top: 60px;
         }
 
         .image-upload-section {
+          margin-top: 0;
           background: white;
           padding: 30px 20px;
           border-bottom: 1px solid #e5e5e5;
