@@ -789,9 +789,6 @@ export default function SearchPage() {
           font-size: 20.8px !important;
           font-weight: 400 !important;
           font-family: swiper-icons !important;
-          line-height: 1 !important;
-          transform: scale(0.514) !important;
-          display: block !important;
         }
 
         .swiper-button-prev,
