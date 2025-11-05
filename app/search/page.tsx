@@ -280,6 +280,8 @@ export default function SearchPage() {
   return (
     <>
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600&display=swap');
+
         .search-page {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           background: #fff;
@@ -290,20 +292,51 @@ export default function SearchPage() {
         .image-upload-section {
           margin-top: 0;
           background: white;
-          padding: 30px 20px;
+          padding: 30px 16px;
           border-bottom: 1px solid #e5e5e5;
         }
 
         .image-upload-box {
-          max-width: 1200px;
+          max-width: 1425px;
+          height: 100px;
           margin: 0 auto;
           border: 2px dashed #3b9cd9;
           border-radius: 4px;
-          padding: 40px;
-          text-align: center;
+          padding-left: 16px;
+          padding-right: 16px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
           cursor: pointer;
           transition: all 0.3s ease;
           background: #f0f8ff;
+          box-sizing: border-box;
+          -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        }
+
+        .upload-title {
+          font-family: 'Nunito', 'acumin-pro-wide', sans-serif;
+          font-size: 16px;
+          font-weight: 300;
+          color: rgb(33, 37, 41);
+          line-height: 24px;
+          margin-bottom: 8px;
+          text-align: center;
+          display: block;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .upload-subtitle {
+          font-family: 'Nunito', 'acumin-pro-wide', sans-serif;
+          font-size: 14px;
+          font-weight: 300;
+          color: rgb(33, 37, 41);
+          line-height: 20px;
+          text-align: center;
+          display: block;
+          -webkit-font-smoothing: antialiased;
         }
 
         .image-upload-box.dragging {
@@ -313,18 +346,6 @@ export default function SearchPage() {
 
         .image-upload-box:hover {
           background: #e6f3ff;
-        }
-
-        .upload-title {
-          font-size: 20px;
-          font-weight: 500;
-          color: #2c3e50;
-          margin-bottom: 12px;
-        }
-
-        .upload-subtitle {
-          font-size: 16px;
-          color: #5a6c7d;
         }
 
         .hidden-input {
