@@ -231,8 +231,67 @@ function PropertyCard({ property }: { property: Property }) {
               ))}
             </Swiper>
 
-            <div className={`swiper-button-prev nav-prev-${property.id}`}></div>
-            <div className={`swiper-button-next nav-next-${property.id}`}></div>
+            <div
+              className={`swiper-button-prev nav-prev-${property.id}`}
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: '18px',
+                left: 0,
+                width: '60px',
+                height: 'calc(100% - 18px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10,
+                cursor: 'pointer',
+                background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
+              }}
+            >
+              <svg
+                width="10.69"
+                height="20.8"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </div>
+
+            <div
+              className={`swiper-button-next nav-next-${property.id}`}
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: '18px',
+                right: 0,
+                width: '60px',
+                height: 'calc(100% - 18px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10,
+                cursor: 'pointer',
+                background: 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
+              }}
+            >
+              <svg
+                width="10.69"
+                height="20.8"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
 
             <div className={`swiper-scrollbar scrollbar-${property.id}`}></div>
           </div>
@@ -751,29 +810,10 @@ export default function SearchPage() {
         }
 
 
-        .swiper-button-prev,
-        .swiper-button-next {
-          position: absolute !important;
-          top: 0 !important;
-          bottom: 18px !important;
-          width: 60px !important;
-          height: calc(100% - 18px) !important;
-          margin-top: 0 !important;
-          z-index: 10 !important;
-          cursor: pointer !important;
-          color: white !important;
-        }
-
-        .swiper-button-prev {
-          left: 0 !important;
-          right: auto !important;
-          background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0)) !important;
-        }
-
-        .swiper-button-next {
-          right: 0 !important;
-          left: auto !important;
-          background: linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0)) !important;
+        .swiper-button-prev:after,
+        .swiper-button-next:after {
+          content: '' !important;
+          display: none !important;
         }
 
         .swiper-button-prev:hover {
@@ -782,13 +822,6 @@ export default function SearchPage() {
 
         .swiper-button-next:hover {
           background: linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
-        }
-
-        .swiper-button-prev:after,
-        .swiper-button-next:after {
-          font-size: 16px !important;
-          font-weight: 700 !important;
-          font-family: swiper-icons !important;
         }
 
         .swiper-scrollbar {
