@@ -770,7 +770,7 @@ export default function SearchPage() {
           top: 50% !important;
           transform: translateY(-50%) !important;
           width: 96px !important;
-          height: min(100px, 40%) !important;
+          height: min(50px, 40%) !important;
           z-index: 10 !important;
           cursor: pointer !important;
           display: flex !important;
