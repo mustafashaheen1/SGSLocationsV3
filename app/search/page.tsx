@@ -167,104 +167,112 @@ interface FilterOption {
   count?: number;
 }
 
+function generatePropertyImages(propertyId: string | number, count: number = 50): string[] {
+  const images: string[] = [];
+  for (let i = 0; i < count; i++) {
+    images.push(`https://picsum.photos/seed/${propertyId}-${i}/800/600`);
+  }
+  return images;
+}
+
 function PropertyCard({ property }: { property: Property }) {
   const router = useRouter();
   const [showLightbox, setShowLightbox] = useState(false);
-  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
+  const swiperRef = useRef<any>(null);
 
-  const images = property.images && property.images.length > 0
-    ? property.images
-    : property.primary_image
-    ? [property.primary_image]
-    : ['https://via.placeholder.com/400x300'];
+  const images = generatePropertyImages(property.id, 50);
 
   return (
     <>
-      <article className="il-search-result" style={{ height: '100%' }}>
-        <div className="il-react-carousel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div style={{ position: 'relative', order: 1 }}>
+      <article className="il-search-result">
+        <div className="il-react-carousel">
+          <div className="swiper-container-wrapper" style={{ position: 'relative' }}>
             <Swiper
               modules={[Navigation, Scrollbar, FreeMode]}
               spaceBetween={3}
-              slidesPerView="auto"
-              freeMode={true}
+              slidesPerView={1}
+              freeMode={false}
+              loop={false}
               navigation={{
-                prevEl: `.swiper-button-prev-${property.id}`,
-                nextEl: `.swiper-button-next-${property.id}`,
+                prevEl: `.nav-prev-${property.id}`,
+                nextEl: `.nav-next-${property.id}`,
               }}
               scrollbar={{
-                el: `.swiper-scrollbar-${property.id}`,
+                el: `.scrollbar-${property.id}`,
                 draggable: true,
-                dragSize: 6.15,
+                dragClass: 'swiper-scrollbar-drag',
               }}
-              onSwiper={setSwiperInstance}
-              className="il-location-carousel"
+              onSwiper={(swiper) => {
+                swiperRef.current = swiper;
+              }}
               style={{
+                width: '100%',
                 height: '300px',
-                width: '100%'
               }}
             >
               {images.map((img, idx) => (
-                <SwiperSlide key={idx} style={{ width: '100%' }}>
-                  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                    <Link href={`/property/${property.id}`}>
-                      <img
-                        src={img}
-                        alt={`${property.name} - ${idx + 1}`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
-                        }}
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/400x300';
-                        }}
-                      />
-                    </Link>
-                  </div>
+                <SwiperSlide key={idx}>
+                  <Link href={`/property/${property.id}`}>
+                    <img
+                      src={img}
+                      alt={`${property.name} - ${idx + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/400x300';
+                      }}
+                    />
+                  </Link>
                 </SwiperSlide>
               ))}
-
-              <div className={`swiper-button-prev swiper-button-prev-${property.id}`}></div>
-              <div className={`swiper-button-next swiper-button-next-${property.id}`}></div>
-
-              <div className={`swiper-scrollbar swiper-scrollbar-${property.id}`}></div>
             </Swiper>
+
+            <div className={`swiper-button-prev nav-prev-${property.id}`}></div>
+            <div className={`swiper-button-next nav-next-${property.id}`}></div>
+
+            <div className={`swiper-scrollbar scrollbar-${property.id}`}></div>
           </div>
 
-          <div style={{ padding: '12px 0', position: 'relative' }}>
-            <h5 style={{
-              fontSize: '18px',
-              fontWeight: 400,
-              marginBottom: '4px',
-              fontFamily: 'acumin-pro-wide, sans-serif'
-            }}>
-              <Link
-                href={`/property/${property.id}`}
-                style={{ color: '#212529', textDecoration: 'none' }}
-              >
-                {property.name}
-              </Link>
-            </h5>
-            <p style={{
-              fontSize: '14px',
-              color: '#6c757d',
-              marginBottom: 0,
-              fontFamily: 'acumin-pro-wide, sans-serif'
-            }}>
-              {property.city}
-            </p>
+          <div style={{ padding: '12px 0', position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1 }}>
+              <h5 style={{
+                fontSize: '18px',
+                fontWeight: 400,
+                marginBottom: '4px',
+                fontFamily: 'acumin-pro-wide, sans-serif',
+                margin: 0
+              }}>
+                <Link
+                  href={`/property/${property.id}`}
+                  style={{ color: '#212529', textDecoration: 'none' }}
+                >
+                  {property.name}
+                </Link>
+              </h5>
+              <p style={{
+                fontSize: '14px',
+                color: '#6c757d',
+                marginBottom: 0,
+                fontFamily: 'acumin-pro-wide, sans-serif',
+                margin: 0
+              }}>
+                {property.city}
+              </p>
+            </div>
 
             <button
               onClick={() => setShowLightbox(true)}
               style={{
-                position: 'absolute',
-                right: 0,
-                top: '12px',
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                padding: 0
+                padding: 0,
+                marginLeft: '12px',
+                flexShrink: 0
               }}
             >
               <svg
@@ -272,7 +280,7 @@ function PropertyCard({ property }: { property: Property }) {
                 height="25"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 512 512"
-                style={{ color: 'rgb(225, 25, 33)' }}
+                style={{ color: 'rgb(225, 25, 33)', display: 'block' }}
               >
                 <path
                   fill="currentColor"
@@ -745,22 +753,27 @@ export default function SearchPage() {
 
         .swiper-button-prev,
         .swiper-button-next {
-          color: white !important;
+          position: absolute !important;
+          top: 0 !important;
+          bottom: 18px !important;
           width: 60px !important;
           height: calc(100% - 18px) !important;
-          top: 0 !important;
           margin-top: 0 !important;
-          background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+          z-index: 10 !important;
+          cursor: pointer !important;
+          color: white !important;
+        }
+
+        .swiper-button-prev {
+          left: 0 !important;
+          right: auto !important;
+          background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0)) !important;
         }
 
         .swiper-button-next {
+          right: 0 !important;
+          left: auto !important;
           background: linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0)) !important;
-        }
-
-        .swiper-button-prev:after,
-        .swiper-button-next:after {
-          font-size: 20.8px !important;
-          font-weight: 400 !important;
         }
 
         .swiper-button-prev:hover {
@@ -771,25 +784,45 @@ export default function SearchPage() {
           background: linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
         }
 
+        .swiper-button-prev:after,
+        .swiper-button-next:after {
+          font-size: 20.8px !important;
+          font-weight: 400 !important;
+          font-family: swiper-icons !important;
+        }
+
         .swiper-scrollbar {
+          position: absolute !important;
           background: rgb(222, 226, 230) !important;
           border-radius: 10px !important;
           bottom: 4px !important;
           height: 8px !important;
           left: 1% !important;
           width: 98% !important;
-          margin-top: 10px !important;
+          z-index: 50 !important;
         }
 
         .swiper-scrollbar-drag {
           background: rgb(225, 25, 33) !important;
           border-radius: 10px !important;
           height: 8px !important;
+          width: 6.15625px !important;
           cursor: grab !important;
+          position: relative !important;
         }
 
         .swiper-scrollbar-drag:active {
           cursor: grabbing !important;
+        }
+
+        .swiper-container-wrapper {
+          position: relative;
+          width: 100%;
+        }
+
+        .il-search-result {
+          background: white;
+          overflow: visible;
         }
 
         .property-grid {
@@ -799,18 +832,6 @@ export default function SearchPage() {
           padding: 20px;
           max-width: 1425px;
           margin: 0 auto;
-        }
-
-        .il-search-result {
-          background: white;
-          border-radius: 4px;
-          overflow: visible;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .il-search-result:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
       `}</style>
 
