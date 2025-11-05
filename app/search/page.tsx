@@ -231,42 +231,8 @@ function PropertyCard({ property }: { property: Property }) {
               ))}
             </Swiper>
 
-            <div className={`swiper-button-prev nav-prev-${property.id}`}>
-              <svg
-                width="10.69"
-                height="20.8"
-                viewBox="0 0 11 21"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ pointerEvents: 'none' }}
-              >
-                <path
-                  d="M10 1L1 10.5L10 20"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className={`swiper-button-next nav-next-${property.id}`}>
-              <svg
-                width="10.69"
-                height="20.8"
-                viewBox="0 0 11 21"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ pointerEvents: 'none' }}
-              >
-                <path
-                  d="M1 1L10 10.5L1 20"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
+            <div className={`swiper-button-prev nav-prev-${property.id}`}></div>
+            <div className={`swiper-button-next nav-next-${property.id}`}></div>
 
             <div className={`swiper-scrollbar scrollbar-${property.id}`}></div>
           </div>
@@ -820,8 +786,12 @@ export default function SearchPage() {
 
         .swiper-button-prev:after,
         .swiper-button-next:after {
-          content: '' !important;
-          display: none !important;
+          font-size: 20.8px !important;
+          font-weight: 400 !important;
+          font-family: swiper-icons !important;
+          line-height: 1 !important;
+          transform: scale(0.5) !important;
+          display: block !important;
         }
 
         .swiper-button-prev,
