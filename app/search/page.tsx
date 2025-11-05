@@ -764,6 +764,21 @@ export default function SearchPage() {
           color: white !important;
         }
 
+        .swiper-button-prev,
+        .swiper-button-next {
+          position: absolute !important;
+          top: 0 !important;
+          bottom: 18px !important;
+          width: 96px !important;
+          height: calc(100% - 18px) !important;
+          margin-top: 0 !important;
+          z-index: 10 !important;
+          cursor: pointer !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
         .swiper-button-prev {
           left: 0 !important;
           right: auto !important;
@@ -786,24 +801,14 @@ export default function SearchPage() {
 
         .swiper-button-prev:after,
         .swiper-button-next:after {
-          font-size: 12px !important;
-          font-weight: 400 !important;
           font-family: swiper-icons !important;
-        }
-
-        .swiper-button-prev,
-        .swiper-button-next {
-          position: absolute !important;
-          top: 0 !important;
-          bottom: 18px !important;
-          width: 60px !important;
-          height: calc(100% - 18px) !important;
-          margin-top: 0 !important;
-          z-index: 10 !important;
-          cursor: pointer !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
+          font-size: 20.8px !important;
+          font-weight: 400 !important;
+          line-height: 20.8px !important;
+          margin-left: -3.2px !important;
+          -webkit-font-smoothing: antialiased !important;
+          display: block !important;
+          color: rgb(255, 255, 255) !important;
         }
 
         .swiper-scrollbar {

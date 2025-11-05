@@ -249,7 +249,12 @@ textarea::placeholder {
 
 .swiper-button-prev:after,
 .swiper-button-next:after {
-  font-size: 12px !important;
-  font-weight: 400 !important;
   font-family: swiper-icons !important;
+  font-size: 20.8px !important;
+  font-weight: 400 !important;
+  line-height: 20.8px !important;
+  margin-left: -3.2px !important;
+  -webkit-font-smoothing: antialiased !important;
+  display: block !important;
+  color: rgb(255, 255, 255) !important;
 }
