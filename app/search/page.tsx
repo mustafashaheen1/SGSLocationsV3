@@ -767,11 +767,10 @@ export default function SearchPage() {
         .swiper-button-prev,
         .swiper-button-next {
           position: absolute !important;
-          top: 0 !important;
-          bottom: 18px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
           width: 96px !important;
-          height: calc(100% - 18px) !important;
-          margin-top: 0 !important;
+          height: min(100px, 40%) !important;
           z-index: 10 !important;
           cursor: pointer !important;
           display: flex !important;
