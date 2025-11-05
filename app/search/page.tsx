@@ -20,145 +20,137 @@ const searchCategories = {
       { text: 'Commercial Space', count: 9 },
       { text: 'Desert', count: 1 },
       { text: 'Dining Room', count: 21 },
-      { text: 'Estate', count: 12 },
-      { text: 'Exterior', count: 42 },
-      { text: 'Farm/Ranch', count: 3 },
+      { text: 'Downtown', count: 12 },
+      { text: 'Farm/Ranch', count: 7 },
       { text: 'Garden', count: 15 },
-      { text: 'Gym/Fitness', count: 2 },
-      { text: 'Historical', count: 5 },
-      { text: 'Hospital/Medical', count: 1 },
-      { text: 'Hotel', count: 3 },
-      { text: 'Industrial', count: 7 },
+      { text: 'Industrial Warehouse Loft', count: 8 },
       { text: 'Kitchen', count: 28 },
-      { text: 'Lake House', count: 4 },
+      { text: 'Lake/River', count: 4 },
       { text: 'Living Room', count: 32 },
-      { text: 'Loft', count: 5 },
-      { text: 'Mansion', count: 8 },
-      { text: 'Mid-Century Modern', count: 6 },
-      { text: 'Modern', count: 15 },
-      { text: 'Mountain', count: 2 },
-      { text: 'Office', count: 11 },
-      { text: 'Outdoor Space', count: 10 },
-      { text: 'Park', count: 4 },
+      { text: 'Mountains', count: 3 },
+      { text: 'Office', count: 14 },
+      { text: 'Penthouse', count: 6 },
       { text: 'Pool', count: 18 },
-      { text: 'Restaurant', count: 6 },
-      { text: 'Retail/Store', count: 7 },
-      { text: 'Rustic', count: 9 },
-      { text: 'School/University', count: 4 },
-      { text: 'Sports Facility', count: 3 },
-      { text: 'Traditional', count: 14 },
-      { text: 'Urban', count: 12 },
-      { text: 'Warehouse', count: 5 }
-    ]
-  },
-  permits: {
-    name: 'Permits',
-    options: [
-      { text: 'Film Permit Available' },
-      { text: 'No Permit Required' },
-      { text: 'Permit Assistance Available' }
+      { text: 'Restaurant', count: 11 },
+      { text: 'Rooftop', count: 9 },
+      { text: 'Studio', count: 13 },
+      { text: 'Suburban', count: 24 },
+      { text: 'Urban', count: 19 }
     ]
   },
   city: {
     name: 'City',
     options: [
-      { text: 'Arlington' },
-      { text: 'Carrollton' },
-      { text: 'Cedar Hill' },
-      { text: 'Dallas' },
-      { text: 'Denton' },
-      { text: 'DeSoto' },
-      { text: 'Flower Mound' },
-      { text: 'Fort Worth' },
-      { text: 'Frisco' },
-      { text: 'Garland' },
-      { text: 'Grand Prairie' },
-      { text: 'Grapevine' },
-      { text: 'Irving' },
-      { text: 'Lancaster' },
-      { text: 'Lewisville' },
-      { text: 'McKinney' },
-      { text: 'Mesquite' },
-      { text: 'Plano' },
-      { text: 'Richardson' },
-      { text: 'Rowlett' }
+      { text: 'Dallas', count: 45 },
+      { text: 'Fort Worth', count: 38 },
+      { text: 'Plano', count: 32 },
+      { text: 'Frisco', count: 28 },
+      { text: 'Arlington', count: 25 },
+      { text: 'Irving', count: 22 },
+      { text: 'McKinney', count: 20 },
+      { text: 'Allen', count: 18 },
+      { text: 'Carrollton', count: 16 },
+      { text: 'Richardson', count: 15 },
+      { text: 'Denton', count: 14 },
+      { text: 'Lewisville', count: 12 },
+      { text: 'Garland', count: 11 },
+      { text: 'Grand Prairie', count: 10 },
+      { text: 'Mesquite', count: 9 }
     ]
   },
   county: {
     name: 'County',
     options: [
-      { text: 'Collin' },
-      { text: 'Dallas' },
-      { text: 'Denton' },
-      { text: 'Ellis' },
-      { text: 'Johnson' },
-      { text: 'Kaufman' },
-      { text: 'Parker' },
-      { text: 'Rockwall' },
-      { text: 'Tarrant' },
-      { text: 'Wise' }
+      { text: 'Dallas County', count: 120 },
+      { text: 'Tarrant County', count: 95 },
+      { text: 'Collin County', count: 80 },
+      { text: 'Denton County', count: 55 }
     ]
   },
   access: {
     name: 'Access',
     options: [
-      { text: '24/7 Access' },
-      { text: 'Business Hours Only' },
-      { text: 'Flexible Schedule' },
-      { text: 'Weekend Access' }
-    ]
-  },
-  floors: {
-    name: 'Floors',
-    options: [
-      { text: 'Single Story' },
-      { text: 'Two Story' },
-      { text: 'Three+ Stories' },
-      { text: 'Multi-Level' },
-      { text: 'Ground Floor Only' }
-    ]
-  },
-  patioBalconies: {
-    name: 'Patio Balconies',
-    options: [
-      { text: 'Balcony' },
-      { text: 'Covered Patio' },
-      { text: 'Open Patio' },
-      { text: 'Rooftop Deck' },
-      { text: 'Terrace' }
-    ]
-  },
-  pool: {
-    name: 'Pool',
-    options: [
-      { text: 'Indoor Pool' },
-      { text: 'Infinity Pool' },
-      { text: 'Lap Pool' },
-      { text: 'No Pool' },
-      { text: 'Outdoor Pool' },
-      { text: 'Pool with Spa' }
+      { text: '24/7 Access', count: 42 },
+      { text: 'Business Hours Only', count: 88 },
+      { text: 'Flexible Schedule', count: 65 },
+      { text: 'Weekend Access', count: 51 }
     ]
   },
   walls: {
     name: 'Walls',
     options: [
-      { text: 'Brick' },
-      { text: 'Concrete' },
-      { text: 'Exposed Brick' },
-      { text: 'Glass' },
-      { text: 'Stone' },
-      { text: 'White Walls' },
-      { text: 'Wood Paneling' }
+      { text: 'Brick', count: 23 },
+      { text: 'Concrete', count: 18 },
+      { text: 'Exposed Brick', count: 15 },
+      { text: 'Glass', count: 12 },
+      { text: 'Stone', count: 19 },
+      { text: 'White Walls', count: 45 },
+      { text: 'Wood Paneling', count: 22 }
     ]
   },
   yard: {
     name: 'Yard',
     options: [
-      { text: 'Large Backyard' },
-      { text: 'Small Yard' },
-      { text: 'No Yard' },
-      { text: 'Landscaped' },
-      { text: 'Natural/Wild' }
+      { text: 'Arbor', count: 8 },
+      { text: 'Fountain', count: 12 },
+      { text: 'Garden', count: 28 },
+      { text: 'Green House', count: 5 },
+      { text: 'Hedges', count: 34 },
+      { text: 'Large Deck', count: 19 },
+      { text: 'Large Lawn', count: 42 },
+      { text: 'Palm Trees', count: 15 },
+      { text: 'Pond', count: 9 },
+      { text: 'Rose Garden', count: 6 },
+      { text: 'Stones', count: 22 },
+      { text: 'Trees', count: 55 }
+    ]
+  },
+  floors: {
+    name: 'Floors',
+    options: [
+      { text: 'Wood', count: 44 },
+      { text: 'Tile', count: 31 },
+      { text: 'Concrete', count: 25 },
+      { text: 'Dark Wood', count: 17 },
+      { text: 'Carpet', count: 13 },
+      { text: 'Light Wood', count: 8 },
+      { text: 'Linoleum', count: 6 },
+      { text: 'White', count: 5 },
+      { text: 'Black', count: 4 },
+      { text: 'Marble', count: 4 },
+      { text: 'Slate', count: 4 },
+      { text: 'Cobblestone', count: 3 }
+    ]
+  },
+  pool: {
+    name: 'Pool',
+    options: [
+      { text: 'Traditional', count: 13 },
+      { text: 'Modern', count: 9 },
+      { text: 'Kidney', count: 5 },
+      { text: 'Large', count: 3 },
+      { text: 'Empty', count: 1 },
+      { text: 'Lagoon', count: 1 },
+      { text: 'Lap', count: 1 }
+    ]
+  },
+  patioBalconies: {
+    name: 'Patio/Balconies',
+    options: [
+      { text: 'Furnished', count: 54 },
+      { text: 'Large', count: 10 },
+      { text: 'With View', count: 13 },
+      { text: 'With City View', count: 8 },
+      { text: 'With Mountain View', count: 5 }
+    ]
+  },
+  permits: {
+    name: 'Permits',
+    options: [
+      { text: 'Film Permit Available', count: 52 },
+      { text: 'Commercial Permit', count: 38 },
+      { text: 'Event Permit', count: 24 },
+      { text: 'Photography Permit', count: 45 }
     ]
   }
 };
