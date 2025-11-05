@@ -231,8 +231,42 @@ function PropertyCard({ property }: { property: Property }) {
               ))}
             </Swiper>
 
-            <div className={`swiper-button-prev nav-prev-${property.id}`}></div>
-            <div className={`swiper-button-next nav-next-${property.id}`}></div>
+            <div className={`swiper-button-prev nav-prev-${property.id}`}>
+              <svg
+                width="10.69"
+                height="20.8"
+                viewBox="0 0 11 21"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ pointerEvents: 'none' }}
+              >
+                <path
+                  d="M10 1L1 10.5L10 20"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className={`swiper-button-next nav-next-${property.id}`}>
+              <svg
+                width="10.69"
+                height="20.8"
+                viewBox="0 0 11 21"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ pointerEvents: 'none' }}
+              >
+                <path
+                  d="M1 1L10 10.5L1 20"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
 
             <div className={`swiper-scrollbar scrollbar-${property.id}`}></div>
           </div>
@@ -786,10 +820,23 @@ export default function SearchPage() {
 
         .swiper-button-prev:after,
         .swiper-button-next:after {
-          font-size: 8px !important;
-          font-weight: 400 !important;
-          font-family: swiper-icons !important;
-          line-height: 1 !important;
+          content: '' !important;
+          display: none !important;
+        }
+
+        .swiper-button-prev,
+        .swiper-button-next {
+          position: absolute !important;
+          top: 0 !important;
+          bottom: 18px !important;
+          width: 60px !important;
+          height: calc(100% - 18px) !important;
+          margin-top: 0 !important;
+          z-index: 10 !important;
+          cursor: pointer !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
 
         .swiper-scrollbar {
