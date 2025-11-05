@@ -790,7 +790,7 @@ export default function SearchPage() {
           font-weight: 400 !important;
           font-family: swiper-icons !important;
           line-height: 1 !important;
-          transform: scale(0.5) !important;
+          transform: scale(0.514) !important;
           display: block !important;
         }
 
