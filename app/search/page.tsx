@@ -786,8 +786,8 @@ export default function SearchPage() {
 
         .swiper-button-prev:after,
         .swiper-button-next:after {
-          font-size: 16px !important;
-          font-weight: 700 !important;
+          font-size: 10.8px !important;
+          font-weight: 400 !important;
           font-family: swiper-icons !important;
         }
 
