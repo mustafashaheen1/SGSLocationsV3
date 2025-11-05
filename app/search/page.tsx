@@ -271,6 +271,11 @@ export default function SearchPage() {
           display: none;
         }
 
+        /* ============================================
+           FILTER DROPDOWN STYLING - EXACT MATCH
+           ============================================ */
+
+        /* Main Container */
         .il-search-options-container {
           display: block;
           font-family: acumin-pro-wide, sans-serif;
@@ -281,6 +286,7 @@ export default function SearchPage() {
           order: -1;
           color: rgb(33, 37, 41);
           -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
           background: white;
           border-bottom: 1px solid #e5e5e5;
           padding: 16px 20px;
@@ -288,44 +294,78 @@ export default function SearchPage() {
 
         .il-filter-row {
           display: flex;
-          align-items: flex-end;
+          align-items: center;
           gap: 0;
           flex-wrap: wrap;
           max-width: 1425px;
           margin: 0 auto;
+          padding: 0 16px;
         }
 
+        /* Dropdown Container */
         .il-drop-down-container {
           position: relative;
           display: inline-block;
         }
 
+        /* Button Trigger - EXACT CSS FROM IMAGE LOCATIONS */
         .il-btn-trigger {
           display: flex;
           align-items: flex-end;
           margin-right: 8px;
+          margin-bottom: 0px;
+          margin-left: 0px;
+          margin-top: 0px;
+
+          /* Background & Border */
           background-color: rgba(0, 0, 0, 0);
           border: 0px none;
           border-radius: 3.2px;
+          border-top-left-radius: 3.2px;
+          border-top-right-radius: 3.2px;
+          border-bottom-left-radius: 3.2px;
+          border-bottom-right-radius: 3.2px;
+
+          /* Colors */
           color: rgb(108, 117, 125);
+
+          /* Typography */
           font-family: acumin-pro-wide, sans-serif;
           font-size: 14px;
           font-weight: 300;
           line-height: 21px;
-          padding: 4px 8px;
-          cursor: pointer;
-          transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
-                      border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
           text-align: center;
+          letter-spacing: normal;
+
+          /* Dimensions */
+          height: 22px;
+          padding: 4px 8px;
+          padding-top: 4px;
+          padding-right: 8px;
+          padding-bottom: 4px;
+          padding-left: 8px;
+
+          /* Behavior */
+          cursor: pointer;
           user-select: none;
           vertical-align: middle;
+
+          /* Transitions */
+          transition-property: color, background-color, border-color, box-shadow;
+          transition-duration: 0.15s, 0.15s, 0.15s, 0.15s;
+          transition-timing-function: ease-in-out, ease-in-out, ease-in-out, ease-in-out;
+          transition-delay: 0s, 0s, 0s, 0s;
+
+          /* Webkit */
           -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
         }
 
         .il-btn-trigger:hover {
           background-color: #f8f9fa;
         }
 
+        /* Dropdown Label */
         .il-drop-down-label {
           font-family: acumin-pro-wide, sans-serif;
           font-weight: 300;
@@ -333,12 +373,27 @@ export default function SearchPage() {
           line-height: 21px;
         }
 
+        /* Dropdown Icon (Arrow) - EXACT CSS */
         .il-dropdown-icon {
-          width: 12px;
-          height: 12px;
+          display: block;
+          width: 11.1953px;
+          height: 12.7891px;
           margin-left: 8px;
+          color: rgb(108, 117, 125);
+          cursor: pointer;
+          overflow: hidden;
+          font-family: acumin-pro-wide, sans-serif;
+          font-size: 14px;
+          font-weight: 300;
+          line-height: 21px;
+          text-align: center;
+          user-select: none;
+          vertical-align: middle;
+          -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
         }
 
+        /* Popover Menu */
         .il-pop-over {
           position: absolute;
           top: calc(100% + 5px);
@@ -349,8 +404,6 @@ export default function SearchPage() {
           box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
           min-width: 200px;
           max-width: 280px;
-          max-height: 400px;
-          overflow-y: auto;
           z-index: 1050;
         }
 
@@ -360,8 +413,26 @@ export default function SearchPage() {
 
         .popover-body {
           padding: 0;
+
+          /* Dropdown Body - EXACT CSS */
+          box-sizing: border-box;
+          color: rgb(33, 37, 41);
+          display: block;
+          font-family: acumin-pro-wide, sans-serif;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 300;
+          height: 500px;
+          max-height: 500px;
+          overflow-y: scroll;
+          line-height: 21px;
+          text-align: start;
+          width: 228.984px;
+          -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
         }
 
+        /* Arrow */
         .arrow {
           position: absolute;
           display: block;
@@ -387,6 +458,11 @@ export default function SearchPage() {
           border-bottom-color: rgba(0, 0, 0, 0.15);
         }
 
+        /* Search Box Inside Dropdown */
+        .ais-RefinementList {
+          padding: 0;
+        }
+
         .ais-RefinementList-searchBox {
           padding: 10px;
           border-bottom: 1px solid #e9ecef;
@@ -402,14 +478,29 @@ export default function SearchPage() {
           font-weight: 300;
         }
 
+        /* Refinement List */
         .ais-RefinementList-list {
           list-style: none;
           padding: 0;
           margin: 0;
         }
 
+        /* List Item - EXACT CSS */
         .ais-RefinementList-item {
-          padding: 8px 15px;
+          padding: 0 15px;
+          box-sizing: border-box;
+          color: rgb(33, 37, 41);
+          display: list-item;
+          font-family: acumin-pro-wide, sans-serif;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 300;
+          height: 24px;
+          line-height: 21px;
+          list-style-type: none;
+          text-align: start;
+          -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
         }
 
         .ais-RefinementList-item:hover {
@@ -420,6 +511,7 @@ export default function SearchPage() {
           background: #e9ecef;
         }
 
+        /* Label */
         .ais-RefinementList-label {
           display: flex;
           align-items: center;
@@ -428,17 +520,45 @@ export default function SearchPage() {
           font-weight: 300;
           font-size: 14px;
           margin: 0;
+          position: relative;
         }
 
+        /* Checkbox - EXACT CSS (HIDDEN) */
         .ais-RefinementList-checkbox {
-          margin-right: 8px;
-          cursor: pointer;
+          appearance: auto;
+          background-color: rgba(0, 0, 0, 0);
+          border: 0px none;
+          box-sizing: border-box;
+          color: rgb(0, 0, 0);
+          cursor: default;
+          display: block;
+          font-family: acumin-pro-wide, sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          height: 22.3984px;
+          width: 20.7969px;
+          line-height: 21px;
+
+          /* HIDDEN WITH THESE PROPERTIES */
+          opacity: 0;
+          position: absolute;
+          left: 0px;
+          z-index: -1;
+
+          margin: 0px;
+          padding: 0px;
+
+          -webkit-font-smoothing: antialiased;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
         }
 
+        /* Label Text */
         .ais-RefinementList-labelText {
           flex: 1;
+          padding-left: 0;
         }
 
+        /* Count Badge */
         .ais-RefinementList-count {
           color: #6c757d;
           font-size: 12px;
