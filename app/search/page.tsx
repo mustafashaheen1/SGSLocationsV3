@@ -11,62 +11,154 @@ const searchCategories = {
   categories: {
     name: 'Categories',
     options: [
-      { text: 'Modern', count: 25 },
-      { text: 'Ranch', count: 18 },
-      { text: 'Colonial', count: 12 },
-      { text: 'Victorian', count: 8 },
-      { text: 'Contemporary', count: 22 },
-      { text: 'Traditional', count: 15 },
-      { text: 'Spanish', count: 10 },
-      { text: 'Mediterranean', count: 9 },
-      { text: 'Industrial', count: 14 },
-      { text: 'Loft', count: 11 }
+      { text: 'Airport', count: 1 },
+      { text: 'Bar/Club/Lounge', count: 5 },
+      { text: 'Bathroom', count: 30 },
+      { text: 'Beach House', count: 1 },
+      { text: 'Bedroom', count: 36 },
+      { text: 'Church/Temple', count: 2 },
+      { text: 'Commercial Space', count: 9 },
+      { text: 'Desert', count: 1 },
+      { text: 'Dining Room', count: 21 },
+      { text: 'Estate', count: 12 },
+      { text: 'Exterior', count: 42 },
+      { text: 'Farm/Ranch', count: 3 },
+      { text: 'Garden', count: 15 },
+      { text: 'Gym/Fitness', count: 2 },
+      { text: 'Historical', count: 5 },
+      { text: 'Hospital/Medical', count: 1 },
+      { text: 'Hotel', count: 3 },
+      { text: 'Industrial', count: 7 },
+      { text: 'Kitchen', count: 28 },
+      { text: 'Lake House', count: 4 },
+      { text: 'Living Room', count: 32 },
+      { text: 'Loft', count: 5 },
+      { text: 'Mansion', count: 8 },
+      { text: 'Mid-Century Modern', count: 6 },
+      { text: 'Modern', count: 15 },
+      { text: 'Mountain', count: 2 },
+      { text: 'Office', count: 11 },
+      { text: 'Outdoor Space', count: 10 },
+      { text: 'Park', count: 4 },
+      { text: 'Pool', count: 18 },
+      { text: 'Restaurant', count: 6 },
+      { text: 'Retail/Store', count: 7 },
+      { text: 'Rustic', count: 9 },
+      { text: 'School/University', count: 4 },
+      { text: 'Sports Facility', count: 3 },
+      { text: 'Traditional', count: 14 },
+      { text: 'Urban', count: 12 },
+      { text: 'Warehouse', count: 5 }
+    ]
+  },
+  permits: {
+    name: 'Permits',
+    options: [
+      { text: 'Film Permit Available' },
+      { text: 'No Permit Required' },
+      { text: 'Permit Assistance Available' }
     ]
   },
   city: {
     name: 'City',
     options: [
-      { text: 'Dallas', count: 45 },
-      { text: 'Fort Worth', count: 38 },
-      { text: 'Plano', count: 32 },
-      { text: 'Frisco', count: 28 },
-      { text: 'Arlington', count: 25 },
-      { text: 'Irving', count: 22 },
-      { text: 'McKinney', count: 20 },
-      { text: 'Allen', count: 18 },
-      { text: 'Carrollton', count: 16 },
-      { text: 'Richardson', count: 15 }
+      { text: 'Arlington' },
+      { text: 'Carrollton' },
+      { text: 'Cedar Hill' },
+      { text: 'Dallas' },
+      { text: 'Denton' },
+      { text: 'DeSoto' },
+      { text: 'Flower Mound' },
+      { text: 'Fort Worth' },
+      { text: 'Frisco' },
+      { text: 'Garland' },
+      { text: 'Grand Prairie' },
+      { text: 'Grapevine' },
+      { text: 'Irving' },
+      { text: 'Lancaster' },
+      { text: 'Lewisville' },
+      { text: 'McKinney' },
+      { text: 'Mesquite' },
+      { text: 'Plano' },
+      { text: 'Richardson' },
+      { text: 'Rowlett' }
     ]
   },
   county: {
     name: 'County',
     options: [
-      { text: 'Dallas County', count: 120 },
-      { text: 'Tarrant County', count: 95 },
-      { text: 'Collin County', count: 80 },
-      { text: 'Denton County', count: 55 }
+      { text: 'Collin' },
+      { text: 'Dallas' },
+      { text: 'Denton' },
+      { text: 'Ellis' },
+      { text: 'Johnson' },
+      { text: 'Kaufman' },
+      { text: 'Parker' },
+      { text: 'Rockwall' },
+      { text: 'Tarrant' },
+      { text: 'Wise' }
     ]
   },
-  propertyType: {
-    name: 'Property Type',
+  access: {
+    name: 'Access',
     options: [
-      { text: 'Residential', count: 180 },
-      { text: 'Commercial', count: 65 },
-      { text: 'Industrial', count: 35 },
-      { text: 'Land', count: 28 },
-      { text: 'Historical', count: 12 }
+      { text: '24/7 Access' },
+      { text: 'Business Hours Only' },
+      { text: 'Flexible Schedule' },
+      { text: 'Weekend Access' }
     ]
   },
-  features: {
-    name: 'Features',
+  floors: {
+    name: 'Floors',
     options: [
-      { text: 'Pool', count: 85 },
-      { text: 'Garage', count: 145 },
-      { text: 'Fireplace', count: 92 },
-      { text: 'Hardwood Floors', count: 110 },
-      { text: 'Updated Kitchen', count: 78 },
-      { text: 'Backyard', count: 125 },
-      { text: 'Patio', count: 95 }
+      { text: 'Single Story' },
+      { text: 'Two Story' },
+      { text: 'Three+ Stories' },
+      { text: 'Multi-Level' },
+      { text: 'Ground Floor Only' }
+    ]
+  },
+  patioBalconies: {
+    name: 'Patio Balconies',
+    options: [
+      { text: 'Balcony' },
+      { text: 'Covered Patio' },
+      { text: 'Open Patio' },
+      { text: 'Rooftop Deck' },
+      { text: 'Terrace' }
+    ]
+  },
+  pool: {
+    name: 'Pool',
+    options: [
+      { text: 'Indoor Pool' },
+      { text: 'Infinity Pool' },
+      { text: 'Lap Pool' },
+      { text: 'No Pool' },
+      { text: 'Outdoor Pool' },
+      { text: 'Pool with Spa' }
+    ]
+  },
+  walls: {
+    name: 'Walls',
+    options: [
+      { text: 'Brick' },
+      { text: 'Concrete' },
+      { text: 'Exposed Brick' },
+      { text: 'Glass' },
+      { text: 'Stone' },
+      { text: 'White Walls' },
+      { text: 'Wood Paneling' }
+    ]
+  },
+  yard: {
+    name: 'Yard',
+    options: [
+      { text: 'Large Backyard' },
+      { text: 'Small Yard' },
+      { text: 'No Yard' },
+      { text: 'Landscaped' },
+      { text: 'Natural/Wild' }
     ]
   }
 };
@@ -84,7 +176,6 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<{ category: string; values: string[] }[]>([]);
-  const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,17 +202,17 @@ export default function SearchPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    const handleClickOutside = () => {
-      setOpenDropdown(null);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
     };
 
-    if (openDropdown) {
-      document.addEventListener('click', handleClickOutside);
-      return () => {
-        document.removeEventListener('click', handleClickOutside);
-      };
-    }
-  }, [openDropdown]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -186,26 +277,16 @@ export default function SearchPage() {
     return properties.slice(start, start + 24);
   };
 
-  const getFilteredOptions = (category: string, options: FilterOption[]) => {
-    const searchTerm = searchTerms[category]?.toLowerCase() || '';
-    if (!searchTerm) return options;
-    return options.filter(opt => opt.text.toLowerCase().includes(searchTerm));
-  };
-
   return (
     <>
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600&display=swap');
 
         .search-page {
-          font-family: acumin-pro-wide, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           background: #fff;
           min-height: 100vh;
-          font-size: 16px;
-          font-weight: 300;
-          line-height: 24px;
-          color: rgb(33, 37, 41);
-          -webkit-font-smoothing: antialiased;
+          padding-top: 60px;
         }
 
         .image-upload-section {
@@ -271,340 +352,129 @@ export default function SearchPage() {
           display: none;
         }
 
-        /* ============================================
-           FILTER DROPDOWN STYLING - EXACT MATCH
-           ============================================ */
-
-        /* Main Container */
-        .il-search-options-container {
-          display: block;
-          font-family: acumin-pro-wide, sans-serif;
-          font-size: 16px;
-          font-weight: 300;
-          line-height: 24px;
-          margin-bottom: 16px;
-          order: -1;
-          color: rgb(33, 37, 41);
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        .filter-bar {
           background: white;
           border-bottom: 1px solid #e5e5e5;
-          padding: 16px 20px;
+          padding: 12px 20px;
         }
 
-        .il-filter-row {
+        .filter-row {
           display: flex;
           align-items: center;
-          gap: 0;
+          gap: 15px;
           flex-wrap: wrap;
-          max-width: 1425px;
+          max-width: 1200px;
           margin: 0 auto;
-          padding: 0 16px;
         }
 
-        /* Dropdown Container */
-        .il-drop-down-container {
+        .filter-dropdown {
           position: relative;
-          display: inline-block;
         }
 
-        /* Button Trigger - EXACT CSS FROM IMAGE LOCATIONS */
-        .il-btn-trigger {
+        .dropdown-toggle {
           display: flex;
-          align-items: flex-end;
-          margin-right: 8px;
-          margin-bottom: 0px;
-          margin-left: 0px;
-          margin-top: 0px;
-
-          /* Background & Border */
-          background-color: rgba(0, 0, 0, 0);
-          border: 0px none;
-          border-radius: 3.2px;
-          border-top-left-radius: 3.2px;
-          border-top-right-radius: 3.2px;
-          border-bottom-left-radius: 3.2px;
-          border-bottom-right-radius: 3.2px;
-
-          /* Colors */
-          color: rgb(108, 117, 125);
-
-          /* Typography */
-          font-family: acumin-pro-wide, sans-serif;
-          font-size: 14px;
-          font-weight: 300;
-          line-height: 21px;
-          text-align: center;
-          letter-spacing: normal;
-
-          /* Dimensions */
-          height: 22px;
-          padding: 4px 8px;
-          padding-top: 4px;
-          padding-right: 8px;
-          padding-bottom: 4px;
-          padding-left: 8px;
-
-          /* Behavior */
+          align-items: center;
+          gap: 4px;
+          padding: 8px 12px;
+          background: white;
+          border: 1px solid #ced4da;
+          border-radius: 3px;
           cursor: pointer;
-          user-select: none;
-          vertical-align: middle;
-
-          /* Transitions */
-          transition-property: color, background-color, border-color, box-shadow;
-          transition-duration: 0.15s, 0.15s, 0.15s, 0.15s;
-          transition-timing-function: ease-in-out, ease-in-out, ease-in-out, ease-in-out;
-          transition-delay: 0s, 0s, 0s, 0s;
-
-          /* Webkit */
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-        }
-
-        .il-btn-trigger:hover {
-          background-color: #f8f9fa;
-        }
-
-        /* Dropdown Label */
-        .il-drop-down-label {
-          font-family: acumin-pro-wide, sans-serif;
-          font-weight: 300;
           font-size: 14px;
-          line-height: 21px;
+          color: #6c757d;
+          transition: all 0.2s;
         }
 
-        /* Dropdown Icon (Arrow) - EXACT CSS */
-        .il-dropdown-icon {
-          display: block;
-          width: 11.1953px;
-          height: 12.7891px;
-          margin-left: 8px;
-          color: rgb(108, 117, 125);
-          cursor: pointer;
-          overflow: hidden;
-          font-family: acumin-pro-wide, sans-serif;
-          font-size: 14px;
-          font-weight: 300;
-          line-height: 21px;
-          text-align: center;
-          user-select: none;
-          vertical-align: middle;
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        .dropdown-toggle:hover {
+          background: #f8f9fa;
         }
 
-        /* Popover Menu */
-        .il-pop-over {
+        .dropdown-toggle.has-active {
+          background: #6c757d;
+          color: white;
+          border-color: #6c757d;
+        }
+
+        .dropdown-menu {
           position: absolute;
           top: calc(100% + 5px);
           left: 0;
           background: white;
-          border: 1px solid rgba(0, 0, 0, 0.15);
-          border-radius: 0.3rem;
-          box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          box-shadow: 0 6px 12px rgba(0,0,0,0.175);
           min-width: 200px;
           max-width: 280px;
+          max-height: 400px;
+          overflow-y: auto;
           z-index: 1050;
         }
 
-        .il-pop-over.d-none {
-          display: none !important;
-        }
-
-        .popover-body {
-          padding: 0;
-
-          /* Dropdown Body - EXACT CSS */
-          box-sizing: border-box;
-          color: rgb(33, 37, 41);
-          display: block;
-          font-family: acumin-pro-wide, sans-serif;
-          font-size: 14px;
-          font-style: normal;
-          font-weight: 300;
-          height: 500px;
-          max-height: 500px;
-          overflow-y: scroll;
-          line-height: 21px;
-          text-align: start;
-          width: 228.984px;
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-        }
-
-        /* Arrow */
-        .arrow {
-          position: absolute;
-          display: block;
-          width: 0.8rem;
-          height: 0.4rem;
-        }
-
-        .arrow::before {
-          position: absolute;
-          display: block;
-          content: "";
-          border-color: transparent;
-          border-style: solid;
-        }
-
-        .bs-popover-bottom .arrow {
-          top: calc(-0.4rem - 1px);
-        }
-
-        .bs-popover-bottom .arrow::before {
-          top: 0;
-          border-width: 0 0.4rem 0.4rem 0.4rem;
-          border-bottom-color: rgba(0, 0, 0, 0.15);
-        }
-
-        /* Search Box Inside Dropdown */
-        .ais-RefinementList {
-          padding: 0;
-        }
-
-        .ais-RefinementList-searchBox {
-          padding: 10px;
-          border-bottom: 1px solid #e9ecef;
-        }
-
-        .ais-SearchBox-input {
-          width: 100%;
-          padding: 6px 12px;
-          border: 1px solid #ced4da;
-          border-radius: 4px;
-          font-size: 14px;
-          font-family: acumin-pro-wide, sans-serif;
-          font-weight: 300;
-        }
-
-        /* Refinement List */
-        .ais-RefinementList-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        /* List Item - EXACT CSS */
-        .ais-RefinementList-item {
-          padding: 0 15px;
-          box-sizing: border-box;
-          color: rgb(33, 37, 41);
-          display: list-item;
-          font-family: acumin-pro-wide, sans-serif;
-          font-size: 14px;
-          font-style: normal;
-          font-weight: 300;
-          height: 24px;
-          line-height: 21px;
-          list-style-type: none;
-          text-align: start;
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-        }
-
-        .ais-RefinementList-item:hover {
+        .dropdown-header {
+          padding: 10px 15px;
           background: #f8f9fa;
+          border-bottom: 1px solid #dee2e6;
+          font-weight: 600;
+          color: #495057;
+          font-size: 14px;
         }
 
-        .ais-RefinementList-item--selected {
-          background: #e9ecef;
+        .dropdown-content {
+          padding: 8px 0;
         }
 
-        /* Label */
-        .ais-RefinementList-label {
+        .option-item {
+          padding: 8px 15px;
           display: flex;
           align-items: center;
           cursor: pointer;
-          font-family: acumin-pro-wide, sans-serif;
-          font-weight: 300;
+          transition: background-color 0.2s;
           font-size: 14px;
-          margin: 0;
+        }
+
+        .option-item:hover {
+          background-color: #f8f9fa;
+        }
+
+        .toggle-switch {
+          width: 40px;
+          height: 20px;
+          background-color: #ccc;
+          border-radius: 10px;
           position: relative;
+          transition: background-color 0.3s;
+          margin-right: 10px;
+          flex-shrink: 0;
         }
 
-        /* Checkbox - EXACT CSS (HIDDEN) */
-        .ais-RefinementList-checkbox {
-          appearance: auto;
-          background-color: rgba(0, 0, 0, 0);
-          border: 0px none;
-          box-sizing: border-box;
-          color: rgb(0, 0, 0);
-          cursor: default;
-          display: block;
-          font-family: acumin-pro-wide, sans-serif;
-          font-size: 14px;
-          font-weight: 400;
-          height: 22.3984px;
-          width: 20.7969px;
-          line-height: 21px;
+        .toggle-switch.active {
+          background-color: #28a745;
+        }
 
-          /* HIDDEN WITH THESE PROPERTIES */
-          opacity: 0;
+        .toggle-switch::after {
+          content: '';
           position: absolute;
-          left: 0px;
-          z-index: -1;
-
-          margin: 0px;
-          padding: 0px;
-
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background-color: white;
+          top: 2px;
+          left: 2px;
+          transition: transform 0.3s;
         }
 
-        /* Label Text */
-        .ais-RefinementList-labelText {
+        .toggle-switch.active::after {
+          transform: translateX(20px);
+        }
+
+        .option-text {
           flex: 1;
-          padding-left: 0;
+          color: #495057;
         }
 
-        /* Count Badge */
-        .ais-RefinementList-count {
+        .option-count {
           color: #6c757d;
           font-size: 12px;
-          margin-left: 5px;
-        }
-
-        .d-none {
-          display: none !important;
-        }
-
-        .d-md-block {
-          display: block !important;
-        }
-
-        @media (max-width: 767px) {
-          .d-md-block {
-            display: none !important;
-          }
-        }
-
-        .mb-3 {
-          margin-bottom: 1rem !important;
-        }
-
-        .mr-2 {
-          margin-right: 0.5rem !important;
-        }
-
-        .position-relative {
-          position: relative !important;
-        }
-
-        .order-first {
-          order: -1 !important;
-        }
-
-        .d-flex {
-          display: flex !important;
-        }
-
-        .align-items-end {
-          align-items: flex-end !important;
-        }
-
-        .shadow-sm {
-          box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
         }
 
         .main-search-container {
@@ -613,7 +483,7 @@ export default function SearchPage() {
         }
 
         .main-search-wrapper {
-          max-width: 1425px;
+          max-width: 1200px;
           margin: 0 auto;
           position: relative;
         }
@@ -641,7 +511,7 @@ export default function SearchPage() {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
-          max-width: 1425px;
+          max-width: 1200px;
           margin: 0 auto;
         }
 
@@ -683,7 +553,7 @@ export default function SearchPage() {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
           gap: 20px;
-          max-width: 1425px;
+          max-width: 1200px;
           margin: 0 auto;
         }
 
@@ -744,81 +614,44 @@ export default function SearchPage() {
           </div>
         </div>
 
-        <div className="il-search-options-container mb-3 d-none d-md-block order-first" ref={dropdownRef}>
-          <div className="il-filter-row">
-            {Object.entries(searchCategories).map(([key, category]) => (
-              <div key={key} className="il-drop-down-container position-relative">
-                <button
-                  id={`trigger-${key}`}
-                  aria-haspopup="true"
-                  aria-expanded={openDropdown === key ? 'true' : 'false'}
-                  className="d-flex align-items-end mr-2 il-btn-trigger btn btn-sm btn-outline-secondary dropdown-toggle border-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenDropdown(openDropdown === key ? null : key);
-                  }}
-                >
-                  <span className="il-drop-down-label">{category.name}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="il-dropdown-icon ml-2">
-                    <path fill="currentColor" d="M207.029 381.476L12.686 187.132c-9.373-9.373-9.373-24.569 0-33.941l22.667-22.667c9.357-9.357 24.522-9.375 33.901-.04L224 284.505l154.745-154.021c9.379-9.335 24.544-9.317 33.901.04l22.667 22.667c9.373 9.373 9.373 24.569 0 33.941L240.971 381.476c-9.373 9.372-24.569 9.372-33.942 0z"></path>
-                  </svg>
-                </button>
+        <div className="filter-bar" ref={dropdownRef}>
+          <div className="filter-row">
+            {Object.entries(searchCategories).map(([key, category]) => {
+              const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
 
-                <div
-                  id={`popup-${key}`}
-                  role="menu"
-                  className={`${openDropdown === key ? '' : 'd-none'} il-pop-over popover bs-popover-bottom shadow-sm`}
-                  aria-labelledby={`trigger-${key}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="arrow"></div>
-                  <div className="popover-body">
-                    <div className="ais-RefinementList">
-                      <div className="ais-RefinementList-searchBox">
-                        <div className="ais-SearchBox">
-                          <form noValidate className="ais-SearchBox-form" action="" role="search" onSubmit={(e) => e.preventDefault()}>
-                            <input
-                              type="search"
-                              placeholder="Search here…"
-                              autoComplete="off"
-                              autoCorrect="off"
-                              autoCapitalize="off"
-                              spellCheck="false"
-                              required
-                              maxLength={512}
-                              className="ais-SearchBox-input"
-                              value={searchTerms[key] || ''}
-                              onChange={(e) => setSearchTerms(prev => ({ ...prev, [key]: e.target.value }))}
-                            />
-                          </form>
-                        </div>
+              return (
+                <div key={key} className="filter-dropdown">
+                  <button
+                    className={`dropdown-toggle ${hasActive > 0 ? 'has-active' : ''}`}
+                    onClick={() => setOpenDropdown(openDropdown === key ? null : key)}
+                  >
+                    <span>{category.name}</span>
+                    <ChevronDown size={16} />
+                  </button>
+
+                  {openDropdown === key && (
+                    <div className="dropdown-menu">
+                      <div className="dropdown-header">{category.name}</div>
+                      <div className="dropdown-content">
+                        {category.options.map((option, idx) => (
+                          <div
+                            key={idx}
+                            className="option-item"
+                            onClick={() => toggleFilter(category.name, option.text)}
+                          >
+                            <div className={`toggle-switch ${isFilterActive(category.name, option.text) ? 'active' : ''}`} />
+                            <span className="option-text">{option.text}</span>
+                            {'count' in option && option.count && (
+                              <span className="option-count">{option.count}</span>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                      <ul className="ais-RefinementList-list">
-                        {getFilteredOptions(key, category.options).map((option, idx) => {
-                          const isActive = isFilterActive(category.name, option.text);
-                          return (
-                            <li key={idx} className={`ais-RefinementList-item ${isActive ? 'ais-RefinementList-item--selected' : ''}`}>
-                              <label className="ais-RefinementList-label">
-                                <input
-                                  className="ais-RefinementList-checkbox"
-                                  type="checkbox"
-                                  checked={isActive}
-                                  onChange={() => toggleFilter(category.name, option.text)}
-                                />
-                                <span className="ais-RefinementList-labelText">{option.text}</span>
-                                {option.count && (
-                                  <span className="ais-RefinementList-count">{option.count}</span>
-                                )}
-                              </label>
-                            </li>
-                          );
-                        })}
-                      </ul>
                     </div>
-                  </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
