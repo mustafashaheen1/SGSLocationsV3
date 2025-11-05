@@ -4,6 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Search, Upload, ChevronDown, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
+import Link from 'next/link';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Scrollbar, FreeMode } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/scrollbar';
+import 'swiper/css/free-mode';
 
 const searchCategories = {
   categories: {
@@ -160,9 +169,8 @@ interface FilterOption {
 
 function PropertyCard({ property }: { property: Property }) {
   const router = useRouter();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
+  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   const images = property.images && property.images.length > 0
     ? property.images
@@ -170,182 +178,111 @@ function PropertyCard({ property }: { property: Property }) {
     ? [property.primary_image]
     : ['https://via.placeholder.com/400x300'];
 
-  const nextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const handleCardClick = () => {
-    router.push(`/property/${property.id}`);
-  };
-
-  const handleMagnifyClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setShowLightbox(true);
-  };
-
   return (
     <>
-      <div
-        className="property-card"
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-      >
-        <div
-          style={{ position: 'relative', width: '100%', aspectRatio: '4/3', cursor: 'pointer' }}
-          onClick={handleCardClick}
-        >
-          <img
-            src={images[currentImageIndex]}
-            alt={property.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => {
-              e.currentTarget.src = `https://via.placeholder.com/400x300/808080/ffffff?text=${property.name}`;
-            }}
-          />
-
-          {images.length > 1 && isHovering && (
-            <>
-              <div
-                onClick={prevImage}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: '18px',
-                  left: 0,
-                  width: '60px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 10,
-                  background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
-                  transition: 'background 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0))';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))';
-                }}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </div>
-
-              <div
-                onClick={nextImage}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: '18px',
-                  right: 0,
-                  width: '60px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 10,
-                  background: 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
-                  transition: 'background 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0))';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))';
-                }}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </div>
-            </>
-          )}
-
-          {images.length > 1 && (
-            <div
+      <article className="il-search-result" style={{ height: '100%' }}>
+        <div className="il-react-carousel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{ position: 'relative', order: 1 }}>
+            <Swiper
+              modules={[Navigation, Scrollbar, FreeMode]}
+              spaceBetween={3}
+              slidesPerView="auto"
+              freeMode={true}
+              navigation={{
+                prevEl: `.swiper-button-prev-${property.id}`,
+                nextEl: `.swiper-button-next-${property.id}`,
+              }}
+              scrollbar={{
+                el: `.swiper-scrollbar-${property.id}`,
+                draggable: true,
+                dragSize: 6.15,
+              }}
+              onSwiper={setSwiperInstance}
+              className="il-location-carousel"
               style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '18px',
-                background: 'rgba(128, 128, 128, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0 8px'
+                height: '300px',
+                width: '100%'
               }}
             >
-              <div style={{ width: '100%', height: '4px', background: 'rgba(200, 200, 200, 0.5)', borderRadius: '2px', position: 'relative' }}>
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    height: '100%',
-                    width: `${((currentImageIndex + 1) / images.length) * 100}%`,
-                    background: '#e11921',
-                    borderRadius: '2px',
-                    transition: 'width 0.3s ease'
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+              {images.map((img, idx) => (
+                <SwiperSlide key={idx} style={{ width: '100%' }}>
+                  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                    <Link href={`/property/${property.id}`}>
+                      <img
+                        src={img}
+                        alt={`${property.name} - ${idx + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/400x300';
+                        }}
+                      />
+                    </Link>
+                  </div>
+                </SwiperSlide>
+              ))}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' }}>
-          <div onClick={handleCardClick} style={{ flex: 1, cursor: 'pointer' }}>
-            <h3 className="property-title" style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 400, color: '#212529' }}>
-              {property.name}
-            </h3>
-            <p className="property-location" style={{ margin: 0, fontSize: '14px', color: '#6c757d' }}>
+              <div className={`swiper-button-prev swiper-button-prev-${property.id}`}></div>
+              <div className={`swiper-button-next swiper-button-next-${property.id}`}></div>
+
+              <div className={`swiper-scrollbar swiper-scrollbar-${property.id}`}></div>
+            </Swiper>
+          </div>
+
+          <div style={{ padding: '12px 0', position: 'relative' }}>
+            <h5 style={{
+              fontSize: '18px',
+              fontWeight: 400,
+              marginBottom: '4px',
+              fontFamily: 'acumin-pro-wide, sans-serif'
+            }}>
+              <Link
+                href={`/property/${property.id}`}
+                style={{ color: '#212529', textDecoration: 'none' }}
+              >
+                {property.name}
+              </Link>
+            </h5>
+            <p style={{
+              fontSize: '14px',
+              color: '#6c757d',
+              marginBottom: 0,
+              fontFamily: 'acumin-pro-wide, sans-serif'
+            }}>
               {property.city}
             </p>
-          </div>
 
-          <div
-            onClick={handleMagnifyClick}
-            style={{
-              width: '40px',
-              height: '40px',
-              background: 'white',
-              border: '2px solid #e11921',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              marginLeft: '12px',
-              transition: 'transform 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e11921" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              <line x1="11" y1="8" x2="11" y2="14"></line>
-              <line x1="8" y1="11" x2="14" y2="11"></line>
-            </svg>
+            <button
+              onClick={() => setShowLightbox(true)}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: '12px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              <svg
+                width="25"
+                height="25"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                style={{ color: 'rgb(225, 25, 33)' }}
+              >
+                <path
+                  fill="currentColor"
+                  d="M319.8 204v8c0 6.6-5.4 12-12 12h-84v84c0 6.6-5.4 12-12 12h-8c-6.6 0-12-5.4-12-12v-84h-84c-6.6 0-12-5.4-12-12v-8c0-6.6 5.4-12 12-12h84v-84c0-6.6 5.4-12 12-12h8c6.6 0 12 5.4 12 12v84h84c6.6 0 12 5.4 12 12zm188.5 293L497 508.3c-4.7 4.7-12.3 4.7-17 0l-129-129c-2.3-2.3-3.5-5.3-3.5-8.5v-8.5C310.6 395.7 261.7 416 208 416 93.8 416 1.5 324.9 0 210.7-1.5 93.7 93.7-1.5 210.7 0 324.9 1.5 416 93.8 416 208c0 53.7-20.3 102.6-53.7 139.5h8.5c3.2 0 6.2 1.3 8.5 3.5l129 129c4.7 4.7 4.7 12.3 0 17zM384 208c0-97.3-78.7-176-176-176S32 110.7 32 208s78.7 176 176 176 176-78.7 176-176z"
+                ></path>
+              </svg>
+            </button>
           </div>
         </div>
-      </div>
+      </article>
 
       {showLightbox && (
         <div
@@ -371,20 +308,13 @@ function PropertyCard({ property }: { property: Property }) {
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              zIndex: 10001,
-              padding: '8px'
+              zIndex: 10001
             }}
           >
             <X size={32} color="#212529" strokeWidth={2} />
           </button>
 
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '1400px',
-              margin: '0 auto'
-            }}
-          >
+          <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1400px', margin: '0 auto' }}>
             <h2 style={{
               fontSize: '32px',
               fontWeight: 400,
@@ -413,11 +343,7 @@ function PropertyCard({ property }: { property: Property }) {
                       borderRadius: '4px',
                       marginBottom: '8px'
                     }}
-                    onClick={() => {
-                      setCurrentImageIndex(idx);
-                      setShowLightbox(false);
-                      router.push(`/property/${property.id}`);
-                    }}
+                    onClick={() => router.push(`/property/${property.id}`)}
                   />
                   <div style={{
                     fontSize: '14px',
@@ -816,70 +742,75 @@ export default function SearchPage() {
           align-items: center;
         }
 
-        .property-grid {
-          padding: 20px;
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 20px;
-          max-width: 1200px;
-          margin: 0 auto;
+
+        .swiper-button-prev,
+        .swiper-button-next {
+          color: white !important;
+          width: 60px !important;
+          height: calc(100% - 18px) !important;
+          top: 0 !important;
+          margin-top: 0 !important;
+          background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
         }
 
-        .property-card {
-          background: white;
-          border: 1px solid #e5e5e5;
-          border-radius: 4px;
-          overflow: hidden;
-          transition: transform 0.2s, box-shadow 0.2s;
+        .swiper-button-next {
+          background: linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0)) !important;
         }
 
-        .property-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .swiper-button-prev:after,
+        .swiper-button-next:after {
+          font-size: 20.8px !important;
+          font-weight: 400 !important;
         }
 
-        .property-image {
-          width: 100%;
-          height: 200px;
-          object-fit: cover;
-        }
-
-        .property-info {
-          padding: 15px;
-        }
-
-        .property-title {
-          font-size: 16px;
-          font-weight: 600;
-          color: #212529;
-          margin-bottom: 5px;
-        }
-
-        .property-location {
-          font-size: 14px;
-          color: #6c757d;
-        }
-
-        .nav-arrow-left:hover {
+        .swiper-button-prev:hover {
           background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
         }
 
-        .nav-arrow-right:hover {
+        .swiper-button-next:hover {
           background: linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
         }
 
-        .magnify-icon:hover {
-          transform: scale(1.1);
-          transition: transform 0.2s ease;
+        .swiper-scrollbar {
+          background: rgb(222, 226, 230) !important;
+          border-radius: 10px !important;
+          bottom: 4px !important;
+          height: 8px !important;
+          left: 1% !important;
+          width: 98% !important;
+          margin-top: 10px !important;
         }
 
-        .property-card {
+        .swiper-scrollbar-drag {
+          background: rgb(225, 25, 33) !important;
+          border-radius: 10px !important;
+          height: 8px !important;
+          cursor: grab !important;
+        }
+
+        .swiper-scrollbar-drag:active {
+          cursor: grabbing !important;
+        }
+
+        .property-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 20px;
+          padding: 20px;
+          max-width: 1425px;
+          margin: 0 auto;
+        }
+
+        .il-search-result {
+          background: white;
+          border-radius: 4px;
+          overflow: visible;
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .property-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        .il-search-result:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
       `}</style>
 
