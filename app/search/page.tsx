@@ -198,17 +198,14 @@ function PropertyCard({ property }: { property: Property }) {
         className="property-card"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        style={{ cursor: 'pointer' }}
       >
         <div
-          className="property-image-container"
-          style={{ position: 'relative', width: '100%', aspectRatio: '4/3' }}
+          style={{ position: 'relative', width: '100%', aspectRatio: '4/3', cursor: 'pointer' }}
           onClick={handleCardClick}
         >
           <img
             src={images[currentImageIndex]}
             alt={property.name}
-            className="property-image"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={(e) => {
               e.currentTarget.src = `https://via.placeholder.com/400x300/808080/ffffff?text=${property.name}`;
@@ -218,7 +215,6 @@ function PropertyCard({ property }: { property: Property }) {
           {images.length > 1 && isHovering && (
             <>
               <div
-                className="nav-arrow nav-arrow-left"
                 onClick={prevImage}
                 style={{
                   position: 'absolute',
@@ -231,25 +227,22 @@ function PropertyCard({ property }: { property: Property }) {
                   justifyContent: 'center',
                   cursor: 'pointer',
                   zIndex: 10,
-                  background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))'
+                  background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
+                  transition: 'background 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))';
                 }}
               >
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </div>
 
               <div
-                className="nav-arrow nav-arrow-right"
                 onClick={nextImage}
                 style={{
                   position: 'absolute',
@@ -262,60 +255,22 @@ function PropertyCard({ property }: { property: Property }) {
                   justifyContent: 'center',
                   cursor: 'pointer',
                   zIndex: 10,
-                  background: 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))'
+                  background: 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))',
+                  transition: 'background 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))';
                 }}
               >
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
               </div>
             </>
           )}
-
-          <div
-            className="magnify-icon"
-            onClick={handleMagnifyClick}
-            style={{
-              position: 'absolute',
-              bottom: '24px',
-              right: '12px',
-              width: '36px',
-              height: '36px',
-              background: 'rgba(255, 255, 255, 0.9)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 20,
-              border: '2px solid #e11921'
-            }}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#e11921"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              <line x1="11" y1="8" x2="11" y2="14"></line>
-              <line x1="8" y1="11" x2="14" y2="11"></line>
-            </svg>
-          </div>
 
           {images.length > 1 && (
             <div
@@ -349,9 +304,46 @@ function PropertyCard({ property }: { property: Property }) {
           )}
         </div>
 
-        <div className="property-info" onClick={handleCardClick}>
-          <h3 className="property-title">{property.name}</h3>
-          <p className="property-location">{property.city}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' }}>
+          <div onClick={handleCardClick} style={{ flex: 1, cursor: 'pointer' }}>
+            <h3 className="property-title" style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 400, color: '#212529' }}>
+              {property.name}
+            </h3>
+            <p className="property-location" style={{ margin: 0, fontSize: '14px', color: '#6c757d' }}>
+              {property.city}
+            </p>
+          </div>
+
+          <div
+            onClick={handleMagnifyClick}
+            style={{
+              width: '40px',
+              height: '40px',
+              background: 'white',
+              border: '2px solid #e11921',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              marginLeft: '12px',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e11921" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -363,59 +355,78 @@ function PropertyCard({ property }: { property: Property }) {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0, 0, 0, 0.95)',
+            background: 'white',
             zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            overflow: 'auto',
+            padding: '40px 20px'
           }}
           onClick={() => setShowLightbox(false)}
         >
           <button
             onClick={() => setShowLightbox(false)}
             style={{
-              position: 'absolute',
+              position: 'fixed',
               top: '20px',
               right: '20px',
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'transparent',
               border: 'none',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               cursor: 'pointer',
-              zIndex: 10001
+              zIndex: 10001,
+              padding: '8px'
             }}
           >
-            <X size={24} color="white" />
+            <X size={32} color="#212529" strokeWidth={2} />
           </button>
 
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              maxWidth: '90vw',
-              maxHeight: '90vh',
-              overflow: 'auto',
-              background: 'white',
-              padding: '20px',
-              borderRadius: '8px'
+              maxWidth: '1400px',
+              margin: '0 auto'
             }}
           >
-            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>{property.name}</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: 400,
+              color: '#212529',
+              marginBottom: '30px',
+              fontFamily: 'acumin-pro-wide, sans-serif'
+            }}>
+              {property.name}
+            </h2>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+              gap: '16px'
+            }}>
               {images.map((img, idx) => (
-                <img
-                  key={idx}
-                  src={img}
-                  alt={`${property.name} ${idx + 1}`}
-                  style={{ width: '100%', height: '150px', objectFit: 'cover', cursor: 'pointer', borderRadius: '4px' }}
-                  onClick={() => {
-                    setCurrentImageIndex(idx);
-                    setShowLightbox(false);
-                  }}
-                />
+                <div key={idx} style={{ textAlign: 'center' }}>
+                  <img
+                    src={img}
+                    alt={`${property.name} ${idx + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '140px',
+                      objectFit: 'cover',
+                      cursor: 'pointer',
+                      borderRadius: '4px',
+                      marginBottom: '8px'
+                    }}
+                    onClick={() => {
+                      setCurrentImageIndex(idx);
+                      setShowLightbox(false);
+                      router.push(`/property/${property.id}`);
+                    }}
+                  />
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#6c757d',
+                    fontFamily: 'acumin-pro-wide, sans-serif'
+                  }}>
+                    {idx + 1}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
