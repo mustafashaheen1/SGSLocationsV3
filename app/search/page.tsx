@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Search, Upload, ChevronDown, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
-import Image from 'next/image';
-import Link from 'next/link';
 
 const searchCategories = {
   categories: {
@@ -158,6 +156,273 @@ const searchCategories = {
 interface FilterOption {
   text: string;
   count?: number;
+}
+
+function PropertyCard({ property }: { property: Property }) {
+  const router = useRouter();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+
+  const images = property.images && property.images.length > 0
+    ? property.images
+    : property.primary_image
+    ? [property.primary_image]
+    : ['https://via.placeholder.com/400x300'];
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleCardClick = () => {
+    router.push(`/property/${property.id}`);
+  };
+
+  const handleMagnifyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setShowLightbox(true);
+  };
+
+  return (
+    <>
+      <div
+        className="property-card"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        style={{ cursor: 'pointer' }}
+      >
+        <div
+          className="property-image-container"
+          style={{ position: 'relative', width: '100%', aspectRatio: '4/3' }}
+          onClick={handleCardClick}
+        >
+          <img
+            src={images[currentImageIndex]}
+            alt={property.name}
+            className="property-image"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => {
+              e.currentTarget.src = `https://via.placeholder.com/400x300/808080/ffffff?text=${property.name}`;
+            }}
+          />
+
+          {images.length > 1 && isHovering && (
+            <>
+              <div
+                className="nav-arrow nav-arrow-left"
+                onClick={prevImage}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: '18px',
+                  left: 0,
+                  width: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                  background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))'
+                }}
+              >
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </div>
+
+              <div
+                className="nav-arrow nav-arrow-right"
+                onClick={nextImage}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: '18px',
+                  right: 0,
+                  width: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                  background: 'linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0))'
+                }}
+              >
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
+            </>
+          )}
+
+          <div
+            className="magnify-icon"
+            onClick={handleMagnifyClick}
+            style={{
+              position: 'absolute',
+              bottom: '24px',
+              right: '12px',
+              width: '36px',
+              height: '36px',
+              background: 'rgba(255, 255, 255, 0.9)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 20,
+              border: '2px solid #e11921'
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#e11921"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </div>
+
+          {images.length > 1 && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '18px',
+                background: 'rgba(128, 128, 128, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 8px'
+              }}
+            >
+              <div style={{ width: '100%', height: '4px', background: 'rgba(200, 200, 200, 0.5)', borderRadius: '2px', position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    height: '100%',
+                    width: `${((currentImageIndex + 1) / images.length) * 100}%`,
+                    background: '#e11921',
+                    borderRadius: '2px',
+                    transition: 'width 0.3s ease'
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="property-info" onClick={handleCardClick}>
+          <h3 className="property-title">{property.name}</h3>
+          <p className="property-location">{property.city}</p>
+        </div>
+      </div>
+
+      {showLightbox && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={() => setShowLightbox(false)}
+        >
+          <button
+            onClick={() => setShowLightbox(false)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10001
+            }}
+          >
+            <X size={24} color="white" />
+          </button>
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              background: 'white',
+              padding: '20px',
+              borderRadius: '8px'
+            }}
+          >
+            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>{property.name}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+              {images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt={`${property.name} ${idx + 1}`}
+                  style={{ width: '100%', height: '150px', objectFit: 'cover', cursor: 'pointer', borderRadius: '4px' }}
+                  onClick={() => {
+                    setCurrentImageIndex(idx);
+                    setShowLightbox(false);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 export default function SearchPage() {
@@ -583,6 +848,28 @@ export default function SearchPage() {
           font-size: 14px;
           color: #6c757d;
         }
+
+        .nav-arrow-left:hover {
+          background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
+        }
+
+        .nav-arrow-right:hover {
+          background: linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
+        }
+
+        .magnify-icon:hover {
+          transform: scale(1.1);
+          transition: transform 0.2s ease;
+        }
+
+        .property-card {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .property-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
       `}</style>
 
       <div className="search-page">
@@ -691,22 +978,7 @@ export default function SearchPage() {
         ) : (
           <div className="property-grid">
             {getCurrentPageItems().map(property => (
-              <div key={property.id} className="property-card">
-                <Link href={`/property/${property.id}`}>
-                  <img
-                    src={property.primary_image || property.images[0] || 'https://via.placeholder.com/400x300'}
-                    alt={property.name}
-                    className="property-image"
-                    onError={(e) => {
-                      e.currentTarget.src = `https://via.placeholder.com/400x300/808080/ffffff?text=${property.name}`;
-                    }}
-                  />
-                  <div className="property-info">
-                    <h3 className="property-title">{property.name}</h3>
-                    <p className="property-location">{property.city}</p>
-                  </div>
-                </Link>
-              </div>
+              <PropertyCard key={property.id} property={property} />
             ))}
           </div>
         )}
