@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,11 +43,31 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+    setErrors({ email: '', password: '', form: '' });
 
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (!data.user) {
+        throw new Error('Login failed');
+      }
+
       router.push('/dashboard');
+    } catch (err: any) {
+      setErrors({
+        email: '',
+        password: '',
+        form: err.message || 'Invalid email or password'
+      });
+      console.error('Login error:', err);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

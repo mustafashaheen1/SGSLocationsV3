@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Camera } from 'lucide-react';
 import LoginModal from '@/components/LoginModal';
 import { nunito } from '@/lib/fonts';
+import { supabase } from '@/lib/supabase';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -88,11 +89,38 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
+    setErrors({ ...errors, form: '' });
 
-    setTimeout(() => {
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('User creation failed');
+      }
+
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: formData.email,
+          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          user_type: 'production',
+        });
+
+      if (profileError) throw profileError;
+
       router.push('/dashboard');
+    } catch (err: any) {
+      setErrors({ ...errors, form: err.message || 'Registration failed. Please try again.' });
+      console.error('Registration error:', err);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

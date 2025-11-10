@@ -20,6 +20,7 @@ export default function HomePage() {
         .from('properties')
         .select('*')
         .eq('status', 'active')
+        .eq('is_featured', true)
         .limit(6);
       if (data) setFeaturedProperties(data);
     }

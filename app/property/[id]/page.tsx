@@ -24,62 +24,6 @@ interface ImageWithCategory {
   categories: string[];
 }
 
-function generateImagesWithCategories(): ImageWithCategory[] {
-  const categories = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
-  const imageList: ImageWithCategory[] = [];
-
-  const workingUrls = [
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80',
-    'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80',
-    'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80',
-    'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=1200&q=80',
-    'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=1200&q=80',
-    'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1200&q=80',
-    'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
-    'https://images.unsplash.com/photo-1565953522043-baea26b83b7e?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600585154526-990dce4d33be?w=1200&q=80',
-    'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1200&q=80',
-    'https://images.unsplash.com/photo-1567496898669-ee935f5f647a?w=1200&q=80',
-    'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=1200&q=80',
-    'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?w=1200&q=80',
-    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&q=80',
-    'https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=1200&q=80',
-    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80',
-    'https://images.unsplash.com/photo-1560185127-6a86733ccc14?w=1200&q=80',
-    'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=1200&q=80',
-    'https://images.unsplash.com/photo-1555636222-cae831e670b3?w=1200&q=80',
-    'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=1200&q=80',
-    'https://images.unsplash.com/photo-1556911073-52527ac43761?w=1200&q=80',
-    'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&q=80',
-    'https://images.unsplash.com/photo-1560440021-33f9b867899d?w=1200&q=80'
-  ];
-
-  for (let i = 0; i < 100; i++) {
-    const numCategories = Math.floor(Math.random() * 3) + 1;
-    const imageCategories: string[] = [];
-
-    for (let j = 0; j < numCategories; j++) {
-      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-      if (!imageCategories.includes(randomCategory)) {
-        imageCategories.push(randomCategory);
-      }
-    }
-
-    imageList.push({
-      url: workingUrls[i % workingUrls.length],
-      categories: imageCategories
-    });
-  }
-  return imageList;
-}
-
 export default function PropertyDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -166,22 +110,38 @@ export default function PropertyDetailPage() {
   }, [params.id]);
 
   useEffect(() => {
-    const imagesWithCats = generateImagesWithCategories();
-    setAllImages(imagesWithCats);
-    setDisplayedImages(imagesWithCats);
+    if (property) {
+      let propertyImages: string[] = [];
 
-    setTimeout(() => {
-      if (categoryRefs.current['Pool']) {
-        const element = categoryRefs.current['Pool'];
-        const rect = element.getBoundingClientRect();
-        setRedBarPosition({
-          left: `${rect.left}px`,
-          width: `${rect.width}px`
-        });
-        setActiveCategory('Pool');
+      if (property.images && property.images.length > 0) {
+        propertyImages = [...property.images];
+      } else if (property.primary_image) {
+        propertyImages = [property.primary_image];
+      } else {
+        propertyImages = ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80'];
       }
-    }, 100);
-  }, []);
+
+      const imagesWithCats = propertyImages.map((url, index) => ({
+        url,
+        categories: index < categoryTags.length ? [categoryTags[index]] : ['General']
+      }));
+
+      setAllImages(imagesWithCats);
+      setDisplayedImages(imagesWithCats);
+
+      setTimeout(() => {
+        if (categoryRefs.current['Pool']) {
+          const element = categoryRefs.current['Pool'];
+          const rect = element.getBoundingClientRect();
+          setRedBarPosition({
+            left: `${rect.left}px`,
+            width: `${rect.width}px`
+          });
+          setActiveCategory('Pool');
+        }
+      }, 100);
+    }
+  }, [property]);
 
   useEffect(() => {
     const handleResize = () => updateRedBarPosition(activeCategory);
