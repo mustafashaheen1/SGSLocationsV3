@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, Upload, ChevronDown, X } from 'lucide-react';
+import { Search, ChevronDown, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -379,8 +379,6 @@ export default function SearchPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<{ category: string; values: string[] }[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -415,35 +413,6 @@ export default function SearchPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFileUpload(e.target.files[0]);
-    }
-  };
-
-  const handleFileUpload = (file: File) => {
-    console.log('File uploaded:', file.name);
-  };
 
   const toggleFilter = (category: string, value: string) => {
     setActiveFilters(prev => {
@@ -489,69 +458,6 @@ export default function SearchPage() {
           background: #fff;
           min-height: 100vh;
           padding-top: 60px;
-        }
-
-        .image-upload-section {
-          margin-top: 0;
-          background: white;
-          padding: 30px 16px;
-          border-bottom: 1px solid #e5e5e5;
-        }
-
-        .image-upload-box {
-          max-width: 1425px;
-          height: 100px;
-          margin: 0 auto;
-          border: 2px dashed #3b9cd9;
-          border-radius: 4px;
-          padding-left: 16px;
-          padding-right: 16px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          background: #f0f8ff;
-          box-sizing: border-box;
-          -webkit-font-smoothing: antialiased;
-          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-        }
-
-        .upload-title {
-          font-family: 'Nunito', 'acumin-pro-wide', sans-serif;
-          font-size: 16px;
-          font-weight: 300;
-          color: rgb(33, 37, 41);
-          line-height: 24px;
-          margin-bottom: 8px;
-          text-align: center;
-          display: block;
-          -webkit-font-smoothing: antialiased;
-        }
-
-        .upload-subtitle {
-          font-family: 'Nunito', 'acumin-pro-wide', sans-serif;
-          font-size: 14px;
-          font-weight: 300;
-          color: rgb(33, 37, 41);
-          line-height: 20px;
-          text-align: center;
-          display: block;
-          -webkit-font-smoothing: antialiased;
-        }
-
-        .image-upload-box.dragging {
-          background: #e6f3ff;
-          border-color: #2980b9;
-        }
-
-        .image-upload-box:hover {
-          background: #e6f3ff;
-        }
-
-        .hidden-input {
-          display: none;
         }
 
         .filter-bar {
@@ -855,26 +761,6 @@ export default function SearchPage() {
       `}</style>
 
       <div className="search-page">
-        <div className="image-upload-section">
-          <div
-            className={`image-upload-box ${isDragging ? 'dragging' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <h2 className="upload-title">Search a Location Using An Image As Reference</h2>
-            <p className="upload-subtitle">Drag & Drop an image here or click here to select a file</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden-input"
-            />
-          </div>
-        </div>
-
         <div className="filter-bar" ref={dropdownRef}>
           <div className="filter-row">
             {Object.entries(searchCategories).map(([key, category]) => {
