@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
@@ -13,6 +13,18 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '', form: '' });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session) {
+        router.push('/dashboard');
+      }
+    }
+
+    checkSession();
+  }, [router]);
 
   const validateForm = () => {
     const newErrors = { email: '', password: '', form: '' };
@@ -46,6 +58,8 @@ export default function LoginPage() {
     setErrors({ email: '', password: '', form: '' });
 
     try {
+      await supabase.auth.signOut();
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
