@@ -269,8 +269,7 @@ export default function HomePage() {
             <Button
               onClick={() => router.push('/list-property')}
               size="lg"
-              variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded" style={{fontWeight: 300}}
+              className="bg-white text-gray-900 hover:bg-gray-100 rounded" style={{fontWeight: 300}}
             >
               List Your Property
             </Button>
