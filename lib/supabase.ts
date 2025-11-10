@@ -1,11 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+console.log('🔧 Supabase Client Initialization:');
+console.log('URL:', supabaseUrl);
+console.log('Key exists:', !!supabaseAnonKey);
+console.log('Key length:', supabaseAnonKey?.length);
 
-export type Property = {
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ MISSING SUPABASE CREDENTIALS!');
+  throw new Error('Missing Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
+
+console.log('✅ Supabase client created');
+
+export interface Property {
   id: string;
   name: string;
   description: string | null;
@@ -29,9 +46,12 @@ export type Property = {
   primary_image: string | null;
   status: string;
   owner_id: string | null;
+  is_featured?: boolean;
+  is_exclusive?: boolean;
+  view_count?: number;
   created_at: string;
   updated_at: string;
-};
+}
 
 export type User = {
   id: string;
