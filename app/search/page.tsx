@@ -415,33 +415,104 @@ export default function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<{ category: string; values: string[] }[]>([]);
   const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const ITEMS_PER_PAGE = 24;
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      setLoading(true);
+  const loadMoreProperties = async () => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+
+    try {
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
       const query = searchParams.get('q');
 
-      let supabaseQuery = supabase.from('properties').select('*').eq('status', 'active');
+      let supabaseQuery = supabase
+        .from('properties')
+        .select('*')
+        .eq('status', 'active')
+        .range(from, to);
 
       if (query) {
         supabaseQuery = supabaseQuery.ilike('title', `%${query}%`);
       }
 
-      const { data } = await supabaseQuery;
-      if (data) {
-        setProperties(data);
+      const areaFilters = activeFilters.find(f => f.category === 'Area');
+      if (areaFilters && areaFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.in('city', areaFilters.values);
       }
+
+      const featuresFilters = activeFilters.find(f => f.category === 'Features');
+      if (featuresFilters && featuresFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.overlaps('features', featuresFilters.values);
+      }
+
+      const residentialFilters = activeFilters.find(f => f.category === 'Residential');
+      if (residentialFilters && residentialFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.overlaps('categories', residentialFilters.values);
+      }
+
+      const commercialFilters = activeFilters.find(f => f.category === 'Commercial');
+      if (commercialFilters && commercialFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.overlaps('categories', commercialFilters.values);
+      }
+
+      const { data, error } = await supabaseQuery;
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setProperties(prev => [...prev, ...data]);
+        setPage(prev => prev + 1);
+
+        if (data.length < ITEMS_PER_PAGE) {
+          setHasMore(false);
+        }
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error loading properties:', error);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setProperties([]);
+    setPage(1);
+    setHasMore(true);
+  }, [searchParams, activeFilters]);
+
+  useEffect(() => {
+    if (page === 1 && properties.length === 0 && !loading) {
+      loadMoreProperties();
+    }
+  }, [page, properties.length]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      if (scrollTop + windowHeight >= documentHeight - 500) {
+        if (!loading && hasMore) {
+          loadMoreProperties();
+        }
+      }
     };
 
-    fetchProperties();
-  }, [searchParams]);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, hasMore]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -483,25 +554,23 @@ export default function SearchPage() {
 
   const removeFilterValue = (category: string, value: string) => {
     toggleFilter(category, value);
+    window.scrollTo(0, 0);
   };
 
   const clearCategoryFilters = (category: string) => {
     setActiveFilters(prev => prev.filter(f => f.category !== category));
+    window.scrollTo(0, 0);
   };
 
   const clearAllFilters = () => {
     setActiveFilters([]);
+    window.scrollTo(0, 0);
   };
 
   const getFilteredOptions = (categoryKey: string, options: string[]) => {
     const searchTerm = searchTerms[categoryKey]?.toLowerCase() || '';
     if (!searchTerm) return options;
     return options.filter(option => option.toLowerCase().includes(searchTerm));
-  };
-
-  const getCurrentPageItems = () => {
-    const start = (currentPage - 1) * 24;
-    return properties.slice(start, start + 24);
   };
 
   return (
@@ -901,6 +970,73 @@ export default function SearchPage() {
           max-width: 1425px;
           margin: 0 auto;
         }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid #f3f4f6;
+          border-top: 3px solid #e11921;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 4rem 2rem;
+          color: #6b7280;
+        }
+
+        .no-results-title {
+          font-size: 1.25rem;
+          margin-bottom: 0.5rem;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 400;
+        }
+
+        .no-results-text {
+          font-size: 0.875rem;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 300;
+        }
+
+        .loading-container {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: center;
+          padding: 2rem 0;
+        }
+
+        .end-message {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 2rem 0;
+          color: #6b7280;
+          font-size: 14px;
+          font-weight: 300;
+          font-family: acumin-pro-wide, sans-serif;
+        }
+
+        .results-count {
+          padding: 15px 20px;
+          background: white;
+          border-bottom: 1px solid #e5e5e5;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .results-count p {
+          color: #6b7280;
+          font-size: 14px;
+          font-weight: 300;
+          font-family: acumin-pro-wide, sans-serif;
+          margin: 0;
+        }
       `}</style>
 
       <div className="search-page">
@@ -1012,15 +1148,37 @@ export default function SearchPage() {
           </div>
         )}
 
-        {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
-        ) : (
-          <div className="property-grid">
-            {getCurrentPageItems().map(property => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
-        )}
+        <div className="results-count">
+          <p>
+            Showing {properties.length} {properties.length === 1 ? 'property' : 'properties'}
+            {!hasMore && properties.length > 0 && ' (all results loaded)'}
+          </p>
+        </div>
+
+        <div className="property-grid">
+          {properties.map(property => (
+            <PropertyCard key={property.id} property={property} />
+          ))}
+
+          {loading && (
+            <div className="loading-container">
+              <div className="loading-spinner" />
+            </div>
+          )}
+
+          {!loading && properties.length === 0 && (
+            <div className="no-results">
+              <p className="no-results-title">No properties found</p>
+              <p className="no-results-text">Try adjusting your filters</p>
+            </div>
+          )}
+
+          {!hasMore && properties.length > 0 && (
+            <div className="end-message">
+              No more properties to load
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
