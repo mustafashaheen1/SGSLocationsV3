@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Building2, Users, Mail, Settings, LogOut, Menu, X } from 'lucide-react';
+import { Home, Building2, Users, Mail, Settings, LogOut, Menu, X, FileText } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,15 +13,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const adminAuth = localStorage.getItem('adminAuth');
-    if (adminAuth === 'true') {
-      setIsAuthenticated(true);
-    } else if (pathname !== '/admin/login') {
-      router.push('/admin/login');
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        if (pathname !== '/admin/login') {
+          router.push('/admin/login');
+        }
+        return;
+      }
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (!userData?.is_admin) {
+        await supabase.auth.signOut();
+        localStorage.removeItem('adminAuth');
+        if (pathname !== '/admin/login') {
+          router.push('/admin/login');
+        }
+      } else {
+        setIsAuthenticated(true);
+      }
+    }
+
+    if (pathname !== '/admin/login') {
+      checkAuth();
     }
   }, [pathname, router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem('adminAuth');
     router.push('/');
   };
@@ -38,6 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/properties', label: 'Properties', icon: Building2 },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/inquiries', label: 'Inquiries', icon: Mail },
+    { href: '/admin/content', label: 'Content', icon: FileText },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
