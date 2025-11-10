@@ -1097,7 +1097,7 @@ function Footer() {
           }}>
             <Camera style={{ width: '24px', height: '24px', color: '#fff' }} />
           </div>
-          <span style={{ fontSize: '1.5rem', fontWeight: 300, color: '#212529' }}>IMAGE LOCATIONS</span>
+          <span style={{ fontSize: '1.5rem', fontWeight: 300, color: '#212529' }}>SGS LOCATIONS</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#4b5563' }}>
