@@ -14,157 +14,198 @@ import 'swiper/css/navigation';
 import 'swiper/css/scrollbar';
 import 'swiper/css/free-mode';
 
-const searchCategories = {
-  categories: {
-    name: 'Categories',
+const filterCategories = {
+  area: {
+    name: 'Area',
+    hasSearch: true,
     options: [
-      { text: 'Airport', count: 1 },
-      { text: 'Bar/Club/Lounge', count: 5 },
-      { text: 'Bathroom', count: 30 },
-      { text: 'Beach House', count: 1 },
-      { text: 'Bedroom', count: 36 },
-      { text: 'Church/Temple', count: 2 },
-      { text: 'Commercial Space', count: 9 },
-      { text: 'Desert', count: 1 },
-      { text: 'Dining Room', count: 21 },
-      { text: 'Downtown', count: 12 },
-      { text: 'Farm/Ranch', count: 7 },
-      { text: 'Garden', count: 15 },
-      { text: 'Industrial Warehouse Loft', count: 8 },
-      { text: 'Kitchen', count: 28 },
-      { text: 'Lake/River', count: 4 },
-      { text: 'Living Room', count: 32 },
-      { text: 'Mountains', count: 3 },
-      { text: 'Office', count: 14 },
-      { text: 'Penthouse', count: 6 },
-      { text: 'Pool', count: 18 },
-      { text: 'Restaurant', count: 11 },
-      { text: 'Rooftop', count: 9 },
-      { text: 'Studio', count: 13 },
-      { text: 'Suburban', count: 24 },
-      { text: 'Urban', count: 19 }
+      'ACTON', 'ADAMS DISTRICT', 'AGOURA HILLS', 'AGUA DULCE', 'ALHAMBRA',
+      'ALTADENA', 'ARCADIA', 'ATWATER VILLAGE', 'AZUZA', 'BALBOA',
+      'BALDWIN HILLS', 'BEL AIR', 'BEVERLY HILLS', 'BRADBURY', 'BRENTWOOD',
+      'BRIDGEPORT', 'BURBANK', 'CALABASAS', 'CANYON COUNTRY', 'CARSON',
+      'CASTAIC', 'CENTRAL LA', 'CENTURY CITY', 'CHAPMAN WOODS', 'CHATSWORTH',
+      'CHEVIOT HILLS', 'COMMERCE', 'COMPTON', 'COUNTRY CLUB PARK', 'CULVER CITY',
+      'DOWNEY', 'DOWNTOWN', 'EAGLE ROCK', 'EAST LA', 'ECHO PARK', 'EL SEGUNDO',
+      'ENCINO', 'FREEMONT PLACE', 'GARDENA', 'GLENDALE', 'GRANADA HILLS',
+      'HANCOCK PARK', 'HAWTHORNE', 'HERMOSA BEACH', 'HIGHLAND PARK', 'HILLS',
+      'HOLLYWOOD', 'HOLLYWOOD HILLS', 'HOLMBY HILLS', 'INDIAN SPRINGS', 'IRVINE',
+      'LA CANADA', 'LA COUNTY PERMIT', 'LA CRESENTA', 'LA HABRA', 'LADERA HEIGHTS',
+      'LONG BEACH', 'LOS ANGELES', 'LOS FELIZ', 'MALIBU', 'MAR VISTA',
+      'MARINA DEL REY', 'MID WILSHIRE', 'MISSION HILLS', 'MONROVIA', 'MONTECITO',
+      'NEWHALL', 'NEWPORT BEACH', 'NORTH HILLS', 'NORTH HOLLYWOOD', 'NORTHRIDGE',
+      'NORWALK', 'OJAI', 'ONTARIO', 'ORANGE COUNTY', 'OUT OF TMZ',
+      'PACIFIC PALISADES', 'PALM SPRINGS', 'PALOS VERDES', 'PASADENA', 'POMONA',
+      'RESEDA', 'SAN FERNANDO VALLEY', 'SAN GABRIEL VALLEY', 'SAN PEDRO',
+      'SANTA BARBARA', 'SANTA CLARITA', 'SANTA MONICA', 'SANTA SUZANA', 'SAUGUS',
+      'SHADOW HILLS', 'SHERMAN OAKS', 'SIERRA MADRE', 'SIGNAL HILL', 'SILVER LAKE',
+      'SIMI VALLEY', 'SOMIS', 'SOUTH LA', 'SOUTH PASADENA', 'SOUTHEAST LA',
+      'SOUTHGATE', 'STEVENSON RANCH', 'STUDIO CITY', 'SUN VALLEY', 'SUNLAND',
+      'TARZANA', 'THOUSAND OAKS', 'TOLUCA LAKE', 'TOPANGA CANYON', 'TORRANCE',
+      'VALENCIA', 'VALLEY VILLAGE', 'VAN NUYS', 'VENICE', 'VERNON', 'WEST COVINA',
+      'WEST HILLS', 'WEST HOLLYWOOD', 'WEST LA', 'WEST VALLEY', 'WESTCHESTER',
+      'WESTLAKE', 'WESTSIDE', 'WHITTIER', 'WOODLAND HILLS'
     ]
   },
-  city: {
-    name: 'City',
+
+  features: {
+    name: 'Features',
+    hasSearch: true,
     options: [
-      { text: 'Dallas', count: 45 },
-      { text: 'Fort Worth', count: 38 },
-      { text: 'Plano', count: 32 },
-      { text: 'Frisco', count: 28 },
-      { text: 'Arlington', count: 25 },
-      { text: 'Irving', count: 22 },
-      { text: 'McKinney', count: 20 },
-      { text: 'Allen', count: 18 },
-      { text: 'Carrollton', count: 16 },
-      { text: 'Richardson', count: 15 },
-      { text: 'Denton', count: 14 },
-      { text: 'Lewisville', count: 12 },
-      { text: 'Garland', count: 11 },
-      { text: 'Grand Prairie', count: 10 },
-      { text: 'Mesquite', count: 9 }
+      '1 Story', '2 Story', '3 Story', 'Arbor', 'Astro Turf', 'Backyard BBQ',
+      'Backyard Desert', 'Backyard Lawn', 'Backyard Native Plants', 'Backyard Pool',
+      'Backyard Pond', 'Backyard View', 'Balcony', 'Bar', 'Basketball Court',
+      'Bathroom', 'Bathroom Dark', 'Bathroom Modern', 'Bathroom Pink',
+      'Bathroom Retro', 'Bathroom Vintage', 'Bathtub', 'Beach', 'Beach Cliff',
+      'Beach House', 'Beach Sand', 'Beach View', 'Bedroom', 'Bedroom Bright',
+      'Bedroom Colorful', 'Bedroom Mid-Century', 'Bedroom Modern', 'Bedroom Retro',
+      'Bedroom Tropical', 'Bedroom Vintage', 'Biergarten', 'Bocce Court', 'Cabin',
+      'Cabinetry Modern', 'Cabinetry Retro', 'Cabins', 'Carport', 'Cathedral Ceiling',
+      'Ceiling', 'Ceiling Beams', 'Ceiling Cathedral', 'Ceiling Coffered',
+      'Ceiling Modern', 'Ceiling Textured', 'Ceiling Vaulted', 'Ceiling Wood Beams',
+      'Cocktail Lounge', 'Contemporary', 'Country', 'Courtyard', 'Deck',
+      'Dining Room', 'Driveway', 'Driveway Brick', 'Driveway Circular',
+      'Driveway Concrete', 'Driveway Gravel', 'Enclosed Patio', 'Fireplace',
+      'Floors', 'Floors Brick', 'Floors Carpet', 'Floors Checkerboard',
+      'Floors Concrete', 'Floors Dark Wood', 'Floors Hardwood', 'Floors Linoleum',
+      'Floors Marble', 'Floors Parquet', 'Floors Slate', 'Floors Terrazzo',
+      'Floors Tile', 'Floors White', 'Floors Wood', 'Fountain', 'Front Lawn',
+      'Front Porch', 'Front Yard Desert', 'Front Yard Grass', 'Front Yard Gravel',
+      'Front Yard Native Plants', 'Front Yard Rock', 'Furnished', 'Furnished Light',
+      'Furnished Minimally', 'Furnished Unfurnished', 'Garage', 'Garage 1 Car',
+      'Garage 2 Car', 'Garage 3 Car', 'Garage Detached', 'Garden', 'Garden Rose',
+      'Garden Vegetable', 'Garden Zen', 'Gate', 'Gazebo', 'Golf Course',
+      'Greenhouse', 'Grill', 'Guest House', 'Gym', 'Gym Home', 'Hedges',
+      'Home Office', 'Home Theater', 'Hot Tub', 'In-Law Suite', 'Island Kitchen',
+      'Jacuzzi', 'Kitchen', 'Kitchen Bright', 'Kitchen Colorful', 'Kitchen Dark',
+      'Kitchen Farmhouse', 'Kitchen Galley', 'Kitchen Modern', 'Kitchen Open',
+      'Kitchen Retro', 'Kitchen Vintage', 'Kitchen White', 'Lake', 'Lake House',
+      'Lake View', 'Laundry Room', 'Library', 'Living Room', 'Living Room Bright',
+      'Living Room Dark', 'Living Room Modern', 'Living Room Retro',
+      'Living Room Traditional', 'Loft', 'Meditation Room', 'Mid-Century',
+      'Modern', 'Mountain View', 'Music Room', 'Nursery', 'Office', 'Outdoor Shower',
+      'Palm Trees', 'Parking', 'Parking Off-Street', 'Parking On-Street',
+      'Parking Underground', 'Patio', 'Patio Balconies', 'Patio Covered',
+      'Patio Enclosed', 'Patio Furniture', 'Patio Open', 'Patio Stone', 'Patio Wood',
+      'Pergola', 'Play Structure', 'Playhouse', 'Pond', 'Pool', 'Pool Above Ground',
+      'Pool Heated', 'Pool Infinity', 'Pool Indoor', 'Pool Kidney Shaped',
+      'Pool Lap', 'Pool Natural', 'Pool Olympic', 'Pool Plunge', 'Pool Rectangular',
+      'Pool Salt Water', 'Pool Spa', 'Putting Green', 'Ranch', 'Retro', 'Rooftop',
+      'RV Parking', 'Sauna', 'Shower', 'Shuffleboard Court', 'Skylight',
+      'Spa', 'Sports Court', 'Stables', 'Staircase', 'Staircase Curved',
+      'Staircase Floating', 'Staircase Modern', 'Staircase Spiral', 'Steam Room',
+      'Stone Walls', 'Storage', 'Studio', 'Study', 'Sunroom', 'Tennis Court',
+      'Terrace', 'Theater Room', 'Tiki Bar', 'Traditional', 'Trailer', 'Treehouse',
+      'Tropical', 'View', 'View City', 'View Desert', 'View Golf Course',
+      'View Hills', 'View Lake', 'View Mountain', 'View Ocean', 'View Panoramic',
+      'View Pool', 'View Sunset', 'View Valley', 'View Water', 'Vintage',
+      'Volleyball Court', 'Walkway', 'Walls', 'Walls Brick', 'Walls Brick Exposed',
+      'Walls Concrete', 'Walls Glass', 'Walls Mirrored', 'Walls Painted',
+      'Walls Paneling', 'Walls Shiplap', 'Walls Stone', 'Walls Stucco',
+      'Walls Textured', 'Walls Wallpaper', 'Walls White', 'Walls Wood',
+      'Walls Wood Paneling', 'Water Feature', 'Wet Bar', 'Wine Cellar',
+      'Wine Room', 'Windows', 'Windows Bay', 'Windows Casement', 'Windows Floor to Ceiling',
+      'Windows French', 'Windows Large', 'Windows Lots of Natural Light',
+      'Windows Picture', 'Windows Skylights', 'Windows Sliding Glass',
+      'Windows Stained Glass', 'Workshop', 'Wrap Around Porch', 'Yard',
+      'Yard Large', 'Yard Small', 'Zen Garden'
     ]
   },
-  county: {
-    name: 'County',
+
+  residential: {
+    name: 'Residential',
+    hasSearch: true,
     options: [
-      { text: 'Dallas County', count: 120 },
-      { text: 'Tarrant County', count: 95 },
-      { text: 'Collin County', count: 80 },
-      { text: 'Denton County', count: 55 }
+      '70s & 80s', '90s Modern', '90s Vibe', 'Americana', 'Americana 50s',
+      'Americana Cape Cod', 'Americana Country', 'Americana Georgian Colonial',
+      'Americana New England', 'Americana Traditional', 'Apartment', 'Art Deco',
+      'Arts and Crafts', 'Bachelor Pad', 'Beach House', 'Bohemian', 'Bungalow',
+      'Cape Cod', 'Castle', 'Chateau', 'Cliff House', 'Colonial', 'Condo',
+      'Contemporary', 'Contemporary Clean Lines', 'Contemporary Glass & Steel',
+      'Contemporary High Tech Modern', 'Cottage', 'Country', 'Craftsman',
+      'Desert Modern', 'East Coast', 'Eclectic', 'Edwardian', 'Estate',
+      'European', 'Farmhouse', 'Florida', 'French', 'French Country',
+      'French Provincial', 'Georgian', 'Georgian Colonial', 'Greek Revival',
+      'Guesthouse', 'High Rise', 'High Tech Modern', 'Historic', 'Hollywood Hills',
+      'Industrial', 'Italian', 'Lake House', 'Loft', 'Log Cabin', 'Luxury',
+      'Mansion', 'Masonry', 'Mediterranean', 'Mid Century', 'Mid West',
+      'Minimalist', 'Modern', 'Modern A-Frame', 'Modern Architecture',
+      'Modern Cube House', 'Modern Farmhouse', 'Modern Glass House',
+      'Modern Minimalist', 'Modern Organic', 'Modern Rustic', 'Modernist',
+      'Mountain', 'Mountain Cabin', 'Mountain House', 'Mountain Lodge',
+      'New Construction', 'New England', 'New Orleans', 'Northwest', 'Penthouse',
+      'Prairie Style', 'Ranch', 'Ranch Horse Property', 'Ranch Style', 'Retro',
+      'Rustic', 'Rustic Modern', 'Scandinavian', 'Seaside', 'Spanish',
+      'Spanish Colonial', 'Spanish Mediterranean', 'Spanish Revival', 'Split Level',
+      'Storybook', 'Studio', 'Suburban', 'Townhouse', 'Traditional', 'Treehouse',
+      'Tropical', 'Tudor', 'Tuscan', 'Urban', 'Victorian', 'Victorian Gothic',
+      'Victorian Italianate', 'Victorian Queen Anne', 'Villa', 'Vintage'
     ]
   },
-  access: {
-    name: 'Access',
+
+  commercial: {
+    name: 'Commercial',
+    hasSearch: true,
     options: [
-      { text: '24/7 Access', count: 42 },
-      { text: 'Business Hours Only', count: 88 },
-      { text: 'Flexible Schedule', count: 65 },
-      { text: 'Weekend Access', count: 51 }
-    ]
-  },
-  walls: {
-    name: 'Walls',
-    options: [
-      { text: 'Brick', count: 23 },
-      { text: 'Concrete', count: 18 },
-      { text: 'Exposed Brick', count: 15 },
-      { text: 'Glass', count: 12 },
-      { text: 'Stone', count: 19 },
-      { text: 'White Walls', count: 45 },
-      { text: 'Wood Paneling', count: 22 }
-    ]
-  },
-  yard: {
-    name: 'Yard',
-    options: [
-      { text: 'Arbor', count: 8 },
-      { text: 'Fountain', count: 12 },
-      { text: 'Garden', count: 28 },
-      { text: 'Green House', count: 5 },
-      { text: 'Hedges', count: 34 },
-      { text: 'Large Deck', count: 19 },
-      { text: 'Large Lawn', count: 42 },
-      { text: 'Palm Trees', count: 15 },
-      { text: 'Pond', count: 9 },
-      { text: 'Rose Garden', count: 6 },
-      { text: 'Stones', count: 22 },
-      { text: 'Trees', count: 55 }
-    ]
-  },
-  floors: {
-    name: 'Floors',
-    options: [
-      { text: 'Wood', count: 44 },
-      { text: 'Tile', count: 31 },
-      { text: 'Concrete', count: 25 },
-      { text: 'Dark Wood', count: 17 },
-      { text: 'Carpet', count: 13 },
-      { text: 'Light Wood', count: 8 },
-      { text: 'Linoleum', count: 6 },
-      { text: 'White', count: 5 },
-      { text: 'Black', count: 4 },
-      { text: 'Marble', count: 4 },
-      { text: 'Slate', count: 4 },
-      { text: 'Cobblestone', count: 3 }
-    ]
-  },
-  pool: {
-    name: 'Pool',
-    options: [
-      { text: 'Traditional', count: 13 },
-      { text: 'Modern', count: 9 },
-      { text: 'Kidney', count: 5 },
-      { text: 'Large', count: 3 },
-      { text: 'Empty', count: 1 },
-      { text: 'Lagoon', count: 1 },
-      { text: 'Lap', count: 1 }
-    ]
-  },
-  patioBalconies: {
-    name: 'Patio/Balconies',
-    options: [
-      { text: 'Furnished', count: 54 },
-      { text: 'Large', count: 10 },
-      { text: 'With View', count: 13 },
-      { text: 'With City View', count: 8 },
-      { text: 'With Mountain View', count: 5 }
-    ]
-  },
-  permits: {
-    name: 'Permits',
-    options: [
-      { text: 'Film Permit Available', count: 52 },
-      { text: 'Commercial Permit', count: 38 },
-      { text: 'Event Permit', count: 24 },
-      { text: 'Photography Permit', count: 45 }
+      'Airplane', 'Airport', 'Airport Hangar', 'Airport Terminal', 'Alley',
+      'Apartment Building', 'Aquarium', 'Arena', 'Art Gallery', 'Auditorium',
+      'Bakery', 'Bank', 'Bar', 'Bar Dive', 'Bar Sports', 'Bar Wine', 'Barn',
+      'Baseball Field', 'Basketball Court', 'Big Box Store', 'Bookstore',
+      'Bowling Alley', 'Brewery', 'Bridge', 'Building Abandoned',
+      'Building Government', 'Building High Rise', 'Building Historic',
+      'Building Industrial', 'Building Medical', 'Building Mid Rise',
+      'Building Office', 'Bus', 'Bus Depot', 'Bus Station', 'Butcher Shop',
+      'Cafe', 'Cafeteria', 'Car Dealership', 'Car Wash', 'Casino', 'Cemetery',
+      'Church', 'Cinema', 'City Hall', 'Classroom', 'Clinic', 'Club',
+      'Club Country', 'Club Golf', 'Club Night', 'Club Yacht', 'Coffee Shop',
+      'College Campus', 'Comedy Club', 'Community Center', 'Concert Hall',
+      'Conference Center', 'Construction Site', 'Convention Center', 'Convenience Store',
+      'Courthouse', 'Deli', 'Department Store', 'Desert', 'Detention Center',
+      'Diner', 'Diner 50s', 'Diner Classic', 'Diner Retro', 'Distillery',
+      'Doctor Office', 'Dock', 'Dorm', 'Downtown', 'Drive In', 'Dry Cleaner',
+      'Elementary School', 'Embassy', 'Factory', 'Factory Abandoned', 'Farmers Market',
+      'Fast Food', 'Ferry Terminal', 'Field', 'Fire Station', 'Fish Market',
+      'Flea Market', 'Food Court', 'Food Hall', 'Food Truck', 'Football Field',
+      'Forest', 'Fort', 'Funeral Home', 'Furniture Store', 'Gallery', 'Garage',
+      'Garage Auto Repair', 'Garage Parking', 'Gas Station', 'Golf Course',
+      'Grocery Store', 'Gym', 'Hair Salon', 'Hardware Store', 'High School',
+      'Highway', 'Hospital', 'Hostel', 'Hotel', 'Hotel Boutique', 'Hotel Luxury',
+      'Hotel Resort', 'House of Worship', 'Ice Cream Shop', 'Ice Rink',
+      'Industrial', 'Industrial Complex', 'Industrial Warehouse', 'Jazz Club',
+      'Jewelry Store', 'Junkyard', 'Laboratory', 'Laundromat', 'Library',
+      'Lighthouse', 'Liquor Store', 'Loading Dock', 'Lobby', 'Locker Room',
+      'Loft', 'Lumberyard', 'Mall', 'Mall Shopping Center', 'Mall Strip',
+      'Marina', 'Market', 'Meat Packing', 'Medical Center', 'Middle School',
+      'Military Base', 'Mill', 'Miniature Golf', 'Motel', 'Mosque', 'Movie Theater',
+      'Museum', 'Music Venue', 'News Stand', 'Nightclub', 'Nursing Home',
+      'Observatory', 'Office', 'Office Building', 'Office Cubicles', 'Office Modern',
+      'Office Open Plan', 'Office Traditional', 'Opera House', 'Optometrist',
+      'Orphanage', 'Outlet Mall', 'Paint Store', 'Park', 'Parking Garage',
+      'Parking Lot', 'Pawn Shop', 'Pet Store', 'Pharmacy', 'Pier', 'Pizza Place',
+      'Police Station', 'Post Office', 'Power Plant', 'Prison', 'Public Pool',
+      'Public Square', 'Quarry', 'Race Track', 'Railroad', 'Recording Studio',
+      'Recycling Center', 'Refinery', 'Restaurant', 'Restaurant Asian',
+      'Restaurant Fast Food', 'Restaurant Fine Dining', 'Restaurant French',
+      'Restaurant Italian', 'Restaurant Mexican', 'Restaurant Seafood',
+      'Retail Store', 'Roller Rink', 'Rooftop', 'Salon', 'School', 'Shipyard',
+      'Shooting Range', 'Shopping Center', 'Skate Park', 'Ski Lodge', 'Ski Resort',
+      'Skyscraper', 'Smoke Shop', 'Spa', 'Stadium', 'Storage Facility', 'Strip Club',
+      'Strip Mall', 'Studio', 'Studio Dance', 'Studio Film', 'Studio Photo',
+      'Studio Recording', 'Studio TV', 'Studio Yoga', 'Subway', 'Subway Station',
+      'Supermarket', 'Surf Shop', 'Synagogue', 'Tattoo Parlor', 'Tavern',
+      'Temple', 'Tennis Club', 'Terminal', 'Terminal Bus', 'Terminal Train',
+      'Theater', 'Theater Drive-In', 'Theater Performing Arts', 'Thrift Store',
+      'Toy Store', 'Train', 'Train Station', 'Train Yard', 'Tunnel', 'University',
+      'Vet Clinic', 'Warehouse', 'Warehouse Abandoned', 'Warehouse Converted',
+      'Warehouse Industrial', 'Water Tower', 'Winery', 'Workshop', 'Yacht Club',
+      'Zoo'
     ]
   }
 };
 
-interface FilterOption {
-  text: string;
-  count?: number;
+interface FilterCategory {
+  name: string;
+  hasSearch: boolean;
+  options: string[];
 }
 
 function generatePropertyImages(propertyId: string | number, count: number = 50): string[] {
@@ -378,6 +419,7 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<{ category: string; values: string[] }[]>([]);
+  const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -443,6 +485,20 @@ export default function SearchPage() {
     toggleFilter(category, value);
   };
 
+  const clearCategoryFilters = (category: string) => {
+    setActiveFilters(prev => prev.filter(f => f.category !== category));
+  };
+
+  const clearAllFilters = () => {
+    setActiveFilters([]);
+  };
+
+  const getFilteredOptions = (categoryKey: string, options: string[]) => {
+    const searchTerm = searchTerms[categoryKey]?.toLowerCase() || '';
+    if (!searchTerm) return options;
+    return options.filter(option => option.toLowerCase().includes(searchTerm));
+  };
+
   const getCurrentPageItems = () => {
     const start = (currentPage - 1) * 24;
     return properties.slice(start, start + 24);
@@ -498,9 +554,9 @@ export default function SearchPage() {
         }
 
         .dropdown-toggle.has-active {
-          background: #6c757d;
+          background: #e11921;
           color: white;
-          border-color: #6c757d;
+          border-color: #e11921;
         }
 
         .dropdown-menu {
@@ -511,11 +567,97 @@ export default function SearchPage() {
           border: 1px solid #dee2e6;
           border-radius: 4px;
           box-shadow: 0 6px 12px rgba(0,0,0,0.175);
-          min-width: 200px;
-          max-width: 280px;
+          min-width: 280px;
+          max-width: 350px;
+          z-index: 1050;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .dropdown-search {
+          padding: 10px 15px;
+          border-bottom: 1px solid #dee2e6;
+        }
+
+        .dropdown-search input {
+          width: 100%;
+          padding: 6px 10px 6px 32px;
+          border: 1px solid #ced4da;
+          border-radius: 3px;
+          font-size: 14px;
+          font-family: acumin-pro-wide, sans-serif;
+        }
+
+        .dropdown-search-wrapper {
+          position: relative;
+        }
+
+        .dropdown-search-icon {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6b7280;
+        }
+
+        .dropdown-options-wrapper {
           max-height: 400px;
           overflow-y: auto;
-          z-index: 1050;
+        }
+
+        .dropdown-footer {
+          padding: 10px 15px;
+          border-top: 1px solid #dee2e6;
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+        }
+
+        .dropdown-footer button {
+          padding: 6px 12px;
+          border-radius: 3px;
+          font-size: 14px;
+          cursor: pointer;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 400;
+          transition: all 0.2s;
+        }
+
+        .clear-btn {
+          background: white;
+          border: 1px solid #ced4da;
+          color: #495057;
+        }
+
+        .clear-btn:hover {
+          background: #f8f9fa;
+        }
+
+        .done-btn {
+          background: #e11921;
+          border: 1px solid #e11921;
+          color: white;
+        }
+
+        .done-btn:hover {
+          background: #c41519;
+        }
+
+        .clear-all-btn {
+          padding: 6px 12px;
+          background: #e11921;
+          border: 1px solid #e11921;
+          color: white;
+          border-radius: 3px;
+          font-size: 14px;
+          cursor: pointer;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 400;
+          transition: all 0.2s;
+        }
+
+        .clear-all-btn:hover {
+          background: #c41519;
         }
 
         .dropdown-header {
@@ -556,7 +698,7 @@ export default function SearchPage() {
         }
 
         .toggle-switch.active {
-          background-color: #28a745;
+          background-color: #e11921;
         }
 
         .toggle-switch::after {
@@ -636,9 +778,10 @@ export default function SearchPage() {
         }
 
         .filter-value {
-          background: #6c757d;
-          color: white;
+          background: white;
+          color: #495057;
           padding: 4px 10px;
+          border: 1px solid #e5e7eb;
           border-radius: 3px;
           font-size: 13px;
           display: inline-flex;
@@ -649,7 +792,7 @@ export default function SearchPage() {
         .filter-remove {
           background: none;
           border: none;
-          color: white;
+          color: #e11921;
           cursor: pointer;
           padding: 0;
           display: flex;
@@ -763,8 +906,9 @@ export default function SearchPage() {
       <div className="search-page">
         <div className="filter-bar" ref={dropdownRef}>
           <div className="filter-row">
-            {Object.entries(searchCategories).map(([key, category]) => {
+            {Object.entries(filterCategories).map(([key, category]) => {
               const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
+              const filteredOptions = getFilteredOptions(key, category.options);
 
               return (
                 <div key={key} className="filter-dropdown">
@@ -779,20 +923,44 @@ export default function SearchPage() {
                   {openDropdown === key && (
                     <div className="dropdown-menu">
                       <div className="dropdown-header">{category.name}</div>
-                      <div className="dropdown-content">
-                        {category.options.map((option, idx) => (
-                          <div
-                            key={idx}
-                            className="option-item"
-                            onClick={() => toggleFilter(category.name, option.text)}
-                          >
-                            <div className={`toggle-switch ${isFilterActive(category.name, option.text) ? 'active' : ''}`} />
-                            <span className="option-text">{option.text}</span>
-                            {'count' in option && option.count && (
-                              <span className="option-count">{option.count}</span>
-                            )}
+
+                      {category.hasSearch && (
+                        <div className="dropdown-search">
+                          <div className="dropdown-search-wrapper">
+                            <Search className="dropdown-search-icon" size={16} />
+                            <input
+                              type="text"
+                              placeholder="Search..."
+                              value={searchTerms[key] || ''}
+                              onChange={(e) => setSearchTerms(prev => ({ ...prev, [key]: e.target.value }))}
+                              onClick={(e) => e.stopPropagation()}
+                            />
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      <div className="dropdown-options-wrapper">
+                        <div className="dropdown-content">
+                          {filteredOptions.map((option, idx) => (
+                            <div
+                              key={idx}
+                              className="option-item"
+                              onClick={() => toggleFilter(category.name, option)}
+                            >
+                              <div className={`toggle-switch ${isFilterActive(category.name, option) ? 'active' : ''}`} />
+                              <span className="option-text">{option}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="dropdown-footer">
+                        <button className="clear-btn" onClick={(e) => { e.stopPropagation(); clearCategoryFilters(category.name); }}>
+                          Clear
+                        </button>
+                        <button className="done-btn" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }}>
+                          Done
+                        </button>
                       </div>
                     </div>
                   )}
@@ -832,12 +1000,15 @@ export default function SearchPage() {
                       className="filter-remove"
                       onClick={() => removeFilterValue(filter.category, value)}
                     >
-                      <X size={14} strokeWidth={3} />
+                      <X size={14} strokeWidth={2} />
                     </button>
                   </span>
                 ))}
               </div>
             ))}
+            <button className="clear-all-btn" onClick={clearAllFilters}>
+              Clear All Filters
+            </button>
           </div>
         )}
 
