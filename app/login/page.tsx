@@ -58,27 +58,76 @@ export default function LoginPage() {
     setErrors({ email: '', password: '', form: '' });
 
     try {
-      await supabase.auth.signOut();
+      console.log('═══════════════════════════════════════');
+      console.log('🔐 LOGIN ATTEMPT STARTED');
+      console.log('Email:', email);
+      console.log('Password length:', password.length);
+      console.log('═══════════════════════════════════════');
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Check if supabase is initialized
+      console.log('Supabase client exists:', !!supabase);
+
+      // Sign out first
+      console.log('🚪 Signing out existing session...');
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) {
+        console.error('Sign out error:', signOutError);
+      } else {
+        console.log('✅ Signed out successfully');
+      }
+
+      // Attempt login
+      console.log('🚀 Attempting signInWithPassword...');
+      const loginResult = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      console.log('═══════════════════════════════════════');
+      console.log('📊 SUPABASE LOGIN RESULT:');
+      console.log('Full response:', JSON.stringify(loginResult, null, 2));
+      console.log('═══════════════════════════════════════');
+      console.log('Error object:', loginResult.error);
+      console.log('Error message:', loginResult.error?.message);
+      console.log('Data exists:', !!loginResult.data);
+      console.log('User exists:', !!loginResult.data?.user);
+      console.log('User email:', loginResult.data?.user?.email);
+      console.log('Session exists:', !!loginResult.data?.session);
+      console.log('═══════════════════════════════════════');
 
-      if (!data.user) {
-        throw new Error('Login failed');
+      const { data, error } = loginResult;
+
+      if (error) {
+        console.error('❌ Authentication failed with error:', error.message);
+        throw error;
       }
 
+      if (!data.user) {
+        console.error('❌ No user in response');
+        throw new Error('Login failed - no user returned');
+      }
+
+      if (!data.session) {
+        console.error('❌ No session in response');
+        throw new Error('Login failed - no session created');
+      }
+
+      console.log('✅ LOGIN SUCCESSFUL - Redirecting to dashboard...');
       router.push('/dashboard');
+
     } catch (err: any) {
+      console.error('═══════════════════════════════════════');
+      console.error('💥 LOGIN ERROR CAUGHT:');
+      console.error('Error type:', err.constructor.name);
+      console.error('Error message:', err.message);
+      console.error('Error object:', err);
+      console.error('═══════════════════════════════════════');
+
       setErrors({
         email: '',
         password: '',
         form: err.message || 'Invalid email or password'
       });
-      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
