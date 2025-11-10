@@ -598,7 +598,7 @@ export default function PropertyDetailPage() {
               paddingRight: '2rem',
               borderRight: '1px solid #e5e5e5'
             }}>
-              {/* Property Title Row with City and Badges */}
+              {/* Property Title Row with City */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -639,67 +639,6 @@ export default function PropertyDetailPage() {
                 }}>
                   {property.city}
                 </p>
-
-                {/* Film LA Logo */}
-                {property.permits_available && (
-                  <div style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    background: '#00a8e1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: '0.5rem'
-                  }}>
-                    <span style={{
-                      color: '#fff',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      fontFamily: 'acumin-pro-wide, sans-serif',
-                      textAlign: 'center',
-                      lineHeight: '1.2'
-                    }}>
-                      Film<br/>LA
-                    </span>
-                  </div>
-                )}
-
-                {/* Pull My Permit Button */}
-                <button
-                  style={{
-                    background: 'rgb(225, 25, 33)',
-                    color: 'rgb(248, 249, 250)',
-                    border: '1px solid rgb(225, 25, 33)',
-                    borderRadius: '3.2px',
-                    padding: '4px 8px',
-                    fontSize: '14px',
-                    fontWeight: 300,
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '-0.28px',
-                    lineHeight: '21px',
-                    cursor: 'pointer',
-                    marginTop: '8px',
-                    marginBottom: '8px',
-                    marginLeft: '0.5rem',
-                    transition: 'all 0.15s ease-in-out',
-                    userSelect: 'none',
-                    verticalAlign: 'middle',
-                    textAlign: 'center',
-                    display: 'inline-block',
-                    minWidth: '114.672px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#bf151c';
-                    e.currentTarget.style.borderColor = '#bf151c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgb(225, 25, 33)';
-                    e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
-                  }}
-                >
-                  Pull My Permit
-                </button>
               </div>
 
               {/* Description */}
