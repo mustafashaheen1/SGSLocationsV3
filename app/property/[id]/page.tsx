@@ -473,67 +473,6 @@ export default function PropertyDetailPage() {
           )}
         </div>
 
-        {/* Category Navigation - Exact Image Locations Match */}
-        <div style={{
-          padding: '20px 0',
-          background: '#fff',
-          position: 'relative',
-          width: '100%'
-        }}>
-          {/* Grey horizontal line - FULL WIDTH 100% touching screen edges */}
-          <div style={{
-            position: 'absolute',
-            top: '10px',
-            left: '0',
-            right: '0',
-            width: '100%',
-            height: '2px',
-            background: '#d1d5db',
-            zIndex: 1
-          }} />
-
-          {/* Red bar that starts at full left and moves along the grey line */}
-          <div style={{
-            position: 'absolute',
-            top: '9px',
-            left: redBarPosition.left || '0px',
-            width: redBarPosition.width || '50px',
-            height: '4px',
-            background: '#e11921',
-            transition: 'all 0.3s ease',
-            zIndex: 2
-          }} />
-
-          {/* Category items */}
-          <div style={{
-            display: 'flex',
-            gap: '30px',
-            justifyContent: 'center',
-            paddingTop: '20px',
-            position: 'relative'
-          }}
-          >
-            {categoryTags.map((tag) => (
-              <span
-                key={tag}
-                ref={(el) => {
-                  if (el) categoryRefs.current[tag] = el;
-                }}
-                onClick={() => handleCategoryClick(tag)}
-                style={{
-                  cursor: 'pointer',
-                  color: activeCategory === tag ? '#e11921' : '#666',
-                  fontSize: '14px',
-                  fontWeight: 300,
-                  transition: 'color 0.3s ease',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
 
         {showLightbox && (
           <div style={{
