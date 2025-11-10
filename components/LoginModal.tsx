@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Camera } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Camera, X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -9,24 +11,56 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({ email: '', password: '', form: '' });
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate inputs
     if (!email || !password) {
       setErrors({
         email: !email ? 'Email is required' : '',
-        password: !password ? 'Password is required' : ''
+        password: !password ? 'Password is required' : '',
+        form: ''
       });
       return;
     }
 
-    window.location.replace('/dashboard');
+    setLoading(true);
+    setErrors({ email: '', password: '', form: '' });
+
+    try {
+      // ACTUAL AUTHENTICATION
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (!data.user) {
+        throw new Error('Login failed');
+      }
+
+      // Success - close modal and redirect
+      onClose();
+      router.push('/dashboard');
+      router.refresh(); // Force page refresh to update navbar
+    } catch (err: any) {
+      setErrors({
+        email: '',
+        password: '',
+        form: err.message || 'Invalid email or password'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,16 +90,29 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </div>
 
         <p className="text-center text-gray-700 mb-6">
-          To download images, please login<br />
-          or create an account{' '}
-          <a href="/register" className="text-red-600 hover:text-red-700 font-medium">
-            here
+          Please login to continue
+          <br />
+          or{' '}
+          <a
+            href="/register"
+            className="text-red-600 hover:text-red-700 font-medium"
+            onClick={onClose}
+          >
+            create an account
           </a>
         </p>
 
+        {errors.form && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+            {errors.form}
+          </div>
+        )}
+
         <form onSubmit={handleLogin}>
           <div className="mb-4">
-            <label className="block text-gray-700 mb-1 text-sm">Email</label>
+            <label className="block text-gray-700 mb-1 text-sm font-medium">
+              Email
+            </label>
             <input
               type="email"
               value={email}
@@ -73,14 +120,19 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 setEmail(e.target.value);
                 setErrors({ ...errors, email: '' });
               }}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               placeholder="your@email.com"
+              disabled={loading}
             />
-            {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 mb-1 text-sm">Password</label>
+            <label className="block text-gray-700 mb-1 text-sm font-medium">
+              Password
+            </label>
             <input
               type="password"
               value={password}
@@ -88,30 +140,50 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 setPassword(e.target.value);
                 setErrors({ ...errors, password: '' });
               }}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               placeholder="Enter your password"
+              disabled={loading}
             />
-            {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+            )}
           </div>
 
-          <div className="mb-4 flex items-center">
-            <input type="checkbox" className="w-4 h-4 mr-2" />
-            <label className="text-sm text-gray-700">Remember me</label>
-          </div>
-
-          <div className="mb-4 text-right">
-            <a href="/forgot-password" className="text-sm text-red-600 hover:text-red-700">
-              Forgot your password?
+          <div className="mb-4 flex items-center justify-between">
+            <label className="flex items-center">
+              <input type="checkbox" className="w-4 h-4 mr-2" />
+              <span className="text-sm text-gray-700">Remember me</span>
+            </label>
+            <a
+              href="/forgot-password"
+              className="text-sm text-red-600 hover:text-red-700"
+              onClick={onClose}
+            >
+              Forgot password?
             </a>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded"
+            disabled={loading}
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? 'Signing in...' : 'Login'}
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <a
+              href="/register"
+              className="text-red-600 hover:text-red-700 font-medium"
+              onClick={onClose}
+            >
+              Register here
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
