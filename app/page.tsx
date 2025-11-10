@@ -228,29 +228,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-16 bg-[#e11921] text-white">
-        <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-5xl mb-2" style={{fontWeight: 100}}>20+</div>
-              <div className="text-lg" style={{fontWeight: 300}}>Years Experience</div>
-            </div>
-            <div>
-              <div className="text-5xl mb-2" style={{fontWeight: 100}}>65+</div>
-              <div className="text-lg" style={{fontWeight: 300}}>Locations</div>
-            </div>
-            <div>
-              <div className="text-5xl mb-2" style={{fontWeight: 100}}>10+</div>
-              <div className="text-lg" style={{fontWeight: 300}}>Cities Covered</div>
-            </div>
-            <div>
-              <div className="text-5xl mb-2" style={{fontWeight: 100}}>500+</div>
-              <div className="text-lg" style={{fontWeight: 300}}>Productions Served</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="grid md:grid-cols-2">
         <div className="relative min-h-[400px] flex items-center justify-center p-12">
           <Image
