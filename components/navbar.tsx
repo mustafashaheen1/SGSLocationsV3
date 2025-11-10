@@ -1,20 +1,42 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Camera, Menu, X } from 'lucide-react';
+import { Search, Camera, Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import LoginModal from '@/components/LoginModal';
+import { supabase } from '@/lib/supabase';
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const isHomepage = pathname === '/';
+
+  useEffect(() => {
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+      setUserEmail(session?.user?.email || null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+    setUserEmail(session?.user?.email || null);
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +46,14 @@ export function Navbar() {
     }
   };
 
-  const navItems = [
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setUserEmail(null);
+    router.push('/');
+  };
+
+  const navItems: Array<{ label: string; href: string; isButton?: boolean }> = [
     { label: 'SEARCH', href: '/search' },
     { label: 'PORTFOLIO', href: '/portfolio' },
     { label: 'LOCATION LIBRARY', href: '/location-library' },
@@ -32,9 +61,16 @@ export function Navbar() {
     { label: 'CONTACT', href: '/contact' },
     { label: 'LIST YOUR PROPERTY', href: '/list-your-property' },
     { label: 'ARTICLES', href: '/articles' },
-    { label: 'LOGIN', href: '/login', isButton: true },
-    { label: 'REGISTER', href: '/register' },
   ];
+
+  if (isAuthenticated) {
+    navItems.push({ label: 'DASHBOARD', href: '/dashboard' });
+  } else {
+    navItems.push(
+      { label: 'LOGIN', href: '/login', isButton: true },
+      { label: 'REGISTER', href: '/register' }
+    );
+  }
 
   return (
     <nav
@@ -68,6 +104,17 @@ export function Navbar() {
                 <Search className="w-4 h-4" />
               </Button>
             </form>
+
+            {isAuthenticated && (
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                size="sm"
+                className="ml-2"
+              >
+                Sign Out
+              </Button>
+            )}
           </div>
 
           <button
@@ -84,7 +131,7 @@ export function Navbar() {
             {navItems.map((item, index) => (
               <div key={item.label} className="flex items-center">
                 {index > 0 && <span className="mx-2 opacity-50">|</span>}
-                {item.label === 'LOGIN' ? (
+                {item.label === 'LOGIN' && item.isButton ? (
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
                     className="text-xs tracking-wider hover:text-gray-600 transition-colors"
@@ -109,7 +156,8 @@ export function Navbar() {
 
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 bg-gray-900">
-          <div className="flex justify-end p-4">
+          <div className="flex justify-between items-center p-4 border-b border-gray-700">
+            <span className="text-white text-lg font-semibold">Menu</span>
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="text-white"
@@ -118,8 +166,9 @@ export function Navbar() {
               <X className="w-6 h-6" />
             </button>
           </div>
-          <div className="flex flex-col items-center gap-6 px-4 py-8">
-            <form onSubmit={handleSearch} className="w-full max-w-md flex gap-2">
+
+          <div className="flex flex-col items-start gap-4 px-6 py-8">
+            <form onSubmit={handleSearch} className="w-full flex gap-2 mb-4">
               <Input
                 type="text"
                 placeholder="Search locations..."
@@ -134,8 +183,26 @@ export function Navbar() {
                 <Search className="w-4 h-4" />
               </Button>
             </form>
+
+            {isAuthenticated && (
+              <div className="w-full mb-4 pb-4 border-b border-gray-700">
+                <div className="flex items-center gap-2 text-white mb-3">
+                  <User className="w-5 h-5" />
+                  <span className="text-sm">{userEmail}</span>
+                </div>
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Sign Out
+                </Button>
+              </div>
+            )}
+
             {navItems.map((item) => (
-              item.isButton ? (
+              item.label === 'LOGIN' && item.isButton ? (
                 <button
                   key={item.href}
                   onClick={() => {
