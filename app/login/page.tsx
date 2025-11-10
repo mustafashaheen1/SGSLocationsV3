@@ -17,12 +17,10 @@ export default function LoginPage() {
   useEffect(() => {
     async function checkSession() {
       const { data: { session } } = await supabase.auth.getSession();
-
       if (session) {
         router.push('/dashboard');
       }
     }
-
     checkSession();
   }, [router]);
 
@@ -58,184 +56,165 @@ export default function LoginPage() {
     setErrors({ email: '', password: '', form: '' });
 
     try {
-      console.log('═══════════════════════════════════════');
-      console.log('🔐 LOGIN ATTEMPT STARTED');
-      console.log('Email:', email);
-      console.log('Password length:', password.length);
-      console.log('═══════════════════════════════════════');
-
-      // Check if supabase is initialized
-      console.log('Supabase client exists:', !!supabase);
-
-      // Sign out first
-      console.log('🚪 Signing out existing session...');
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) {
-        console.error('Sign out error:', signOutError);
-      } else {
-        console.log('✅ Signed out successfully');
-      }
-
-      // Attempt login
-      console.log('🚀 Attempting signInWithPassword...');
-      const loginResult = await supabase.auth.signInWithPassword({
+      // CRITICAL: Use signInWithPassword, NOT signUp
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('═══════════════════════════════════════');
-      console.log('📊 SUPABASE LOGIN RESULT:');
-      console.log('Full response:', JSON.stringify(loginResult, null, 2));
-      console.log('═══════════════════════════════════════');
-      console.log('Error object:', loginResult.error);
-      console.log('Error message:', loginResult.error?.message);
-      console.log('Data exists:', !!loginResult.data);
-      console.log('User exists:', !!loginResult.data?.user);
-      console.log('User email:', loginResult.data?.user?.email);
-      console.log('Session exists:', !!loginResult.data?.session);
-      console.log('═══════════════════════════════════════');
-
-      const { data, error } = loginResult;
-
-      if (error) {
-        console.error('❌ Authentication failed with error:', error.message);
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data.user) {
-        console.error('❌ No user in response');
-        throw new Error('Login failed - no user returned');
+        throw new Error('Login failed');
       }
 
-      if (!data.session) {
-        console.error('❌ No session in response');
-        throw new Error('Login failed - no session created');
-      }
-
-      console.log('✅ LOGIN SUCCESSFUL - Redirecting to dashboard...');
       router.push('/dashboard');
-
     } catch (err: any) {
-      console.error('═══════════════════════════════════════');
-      console.error('💥 LOGIN ERROR CAUGHT:');
-      console.error('Error type:', err.constructor.name);
-      console.error('Error message:', err.message);
-      console.error('Error object:', err);
-      console.error('═══════════════════════════════════════');
-
       setErrors({
         email: '',
         password: '',
         form: err.message || 'Invalid email or password'
       });
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-white flex items-center justify-center py-12 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <Camera className="w-10 h-10 text-[#e11921]" />
-            <span className="text-2xl font-bold text-gray-900">
-              SGS LOCATIONS<sup className="text-xs">®</sup>
-            </span>
-          </Link>
-        </div>
+    <>
+      <style jsx global>{`
+        .login-page input[type="email"],
+        .login-page input[type="password"] {
+          border-radius: 0 !important;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #d1d5db;
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
 
-        <div className="bg-white shadow rounded-lg p-8">
-          <div className="text-center mb-6">
-            <p className="text-gray-600">
-              To access your account, please login or{' '}
-              <Link href="/register" className="text-[#e11921] hover:underline">
-                create an account
-              </Link>
-            </p>
-          </div>
+        .login-page input[type="email"]:focus,
+        .login-page input[type="password"]:focus {
+          border-color: #f2888c !important;
+          box-shadow: 0 0 0 0 rgba(225, 25, 33, 0.25) !important;
+          outline: none !important;
+          --tw-ring-shadow: none !important;
+        }
 
-          {errors.form && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-              {errors.form}
-            </div>
-          )}
+        .login-page button[type="submit"] {
+          background-color: #e11921;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          padding: 0.5rem 1rem;
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+        }
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-gray-700 mb-1 text-sm">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
-                placeholder="your@email.com"
-                style={{ color: '#495057' }}
-              />
-              {errors.email && (
-                <p className="text-red-600 text-sm mt-1">{errors.email}</p>
-              )}
-            </div>
+        .login-page button[type="submit"]:hover {
+          background-color: #bf151c;
+        }
 
-            <div>
-              <label htmlFor="password" className="block text-gray-700 mb-1 text-sm">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
-                placeholder="Enter your password"
-                style={{ color: '#495057' }}
-              />
-              {errors.password && (
-                <p className="text-red-600 text-sm mt-1">{errors.password}</p>
-              )}
-            </div>
+        .login-page button[type="submit"]:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                />
-                <label htmlFor="remember" className="ml-2 text-sm text-gray-700">
-                  Remember me
-                </label>
-              </div>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-[#e11921] hover:text-red-700 font-medium"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#e11921] hover:bg-[#c41e26] text-white font-semibold py-2 px-8 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center text-sm text-gray-700">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-[#e11921] hover:text-red-700 font-medium">
-              Register here
+      <main className="login-page min-h-screen bg-gray-100 flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-6">
+            <Link href="/" className="flex items-center gap-2">
+              <Camera className="w-10 h-10 text-[#e11921]" />
+              <span className="text-2xl font-bold tracking-tight text-gray-900">
+                SGS LOCATIONS<sup className="text-xs">®</sup>
+              </span>
             </Link>
           </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h1 className="text-2xl font-bold text-center text-gray-900 mb-6">
+              Sign In
+            </h1>
+
+            {errors.form && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+                {errors.form}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin}>
+              <div className="mb-4">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full"
+                  placeholder="your@email.com"
+                />
+                {errors.email && (
+                  <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full"
+                  placeholder="Enter your password"
+                />
+                {errors.password && (
+                  <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between mb-6">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
+
+                <Link href="/forgot-password" className="text-sm text-[#e11921] hover:underline">
+                  Forgot Password?
+                </Link>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full text-white"
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link href="/register" className="text-[#e11921] hover:underline font-semibold">
+                  Register here
+                </Link>
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
