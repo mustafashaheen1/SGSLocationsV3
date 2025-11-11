@@ -9,22 +9,60 @@ import { useState, useEffect } from 'react';
 import { supabase, Property } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image: string;
+  count: number;
+}
+
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchFeatured() {
-      const { data } = await supabase
+    async function fetchData() {
+      // Fetch featured properties
+      const { data: featured } = await supabase
         .from('properties')
         .select('*')
         .eq('status', 'active')
         .eq('is_featured', true)
         .limit(6);
-      if (data) setFeaturedProperties(data);
+
+      if (featured) setFeaturedProperties(featured);
+
+      // Fetch categories with property counts
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name, slug, image, display_order')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (categoriesData) {
+        // Get count for each category
+        const categoriesWithCounts = await Promise.all(
+          categoriesData.map(async (cat) => {
+            const { count } = await supabase
+              .from('property_categories')
+              .select('*', { count: 'exact', head: true })
+              .eq('category_id', cat.id);
+
+            return {
+              ...cat,
+              count: count || 0
+            };
+          })
+        );
+
+        setCategories(categoriesWithCounts);
+      }
     }
-    fetchFeatured();
+
+    fetchData();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -36,20 +74,6 @@ export default function HomePage() {
     }
   };
 
-  const categories = [
-    { name: 'Estates & Luxury Homes', count: 12, image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80' },
-    { name: 'Modern Architecture', count: 8, image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80' },
-    { name: 'Natural Settings', count: 15, image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80' },
-    { name: 'Urban & Industrial', count: 7, image: 'https://images.unsplash.com/photo-1486718448742-163732cd1544?w=800&q=80' },
-    { name: 'Historical Properties', count: 5, image: 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&q=80' },
-    { name: 'Commercial Spaces', count: 9, image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80' },
-    { name: 'Restaurants & Bars', count: 6, image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80' },
-    { name: 'Outdoor Spaces', count: 10, image: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&q=80' },
-    { name: 'Educational Facilities', count: 4, image: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80' },
-    { name: 'Sports Facilities', count: 3, image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80' },
-    { name: 'Warehouses & Lofts', count: 5, image: 'https://images.unsplash.com/photo-1565182999561-18d7dc61c393?w=800&q=80' },
-    { name: 'Mid-Century Modern', count: 6, image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80' },
-  ];
 
   const services = [
     {
@@ -168,12 +192,14 @@ export default function HomePage() {
 
       <section className="py-24 bg-[#f8f9fa]">
         <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
-          <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100, color: '#212529'}}>Browse by Category</h2>
+          <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100, color: '#212529'}}>
+            Browse by Category
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
               <Link
-                key={category.name}
-                href={`/search?category=${encodeURIComponent(category.name)}`}
+                key={category.id}
+                href={`/search?category=${category.slug}`}
                 className="group relative h-48 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all"
               >
                 <Image
@@ -185,7 +211,9 @@ export default function HomePage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                   <h3 className="text-lg mb-1" style={{fontWeight: 400}}>{category.name}</h3>
-                  <p className="text-sm opacity-90" style={{fontWeight: 300}}>{category.count} Locations</p>
+                  <p className="text-sm opacity-90" style={{fontWeight: 300}}>
+                    {category.count} {category.count === 1 ? 'Location' : 'Locations'}
+                  </p>
                 </div>
               </Link>
             ))}
