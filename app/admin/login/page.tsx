@@ -64,7 +64,7 @@ export default function AdminLoginPage() {
     };
 
     const timeout = setTimeout(() => {
-      if (mounted && isCheckingAuth) {
+      if (mounted) {
         console.log('Auth check timeout, showing login form');
         setIsCheckingAuth(false);
         setError('Connection timeout. Please check your internet and try again.');
@@ -77,7 +77,7 @@ export default function AdminLoginPage() {
       mounted = false;
       clearTimeout(timeout);
     };
-  }, [router, isCheckingAuth]);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
