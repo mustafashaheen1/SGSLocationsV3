@@ -17,12 +17,8 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (pathname !== '/admin/login') {
-      checkAuth();
-    } else {
-      setLoading(false);
-    }
-  }, [pathname]);
+    checkAuth();
+  }, []);
 
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -62,16 +58,16 @@ export default function AdminLayout({
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Loading...</div>
       </div>
     );
+  }
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
   }
 
   return (
