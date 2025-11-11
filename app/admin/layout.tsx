@@ -3,18 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Home,
-  Building2,
-  Users,
-  Mail,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  FileText,
-  Folder
-} from 'lucide-react';
+import { Chrome as Home, Building2, Users, Mail, Settings, LogOut, Menu, X, FileText, Folder } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function AdminLayout({
