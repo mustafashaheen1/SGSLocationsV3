@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Building2, Users, Mail, Settings, LogOut, Menu, X, FileText } from 'lucide-react';
+import { Home, Building2, Users, Mail, Settings, LogOut, Menu, X, FileText, Folder } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -62,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const menuItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
     { href: '/admin/properties', label: 'Properties', icon: Building2 },
+    { href: '/admin/categories', label: 'Categories', icon: Folder },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/inquiries', label: 'Inquiries', icon: Mail },
     { href: '/admin/content', label: 'Content', icon: FileText },
