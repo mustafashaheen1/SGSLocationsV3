@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,24 +11,25 @@ interface Category {
   id: string;
   name: string;
   slug: string;
-  image: string;
   description: string | null;
+  image: string;
   display_order: number;
   is_active: boolean;
-  property_count?: number;
+  property_count: number;
 }
 
-export default function AdminCategoriesPage() {
+export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
-    image: '',
     description: '',
-    display_order: 0
+    image: '',
+    display_order: 1,
   });
 
   useEffect(() => {
@@ -36,30 +37,23 @@ export default function AdminCategoriesPage() {
   }, []);
 
   async function fetchCategories() {
-    setLoading(true);
     try {
-      const { data: categoriesData } = await supabase
+      const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select(`
+          *,
+          property_count:properties(count)
+        `)
         .order('display_order');
 
-      if (categoriesData) {
-        const categoriesWithCounts = await Promise.all(
-          categoriesData.map(async (cat) => {
-            const { count } = await supabase
-              .from('property_categories')
-              .select('*', { count: 'exact', head: true })
-              .eq('category_id', cat.id);
+      if (error) throw error;
 
-            return {
-              ...cat,
-              property_count: count || 0
-            };
-          })
-        );
+      const categoriesWithCount = data?.map(cat => ({
+        ...cat,
+        property_count: cat.property_count?.[0]?.count || 0
+      })) || [];
 
-        setCategories(categoriesWithCounts);
-      }
+      setCategories(categoriesWithCount);
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {
@@ -68,39 +62,105 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleAdd() {
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .insert({
-          name: formData.name,
-          slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
-          image: formData.image,
-          description: formData.description,
-          display_order: formData.display_order
-        });
-
-      if (error) throw error;
-
-      setFormData({ name: '', slug: '', image: '', description: '', display_order: 0 });
-      setShowAddForm(false);
-      fetchCategories();
-    } catch (error: any) {
-      alert('Error adding category: ' + error.message);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm('Are you sure? This will remove this category from all properties.')) {
+    if (!formData.name || !formData.slug) {
+      alert('Please fill in name and slug');
       return;
     }
 
     try {
       const { error } = await supabase
         .from('categories')
+        .insert([{
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description || null,
+          image: formData.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400',
+          display_order: formData.display_order,
+          is_active: true,
+        }]);
+
+      if (error) throw error;
+
+      setShowAddForm(false);
+      setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+      fetchCategories();
+    } catch (error: any) {
+      alert('Error adding category: ' + error.message);
+    }
+  }
+
+  function handleEditClick(category: Category) {
+    setEditingCategory(category);
+    setFormData({
+      name: category.name,
+      slug: category.slug,
+      description: category.description || '',
+      image: category.image,
+      display_order: category.display_order,
+    });
+    setShowEditForm(true);
+  }
+
+  async function handleUpdate() {
+    if (!editingCategory || !formData.name || !formData.slug) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description || null,
+          image: formData.image,
+          display_order: formData.display_order,
+        })
+        .eq('id', editingCategory.id);
+
+      if (error) throw error;
+
+      setShowEditForm(false);
+      setEditingCategory(null);
+      setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+      fetchCategories();
+    } catch (error: any) {
+      alert('Error updating category: ' + error.message);
+    }
+  }
+
+  async function handleDelete(id: string, currentOrder: number) {
+    if (!confirm('Are you sure? This will remove this category from all properties.')) {
+      return;
+    }
+
+    try {
+      // Step 1: Delete the category
+      const { error: deleteError } = await supabase
+        .from('categories')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // Step 2: Reorder remaining categories
+      // Get all categories with display_order greater than the deleted one
+      const categoriesToReorder = categories.filter(
+        cat => cat.display_order > currentOrder
+      );
+
+      // Update each category's display_order to decrease by 1
+      for (const cat of categoriesToReorder) {
+        const { error: updateError } = await supabase
+          .from('categories')
+          .update({ display_order: cat.display_order - 1 })
+          .eq('id', cat.id);
+
+        if (updateError) throw updateError;
+      }
+
+      // Step 3: Refresh the list
       fetchCategories();
     } catch (error: any) {
       alert('Error deleting category: ' + error.message);
@@ -135,54 +195,122 @@ export default function AdminCategoriesPage() {
         </Button>
       </div>
 
+      {/* ADD FORM MODAL */}
       {showAddForm && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-bold mb-4">Add New Category</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Category Name</label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Modern Architecture"
-              />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Add New Category</h2>
+              <button onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Slug (URL)</label>
-              <Input
-                value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                placeholder="e.g., modern-architecture"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Category Name *</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Modern Architecture"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Slug (URL) *</label>
+                <Input
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  placeholder="e.g., modern-architecture"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <Input
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  placeholder="https://images.unsplash.com/..."
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Category description..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Display Order</label>
+                <Input
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+                />
+              </div>
             </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium mb-1">Image URL</label>
-              <Input
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="https://images.unsplash.com/..."
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium mb-1">Description (Optional)</label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Category description..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Display Order</label>
-              <Input
-                type="number"
-                value={formData.display_order}
-                onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
-              />
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handleAdd}>Save Category</Button>
+              <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
             </div>
           </div>
-          <div className="flex gap-2 mt-4">
-            <Button onClick={handleAdd}>Save Category</Button>
-            <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
+        </div>
+      )}
+
+      {/* EDIT FORM MODAL */}
+      {showEditForm && editingCategory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Category</h2>
+              <button onClick={() => setShowEditForm(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Category Name *</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Modern Architecture"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Slug (URL) *</label>
+                <Input
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  placeholder="e.g., modern-architecture"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Image URL</label>
+                <Input
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  placeholder="https://images.unsplash.com/..."
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Category description..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Display Order</label>
+                <Input
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handleUpdate}>Update Category</Button>
+              <Button variant="outline" onClick={() => setShowEditForm(false)}>Cancel</Button>
+            </div>
           </div>
         </div>
       )}
@@ -227,10 +355,18 @@ export default function AdminCategoriesPage() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditClick(category)}
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(category.id)}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(category.id, category.display_order)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
