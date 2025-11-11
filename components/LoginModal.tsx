@@ -19,16 +19,22 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   if (!isOpen) return null;
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate inputs
+  const validateForm = () => {
     if (!email || !password) {
       setErrors({
         email: !email ? 'Email is required' : '',
         password: !password ? 'Password is required' : '',
         form: ''
       });
+      return false;
+    }
+    return true;
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
 
@@ -36,22 +42,31 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setErrors({ email: '', password: '', form: '' });
 
     try {
-      // ACTUAL AUTHENTICATION
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Step 1: Authenticate with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
-      if (!data.user) {
-        throw new Error('Login failed');
+      // Step 2: Check if user exists in users table (NOT admins table)
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, email, user_type')
+        .eq('id', authData.user.id)
+        .single();
+
+      // If user doesn't exist in users table, sign them out
+      if (userError || !userData) {
+        await supabase.auth.signOut();
+        throw new Error('This account is not registered as a user. Please use the registration page or contact support.');
       }
 
-      // Success - close modal and redirect
+      // Step 3: Success - user exists in users table
       onClose();
       router.push('/dashboard');
-      router.refresh(); // Force page refresh to update navbar
+      router.refresh();
     } catch (err: any) {
       setErrors({
         email: '',
