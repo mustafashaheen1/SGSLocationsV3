@@ -1,14 +1,20 @@
+'use client';
+
 import Link from 'next/link';
 import { Camera, Facebook, Instagram, Twitter, Linkedin, Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { useState } from 'react';
+import LoginModal from './LoginModal';
 
 export function Footer() {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   const quickLinks = [
     { label: 'Search Locations', href: '/search' },
-    { label: 'List Your Property', href: '/list-property' },
+    { label: 'List Your Property', href: '/list-your-property' },
     { label: 'About Us', href: '/about' },
     { label: 'Contact', href: '/contact' },
     { label: 'Articles', href: '/articles' },
-    { label: 'Login', href: '/login' },
+    { label: 'Login', href: '#', onClick: () => setIsLoginModalOpen(true) },
     { label: 'Register', href: '/register' },
   ];
 
@@ -81,13 +87,22 @@ export function Footer() {
             <h3 className="text-lg mb-4" style={{fontWeight: 400}}>Quick Links</h3>
             <ul className="space-y-2">
               {quickLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 hover:text-[#e11921] transition-colors text-sm" style={{fontWeight: 300}}
-                  >
-                    {link.label}
-                  </Link>
+                <li key={link.label}>
+                  {link.onClick ? (
+                    <button
+                      onClick={link.onClick}
+                      className="text-gray-400 hover:text-[#e11921] transition-colors text-sm" style={{fontWeight: 300}}
+                    >
+                      {link.label}
+                    </button>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-gray-400 hover:text-[#e11921] transition-colors text-sm" style={{fontWeight: 300}}
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -145,6 +160,8 @@ export function Footer() {
           <p>&copy; {new Date().getFullYear()} SGS Locations. All rights reserved.</p>
         </div>
       </div>
+
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </footer>
   );
 }
