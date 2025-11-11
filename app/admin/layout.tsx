@@ -59,14 +59,14 @@ export default function AdminLayout({
           return;
         }
 
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('is_admin')
-          .eq('id', session.user.id)
+        const { data: adminData, error: adminError } = await supabase
+          .from('admins')
+          .select('id, email, role')
+          .eq('email', session.user.email)
           .maybeSingle();
 
-        if (userError || !userData?.is_admin) {
-          console.log('[Admin Layout] Not admin');
+        if (adminError || !adminData) {
+          console.log('[Admin Layout] Not found in admins table');
           await supabase.auth.signOut();
           router.push('/admin/login');
           return;

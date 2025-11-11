@@ -38,23 +38,25 @@ export default function AdminLoginPage() {
         return;
       }
 
-      console.log('[Admin Login] Checking admin status...');
+      console.log('[Admin Login] Checking admin status in admins table...');
 
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', authData.user.id)
+      // Step 2: Check if user exists in ADMINS table (not users table!)
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('id, email, role')
+        .eq('email', authData.user.email)
         .maybeSingle();
 
-      if (userError || !userData?.is_admin) {
-        console.log('[Admin Login] Not admin');
+      if (adminError || !adminData) {
+        console.log('[Admin Login] Not found in admins table');
         await supabase.auth.signOut();
         setError('Access denied. Admin privileges required.');
         setIsLoading(false);
         return;
       }
 
-      console.log('[Admin Login] Success! Redirecting...');
+      console.log('[Admin Login] Admin verified! Role:', adminData.role);
+      console.log('[Admin Login] Redirecting to dashboard...');
       router.push('/admin/dashboard');
       router.refresh();
     } catch (err) {
