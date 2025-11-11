@@ -104,7 +104,7 @@ export default function HomePage() {
               Search Locations
             </Button>
             <Button
-              onClick={() => router.push('/list-property')}
+              onClick={() => router.push('/list-your-property')}
               size="lg"
               variant="outline"
               className="text-lg bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
@@ -268,7 +268,7 @@ export default function HomePage() {
               Turn your property into a filming location
             </p>
             <Button
-              onClick={() => router.push('/list-property')}
+              onClick={() => router.push('/list-your-property')}
               size="lg"
               className="bg-white text-gray-900 hover:bg-gray-100 rounded" style={{fontWeight: 300}}
             >
