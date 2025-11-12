@@ -700,6 +700,7 @@ export default function SearchPage() {
           font-size: 14px;
           color: #495057;
           font-weight: 500;
+          font-family: acumin-pro-wide, sans-serif;
         }
 
         .filter-value {
@@ -735,6 +736,7 @@ export default function SearchPage() {
           gap: 8px !important;
           font-size: 14px !important;
           font-weight: 500 !important;
+          font-family: acumin-pro-wide, sans-serif !important;
           margin-right: 8px !important;
           margin-bottom: 8px !important;
         }
