@@ -35,12 +35,33 @@ export default function SearchFiltersPage() {
 
   async function fetchFilters() {
     try {
+      setLoading(true);
+
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        return;
+      }
+
+      if (!session) {
+        console.error('No active session');
+        return;
+      }
+
+      console.log('Fetching filters...');
+
       const { data, error } = await supabase
         .from('search_filters')
         .select('*')
         .order('display_order');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching filters:', error);
+        throw error;
+      }
+
+      console.log('Filters fetched:', data);
 
       const filtersWithCounts = await Promise.all(
         (data || []).map(async (filter) => {
@@ -56,9 +77,11 @@ export default function SearchFiltersPage() {
         })
       );
 
+      console.log('Filters with counts:', filtersWithCounts);
       setFilters(filtersWithCounts);
     } catch (error) {
       console.error('Error fetching filters:', error);
+      alert('Error loading filters. Check console for details.');
     } finally {
       setLoading(false);
     }
