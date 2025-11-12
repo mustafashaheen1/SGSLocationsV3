@@ -1031,9 +1031,6 @@ export default function SearchPage() {
                 ))}
               </div>
             ))}
-            <button className="clear-all-btn" onClick={clearAllFilters}>
-              Clear All Filters
-            </button>
           </div>
         )}
 
