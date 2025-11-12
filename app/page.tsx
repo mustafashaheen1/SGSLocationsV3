@@ -93,8 +93,45 @@ export default function HomePage() {
     },
   ];
 
-  const clients = [
-    'Landman', 'Yellowstone', 'Madison', 'Lioness', 'Paramount', 'Netflix', 'HBO', 'Amazon Studios'
+  const productionLogos = [
+    // TV Shows - Top Row
+    {
+      name: 'Landman',
+      logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/85/Landman_%28TV_series%29_Title_Card.jpg/250px-Landman_%28TV_series%29_Title_Card.jpg',
+      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Landman'
+    },
+    {
+      name: 'Yellowstone',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Yellowstone_%28American_TV_series%29_Title_Card.png/250px-Yellowstone_%28American_TV_series%29_Title_Card.png',
+      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Yellowstone'
+    },
+    {
+      name: 'Madison',
+      logo: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Madison',
+      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Madison'
+    },
+    {
+      name: 'Lioness',
+      logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/65/Special_Ops-_Lioness_Title_Card.jpg/250px-Special_Ops-_Lioness_Title_Card.jpg',
+      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Lioness'
+    },
+    // Production Companies - Bottom Row
+    {
+      name: 'Paramount',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Paramount_Plus.svg/320px-Paramount_Plus.svg.png'
+    },
+    {
+      name: 'Netflix',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/320px-Netflix_2015_logo.svg.png'
+    },
+    {
+      name: 'HBO',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/HBO_logo.svg/320px-HBO_logo.svg.png'
+    },
+    {
+      name: 'Amazon Studios',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Prime_Video.png/320px-Prime_Video.png'
+    }
   ];
 
   return (
@@ -227,10 +264,19 @@ export default function HomePage() {
           <p className="text-center mb-16 text-lg" style={{fontWeight: 300, color: '#6c757d'}}>
             Trusted by leading production companies and streaming platforms
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center opacity-60">
-            {clients.map((client) => (
-              <div key={client} className="text-2xl hover:opacity-100 transition-opacity" style={{fontWeight: 300, color: '#212529'}}>
-                {client}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
+            {productionLogos.map((item) => (
+              <div key={item.name} className="flex items-center justify-center h-20 w-full">
+                <img
+                  src={item.logo}
+                  alt={item.name}
+                  className="max-h-16 max-w-[180px] w-auto object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                  onError={(e) => {
+                    if (item.fallback) {
+                      e.currentTarget.src = item.fallback;
+                    }
+                  }}
+                />
               </div>
             ))}
           </div>
