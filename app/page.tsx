@@ -118,7 +118,7 @@ export default function HomePage() {
     // Production Companies - Bottom Row
     {
       name: 'Paramount',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Paramount%2B_logo.svg/320px-Paramount%2B_logo.svg.png',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Paramount_Network.svg/320px-Paramount_Network.svg.png',
       fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Paramount'
     },
     {
