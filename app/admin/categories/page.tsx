@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { uploadImageToS3 } from '@/lib/s3-upload';
+import { useRouter } from 'next/navigation';
 
 interface Category {
   id: string;
@@ -20,6 +21,7 @@ interface Category {
 }
 
 export default function CategoriesPage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -528,7 +530,12 @@ export default function CategoriesPage() {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <img src={category.image} alt={category.name} className="w-16 h-16 object-cover rounded" />
-                    <span className="font-medium">{category.name}</span>
+                    <button
+                      onClick={() => router.push(`/admin/categories/${category.id}`)}
+                      className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                    >
+                      {category.name}
+                    </button>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">{category.slug}</td>

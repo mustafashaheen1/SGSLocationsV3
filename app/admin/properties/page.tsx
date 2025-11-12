@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Check, X, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { Search, Check, X, Edit, Trash2, Eye, Star, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function PropertiesPage() {
+  const router = useRouter();
   const [properties, setProperties] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -128,6 +131,17 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Properties</h1>
+        <Button
+          onClick={() => router.push('/list-your-property')}
+          className="bg-[#e11921] hover:bg-red-700"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Property
+        </Button>
+      </div>
+
       {successMessage && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           {successMessage}
