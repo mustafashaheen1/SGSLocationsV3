@@ -40,6 +40,8 @@ export default function AddPropertyPage() {
     state: 'Texas',
     zipcode: '',
     category_id: '',
+    is_featured: false,
+    is_exclusive: false,
   });
 
   useEffect(() => {
@@ -62,8 +64,14 @@ export default function AddPropertyPage() {
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   }
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -132,6 +140,8 @@ export default function AddPropertyPage() {
         primary_image: imageUrls[0],
         status: 'active',
         owner_id: null,
+        is_featured: formData.is_featured,
+        is_exclusive: formData.is_exclusive,
       }]);
 
       if (error) throw error;
@@ -243,6 +253,40 @@ export default function AddPropertyPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="col-span-2 grid grid-cols-2 gap-6">
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_featured"
+                  checked={formData.is_featured}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-900 block">Featured Property</span>
+                  <span className="text-xs text-gray-600">Display prominently on homepage</span>
+                </div>
+              </label>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_exclusive"
+                  checked={formData.is_exclusive}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-900 block">Exclusive Property</span>
+                  <span className="text-xs text-gray-600">Mark as exclusive listing</span>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="col-span-2">
