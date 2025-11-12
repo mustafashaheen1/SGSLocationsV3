@@ -14,20 +14,272 @@ import 'swiper/css/navigation';
 import 'swiper/css/scrollbar';
 import 'swiper/css/free-mode';
 
-interface FilterTag {
-  id: string;
-  name: string;
-  slug: string;
-}
+const filterCategories = {
+  area: {
+    name: 'Area',
+    hasSearch: true,
+    options: [
+      'ACTON', 'ADAMS DISTRICT', 'AGOURA HILLS', 'AGUA DULCE', 'ALHAMBRA',
+      'ALTADENA', 'ARCADIA', 'ATWATER VILLAGE', 'AZUZA', 'BALBOA',
+      'BALDWIN HILLS', 'BEL AIR', 'BEVERLY HILLS', 'BRADBURY', 'BRENTWOOD',
+      'BRIDGEPORT', 'BURBANK', 'CALABASAS', 'CANYON COUNTRY', 'CARSON',
+      'CASTAIC', 'CENTRAL LA', 'CENTURY CITY', 'CHAPMAN WOODS', 'CHATSWORTH',
+      'CHEVIOT HILLS', 'COMMERCE', 'COMPTON', 'COUNTRY CLUB PARK', 'CULVER CITY',
+      'DOWNEY', 'DOWNTOWN', 'EAGLE ROCK', 'EAST LA', 'ECHO PARK', 'EL SEGUNDO',
+      'ENCINO', 'FREEMONT PLACE', 'GARDENA', 'GLENDALE', 'GRANADA HILLS',
+      'HANCOCK PARK', 'HAWTHORNE', 'HERMOSA BEACH', 'HIGHLAND PARK', 'HILLS',
+      'HOLLYWOOD', 'HOLLYWOOD HILLS', 'HOLMBY HILLS', 'INDIAN SPRINGS', 'IRVINE',
+      'LA CANADA', 'LA COUNTY PERMIT', 'LA CRESENTA', 'LA HABRA', 'LADERA HEIGHTS',
+      'LONG BEACH', 'LOS ANGELES', 'LOS FELIZ', 'MALIBU', 'MAR VISTA',
+      'MARINA DEL REY', 'MID WILSHIRE', 'MISSION HILLS', 'MONROVIA', 'MONTECITO',
+      'NEWHALL', 'NEWPORT BEACH', 'NORTH HILLS', 'NORTH HOLLYWOOD', 'NORTHRIDGE',
+      'NORWALK', 'OJAI', 'ONTARIO', 'ORANGE COUNTY', 'OUT OF TMZ',
+      'PACIFIC PALISADES', 'PALM SPRINGS', 'PALOS VERDES', 'PASADENA', 'POMONA',
+      'RESEDA', 'SAN FERNANDO VALLEY', 'SAN GABRIEL VALLEY', 'SAN PEDRO',
+      'SANTA BARBARA', 'SANTA CLARITA', 'SANTA MONICA', 'SANTA SUZANA', 'SAUGUS',
+      'SHADOW HILLS', 'SHERMAN OAKS', 'SIERRA MADRE', 'SIGNAL HILL', 'SILVER LAKE',
+      'SIMI VALLEY', 'SOMIS', 'SOUTH LA', 'SOUTH PASADENA', 'SOUTHEAST LA',
+      'SOUTHGATE', 'STEVENSON RANCH', 'STUDIO CITY', 'SUN VALLEY', 'SUNLAND',
+      'TARZANA', 'THOUSAND OAKS', 'TOLUCA LAKE', 'TOPANGA CANYON', 'TORRANCE',
+      'VALENCIA', 'VALLEY VILLAGE', 'VAN NUYS', 'VENICE', 'VERNON', 'WEST COVINA',
+      'WEST HILLS', 'WEST HOLLYWOOD', 'WEST LA', 'WEST VALLEY', 'WESTCHESTER',
+      'WESTLAKE', 'WESTSIDE', 'WHITTIER', 'WOODLAND HILLS'
+    ]
+  },
 
-interface SearchFilterCategory {
-  id: string;
+  features: {
+    name: 'Features',
+    hasSearch: true,
+    options: [
+      '1 Story', '2 Story', '3 Story', 'Arbor', 'Astro Turf', 'Backyard BBQ',
+      'Backyard Desert', 'Backyard Lawn', 'Backyard Native Plants', 'Backyard Pool',
+      'Backyard Pond', 'Backyard View', 'Balcony', 'Bar', 'Basketball Court',
+      'Bathroom', 'Bathroom Dark', 'Bathroom Modern', 'Bathroom Pink',
+      'Bathroom Retro', 'Bathroom Vintage', 'Bathtub', 'Beach', 'Beach Cliff',
+      'Beach House', 'Beach Sand', 'Beach View', 'Bedroom', 'Bedroom Bright',
+      'Bedroom Colorful', 'Bedroom Mid-Century', 'Bedroom Modern', 'Bedroom Retro',
+      'Bedroom Tropical', 'Bedroom Vintage', 'Biergarten', 'Bocce Court', 'Cabin',
+      'Cabinetry Modern', 'Cabinetry Retro', 'Cabins', 'Carport', 'Cathedral Ceiling',
+      'Ceiling', 'Ceiling Beams', 'Ceiling Cathedral', 'Ceiling Coffered',
+      'Ceiling Modern', 'Ceiling Textured', 'Ceiling Vaulted', 'Ceiling Wood Beams',
+      'Cocktail Lounge', 'Contemporary', 'Country', 'Courtyard', 'Deck',
+      'Dining Room', 'Driveway', 'Driveway Brick', 'Driveway Circular',
+      'Driveway Concrete', 'Driveway Gravel', 'Enclosed Patio', 'Fireplace',
+      'Floors', 'Floors Brick', 'Floors Carpet', 'Floors Checkerboard',
+      'Floors Concrete', 'Floors Dark Wood', 'Floors Hardwood', 'Floors Linoleum',
+      'Floors Marble', 'Floors Parquet', 'Floors Slate', 'Floors Terrazzo',
+      'Floors Tile', 'Floors White', 'Floors Wood', 'Fountain', 'Front Lawn',
+      'Front Porch', 'Front Yard Desert', 'Front Yard Grass', 'Front Yard Gravel',
+      'Front Yard Native Plants', 'Front Yard Rock', 'Furnished', 'Furnished Light',
+      'Furnished Minimally', 'Furnished Unfurnished', 'Garage', 'Garage 1 Car',
+      'Garage 2 Car', 'Garage 3 Car', 'Garage Detached', 'Garden', 'Garden Rose',
+      'Garden Vegetable', 'Garden Zen', 'Gate', 'Gazebo', 'Golf Course',
+      'Greenhouse', 'Grill', 'Guest House', 'Gym', 'Gym Home', 'Hedges',
+      'Home Office', 'Home Theater', 'Hot Tub', 'In-Law Suite', 'Island Kitchen',
+      'Jacuzzi', 'Kitchen', 'Kitchen Bright', 'Kitchen Colorful', 'Kitchen Dark',
+      'Kitchen Farmhouse', 'Kitchen Galley', 'Kitchen Modern', 'Kitchen Open',
+      'Kitchen Retro', 'Kitchen Vintage', 'Kitchen White', 'Lake', 'Lake House',
+      'Lake View', 'Laundry Room', 'Library', 'Living Room', 'Living Room Bright',
+      'Living Room Dark', 'Living Room Modern', 'Living Room Retro',
+      'Living Room Traditional', 'Loft', 'Meditation Room', 'Mid-Century',
+      'Modern', 'Mountain View', 'Music Room', 'Nursery', 'Office', 'Outdoor Shower',
+      'Palm Trees', 'Parking', 'Parking Off-Street', 'Parking On-Street',
+      'Parking Underground', 'Patio', 'Patio Balconies', 'Patio Covered',
+      'Patio Enclosed', 'Patio Furniture', 'Patio Open', 'Patio Stone', 'Patio Wood',
+      'Pergola', 'Play Structure', 'Playhouse', 'Pond', 'Pool', 'Pool Above Ground',
+      'Pool Heated', 'Pool Infinity', 'Pool Indoor', 'Pool Kidney Shaped',
+      'Pool Lap', 'Pool Natural', 'Pool Olympic', 'Pool Plunge', 'Pool Rectangular',
+      'Pool Salt Water', 'Pool Spa', 'Putting Green', 'Ranch', 'Retro', 'Rooftop',
+      'RV Parking', 'Sauna', 'Shower', 'Shuffleboard Court', 'Skylight',
+      'Spa', 'Sports Court', 'Stables', 'Staircase', 'Staircase Curved',
+      'Staircase Floating', 'Staircase Modern', 'Staircase Spiral', 'Steam Room',
+      'Stone Walls', 'Storage', 'Studio', 'Study', 'Sunroom', 'Tennis Court',
+      'Terrace', 'Theater Room', 'Tiki Bar', 'Traditional', 'Trailer', 'Treehouse',
+      'Tropical', 'View', 'View City', 'View Desert', 'View Golf Course',
+      'View Hills', 'View Lake', 'View Mountain', 'View Ocean', 'View Panoramic',
+      'View Pool', 'View Sunset', 'View Valley', 'View Water', 'Vintage',
+      'Volleyball Court', 'Walkway', 'Walls', 'Walls Brick', 'Walls Brick Exposed',
+      'Walls Concrete', 'Walls Glass', 'Walls Mirrored', 'Walls Painted',
+      'Walls Paneling', 'Walls Shiplap', 'Walls Stone', 'Walls Stucco',
+      'Walls Textured', 'Walls Wallpaper', 'Walls White', 'Walls Wood',
+      'Walls Wood Paneling', 'Water Feature', 'Wet Bar', 'Wine Cellar',
+      'Wine Room', 'Windows', 'Windows Bay', 'Windows Casement', 'Windows Floor to Ceiling',
+      'Windows French', 'Windows Large', 'Windows Lots of Natural Light',
+      'Windows Picture', 'Windows Skylights', 'Windows Sliding Glass',
+      'Windows Stained Glass', 'Workshop', 'Wrap Around Porch', 'Yard',
+      'Yard Large', 'Yard Small', 'Zen Garden'
+    ]
+  },
+
+  residential: {
+    name: 'Residential',
+    hasSearch: true,
+    options: [
+      '70s & 80s', '90s Modern', '90s Vibe', 'Americana', 'Americana 50s',
+      'Americana Cape Cod', 'Americana Country', 'Americana Georgian Colonial',
+      'Americana New England', 'Americana Traditional', 'Apartment', 'Art Deco',
+      'Arts and Crafts', 'Bachelor Pad', 'Beach House', 'Bohemian', 'Bungalow',
+      'Cape Cod', 'Castle', 'Chateau', 'Cliff House', 'Colonial', 'Condo',
+      'Contemporary', 'Contemporary Clean Lines', 'Contemporary Glass & Steel',
+      'Contemporary High Tech Modern', 'Cottage', 'Country', 'Craftsman',
+      'Desert Modern', 'East Coast', 'Eclectic', 'Edwardian', 'Estate',
+      'European', 'Farmhouse', 'Florida', 'French', 'French Country',
+      'French Provincial', 'Georgian', 'Georgian Colonial', 'Greek Revival',
+      'Guesthouse', 'High Rise', 'High Tech Modern', 'Historic', 'Hollywood Hills',
+      'Industrial', 'Italian', 'Lake House', 'Loft', 'Log Cabin', 'Luxury',
+      'Mansion', 'Masonry', 'Mediterranean', 'Mid Century', 'Mid West',
+      'Minimalist', 'Modern', 'Modern A-Frame', 'Modern Architecture',
+      'Modern Cube House', 'Modern Farmhouse', 'Modern Glass House',
+      'Modern Minimalist', 'Modern Organic', 'Modern Rustic', 'Modernist',
+      'Mountain', 'Mountain Cabin', 'Mountain House', 'Mountain Lodge',
+      'New Construction', 'New England', 'New Orleans', 'Northwest', 'Penthouse',
+      'Prairie Style', 'Ranch', 'Ranch Horse Property', 'Ranch Style', 'Retro',
+      'Rustic', 'Rustic Modern', 'Scandinavian', 'Seaside', 'Spanish',
+      'Spanish Colonial', 'Spanish Mediterranean', 'Spanish Revival', 'Split Level',
+      'Storybook', 'Studio', 'Suburban', 'Townhouse', 'Traditional', 'Treehouse',
+      'Tropical', 'Tudor', 'Tuscan', 'Urban', 'Victorian', 'Victorian Gothic',
+      'Victorian Italianate', 'Victorian Queen Anne', 'Villa', 'Vintage'
+    ]
+  },
+
+  commercial: {
+    name: 'Commercial',
+    hasSearch: true,
+    options: [
+      'Airport',
+      'Amusement',
+      'apartment',
+      'Arcade',
+      'Architects office',
+      'Art',
+      'Auditorium',
+      'Auto Dealerships',
+      'Auto Shop',
+      'Autopsy Room',
+      'ballroom',
+      'Bank',
+      'Bar/Lounge',
+      'Barber',
+      'Basement',
+      'beach house',
+      'Board Room',
+      'Boiler Room',
+      'Bowling Alley',
+      'BRANDEIS',
+      'Break Room',
+      'Building',
+      'Bullpen',
+      'cafe',
+      'Cafeteria',
+      'Campground',
+      'Campus',
+      'Car Wash',
+      'cemetery',
+      'Church',
+      'Clinic',
+      'Coffee Shop',
+      'Colorful Walls',
+      'commercial',
+      'Conference Room',
+      'Convenience Store',
+      'Conveyor Belt',
+      'courthouse',
+      'Courtyard',
+      'Crematory',
+      'Cubicles',
+      'cyclorama',
+      'dance studio',
+      'DELI',
+      'Dental office',
+      'desert',
+      'diner',
+      'Downtown',
+      'duplex/triplex',
+      'Elevator',
+      'equestrian',
+      'event space',
+      'factory',
+      'Fire Escape',
+      'Gallery',
+      'Gardening',
+      'Gas Station',
+      'Glass Walls',
+      'Golf Course',
+      'grocery',
+      'gym',
+      'Hall',
+      'Hangar',
+      'High Rise',
+      'Home Decor',
+      'Hospital',
+      'hotel/motel',
+      'Industrial',
+      'jail/prison',
+      'Kitchen Commercial',
+      'Laboratory',
+      'Laundromat',
+      'library',
+      'Loading Dock',
+      'Lobby',
+      'Locker Room',
+      'Loft',
+      'market',
+      'Medical',
+      'Modern',
+      'Mortuary',
+      'MOTELS',
+      'Movie Theater',
+      'Newscaster Studio',
+      'nightclub',
+      'Nursery',
+      'Office',
+      'Office Space Raw',
+      'Operation Room',
+      'Paintball',
+      'Parking Lot',
+      'Patio outdoor',
+      'Penthouse',
+      'Police station',
+      'Quarry',
+      'Racquettball',
+      'Raw Space',
+      'reality',
+      'Recording Studio',
+      'Records Room',
+      'Religious',
+      'Restaurant',
+      'retail',
+      'salon',
+      'school',
+      'Shopping Center',
+      'Sound Stage',
+      'Sports Complex',
+      'Store',
+      'studio',
+      'Telephone Booth',
+      'Tennis Club',
+      'Theater',
+      'Theme Park',
+      'Track & Field',
+      'Tunnel',
+      'underground',
+      'University Campus',
+      'Vacant',
+      'Vacant Lot',
+      'Vault',
+      'veterinary',
+      'Warehouse',
+      'Wine Vineyard',
+      'Yoga Studio'
+    ]
+  }
+};
+
+interface FilterCategory {
   name: string;
-  slug: string;
   hasSearch: boolean;
   options: string[];
 }
-
 
 function generatePropertyImages(propertyId: string | number, count: number = 50): string[] {
   const images: string[] = [];
@@ -242,63 +494,8 @@ export default function SearchPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<{ category: string; values: string[] }[]>([]);
   const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
-  const [filterCategories, setFilterCategories] = useState<Record<string, SearchFilterCategory>>({});
-  const [filtersLoading, setFiltersLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 24;
-
-  useEffect(() => {
-    fetchFilters();
-  }, []);
-
-  async function fetchFilters() {
-    try {
-      const { data: filtersData, error: filtersError } = await supabase
-        .from('search_filters')
-        .select('id, name, slug, has_search')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (filtersError) throw filtersError;
-
-      const filtersWithTags = await Promise.all(
-        (filtersData || []).map(async (filter) => {
-          const { data: tagsData, error: tagsError } = await supabase
-            .from('search_filter_tags')
-            .select('id, name, slug')
-            .eq('filter_id', filter.id)
-            .eq('is_active', true)
-            .order('display_order');
-
-          if (tagsError) {
-            console.error('Error fetching tags:', tagsError);
-            return null;
-          }
-
-          return {
-            id: filter.id,
-            name: filter.name,
-            slug: filter.slug,
-            hasSearch: filter.has_search,
-            options: (tagsData || []).map(tag => tag.name),
-          };
-        })
-      );
-
-      const categoriesObject: Record<string, SearchFilterCategory> = {};
-      filtersWithTags.filter(Boolean).forEach((filter) => {
-        if (filter) {
-          categoriesObject[filter.slug] = filter;
-        }
-      });
-
-      setFilterCategories(categoriesObject);
-    } catch (error) {
-      console.error('Error fetching filters:', error);
-    } finally {
-      setFiltersLoading(false);
-    }
-  }
 
   const loadMoreProperties = async () => {
     if (loading || !hasMore) return;
@@ -918,12 +1115,7 @@ export default function SearchPage() {
       <div className="search-page">
         <div className="filter-bar" ref={dropdownRef}>
           <div className="filter-row">
-            {filtersLoading ? (
-              <div style={{ padding: '0.5rem', color: '#6b7280' }}>Loading filters...</div>
-            ) : Object.keys(filterCategories).length === 0 ? (
-              <div style={{ padding: '0.5rem', color: '#6b7280' }}>No filters available</div>
-            ) : (
-              Object.entries(filterCategories).map(([key, category]) => {
+            {Object.entries(filterCategories).map(([key, category]) => {
               const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
               const filteredOptions = getFilteredOptions(key, category.options);
 
@@ -983,8 +1175,7 @@ export default function SearchPage() {
                   )}
                 </div>
               );
-            })
-            )}
+            })}
           </div>
         </div>
 
