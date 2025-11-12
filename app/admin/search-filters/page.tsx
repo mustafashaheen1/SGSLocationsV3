@@ -104,18 +104,41 @@ export default function SearchFiltersPage() {
 
     try {
       const slug = generateSlug(formData.name);
+      const targetOrder = formData.display_order;
 
-      const { error } = await supabase
+      const { data: existingFilters, error: checkError } = await supabase
+        .from('search_filters')
+        .select('id, display_order')
+        .gte('display_order', targetOrder)
+        .order('display_order', { ascending: false });
+
+      if (checkError) throw checkError;
+
+      if (existingFilters && existingFilters.length > 0) {
+        for (const filter of existingFilters) {
+          const { error: updateError } = await supabase
+            .from('search_filters')
+            .update({ display_order: filter.display_order + 1 })
+            .eq('id', filter.id);
+
+          if (updateError) {
+            console.error('Error updating filter order:', updateError);
+            throw updateError;
+          }
+        }
+      }
+
+      const { error: insertError } = await supabase
         .from('search_filters')
         .insert([{
           name: formData.name,
           slug: slug,
           has_search: formData.has_search,
-          display_order: formData.display_order,
+          display_order: targetOrder,
           is_active: true,
         }]);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       setShowAddForm(false);
       setFormData({ name: '', slug: '', has_search: false, display_order: 1 });
