@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { uploadImageToS3 } from '@/lib/s3-upload';
 
 interface Category {
   id: string;
@@ -31,11 +32,56 @@ export default function CategoriesPage() {
     image: '',
     display_order: 1,
   });
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     console.log('Categories page mounted');
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (formData.name) {
+      setFormData(prev => ({ ...prev, slug: generateSlug(prev.name) }));
+    }
+  }, [formData.name]);
+
+  function generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function handleImageDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file && (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp')) {
+      setUploadedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      alert('Please upload a valid image file (JPEG, PNG, or WebP)');
+    }
+  }
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  }
+
+  function removeImage() {
+    setUploadedImage(null);
+    setImagePreview('');
+  }
 
   async function fetchCategories() {
     try {
@@ -74,19 +120,28 @@ export default function CategoriesPage() {
   }
 
   async function handleAdd() {
-    if (!formData.name || !formData.slug) {
-      alert('Please fill in name and slug');
+    if (!formData.name) {
+      alert('Please fill in category name');
+      return;
+    }
+
+    if (!uploadedImage) {
+      alert('Please upload a category image');
       return;
     }
 
     try {
+      setUploading(true);
+
+      const imageUrl = await uploadImageToS3(uploadedImage, 'categories');
+
       const { error } = await supabase
         .from('categories')
         .insert([{
           name: formData.name,
           slug: formData.slug,
           description: formData.description || null,
-          image: formData.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400',
+          image: imageUrl,
           display_order: formData.display_order,
           is_active: true,
         }]);
@@ -95,9 +150,13 @@ export default function CategoriesPage() {
 
       setShowAddForm(false);
       setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+      setUploadedImage(null);
+      setImagePreview('');
       fetchCategories();
     } catch (error: any) {
       alert('Error adding category: ' + error.message);
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -110,23 +169,33 @@ export default function CategoriesPage() {
       image: category.image,
       display_order: category.display_order,
     });
+    setImagePreview(category.image);
+    setUploadedImage(null);
     setShowEditForm(true);
   }
 
   async function handleUpdate() {
-    if (!editingCategory || !formData.name || !formData.slug) {
-      alert('Please fill in all required fields');
+    if (!editingCategory || !formData.name) {
+      alert('Please fill in category name');
       return;
     }
 
     try {
+      setUploading(true);
+
+      let imageUrl = formData.image;
+
+      if (uploadedImage) {
+        imageUrl = await uploadImageToS3(uploadedImage, 'categories');
+      }
+
       const { error } = await supabase
         .from('categories')
         .update({
           name: formData.name,
           slug: formData.slug,
           description: formData.description || null,
-          image: formData.image,
+          image: imageUrl,
           display_order: formData.display_order,
         })
         .eq('id', editingCategory.id);
@@ -136,9 +205,13 @@ export default function CategoriesPage() {
       setShowEditForm(false);
       setEditingCategory(null);
       setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+      setUploadedImage(null);
+      setImagePreview('');
       fetchCategories();
     } catch (error: any) {
       alert('Error updating category: ' + error.message);
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -204,6 +277,8 @@ export default function CategoriesPage() {
         <Button onClick={() => {
           setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
           setEditingCategory(null);
+          setUploadedImage(null);
+          setImagePreview('');
           setShowAddForm(true);
         }}>
           <Plus className="w-4 h-4 mr-2" />
@@ -224,7 +299,7 @@ export default function CategoriesPage() {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Category Name *</label>
                 <Input
@@ -233,30 +308,69 @@ export default function CategoriesPage() {
                   placeholder="e.g., Modern Architecture"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium mb-1">Slug (URL) *</label>
+                <label className="block text-sm font-medium mb-1">Slug (Auto-generated)</label>
                 <Input
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="e.g., modern-architecture"
+                  disabled
+                  className="bg-gray-100"
                 />
               </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <Input
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                />
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Category Image *</label>
+                {!imagePreview ? (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleImageDrop}
+                    onClick={() => document.getElementById('imageUpload')?.click()}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                      isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">PNG, JPG or WebP (recommended: 400x300px)</p>
+                    </div>
+                    <input
+                      id="imageUpload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="col-span-2">
+
+              <div>
                 <label className="block text-sm font-medium mb-1">Description (Optional)</label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Category description..."
+                  rows={3}
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium mb-1">Display Order</label>
                 <Input
@@ -267,10 +381,14 @@ export default function CategoriesPage() {
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button onClick={handleAdd}>Save Category</Button>
+              <Button onClick={handleAdd} disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Save Category'}
+              </Button>
               <Button variant="outline" onClick={() => {
                 setShowAddForm(false);
                 setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+                setUploadedImage(null);
+                setImagePreview('');
               }}>Cancel</Button>
             </div>
           </div>
@@ -287,11 +405,13 @@ export default function CategoriesPage() {
                 setShowEditForm(false);
                 setEditingCategory(null);
                 setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+                setUploadedImage(null);
+                setImagePreview('');
               }} className="text-gray-500 hover:text-gray-700">
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Category Name *</label>
                 <Input
@@ -300,30 +420,70 @@ export default function CategoriesPage() {
                   placeholder="e.g., Modern Architecture"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium mb-1">Slug (URL) *</label>
+                <label className="block text-sm font-medium mb-1">Slug</label>
                 <Input
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   placeholder="e.g., modern-architecture"
                 />
               </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <Input
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                />
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Category Image</label>
+                <div className="space-y-2">
+                  {imagePreview && (
+                    <div className="relative">
+                      <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleImageDrop}
+                    onClick={() => document.getElementById('imageUploadEdit')?.click()}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                      isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-blue-600">Click to upload new image</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">PNG, JPG or WebP</p>
+                    </div>
+                    <input
+                      id="imageUploadEdit"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="col-span-2">
+
+              <div>
                 <label className="block text-sm font-medium mb-1">Description (Optional)</label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Category description..."
+                  rows={3}
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium mb-1">Display Order</label>
                 <Input
@@ -334,11 +494,15 @@ export default function CategoriesPage() {
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button onClick={handleUpdate}>Update Category</Button>
+              <Button onClick={handleUpdate} disabled={uploading}>
+                {uploading ? 'Updating...' : 'Update Category'}
+              </Button>
               <Button variant="outline" onClick={() => {
                 setShowEditForm(false);
                 setEditingCategory(null);
                 setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+                setUploadedImage(null);
+                setImagePreview('');
               }}>Cancel</Button>
             </div>
           </div>
