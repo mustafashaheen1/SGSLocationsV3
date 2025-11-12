@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 
+const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+  'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+  'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+  'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+  'Wisconsin', 'Wyoming'
+];
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export default function AddPropertyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -19,30 +37,33 @@ export default function AddPropertyPage() {
     description: '',
     address: '',
     city: '',
-    county: '',
+    state: 'Texas',
     zipcode: '',
-    property_type: 'Residential',
-    square_footage: '',
-    lot_size: '',
-    bedrooms: '',
-    bathrooms: '',
-    parking_spaces: '',
-    year_built: '',
-    features: [] as string[],
-    categories: [] as string[],
-    permits_available: false,
-    permit_details: '',
-    daily_rate: '',
+    category_id: '',
   });
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    const { name, value, type } = e.target;
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  async function fetchCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, slug')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
     }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   }
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -67,39 +88,46 @@ export default function AddPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!formData.name || !formData.address || !formData.city || !formData.daily_rate) {
+    if (!formData.name || !formData.address || !formData.city || !formData.category_id) {
       alert('Please fill in all required fields');
       return;
     }
 
-    if (uploadedImages.length === 0) {
-      alert('Please upload at least one property image');
+    if (uploadedImages.length < 10) {
+      alert('Please upload at least 10 property images');
       return;
     }
 
     setLoading(true);
     try {
+      const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+      if (!selectedCategory) {
+        throw new Error('Invalid category selected');
+      }
+
+      console.log(`Uploading ${uploadedImages.length} images...`);
       const imageUrls = await uploadMultipleImages(uploadedImages, 'properties');
+      console.log('Images uploaded successfully');
 
       const { error } = await supabase.from('properties').insert([{
         name: formData.name,
         description: formData.description || null,
         address: formData.address,
         city: formData.city,
-        county: formData.county || null,
+        county: formData.state,
         zipcode: formData.zipcode || null,
-        property_type: formData.property_type,
-        square_footage: formData.square_footage ? parseInt(formData.square_footage) : null,
-        lot_size: formData.lot_size ? parseFloat(formData.lot_size) : null,
-        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
-        bathrooms: formData.bathrooms ? parseFloat(formData.bathrooms) : null,
-        parking_spaces: formData.parking_spaces ? parseInt(formData.parking_spaces) : null,
-        year_built: formData.year_built ? parseInt(formData.year_built) : null,
-        features: formData.features,
-        categories: formData.categories,
-        permits_available: formData.permits_available,
-        permit_details: formData.permit_details || null,
-        daily_rate: parseFloat(formData.daily_rate),
+        property_type: 'Residential',
+        square_footage: null,
+        lot_size: null,
+        bedrooms: null,
+        bathrooms: null,
+        parking_spaces: null,
+        year_built: null,
+        features: [],
+        categories: [selectedCategory.name],
+        permits_available: false,
+        permit_details: null,
+        daily_rate: 0,
         images: imageUrls,
         primary_image: imageUrls[0],
         status: 'active',
@@ -111,6 +139,7 @@ export default function AddPropertyPage() {
       alert('Property added successfully!');
       router.push('/admin/properties');
     } catch (error: any) {
+      console.error('Error adding property:', error);
       alert('Error adding property: ' + error.message);
     } finally {
       setLoading(false);
@@ -174,13 +203,18 @@ export default function AddPropertyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">County</label>
-            <Input
-              name="county"
-              value={formData.county}
+            <label className="block text-sm font-medium mb-2">State *</label>
+            <select
+              name="state"
+              value={formData.state}
               onChange={handleInputChange}
-              placeholder="Dallas County"
-            />
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+              required
+            >
+              {US_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -194,133 +228,31 @@ export default function AddPropertyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Property Type</label>
+            <label className="block text-sm font-medium mb-2">Category *</label>
             <select
-              name="property_type"
-              value={formData.property_type}
+              name="category_id"
+              value={formData.category_id}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+              required
             >
-              <option value="Residential">Residential</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Industrial">Industrial</option>
-              <option value="Land">Land</option>
+              <option value="">Select a category</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Square Footage</label>
-            <Input
-              name="square_footage"
-              type="number"
-              value={formData.square_footage}
-              onChange={handleInputChange}
-              placeholder="2500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Lot Size (acres)</label>
-            <Input
-              name="lot_size"
-              type="number"
-              step="0.01"
-              value={formData.lot_size}
-              onChange={handleInputChange}
-              placeholder="0.5"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Bedrooms</label>
-            <Input
-              name="bedrooms"
-              type="number"
-              value={formData.bedrooms}
-              onChange={handleInputChange}
-              placeholder="3"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Bathrooms</label>
-            <Input
-              name="bathrooms"
-              type="number"
-              step="0.5"
-              value={formData.bathrooms}
-              onChange={handleInputChange}
-              placeholder="2.5"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Parking Spaces</label>
-            <Input
-              name="parking_spaces"
-              type="number"
-              value={formData.parking_spaces}
-              onChange={handleInputChange}
-              placeholder="2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Year Built</label>
-            <Input
-              name="year_built"
-              type="number"
-              value={formData.year_built}
-              onChange={handleInputChange}
-              placeholder="2020"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Daily Rate *</label>
-            <Input
-              name="daily_rate"
-              type="number"
-              step="0.01"
-              value={formData.daily_rate}
-              onChange={handleInputChange}
-              placeholder="2500.00"
-              required
-            />
-          </div>
-
           <div className="col-span-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="permits_available"
-                checked={formData.permits_available}
-                onChange={handleInputChange}
-                className="w-4 h-4"
-              />
-              <span className="text-sm font-medium">Film Permits Available</span>
+            <label className="block text-sm font-medium mb-2">
+              Property Images * (Minimum 10 images required)
             </label>
-          </div>
-
-          {formData.permits_available && (
-            <div className="col-span-2">
-              <label className="block text-sm font-medium mb-2">Permit Details</label>
-              <Textarea
-                name="permit_details"
-                value={formData.permit_details}
-                onChange={handleInputChange}
-                placeholder="Details about film permits..."
-                rows={3}
-              />
-            </div>
-          )}
-
-          <div className="col-span-2">
-            <label className="block text-sm font-medium mb-2">Property Images *</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 multiple
                 onChange={handleImageSelect}
                 className="hidden"
@@ -328,38 +260,77 @@ export default function AddPropertyPage() {
               />
               <label htmlFor="imageUpload" className="cursor-pointer">
                 <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-                <p className="text-xs text-gray-500 mt-2">PNG, JPG, WebP (Max 10 images)</p>
+                <p className="text-sm text-gray-600 mb-1">
+                  Click to upload images or drag and drop
+                </p>
+                <p className="text-xs text-gray-500">
+                  PNG, JPG, or WebP • Minimum 10 images • No maximum limit
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {uploadedImages.length} / 10 minimum uploaded
+                </p>
               </label>
             </div>
 
             {imagePreviews.length > 0 && (
-              <div className="grid grid-cols-5 gap-4 mt-4">
-                {imagePreviews.map((preview, index) => (
-                  <div key={index} className="relative">
-                    <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-24 object-cover rounded" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-gray-700">
+                    Uploaded Images: {uploadedImages.length}
+                    {uploadedImages.length < 10 && (
+                      <span className="text-red-600 ml-2">
+                        (Need {10 - uploadedImages.length} more)
+                      </span>
+                    )}
+                    {uploadedImages.length >= 10 && (
+                      <span className="text-green-600 ml-2">✓ Minimum met</span>
+                    )}
+                  </p>
+                </div>
+                <div className="grid grid-cols-5 gap-4">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-24 object-cover rounded border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <Button type="submit" disabled={loading} className="bg-[#e11921] hover:bg-red-700">
+        <div className="flex gap-4 pt-4 border-t">
+          <Button
+            type="submit"
+            disabled={loading || uploadedImages.length < 10}
+            className="bg-[#e11921] hover:bg-red-700"
+          >
             {loading ? 'Adding Property...' : 'Add Property'}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
         </div>
+
+        {uploadedImages.length < 10 && (
+          <p className="text-sm text-red-600">
+            * Please upload at least 10 images before submitting
+          </p>
+        )}
       </form>
     </div>
   );
