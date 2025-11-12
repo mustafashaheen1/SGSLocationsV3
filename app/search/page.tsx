@@ -239,11 +239,52 @@ export default function SearchPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 24;
 
+  const FILTER_CACHE_KEY = 'sgs_search_filters_cache';
+  const CACHE_DURATION = 5 * 60 * 1000;
+
+  const getCachedFilters = () => {
+    if (typeof window === 'undefined') return null;
+    const cached = localStorage.getItem(FILTER_CACHE_KEY);
+    if (!cached) return null;
+
+    const { data, timestamp } = JSON.parse(cached);
+    const isExpired = Date.now() - timestamp > CACHE_DURATION;
+
+    if (isExpired) {
+      localStorage.removeItem(FILTER_CACHE_KEY);
+      return null;
+    }
+
+    return data;
+  };
+
+  const setCachedFilters = (data: any) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(FILTER_CACHE_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  };
+
   useEffect(() => {
-    fetchFiltersFromDatabase();
+    fetchFilters();
   }, []);
 
-  async function fetchFiltersFromDatabase() {
+  async function fetchFilters() {
+    const cached = getCachedFilters();
+    if (cached) {
+      setFilterCategories(cached);
+      setFiltersLoading(false);
+
+      fetchFreshFilters(false);
+    } else {
+      fetchFreshFilters(true);
+    }
+  }
+
+  async function fetchFreshFilters(showLoading: boolean) {
+    if (showLoading) setFiltersLoading(true);
+
     try {
       const { data: filtersData, error: filtersError } = await supabase
         .from('search_filters')
@@ -255,7 +296,7 @@ export default function SearchPage() {
 
       const categoriesObject: Record<string, any> = {};
 
-      for (const filter of filtersData || []) {
+      const filterPromises = (filtersData || []).map(async (filter) => {
         const { data: tagsData, error: tagsError } = await supabase
           .from('search_filter_tags')
           .select('name, slug')
@@ -264,19 +305,32 @@ export default function SearchPage() {
           .order('display_order');
 
         if (!tagsError) {
-          categoriesObject[filter.slug] = {
-            name: filter.name,
-            hasSearch: filter.has_search,
-            options: (tagsData || []).map(tag => tag.name)
+          return {
+            slug: filter.slug,
+            data: {
+              name: filter.name,
+              hasSearch: filter.has_search,
+              options: (tagsData || []).map(tag => tag.name)
+            }
           };
         }
-      }
+        return null;
+      });
+
+      const results = await Promise.all(filterPromises);
+
+      results.forEach(result => {
+        if (result) {
+          categoriesObject[result.slug] = result.data;
+        }
+      });
 
       setFilterCategories(categoriesObject);
+      setCachedFilters(categoriesObject);
     } catch (error) {
       console.error('Error fetching filters:', error);
     } finally {
-      setFiltersLoading(false);
+      if (showLoading) setFiltersLoading(false);
     }
   }
 
