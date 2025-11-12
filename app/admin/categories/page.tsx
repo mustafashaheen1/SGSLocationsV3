@@ -33,6 +33,7 @@ export default function CategoriesPage() {
   });
 
   useEffect(() => {
+    console.log('Categories page mounted');
     fetchCategories();
   }, []);
 
@@ -40,19 +41,30 @@ export default function CategoriesPage() {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select(`
-          *,
-          property_count:properties(count)
-        `)
+        .select('*')
         .order('display_order');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
 
-      const categoriesWithCount = data?.map(cat => ({
-        ...cat,
-        property_count: cat.property_count?.[0]?.count || 0
-      })) || [];
+      // For each category, count properties separately
+      const categoriesWithCount = await Promise.all(
+        (data || []).map(async (cat) => {
+          const { count } = await supabase
+            .from('properties')
+            .select('*', { count: 'exact', head: true })
+            .contains('categories', [cat.name]);
 
+          return {
+            ...cat,
+            property_count: count || 0
+          };
+        })
+      );
+
+      console.log('Categories loaded:', categoriesWithCount);
       setCategories(categoriesWithCount);
     } catch (error) {
       console.error('Error fetching categories:', error);
