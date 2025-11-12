@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   FileText,
-  Folder
+  Folder,
+  Filter
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
@@ -107,6 +108,7 @@ export default function AdminLayout({
       ]
     },
     { href: '/admin/categories', label: 'Categories', icon: Folder },
+    { href: '/admin/search-filters', label: 'Search Filters', icon: Filter },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/inquiries', label: 'Inquiries', icon: Mail },
     { href: '/admin/content', label: 'Content', icon: FileText },
