@@ -724,6 +724,39 @@ export default function SearchPage() {
           align-items: center;
         }
 
+        .filter-tag,
+        .active-filter-tag {
+          background-color: #dc2626 !important;
+          color: white !important;
+          padding: 6px 12px !important;
+          border-radius: 20px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          margin-right: 8px !important;
+          margin-bottom: 8px !important;
+        }
+
+        .filter-tag:hover,
+        .active-filter-tag:hover {
+          background-color: #b91c1c !important;
+        }
+
+        .filter-tag button,
+        .active-filter-tag button,
+        .filter-tag .remove-btn,
+        .active-filter-tag .remove-btn {
+          background: none !important;
+          border: none !important;
+          color: white !important;
+          cursor: pointer !important;
+          padding: 0 !important;
+          margin-left: 4px !important;
+          font-size: 16px !important;
+        }
+
 
         .swiper-button-prev,
         .swiper-button-next {
@@ -986,10 +1019,10 @@ export default function SearchPage() {
               <div key={filter.category} className="filter-pill-group">
                 <span className="filter-label">{filter.category}:</span>
                 {filter.values.map(value => (
-                  <span key={value} className="filter-value">
+                  <span key={value} className="filter-tag">
                     {value}
                     <button
-                      className="filter-remove"
+                      className="remove-btn"
                       onClick={() => removeFilterValue(filter.category, value)}
                     >
                       <X size={14} strokeWidth={2} />
