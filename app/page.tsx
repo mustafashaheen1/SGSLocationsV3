@@ -118,7 +118,8 @@ export default function HomePage() {
     // Production Companies - Bottom Row
     {
       name: 'Paramount',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Paramount_Plus.svg/320px-Paramount_Plus.svg.png'
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Paramount%2B_logo.svg/320px-Paramount%2B_logo.svg.png',
+      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Paramount'
     },
     {
       name: 'Netflix',
@@ -261,7 +262,7 @@ export default function HomePage() {
       <section className="py-24 bg-white">
         <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
           <h2 className="text-4xl text-center mb-4" style={{fontWeight: 100, color: '#212529'}}>Featured in Major Productions</h2>
-          <p className="text-center mb-16 text-lg" style={{fontWeight: 300, color: '#6c757d'}}>
+          <p className="text-center mb-8 text-lg" style={{fontWeight: 300, color: '#6c757d'}}>
             Trusted by leading production companies and streaming platforms
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
