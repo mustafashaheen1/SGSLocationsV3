@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,10 +44,33 @@ interface SocialLink {
   is_active: boolean;
 }
 
+async function uploadVideoToS3(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('folder', 'videos');
+
+  try {
+    const response = await fetch('/api/upload-video', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error('Upload failed');
+
+    const data = await response.json();
+    return data.url;
+  } catch (error) {
+    console.error('Error uploading video:', error);
+    throw error;
+  }
+}
+
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
 
   // Home Page Content States
   const [heroVideo, setHeroVideo] = useState('');
@@ -148,9 +171,25 @@ export default function ContentManagementPage() {
         });
 
       if (error) throw error;
-      alert('Setting saved successfully!');
     } catch (error: any) {
-      alert('Error saving: ' + error.message);
+      throw error;
+    }
+  }
+
+  async function handleVideoUpload() {
+    if (!selectedVideoFile) return;
+
+    setUploadingVideo(true);
+    try {
+      const videoUrl = await uploadVideoToS3(selectedVideoFile);
+      await saveSiteSetting('hero_video', videoUrl, 'home', 'hero');
+      setHeroVideo(videoUrl);
+      setSelectedVideoFile(null);
+      alert('Video uploaded and saved successfully!');
+    } catch (error) {
+      alert('Error uploading video');
+    } finally {
+      setUploadingVideo(false);
     }
   }
 
@@ -236,6 +275,24 @@ export default function ContentManagementPage() {
     }
   }
 
+  async function addService(service: Partial<Service>) {
+    try {
+      const { error } = await supabase
+        .from('services')
+        .insert([{
+          ...service,
+          display_order: services.length + 1,
+          is_active: true
+        }]);
+
+      if (error) throw error;
+      fetchAllContent();
+      setNewServiceForm(false);
+    } catch (error: any) {
+      alert('Error adding service: ' + error.message);
+    }
+  }
+
   async function updateService(id: string, updates: Partial<Service>) {
     try {
       const { error } = await supabase
@@ -248,6 +305,22 @@ export default function ContentManagementPage() {
       setEditingService(null);
     } catch (error: any) {
       alert('Error updating service: ' + error.message);
+    }
+  }
+
+  async function deleteService(id: string) {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchAllContent();
+    } catch (error: any) {
+      alert('Error deleting service: ' + error.message);
     }
   }
 
@@ -299,13 +372,50 @@ export default function ContentManagementPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Hero Video URL</label>
-                  <Input
-                    value={heroVideo}
-                    onChange={(e) => setHeroVideo(e.target.value)}
-                    placeholder="https://example.com/video.mp4"
-                  />
+                  <label className="block text-sm font-medium mb-2">Current Hero Video</label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      value={heroVideo}
+                      disabled
+                      className="flex-1 bg-gray-50"
+                      placeholder="No video uploaded"
+                    />
+                    <Button
+                      onClick={() => document.getElementById('videoUpload')?.click()}
+                      disabled={uploadingVideo}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingVideo ? 'Uploading...' : 'Upload New Video'}
+                    </Button>
+                    <input
+                      id="videoUpload"
+                      type="file"
+                      accept="video/mp4,video/webm"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSelectedVideoFile(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+                  {selectedVideoFile && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded flex items-center justify-between">
+                      <span className="text-sm">Selected: {selectedVideoFile.name}</span>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleVideoUpload} disabled={uploadingVideo}>
+                          {uploadingVideo ? 'Uploading...' : 'Confirm Upload'}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setSelectedVideoFile(null)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">MP4 or WebM format recommended</p>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Hero Title</label>
                   <Input
@@ -314,6 +424,7 @@ export default function ContentManagementPage() {
                     placeholder="Dallas Fort Worth's Largest Location Database"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Hero Subtitle</label>
                   <Input
@@ -322,6 +433,7 @@ export default function ContentManagementPage() {
                     placeholder="65+ filming locations across North and Central Texas"
                   />
                 </div>
+
                 <Button onClick={saveAllHomeContent} disabled={saving}>
                   <Save className="w-4 h-4 mr-2" />
                   Save Hero Content
@@ -439,45 +551,104 @@ export default function ContentManagementPage() {
             {/* Services Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Our Services</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Our Services</CardTitle>
+                  <Button onClick={() => setNewServiceForm(true)} size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Service
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {services.map(service => (
-                  <div key={service.id} className="border rounded p-4">
-                    {editingService?.id === service.id ? (
-                      <div className="space-y-2">
-                        <Input
-                          value={editingService.title}
-                          onChange={(e) => setEditingService({...editingService, title: e.target.value})}
-                        />
-                        <Textarea
-                          value={editingService.description}
-                          onChange={(e) => setEditingService({...editingService, description: e.target.value})}
-                        />
-                        <div className="flex space-x-2">
-                          <Button onClick={() => updateService(service.id, editingService)}>Save</Button>
-                          <Button variant="outline" onClick={() => setEditingService(null)}>Cancel</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium">{service.title}</h4>
-                            <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                {services.length === 0 ? (
+                  <p className="text-gray-500">No services added yet</p>
+                ) : (
+                  services.map(service => (
+                    <div key={service.id} className="border rounded p-4">
+                      {editingService?.id === service.id ? (
+                        <div className="space-y-2">
+                          <Input
+                            value={editingService.title}
+                            onChange={(e) => setEditingService({...editingService, title: e.target.value})}
+                            placeholder="Service Title"
+                          />
+                          <Input
+                            value={editingService.icon}
+                            onChange={(e) => setEditingService({...editingService, icon: e.target.value})}
+                            placeholder="Icon name (e.g., MapPin, FileCheck)"
+                          />
+                          <Textarea
+                            value={editingService.description}
+                            onChange={(e) => setEditingService({...editingService, description: e.target.value})}
+                            placeholder="Service Description"
+                            rows={3}
+                          />
+                          <div className="flex space-x-2">
+                            <Button size="sm" onClick={() => updateService(service.id, editingService)}>
+                              Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingService(null)}>
+                              Cancel
+                            </Button>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditingService(service)}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
                         </div>
-                      </>
-                    )}
+                      ) : (
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="p-2 bg-red-100 rounded">
+                                <span className="text-red-600 text-sm">{service.icon}</span>
+                              </div>
+                              <h4 className="font-medium">{service.title}</h4>
+                            </div>
+                            <p className="text-sm text-gray-600">{service.description}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingService(service)}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteService(service.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                {newServiceForm && (
+                  <div className="border rounded p-4 bg-gray-50 space-y-2">
+                    <h4 className="font-medium mb-2">Add New Service</h4>
+                    <Input placeholder="Service Title" id="new-service-title" />
+                    <Input placeholder="Icon name (e.g., MapPin)" id="new-service-icon" />
+                    <Textarea placeholder="Service Description" id="new-service-desc" rows={3} />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const title = (document.getElementById('new-service-title') as HTMLInputElement).value;
+                          const icon = (document.getElementById('new-service-icon') as HTMLInputElement).value;
+                          const desc = (document.getElementById('new-service-desc') as HTMLTextAreaElement).value;
+                          addService({ title, icon, description: desc });
+                        }}
+                      >
+                        Add Service
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setNewServiceForm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </div>
