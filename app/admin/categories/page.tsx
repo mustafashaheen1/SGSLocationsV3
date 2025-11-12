@@ -201,7 +201,11 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Categories Management</h1>
-        <Button onClick={() => setShowAddForm(true)}>
+        <Button onClick={() => {
+          setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+          setEditingCategory(null);
+          setShowAddForm(true);
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Category
         </Button>
@@ -213,7 +217,10 @@ export default function CategoriesPage() {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Add New Category</h2>
-              <button onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => {
+                setShowAddForm(false);
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+              }} className="text-gray-500 hover:text-gray-700">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -261,7 +268,10 @@ export default function CategoriesPage() {
             </div>
             <div className="flex gap-2 mt-4">
               <Button onClick={handleAdd}>Save Category</Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => {
+                setShowAddForm(false);
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+              }}>Cancel</Button>
             </div>
           </div>
         </div>
@@ -273,7 +283,11 @@ export default function CategoriesPage() {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Category</h2>
-              <button onClick={() => setShowEditForm(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => {
+                setShowEditForm(false);
+                setEditingCategory(null);
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+              }} className="text-gray-500 hover:text-gray-700">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -321,7 +335,11 @@ export default function CategoriesPage() {
             </div>
             <div className="flex gap-2 mt-4">
               <Button onClick={handleUpdate}>Update Category</Button>
-              <Button variant="outline" onClick={() => setShowEditForm(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => {
+                setShowEditForm(false);
+                setEditingCategory(null);
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+              }}>Cancel</Button>
             </div>
           </div>
         </div>
