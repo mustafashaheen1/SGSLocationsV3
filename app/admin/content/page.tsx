@@ -100,9 +100,11 @@ export default function ContentManagementPage() {
     setLoading(true);
     try {
       // Fetch site settings
-      const { data: settings } = await supabase
+      const { data: settings, error: settingsError } = await supabase
         .from('site_settings')
         .select('*');
+
+      console.log('Settings:', settings, 'Error:', settingsError);
 
       if (settings) {
         settings.forEach(setting => {
@@ -120,36 +122,45 @@ export default function ContentManagementPage() {
       }
 
       // Fetch production logos
-      const { data: logos } = await supabase
+      const { data: logos, error: logosError } = await supabase
         .from('production_logos')
         .select('*')
         .order('display_order');
+
+      console.log('Logos:', logos, 'Error:', logosError);
       if (logos) setProductionLogos(logos);
 
       // Fetch services
-      const { data: servicesData } = await supabase
+      const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select('*')
         .order('display_order');
+
+      console.log('Services:', servicesData, 'Error:', servicesError);
       if (servicesData) setServices(servicesData);
 
       // Fetch social links
-      const { data: social } = await supabase
+      const { data: social, error: socialError } = await supabase
         .from('social_links')
         .select('*')
         .order('display_order');
+
+      console.log('Social:', social, 'Error:', socialError);
       if (social) setSocialLinks(social);
 
       // Fetch categories for footer
-      const { data: cats } = await supabase
+      const { data: cats, error: catsError } = await supabase
         .from('categories')
         .select('id, name, slug')
         .eq('is_active', true)
         .order('display_order');
+
+      console.log('Categories:', cats, 'Error:', catsError);
       if (cats) setCategories(cats);
 
     } catch (error) {
       console.error('Error fetching content:', error);
+      alert('Error loading content. Check console for details.');
     } finally {
       setLoading(false);
     }
@@ -404,38 +415,52 @@ export default function ContentManagementPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {newLogoForm && (
-                  <div className="mb-4 p-4 border rounded">
-                    <h4 className="font-medium mb-2">Add New Logo</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      <Input placeholder="Name" id="new-logo-name" />
-                      <Input placeholder="Logo URL" id="new-logo-url" />
-                      <select id="new-logo-type" className="border rounded px-3">
-                        <option value="production">TV Show</option>
-                        <option value="company">Company</option>
-                      </select>
-                    </div>
-                    <div className="mt-2 space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          const name = (document.getElementById('new-logo-name') as HTMLInputElement).value;
-                          const url = (document.getElementById('new-logo-url') as HTMLInputElement).value;
-                          const type = (document.getElementById('new-logo-type') as HTMLSelectElement).value as 'production' | 'company';
-                          addProductionLogo({ name, logo_url: url, logo_type: type, is_active: true });
-                        }}
-                      >
-                        Save
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setNewLogoForm(false)}>
-                        Cancel
-                      </Button>
-                    </div>
+                {productionLogos.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No production logos found</p>
+                    <p className="text-sm text-gray-400 mb-4">Run the SQL migration to add default logos</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchAllContent}
+                    >
+                      Refresh After Adding Data
+                    </Button>
                   </div>
-                )}
+                ) : (
+                  <>
+                    {newLogoForm && (
+                      <div className="mb-4 p-4 border rounded">
+                        <h4 className="font-medium mb-2">Add New Logo</h4>
+                        <div className="grid grid-cols-3 gap-4">
+                          <Input placeholder="Name" id="new-logo-name" />
+                          <Input placeholder="Logo URL" id="new-logo-url" />
+                          <select id="new-logo-type" className="border rounded px-3">
+                            <option value="production">TV Show</option>
+                            <option value="company">Company</option>
+                          </select>
+                        </div>
+                        <div className="mt-2 space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const name = (document.getElementById('new-logo-name') as HTMLInputElement).value;
+                              const url = (document.getElementById('new-logo-url') as HTMLInputElement).value;
+                              const type = (document.getElementById('new-logo-type') as HTMLSelectElement).value as 'production' | 'company';
+                              addProductionLogo({ name, logo_url: url, logo_type: type, is_active: true });
+                            }}
+                          >
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setNewLogoForm(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {productionLogos.map(logo => (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {productionLogos.map(logo => (
                     <div key={logo.id} className="border rounded p-4">
                       {editingLogo?.id === logo.id ? (
                         <div className="space-y-2">
@@ -495,7 +520,9 @@ export default function ContentManagementPage() {
                       )}
                     </div>
                   ))}
-                </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
