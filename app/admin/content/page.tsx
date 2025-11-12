@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,7 +91,6 @@ export default function ContentManagementPage() {
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [newLogoForm, setNewLogoForm] = useState(false);
-  const [newServiceForm, setNewServiceForm] = useState(false);
 
   useEffect(() => {
     fetchAllContent();
@@ -275,54 +274,6 @@ export default function ContentManagementPage() {
     }
   }
 
-  async function addService(service: Partial<Service>) {
-    try {
-      const { error } = await supabase
-        .from('services')
-        .insert([{
-          ...service,
-          display_order: services.length + 1,
-          is_active: true
-        }]);
-
-      if (error) throw error;
-      fetchAllContent();
-      setNewServiceForm(false);
-    } catch (error: any) {
-      alert('Error adding service: ' + error.message);
-    }
-  }
-
-  async function updateService(id: string, updates: Partial<Service>) {
-    try {
-      const { error } = await supabase
-        .from('services')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchAllContent();
-      setEditingService(null);
-    } catch (error: any) {
-      alert('Error updating service: ' + error.message);
-    }
-  }
-
-  async function deleteService(id: string) {
-    if (!confirm('Are you sure you want to delete this service?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('services')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchAllContent();
-    } catch (error: any) {
-      alert('Error deleting service: ' + error.message);
-    }
-  }
 
   async function updateSocialLink(id: string, url: string) {
     try {
@@ -551,101 +502,124 @@ export default function ContentManagementPage() {
             {/* Services Section */}
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Our Services</CardTitle>
-                  <Button onClick={() => setNewServiceForm(true)} size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Service
-                  </Button>
-                </div>
+                <CardTitle>Our Services</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {services.length === 0 ? (
-                  <p className="text-gray-500">No services added yet</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Loading services...</p>
+                    <Button
+                      variant="outline"
+                      onClick={fetchAllContent}
+                    >
+                      Refresh
+                    </Button>
+                  </div>
                 ) : (
-                  services.map(service => (
-                    <div key={service.id} className="border rounded p-4">
-                      {editingService?.id === service.id ? (
-                        <div className="space-y-2">
-                          <Input
-                            value={editingService.title}
-                            onChange={(e) => setEditingService({...editingService, title: e.target.value})}
-                            placeholder="Service Title"
-                          />
-                          <Input
-                            value={editingService.icon}
-                            onChange={(e) => setEditingService({...editingService, icon: e.target.value})}
-                            placeholder="Icon name (e.g., MapPin, FileCheck)"
-                          />
-                          <Textarea
-                            value={editingService.description}
-                            onChange={(e) => setEditingService({...editingService, description: e.target.value})}
-                            placeholder="Service Description"
-                            rows={3}
-                          />
-                          <div className="flex space-x-2">
-                            <Button size="sm" onClick={() => updateService(service.id, editingService)}>
-                              Save
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingService(null)}>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="p-2 bg-red-100 rounded">
-                                <span className="text-red-600 text-sm">{service.icon}</span>
-                              </div>
-                              <h4 className="font-medium">{service.title}</h4>
-                            </div>
-                            <p className="text-sm text-gray-600">{service.description}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingService(service)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => deleteService(service.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
+                  <div className="space-y-4">
+                    {services.map((service, index) => {
+                      const iconMap: { [key: string]: React.ReactNode } = {
+                        'MapPin': <MapPin className="w-5 h-5" />,
+                        'FileCheck': <FileCheck className="w-5 h-5" />,
+                        'ImageIcon': <ImageIcon className="w-5 h-5" />
+                      };
 
-                {newServiceForm && (
-                  <div className="border rounded p-4 bg-gray-50 space-y-2">
-                    <h4 className="font-medium mb-2">Add New Service</h4>
-                    <Input placeholder="Service Title" id="new-service-title" />
-                    <Input placeholder="Icon name (e.g., MapPin)" id="new-service-icon" />
-                    <Textarea placeholder="Service Description" id="new-service-desc" rows={3} />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          const title = (document.getElementById('new-service-title') as HTMLInputElement).value;
-                          const icon = (document.getElementById('new-service-icon') as HTMLInputElement).value;
-                          const desc = (document.getElementById('new-service-desc') as HTMLTextAreaElement).value;
-                          addService({ title, icon, description: desc });
-                        }}
-                      >
-                        Add Service
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setNewServiceForm(false)}>
-                        Cancel
-                      </Button>
+                      return (
+                        <div key={service.id} className="border rounded-lg p-4 bg-gray-50">
+                          {editingService?.id === service.id ? (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="p-2 bg-[#e11921] rounded-full text-white">
+                                  {iconMap[service.icon]}
+                                </div>
+                                <span className="text-sm text-gray-500">Service {index + 1}</span>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium mb-1">Service Title</label>
+                                <Input
+                                  value={editingService.title}
+                                  onChange={(e) => setEditingService({...editingService, title: e.target.value})}
+                                  placeholder="Service Title"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium mb-1">Service Description</label>
+                                <Textarea
+                                  value={editingService.description}
+                                  onChange={(e) => setEditingService({...editingService, description: e.target.value})}
+                                  placeholder="Service Description"
+                                  rows={3}
+                                />
+                              </div>
+
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('services')
+                                        .update({
+                                          title: editingService.title,
+                                          description: editingService.description,
+                                          updated_at: new Date().toISOString()
+                                        })
+                                        .eq('id', service.id);
+
+                                      if (error) throw error;
+
+                                      alert('Service updated successfully!');
+                                      fetchAllContent();
+                                      setEditingService(null);
+                                    } catch (error: any) {
+                                      alert('Error updating service: ' + error.message);
+                                    }
+                                  }}
+                                >
+                                  Save Changes
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditingService(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between items-start">
+                              <div className="flex gap-3 flex-1">
+                                <div className="p-2 bg-[#e11921] rounded-full text-white flex-shrink-0">
+                                  {iconMap[service.icon]}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 mb-1">
+                                    {service.title}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 leading-relaxed">
+                                    {service.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditingService(service)}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    <div className="mt-4 p-3 bg-blue-50 rounded text-sm text-blue-700">
+                      <p className="font-medium">Note:</p>
+                      <p>The 3 services are fixed and can only be edited, not added or removed. Icons are predefined for each service.</p>
                     </div>
                   </div>
                 )}
