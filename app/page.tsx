@@ -118,7 +118,7 @@ export default function HomePage() {
     // Production Companies - Bottom Row
     {
       name: 'Paramount',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Paramount_Network.svg/320px-Paramount_Network.svg.png',
+      logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCAyMDAgODAiPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM2YjcyODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPnBhcmFtb3VudDwvdGV4dD48L3N2Zz4=',
       fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Paramount'
     },
     {
