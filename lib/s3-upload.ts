@@ -1,15 +1,30 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
+const AWS_REGION = process.env.NEXT_PUBLIC_AWS_REGION || 'us-west-1';
+const AWS_ACCESS_KEY_ID = process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '';
+const AWS_SECRET_ACCESS_KEY = process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || '';
+const BUCKET_NAME = process.env.NEXT_PUBLIC_AWS_S3_BUCKET || '';
+const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+
+function validateS3Config() {
+  if (!AWS_ACCESS_KEY_ID) {
+    throw new Error('AWS Access Key ID is not configured. Please set NEXT_PUBLIC_AWS_ACCESS_KEY_ID in .env');
+  }
+  if (!AWS_SECRET_ACCESS_KEY) {
+    throw new Error('AWS Secret Access Key is not configured. Please set NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY in .env');
+  }
+  if (!BUCKET_NAME) {
+    throw new Error('AWS S3 Bucket is not configured. Please set NEXT_PUBLIC_AWS_S3_BUCKET in .env');
+  }
+}
+
 const s3Client = new S3Client({
-  region: process.env.NEXT_PUBLIC_AWS_REGION!,
+  region: AWS_REGION,
   credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
 });
-
-const BUCKET_NAME = process.env.NEXT_PUBLIC_AWS_S3_BUCKET!;
-const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
 
 function generateUniqueFileName(originalName: string): string {
   const timestamp = Date.now();
@@ -20,6 +35,8 @@ function generateUniqueFileName(originalName: string): string {
 
 export async function uploadImageToS3(file: File, folder: string = 'properties'): Promise<string> {
   try {
+    validateS3Config();
+
     const fileName = `${folder}/${generateUniqueFileName(file.name)}`;
 
     const buffer = await file.arrayBuffer();
@@ -37,10 +54,10 @@ export async function uploadImageToS3(file: File, folder: string = 'properties')
     if (CLOUDFRONT_URL) {
       return `${CLOUDFRONT_URL}/${fileName}`;
     }
-    return `https://${BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileName}`;
-  } catch (error) {
+    return `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileName}`;
+  } catch (error: any) {
     console.error('Error uploading to S3:', error);
-    throw new Error('Failed to upload image');
+    throw new Error(error.message || 'Failed to upload image');
   }
 }
 
@@ -51,6 +68,8 @@ export async function uploadMultipleImages(files: File[], folder: string = 'prop
 
 export async function deleteImageFromS3(imageUrl: string): Promise<void> {
   try {
+    validateS3Config();
+
     const url = new URL(imageUrl);
     const key = url.pathname.substring(1);
 
@@ -60,8 +79,8 @@ export async function deleteImageFromS3(imageUrl: string): Promise<void> {
     });
 
     await s3Client.send(command);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting from S3:', error);
-    throw new Error('Failed to delete image');
+    throw new Error(error.message || 'Failed to delete image');
   }
 }
