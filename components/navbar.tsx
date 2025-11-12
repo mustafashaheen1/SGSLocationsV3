@@ -32,6 +32,34 @@ export function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    const checkAndLogoutAdmin = async () => {
+      if (pathname?.startsWith('/admin')) {
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session) {
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('email')
+          .eq('email', session.user.email)
+          .maybeSingle();
+
+        if (adminData) {
+          console.log('Admin detected on main site - auto logout');
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+          setUserEmail(null);
+          router.refresh();
+        }
+      }
+    };
+
+    checkAndLogoutAdmin();
+  }, [pathname, router]);
+
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
     setIsAuthenticated(!!session);
