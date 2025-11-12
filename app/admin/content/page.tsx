@@ -99,12 +99,40 @@ export default function ContentManagementPage() {
   async function fetchAllContent() {
     setLoading(true);
     try {
+      // Test admin authentication first
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('Current user:', user?.email, 'User error:', userError);
+
+      if (!user) {
+        console.error('No authenticated user found');
+        alert('Please log in as an admin to access this page.');
+        setLoading(false);
+        return;
+      }
+
+      // Check admin status
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('email', user?.email)
+        .maybeSingle();
+
+      console.log('Admin status:', adminData, 'Admin error:', adminError);
+
+      if (!adminData) {
+        console.error('User is not an admin:', user.email);
+        alert('Access denied. You must be an admin to view this page.');
+        setLoading(false);
+        return;
+      }
+
       // Fetch site settings
       const { data: settings, error: settingsError } = await supabase
         .from('site_settings')
         .select('*');
 
       console.log('Settings:', settings, 'Error:', settingsError);
+      if (settingsError) console.error('Settings error details:', settingsError);
 
       if (settings) {
         settings.forEach(setting => {
@@ -128,6 +156,7 @@ export default function ContentManagementPage() {
         .order('display_order');
 
       console.log('Logos:', logos, 'Error:', logosError);
+      if (logosError) console.error('Logos error details:', logosError);
       if (logos) setProductionLogos(logos);
 
       // Fetch services
@@ -137,6 +166,7 @@ export default function ContentManagementPage() {
         .order('display_order');
 
       console.log('Services:', servicesData, 'Error:', servicesError);
+      if (servicesError) console.error('Services error details:', servicesError);
       if (servicesData) setServices(servicesData);
 
       // Fetch social links
@@ -146,6 +176,7 @@ export default function ContentManagementPage() {
         .order('display_order');
 
       console.log('Social:', social, 'Error:', socialError);
+      if (socialError) console.error('Social links error details:', socialError);
       if (social) setSocialLinks(social);
 
       // Fetch categories for footer
@@ -156,10 +187,11 @@ export default function ContentManagementPage() {
         .order('display_order');
 
       console.log('Categories:', cats, 'Error:', catsError);
+      if (catsError) console.error('Categories error details:', catsError);
       if (cats) setCategories(cats);
 
     } catch (error) {
-      console.error('Error fetching content:', error);
+      console.error('Full error details:', error);
       alert('Error loading content. Check console for details.');
     } finally {
       setLoading(false);
