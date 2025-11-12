@@ -1,0 +1,1001 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Search, ChevronDown, X } from 'lucide-react';
+import { supabase, Property } from '@/lib/supabase';
+import Link from 'next/link';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Scrollbar, FreeMode } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/scrollbar';
+import 'swiper/css/free-mode';
+
+interface FilterCategory {
+  name: string;
+  hasSearch: boolean;
+  options: string[];
+}
+
+interface SearchPageClientProps {
+  initialFilters: Record<string, FilterCategory>;
+  initialProperties: Property[];
+}
+
+function generatePropertyImages(propertyId: string | number, count: number = 50): string[] {
+  const images: string[] = [];
+  for (let i = 0; i < count; i++) {
+    images.push(`https://picsum.photos/seed/${propertyId}-${i}/800/600`);
+  }
+  return images;
+}
+
+function PropertyCard({ property }: { property: Property }) {
+  const router = useRouter();
+  const [showLightbox, setShowLightbox] = useState(false);
+  const swiperRef = useRef<any>(null);
+
+  const images = generatePropertyImages(property.id, 50);
+
+  return (
+    <>
+      <article className="il-search-result">
+        <div className="il-react-carousel">
+          <div className="swiper-container-wrapper" style={{ position: 'relative' }}>
+            <Swiper
+              modules={[Navigation, Scrollbar, FreeMode]}
+              spaceBetween={3}
+              slidesPerView={1}
+              freeMode={false}
+              loop={false}
+              navigation={{
+                prevEl: `.nav-prev-${property.id}`,
+                nextEl: `.nav-next-${property.id}`,
+              }}
+              scrollbar={{
+                el: `.scrollbar-${property.id}`,
+                draggable: true,
+                dragClass: 'swiper-scrollbar-drag',
+              }}
+              onSwiper={(swiper) => {
+                swiperRef.current = swiper;
+              }}
+              style={{
+                width: '100%',
+                height: '300px',
+              }}
+            >
+              {images.map((img, idx) => (
+                <SwiperSlide key={idx}>
+                  <Link href={`/property/${property.id}`}>
+                    <img
+                      src={img}
+                      alt={`${property.name} - ${idx + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/400x300';
+                      }}
+                    />
+                  </Link>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            <div className={`swiper-button-prev nav-prev-${property.id}`}></div>
+            <div className={`swiper-button-next nav-next-${property.id}`}></div>
+
+            <div className={`swiper-scrollbar scrollbar-${property.id}`}></div>
+          </div>
+
+          <div style={{ padding: '12px 0', position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1 }}>
+              <h5 style={{
+                fontSize: '18px',
+                fontWeight: 400,
+                marginBottom: '4px',
+                fontFamily: 'acumin-pro-wide, sans-serif',
+                margin: 0
+              }}>
+                <Link
+                  href={`/property/${property.id}`}
+                  style={{ color: '#212529', textDecoration: 'none' }}
+                >
+                  {property.name}
+                </Link>
+              </h5>
+              <p style={{
+                fontSize: '14px',
+                color: '#6c757d',
+                marginBottom: 0,
+                fontFamily: 'acumin-pro-wide, sans-serif',
+                margin: 0
+              }}>
+                {property.city}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowLightbox(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                marginLeft: '12px',
+                flexShrink: 0
+              }}
+            >
+              <svg
+                width="25"
+                height="25"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                style={{ color: 'rgb(225, 25, 33)', display: 'block' }}
+              >
+                <path
+                  fill="currentColor"
+                  d="M319.8 204v8c0 6.6-5.4 12-12 12h-84v84c0 6.6-5.4 12-12 12h-8c-6.6 0-12-5.4-12-12v-84h-84c-6.6 0-12-5.4-12-12v-8c0-6.6 5.4-12 12-12h84v-84c0-6.6 5.4-12 12-12h8c6.6 0 12 5.4 12 12v84h84c6.6 0 12 5.4 12 12zm188.5 293L497 508.3c-4.7 4.7-12.3 4.7-17 0l-129-129c-2.3-2.3-3.5-5.3-3.5-8.5v-8.5C310.6 395.7 261.7 416 208 416 93.8 416 1.5 324.9 0 210.7-1.5 93.7 93.7-1.5 210.7 0 324.9 1.5 416 93.8 416 208c0 53.7-20.3 102.6-53.7 139.5h8.5c3.2 0 6.2 1.3 8.5 3.5l129 129c4.7 4.7 4.7 12.3 0 17zM384 208c0-97.3-78.7-176-176-176S32 110.7 32 208s78.7 176 176 176 176-78.7 176-176z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {showLightbox && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <button
+            onClick={() => setShowLightbox(false)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              color: 'white',
+              fontSize: '32px',
+              cursor: 'pointer',
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000
+            }}
+          >
+            ×
+          </button>
+
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <Swiper
+              modules={[Navigation, FreeMode]}
+              spaceBetween={10}
+              slidesPerView={1}
+              navigation={true}
+              loop={false}
+              style={{
+                width: '100%',
+                height: '80vh',
+                maxWidth: '1200px'
+              }}
+            >
+              {images.map((img, idx) => (
+                <SwiperSlide key={idx}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                    <img
+                      src={img}
+                      alt={`${property.name} - ${idx + 1}`}
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function SearchPageClient({ initialFilters, initialProperties }: SearchPageClientProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [properties, setProperties] = useState<Property[]>(initialProperties);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<{ category: string; values: string[] }[]>([]);
+  const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
+  const [filterCategories] = useState<Record<string, FilterCategory>>(initialFilters);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const ITEMS_PER_PAGE = 24;
+
+  const loadMoreProperties = async () => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+
+    try {
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+      const query = searchParams.get('q');
+
+      let supabaseQuery = supabase
+        .from('properties')
+        .select('*')
+        .eq('status', 'active')
+        .range(from, to);
+
+      if (query) {
+        supabaseQuery = supabaseQuery.ilike('title', `%${query}%`);
+      }
+
+      const areaFilters = activeFilters.find(f => f.category === 'Area');
+      if (areaFilters && areaFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.in('city', areaFilters.values);
+      }
+
+      const featuresFilters = activeFilters.find(f => f.category === 'Features');
+      if (featuresFilters && featuresFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.overlaps('features', featuresFilters.values);
+      }
+
+      const residentialFilters = activeFilters.find(f => f.category === 'Residential');
+      if (residentialFilters && residentialFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.overlaps('categories', residentialFilters.values);
+      }
+
+      const commercialFilters = activeFilters.find(f => f.category === 'Commercial');
+      if (commercialFilters && commercialFilters.values.length > 0) {
+        supabaseQuery = supabaseQuery.overlaps('categories', commercialFilters.values);
+      }
+
+      const { data, error } = await supabaseQuery;
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setProperties(prev => [...prev, ...data]);
+        setPage(prev => prev + 1);
+
+        if (data.length < ITEMS_PER_PAGE) {
+          setHasMore(false);
+        }
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error loading properties:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setProperties(initialProperties);
+    setPage(2);
+    setHasMore(true);
+  }, [searchParams, activeFilters]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      if (scrollTop + windowHeight >= documentHeight - 500) {
+        if (!loading && hasMore) {
+          loadMoreProperties();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, hasMore, page]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleFilter = (category: string, value: string) => {
+    setActiveFilters(prev => {
+      const existingFilter = prev.find(f => f.category === category);
+      if (existingFilter) {
+        const newValues = existingFilter.values.includes(value)
+          ? existingFilter.values.filter(v => v !== value)
+          : [...existingFilter.values, value];
+
+        if (newValues.length === 0) {
+          return prev.filter(f => f.category !== category);
+        }
+
+        return prev.map(f =>
+          f.category === category ? { ...f, values: newValues } : f
+        );
+      }
+      return [...prev, { category, values: [value] }];
+    });
+  };
+
+  const isFilterActive = (category: string, value: string) => {
+    const filter = activeFilters.find(f => f.category === category);
+    return filter ? filter.values.includes(value) : false;
+  };
+
+  const removeFilterValue = (category: string, value: string) => {
+    toggleFilter(category, value);
+    window.scrollTo(0, 0);
+  };
+
+  const clearCategoryFilters = (category: string) => {
+    setActiveFilters(prev => prev.filter(f => f.category !== category));
+    window.scrollTo(0, 0);
+  };
+
+  const getFilteredOptions = (categoryKey: string, options: string[]) => {
+    const searchTerm = searchTerms[categoryKey]?.toLowerCase() || '';
+    if (!searchTerm) return options;
+    return options.filter(option => option.toLowerCase().includes(searchTerm));
+  };
+
+  return (
+    <>
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600&display=swap');
+
+        .search-page {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background: #fff;
+          min-height: 100vh;
+          padding-top: 60px;
+        }
+
+        .filter-bar {
+          background: white;
+          border-bottom: 1px solid #e5e5e5;
+          padding: 12px 20px;
+        }
+
+        .filter-row {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          flex-wrap: wrap;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .filter-dropdown {
+          position: relative;
+        }
+
+        .dropdown-toggle {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 12px;
+          background: white;
+          border: 1px solid #ced4da;
+          border-radius: 3px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #6c757d;
+          transition: all 0.2s;
+        }
+
+        .dropdown-toggle:hover {
+          background: #f8f9fa;
+        }
+
+        .dropdown-toggle.has-active {
+          background: #e11921;
+          color: white;
+          border-color: #e11921;
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 4px;
+          background: white;
+          border: 1px solid #e5e5e5;
+          border-radius: 3px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          z-index: 1000;
+          min-width: 280px;
+          max-width: 350px;
+        }
+
+        .dropdown-header {
+          padding: 12px 15px;
+          border-bottom: 1px solid #e5e5e5;
+          font-weight: 500;
+          font-size: 14px;
+          color: #495057;
+        }
+
+        .dropdown-search {
+          padding: 10px 15px;
+          border-bottom: 1px solid #e5e5e5;
+        }
+
+        .dropdown-search-wrapper {
+          position: relative;
+        }
+
+        .dropdown-search input {
+          width: 100%;
+          padding: 6px 6px 6px 30px;
+          border: 1px solid #ced4da;
+          border-radius: 3px;
+          font-size: 13px;
+        }
+
+        .dropdown-search-icon {
+          position: absolute;
+          left: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6c757d;
+        }
+
+        .dropdown-options-wrapper {
+          max-height: 300px;
+          overflow-y: auto;
+        }
+
+        .dropdown-content {
+          padding: 8px 0;
+        }
+
+        .option-item {
+          padding: 8px 15px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .option-item:hover {
+          background: #f8f9fa;
+        }
+
+        .toggle-switch {
+          width: 16px;
+          height: 16px;
+          border: 2px solid #ced4da;
+          border-radius: 2px;
+          flex-shrink: 0;
+          position: relative;
+        }
+
+        .toggle-switch.active {
+          background: #e11921;
+          border-color: #e11921;
+        }
+
+        .toggle-switch.active::after {
+          content: '';
+          position: absolute;
+          left: 4px;
+          top: 1px;
+          width: 4px;
+          height: 8px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+
+        .option-text {
+          font-size: 13px;
+          color: #495057;
+        }
+
+        .dropdown-footer {
+          padding: 10px 15px;
+          border-top: 1px solid #e5e5e5;
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+        }
+
+        .clear-btn,
+        .done-btn {
+          padding: 6px 16px;
+          border-radius: 3px;
+          font-size: 13px;
+          cursor: pointer;
+          border: 1px solid #ced4da;
+          background: white;
+          color: #495057;
+          transition: all 0.2s;
+        }
+
+        .done-btn {
+          background: #e11921;
+          color: white;
+          border-color: #e11921;
+        }
+
+        .clear-btn:hover {
+          background: #f8f9fa;
+        }
+
+        .done-btn:hover {
+          background: #c01018;
+        }
+
+        .clear-all-btn {
+          padding: 6px 16px;
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 3px;
+          font-size: 13px;
+          cursor: pointer;
+          color: #495057;
+          transition: all 0.2s;
+        }
+
+        .clear-all-btn:hover {
+          background: #f8f9fa;
+        }
+
+        .main-search-container {
+          background: white;
+          padding: 20px;
+          border-bottom: 1px solid #e5e5e5;
+        }
+
+        .main-search-wrapper {
+          max-width: 1200px;
+          margin: 0 auto;
+          position: relative;
+        }
+
+        .main-search-input {
+          width: 100%;
+          padding: 12px 40px 12px 45px;
+          border: 1px solid #ced4da;
+          border-radius: 3px;
+          font-size: 16px;
+        }
+
+        .main-search-icon {
+          position: absolute;
+          left: 15px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6c757d;
+        }
+
+        .filter-pills {
+          padding: 15px 20px;
+          background: white;
+          border-bottom: 1px solid #e5e5e5;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .filter-pill-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .filter-label {
+          font-size: 14px;
+          color: #495057;
+          font-weight: 500;
+          font-family: acumin-pro-wide, sans-serif;
+        }
+
+        .filter-value {
+          background: white;
+          color: #495057;
+          padding: 4px 10px;
+          border: 1px solid #e5e7eb;
+          border-radius: 3px;
+          font-size: 13px;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .filter-remove {
+          background: none;
+          border: none;
+          color: #e11921;
+          cursor: pointer;
+          padding: 0;
+          display: flex;
+          align-items: center;
+        }
+
+        .filter-tag,
+        .active-filter-tag {
+          background-color: #dc2626 !important;
+          color: white !important;
+          padding: 6px 12px !important;
+          border-radius: 20px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          font-family: acumin-pro-wide, sans-serif !important;
+          margin-right: 8px !important;
+          margin-bottom: 8px !important;
+        }
+
+        .filter-tag:hover,
+        .active-filter-tag:hover {
+          background-color: #b91c1c !important;
+        }
+
+        .filter-tag button,
+        .active-filter-tag button,
+        .filter-tag .remove-btn,
+        .active-filter-tag .remove-btn {
+          background: none !important;
+          border: none !important;
+          color: white !important;
+          cursor: pointer !important;
+          padding: 0 !important;
+          margin-left: 4px !important;
+          font-size: 16px !important;
+        }
+
+
+        .swiper-button-prev,
+        .swiper-button-next {
+          position: absolute !important;
+          top: 0 !important;
+          bottom: 18px !important;
+          width: 60px !important;
+          height: calc(100% - 18px) !important;
+          margin-top: 0 !important;
+          z-index: 10 !important;
+          cursor: pointer !important;
+          color: white !important;
+        }
+
+        .swiper-button-prev,
+        .swiper-button-next {
+          position: absolute !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          width: 96px !important;
+          height: min(50px, 40%) !important;
+          z-index: 10 !important;
+          cursor: pointer !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        .swiper-button-prev {
+          left: 0 !important;
+          right: auto !important;
+          background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0)) !important;
+        }
+
+        .swiper-button-next {
+          right: 0 !important;
+          left: auto !important;
+          background: linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0)) !important;
+        }
+
+        .swiper-button-prev:hover {
+          background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
+        }
+
+        .swiper-button-next:hover {
+          background: linear-gradient(270deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) !important;
+        }
+
+        .swiper-button-prev:after,
+        .swiper-button-next:after {
+          font-family: swiper-icons !important;
+          font-size: 20.8px !important;
+          font-weight: 400 !important;
+          line-height: 20.8px !important;
+          margin-left: -3.2px !important;
+          -webkit-font-smoothing: antialiased !important;
+          display: block !important;
+          color: rgb(255, 255, 255) !important;
+        }
+
+        .swiper-scrollbar {
+          position: absolute !important;
+          background: rgb(222, 226, 230) !important;
+          border-radius: 10px !important;
+          bottom: 4px !important;
+          height: 8px !important;
+          left: 1% !important;
+          width: 98% !important;
+          z-index: 50 !important;
+        }
+
+        .swiper-scrollbar-drag {
+          background: rgb(225, 25, 33) !important;
+          border-radius: 10px !important;
+          height: 8px !important;
+          width: 6.15625px !important;
+          cursor: grab !important;
+          position: relative !important;
+        }
+
+        .swiper-scrollbar-drag:active {
+          cursor: grabbing !important;
+        }
+
+        .swiper-container-wrapper {
+          position: relative;
+          width: 100%;
+        }
+
+        .il-search-result {
+          background: white;
+          overflow: visible;
+        }
+
+        .property-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 20px;
+          padding: 20px;
+          max-width: 1425px;
+          margin: 0 auto;
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid #f3f4f6;
+          border-top: 3px solid #e11921;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 4rem 2rem;
+          color: #6b7280;
+        }
+
+        .no-results-title {
+          font-size: 1.25rem;
+          margin-bottom: 0.5rem;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 400;
+        }
+
+        .no-results-text {
+          font-size: 0.875rem;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 300;
+        }
+
+        .loading-container {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: center;
+          padding: 2rem 0;
+        }
+
+        .end-message {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 2rem 0;
+          color: #6b7280;
+          font-size: 14px;
+          font-weight: 300;
+          font-family: acumin-pro-wide, sans-serif;
+        }
+
+        .results-count {
+          padding: 15px 20px;
+          background: white;
+          border-bottom: 1px solid #e5e5e5;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .results-count p {
+          color: #6b7280;
+          font-size: 14px;
+          font-weight: 300;
+          font-family: acumin-pro-wide, sans-serif;
+          margin: 0;
+        }
+      `}</style>
+
+      <div className="search-page">
+        <div className="filter-bar" ref={dropdownRef}>
+          <div className="filter-row">
+            {Object.entries(filterCategories).map(([key, category]) => {
+              const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
+              const filteredOptions = getFilteredOptions(key, category.options);
+
+              return (
+                <div key={key} className="filter-dropdown">
+                  <button
+                    className={`dropdown-toggle ${hasActive > 0 ? 'has-active' : ''}`}
+                    onClick={() => setOpenDropdown(openDropdown === key ? null : key)}
+                  >
+                    <span>{category.name}</span>
+                    <ChevronDown size={16} />
+                  </button>
+
+                  {openDropdown === key && (
+                    <div className="dropdown-menu">
+                      <div className="dropdown-header">{category.name}</div>
+
+                      {category.hasSearch && (
+                        <div className="dropdown-search">
+                          <div className="dropdown-search-wrapper">
+                            <Search className="dropdown-search-icon" size={16} />
+                            <input
+                              type="text"
+                              placeholder="Search..."
+                              value={searchTerms[key] || ''}
+                              onChange={(e) => setSearchTerms(prev => ({ ...prev, [key]: e.target.value }))}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="dropdown-options-wrapper">
+                        <div className="dropdown-content">
+                          {filteredOptions.map((option, idx) => (
+                            <div
+                              key={idx}
+                              className="option-item"
+                              onClick={() => toggleFilter(category.name, option)}
+                            >
+                              <div className={`toggle-switch ${isFilterActive(category.name, option) ? 'active' : ''}`} />
+                              <span className="option-text">{option}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="dropdown-footer">
+                        <button className="clear-btn" onClick={(e) => { e.stopPropagation(); clearCategoryFilters(category.name); }}>
+                          Clear
+                        </button>
+                        <button className="done-btn" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }}>
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="main-search-container">
+          <div className="main-search-wrapper">
+            <Search className="main-search-icon" size={20} />
+            <input
+              type="text"
+              className="main-search-input"
+              placeholder="Search locations..."
+              defaultValue={searchParams.get('q') || ''}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  const value = e.currentTarget.value;
+                  router.push(value ? `/search?q=${encodeURIComponent(value)}` : '/search');
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        {activeFilters.length > 0 && (
+          <div className="filter-pills">
+            {activeFilters.map(filter => (
+              <div key={filter.category} className="filter-pill-group">
+                <span className="filter-label">{filter.category}:</span>
+                {filter.values.map(value => (
+                  <span key={value} className="filter-tag">
+                    {value}
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeFilterValue(filter.category, value)}
+                    >
+                      <X size={14} strokeWidth={2} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="results-count">
+          <p>
+            Showing {properties.length} {properties.length === 1 ? 'property' : 'properties'}
+            {!hasMore && properties.length > 0 && ' (all results loaded)'}
+          </p>
+        </div>
+
+        <div className="property-grid">
+          {properties.map(property => (
+            <PropertyCard key={property.id} property={property} />
+          ))}
+
+          {loading && (
+            <div className="loading-container">
+              <div className="loading-spinner" />
+            </div>
+          )}
+
+          {!loading && properties.length === 0 && (
+            <div className="no-results">
+              <p className="no-results-title">No properties found</p>
+              <p className="no-results-text">Try adjusting your filters</p>
+            </div>
+          )}
+
+          {!hasMore && properties.length > 0 && (
+            <div className="end-message">
+              No more properties to load
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
