@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -71,6 +72,11 @@ export default function ContentManagementPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoImageFile, setLogoImageFile] = useState<File | null>(null);
+  const [logoImagePreview, setLogoImagePreview] = useState<string>('');
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editLogoPreview, setEditLogoPreview] = useState<string>('');
 
   // Home Page Content States
   const [heroVideo, setHeroVideo] = useState('');
@@ -440,81 +446,249 @@ export default function ContentManagementPage() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Featured Productions</CardTitle>
-                  <Button onClick={() => setNewLogoForm(true)} size="sm">
+                  <Button onClick={() => {
+                    setNewLogoForm(true);
+                    setLogoImageFile(null);
+                    setLogoImagePreview('');
+                  }} size="sm">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Logo
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {productionLogos.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">No production logos found</p>
-                    <p className="text-sm text-gray-400 mb-4">Run the SQL migration to add default logos</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={fetchAllContent}
-                    >
-                      Refresh After Adding Data
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    {newLogoForm && (
-                      <div className="mb-4 p-4 border rounded">
-                        <h4 className="font-medium mb-2">Add New Logo</h4>
-                        <div className="grid grid-cols-3 gap-4">
-                          <Input placeholder="Name" id="new-logo-name" />
-                          <Input placeholder="Logo URL" id="new-logo-url" />
-                          <select id="new-logo-type" className="border rounded px-3">
-                            <option value="production">TV Show</option>
-                            <option value="company">Company</option>
-                          </select>
-                        </div>
-                        <div className="mt-2 space-x-2">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              const name = (document.getElementById('new-logo-name') as HTMLInputElement).value;
-                              const url = (document.getElementById('new-logo-url') as HTMLInputElement).value;
-                              const type = (document.getElementById('new-logo-type') as HTMLSelectElement).value as 'production' | 'company';
-                              addProductionLogo({ name, logo_url: url, logo_type: type, is_active: true });
-                            }}
-                          >
-                            Save
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setNewLogoForm(false)}>
-                            Cancel
-                          </Button>
-                        </div>
+                {newLogoForm && (
+                  <div className="mb-4 p-4 border rounded bg-gray-50">
+                    <h4 className="font-medium mb-3">Add New Production Logo</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Production Name</label>
+                        <Input
+                          placeholder="e.g. Yellowstone, Netflix"
+                          id="new-logo-name"
+                        />
                       </div>
-                    )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {productionLogos.map(logo => (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Logo Image</label>
+                        {!logoImagePreview ? (
+                          <div
+                            className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                            onClick={() => document.getElementById('logoImageUpload')?.click()}
+                          >
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                            <p className="text-sm text-gray-600">
+                              Click to upload logo image
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              PNG, JPG or WebP (Recommended: 200x80px)
+                            </p>
+                            <input
+                              id="logoImageUpload"
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setLogoImageFile(file);
+                                  setLogoImagePreview(URL.createObjectURL(file));
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <img
+                              src={logoImagePreview}
+                              alt="Logo preview"
+                              className="w-full h-20 object-contain border rounded p-2"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLogoImageFile(null);
+                                setLogoImagePreview('');
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        disabled={uploadingLogo}
+                        onClick={async () => {
+                          const name = (document.getElementById('new-logo-name') as HTMLInputElement)?.value;
+
+                          if (!name || !logoImageFile) {
+                            alert('Please provide both name and logo image');
+                            return;
+                          }
+
+                          setUploadingLogo(true);
+                          try {
+                            // Upload image to S3
+                            const logoUrl = await uploadImageToS3(logoImageFile, 'production-logos');
+
+                            // Save to database
+                            const { error } = await supabase
+                              .from('production_logos')
+                              .insert([{
+                                name,
+                                logo_url: logoUrl,
+                                logo_type: 'production',
+                                display_order: productionLogos.length + 1,
+                                is_active: true
+                              }]);
+
+                            if (error) throw error;
+
+                            // Reset form and refresh
+                            setNewLogoForm(false);
+                            setLogoImageFile(null);
+                            setLogoImagePreview('');
+                            fetchAllContent();
+                            alert('Logo added successfully!');
+                          } catch (error: any) {
+                            alert('Error adding logo: ' + error.message);
+                          } finally {
+                            setUploadingLogo(false);
+                          }
+                        }}
+                      >
+                        {uploadingLogo ? 'Uploading...' : 'Save'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setNewLogoForm(false);
+                          setLogoImageFile(null);
+                          setLogoImagePreview('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {productionLogos.map(logo => (
                     <div key={logo.id} className="border rounded p-4">
                       {editingLogo?.id === logo.id ? (
                         <div className="space-y-2">
                           <Input
                             value={editingLogo.name}
                             onChange={(e) => setEditingLogo({...editingLogo, name: e.target.value})}
+                            placeholder="Production Name"
                           />
-                          <Input
-                            value={editingLogo.logo_url}
-                            onChange={(e) => setEditingLogo({...editingLogo, logo_url: e.target.value})}
-                          />
+
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">Current Logo:</p>
+                            <img
+                              src={editingLogo.logo_url}
+                              alt={editingLogo.name}
+                              className="h-10 object-contain mb-2"
+                            />
+
+                            {!editLogoPreview ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => document.getElementById(`editLogo-${logo.id}`)?.click()}
+                              >
+                                <Upload className="w-3 h-3 mr-1" />
+                                Change Logo
+                              </Button>
+                            ) : (
+                              <div className="relative">
+                                <img
+                                  src={editLogoPreview}
+                                  alt="New preview"
+                                  className="h-10 object-contain border rounded p-1"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditLogoFile(null);
+                                    setEditLogoPreview('');
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+
+                            <input
+                              id={`editLogo-${logo.id}`}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setEditLogoFile(file);
+                                  setEditLogoPreview(URL.createObjectURL(file));
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </div>
+
                           <div className="flex space-x-2">
                             <Button
                               size="sm"
-                              onClick={() => updateProductionLogo(logo.id, editingLogo)}
+                              disabled={uploadingLogo}
+                              onClick={async () => {
+                                setUploadingLogo(true);
+                                try {
+                                  let logoUrl = editingLogo.logo_url;
+
+                                  // If new image was selected, upload it
+                                  if (editLogoFile) {
+                                    logoUrl = await uploadImageToS3(editLogoFile, 'production-logos');
+                                  }
+
+                                  const { error } = await supabase
+                                    .from('production_logos')
+                                    .update({
+                                      name: editingLogo.name,
+                                      logo_url: logoUrl,
+                                      updated_at: new Date().toISOString()
+                                    })
+                                    .eq('id', logo.id);
+
+                                  if (error) throw error;
+
+                                  setEditingLogo(null);
+                                  setEditLogoFile(null);
+                                  setEditLogoPreview('');
+                                  fetchAllContent();
+                                  alert('Logo updated successfully!');
+                                } catch (error: any) {
+                                  alert('Error updating logo: ' + error.message);
+                                } finally {
+                                  setUploadingLogo(false);
+                                }
+                              }}
                             >
-                              Save
+                              {uploadingLogo ? 'Saving...' : 'Save'}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setEditingLogo(null)}
+                              onClick={() => {
+                                setEditingLogo(null);
+                                setEditLogoFile(null);
+                                setEditLogoPreview('');
+                              }}
                             >
                               Cancel
                             </Button>
@@ -531,19 +705,36 @@ export default function ContentManagementPage() {
                             }}
                           />
                           <p className="text-sm font-medium">{logo.name}</p>
-                          <p className="text-xs text-gray-500 mb-2">{logo.logo_type}</p>
-                          <div className="flex space-x-1">
+                          <div className="flex space-x-1 mt-2">
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => setEditingLogo(logo)}
+                              onClick={() => {
+                                setEditingLogo(logo);
+                                setEditLogoFile(null);
+                                setEditLogoPreview('');
+                              }}
                             >
                               <Edit2 className="w-3 h-3" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => deleteProductionLogo(logo.id)}
+                              onClick={async () => {
+                                if (!confirm(`Delete ${logo.name}?`)) return;
+
+                                try {
+                                  const { error } = await supabase
+                                    .from('production_logos')
+                                    .delete()
+                                    .eq('id', logo.id);
+
+                                  if (error) throw error;
+                                  fetchAllContent();
+                                } catch (error: any) {
+                                  alert('Error deleting logo: ' + error.message);
+                                }
+                              }}
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -552,9 +743,7 @@ export default function ContentManagementPage() {
                       )}
                     </div>
                   ))}
-                    </div>
-                  </>
-                )}
+                </div>
               </CardContent>
             </Card>
 
