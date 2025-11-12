@@ -1,36 +1,32 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Check, X, Edit, Trash2, Eye, Star, Plus } from 'lucide-react';
+import { Search, X, Eye, Trash2, Star, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
-export default function PropertiesPage() {
+export default function AdminPropertiesPage() {
   const router = useRouter();
   const [properties, setProperties] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchProperties();
-  }, [statusFilter]);
+  }, []);
 
   async function fetchProperties() {
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('properties')
-        .select('*, users(full_name, email)');
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+        .select('*')
+        .eq('status', 'active')
+        .is('owner_id', null)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProperties(data || []);
@@ -46,22 +42,7 @@ export default function PropertiesPage() {
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
-  async function handleApprove(id: string) {
-    try {
-      const { error } = await supabase
-        .from('properties')
-        .update({ status: 'active', updated_at: new Date().toISOString() })
-        .eq('id', id);
-
-      if (error) throw error;
-      showSuccess('Property approved successfully');
-      fetchProperties();
-    } catch (error: any) {
-      alert('Error approving property: ' + error.message);
-    }
-  }
-
-  async function handleReject(id: string) {
+  async function handleDeactivate(id: string) {
     try {
       const { error } = await supabase
         .from('properties')
@@ -69,10 +50,10 @@ export default function PropertiesPage() {
         .eq('id', id);
 
       if (error) throw error;
-      showSuccess('Property rejected');
+      showSuccess('Property deactivated');
       fetchProperties();
     } catch (error: any) {
-      alert('Error rejecting property: ' + error.message);
+      alert('Error deactivating property: ' + error.message);
     }
   }
 
@@ -114,25 +95,17 @@ export default function PropertiesPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       property.name?.toLowerCase().includes(searchLower) ||
-      property.city?.toLowerCase().includes(searchLower) ||
-      property.users?.full_name?.toLowerCase().includes(searchLower) ||
-      property.users?.email?.toLowerCase().includes(searchLower)
+      property.city?.toLowerCase().includes(searchLower)
     );
   });
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      active: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      inactive: 'bg-gray-100 text-gray-800',
-    };
-    return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800';
-  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Properties</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Admin Properties</h1>
+          <p className="text-sm text-gray-600 mt-1">{filteredProperties.length} properties created by admins</p>
+        </div>
         <Button
           onClick={() => router.push('/admin/properties/add')}
           className="bg-[#e11921] hover:bg-red-700"
@@ -149,27 +122,17 @@ export default function PropertiesPage() {
       )}
 
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
+        <div className="mb-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search properties, owners, or cities..."
+              placeholder="Search admin properties..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="inactive">Inactive</option>
-          </select>
         </div>
 
         {loading ? (
@@ -185,9 +148,8 @@ export default function PropertiesPage() {
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Image</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Property</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Owner</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Location</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Rate</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Featured</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
                   </tr>
@@ -206,17 +168,11 @@ export default function PropertiesPage() {
                         <div className="text-sm font-medium text-gray-900">{property.name}</div>
                         <div className="text-sm text-gray-500">{property.property_type}</div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-sm text-gray-900">{property.users?.full_name || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{property.users?.email}</div>
-                      </td>
                       <td className="py-4 px-4 text-sm text-gray-900">
                         {property.city}, {property.county}
                       </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(property.status)}`}>
-                          {property.status?.charAt(0).toUpperCase() + property.status?.slice(1)}
-                        </span>
+                      <td className="py-4 px-4 text-sm text-gray-900">
+                        ${property.daily_rate?.toLocaleString()}/day
                       </td>
                       <td className="py-4 px-4">
                         <button
@@ -241,36 +197,13 @@ export default function PropertiesPage() {
                           >
                             <Eye size={16} />
                           </Link>
-
-                          {property.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(property.id)}
-                                className="p-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
-                                title="Approve"
-                              >
-                                <Check size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleReject(property.id)}
-                                className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
-                                title="Reject"
-                              >
-                                <X size={16} />
-                              </button>
-                            </>
-                          )}
-
-                          {property.status === 'active' && (
-                            <button
-                              onClick={() => handleReject(property.id)}
-                              className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
-                              title="Deactivate"
-                            >
-                              <X size={16} />
-                            </button>
-                          )}
-
+                          <button
+                            onClick={() => handleDeactivate(property.id)}
+                            className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
+                            title="Deactivate"
+                          >
+                            <X size={16} />
+                          </button>
                           <button
                             onClick={() => handleDelete(property.id)}
                             className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
@@ -288,7 +221,7 @@ export default function PropertiesPage() {
 
             {filteredProperties.length === 0 && (
               <div className="text-center py-12 text-gray-500">
-                No properties found matching your criteria
+                No admin properties found. Click "Add Property" to create one.
               </div>
             )}
           </>

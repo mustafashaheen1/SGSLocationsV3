@@ -96,7 +96,16 @@ export default function AdminLayout({
 
   const menuItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/admin/properties', label: 'Properties', icon: Building2 },
+    {
+      label: 'Properties',
+      icon: Building2,
+      subItems: [
+        { href: '/admin/properties', label: 'All Properties' },
+        { href: '/admin/properties/pending', label: 'Pending Approval' },
+        { href: '/admin/properties/approved', label: 'Approved' },
+        { href: '/admin/properties/admin', label: 'Admin Properties' },
+      ]
+    },
     { href: '/admin/categories', label: 'Categories', icon: Folder },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/inquiries', label: 'Inquiries', icon: Mail },
@@ -154,24 +163,53 @@ export default function AdminLayout({
       >
         <nav className="p-4 space-y-1">
           {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
+            if ('subItems' in item && item.subItems) {
+              const Icon = item.icon;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-red-50 text-[#e11921] font-medium'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-                style={{ fontFamily: 'acumin-pro-wide' }}
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-              </Link>
-            );
+              return (
+                <div key={item.label}>
+                  <div className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium" style={{ fontFamily: 'acumin-pro-wide' }}>
+                    <Icon className="w-5 h-5" />
+                    <span>{item.label}</span>
+                  </div>
+                  <div className="ml-6 space-y-1">
+                    {item.subItems.map((subItem) => (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        className={`block px-4 py-2 rounded-lg text-sm transition-colors ${
+                          pathname === subItem.href
+                            ? 'bg-red-50 text-[#e11921] font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                        style={{ fontFamily: 'acumin-pro-wide' }}
+                      >
+                        {subItem.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-red-50 text-[#e11921] font-medium'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                  style={{ fontFamily: 'acumin-pro-wide' }}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </Link>
+              );
+            }
           })}
         </nav>
       </aside>

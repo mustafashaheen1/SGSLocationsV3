@@ -1,36 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Check, X, Edit, Trash2, Eye, Star, Plus } from 'lucide-react';
+import { Search, Check, X, Eye, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 
-export default function PropertiesPage() {
-  const router = useRouter();
+export default function PendingPropertiesPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchProperties();
-  }, [statusFilter]);
+  }, []);
 
   async function fetchProperties() {
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('properties')
-        .select('*, users(full_name, email)');
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+        .select('*, users(full_name, email)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProperties(data || []);
@@ -95,21 +87,6 @@ export default function PropertiesPage() {
     }
   }
 
-  async function toggleFeatured(id: string, currentStatus: boolean) {
-    try {
-      const { error } = await supabase
-        .from('properties')
-        .update({ is_featured: !currentStatus })
-        .eq('id', id);
-
-      if (error) throw error;
-      showSuccess(`Property ${!currentStatus ? 'featured' : 'unfeatured'}`);
-      fetchProperties();
-    } catch (error: any) {
-      alert('Error updating featured status: ' + error.message);
-    }
-  }
-
   const filteredProperties = properties.filter(property => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -120,26 +97,13 @@ export default function PropertiesPage() {
     );
   });
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      active: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      inactive: 'bg-gray-100 text-gray-800',
-    };
-    return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800';
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Properties</h1>
-        <Button
-          onClick={() => router.push('/admin/properties/add')}
-          className="bg-[#e11921] hover:bg-red-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Property
-        </Button>
+        <h1 className="text-3xl font-bold">Pending Properties</h1>
+        <div className="text-sm text-gray-600">
+          {filteredProperties.length} properties awaiting approval
+        </div>
       </div>
 
       {successMessage && (
@@ -149,27 +113,17 @@ export default function PropertiesPage() {
       )}
 
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
+        <div className="mb-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search properties, owners, or cities..."
+              placeholder="Search pending properties..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="inactive">Inactive</option>
-          </select>
         </div>
 
         {loading ? (
@@ -187,8 +141,7 @@ export default function PropertiesPage() {
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Property</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Owner</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Location</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Featured</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Submitted</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
                   </tr>
                 </thead>
@@ -213,23 +166,8 @@ export default function PropertiesPage() {
                       <td className="py-4 px-4 text-sm text-gray-900">
                         {property.city}, {property.county}
                       </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(property.status)}`}>
-                          {property.status?.charAt(0).toUpperCase() + property.status?.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <button
-                          onClick={() => toggleFeatured(property.id, property.is_featured)}
-                          className={`flex items-center gap-1 px-2 py-1 text-xs rounded ${
-                            property.is_featured
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          <Star className={property.is_featured ? 'fill-current' : ''} size={12} />
-                          {property.is_featured ? 'Featured' : 'Not Featured'}
-                        </button>
+                      <td className="py-4 px-4 text-sm text-gray-500">
+                        {new Date(property.created_at).toLocaleDateString()}
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex justify-end gap-2">
@@ -241,36 +179,20 @@ export default function PropertiesPage() {
                           >
                             <Eye size={16} />
                           </Link>
-
-                          {property.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(property.id)}
-                                className="p-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
-                                title="Approve"
-                              >
-                                <Check size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleReject(property.id)}
-                                className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
-                                title="Reject"
-                              >
-                                <X size={16} />
-                              </button>
-                            </>
-                          )}
-
-                          {property.status === 'active' && (
-                            <button
-                              onClick={() => handleReject(property.id)}
-                              className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
-                              title="Deactivate"
-                            >
-                              <X size={16} />
-                            </button>
-                          )}
-
+                          <button
+                            onClick={() => handleApprove(property.id)}
+                            className="p-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                            title="Approve"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleReject(property.id)}
+                            className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
+                            title="Reject"
+                          >
+                            <X size={16} />
+                          </button>
                           <button
                             onClick={() => handleDelete(property.id)}
                             className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
@@ -288,7 +210,7 @@ export default function PropertiesPage() {
 
             {filteredProperties.length === 0 && (
               <div className="text-center py-12 text-gray-500">
-                No properties found matching your criteria
+                No pending properties at the moment
               </div>
             )}
           </>
