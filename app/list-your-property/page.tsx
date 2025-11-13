@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 const TEXAS_COUNTIES = [
   'Dallas', 'Tarrant', 'Collin', 'Denton', 'Rockwall', 'Kaufman', 'Ellis', 'Johnson',
@@ -34,6 +35,25 @@ export default function ListYourPropertyPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
+  const [termsContent, setTermsContent] = useState('');
+
+  useEffect(() => {
+    async function fetchTerms() {
+      const { data } = await supabase
+        .from('terms_and_conditions')
+        .select('content')
+        .eq('is_active', true)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setTermsContent(data.content);
+      }
+    }
+
+    fetchTerms();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -115,7 +135,7 @@ export default function ListYourPropertyPage() {
     if (formData.requestedUse.length === 0) newErrors.requestedUse = 'Select at least one option';
     if (formData.listedWith.length === 0) newErrors.listedWith = 'Select at least one option';
     if (formData.howDidYouHear.length === 0) newErrors.howDidYouHear = 'Select at least one option';
-    if (uploadedFiles.length < 4) newErrors.files = 'Please upload at least 4 images';
+    if (uploadedFiles.length < 10) newErrors.files = 'Minimum 10 images required';
     if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms and conditions';
 
     setErrors(newErrors);
@@ -572,26 +592,8 @@ export default function ListYourPropertyPage() {
               {/* Terms and Conditions */}
               <section className="mb-6">
                 <label className="block font-semibold text-gray-700 mb-2">Terms and Conditions</label>
-                <div className="max-h-[300px] overflow-y-auto border border-gray-300 rounded p-4 bg-gray-50 text-sm leading-relaxed">
-                  <p className="mb-4">
-                    SGS Locations, with unparalleled professionalism, represents the most exclusive locations for location shooting of motion pictures, television shows, commercials, still photography and location use for special events.
-                  </p>
-                  <p className="mb-4">
-                    If you are interested in listing and hosting your property for the entertainment industry location rental, for special events, or weddings, we encourage you to submit photographs of your property for our consideration.
-                  </p>
-                  <p className="mb-4">
-                    If we agree to represent your property, we will contact you and provide a representation agreement.
-                  </p>
-                  <p className="mb-2 font-semibold">By submitting your online application, you represent that:</p>
-                  <ol className="list-decimal pl-5 space-y-2 mb-4">
-                    <li>You are the owner of the property or that you have the legal authority to act on behalf of the owner.</li>
-                    <li>You are the owner or copyright holder of all photographs submitted with your application.</li>
-                    <li>All photographs submitted remain the property of the photographer, and you grant SGS Locations the right to use the images without compensation.</li>
-                    <li>You understand that submission does not create a representative relationship, unless SGS Locations expressly accepts your application.</li>
-                    <li>By submitting photographs, you grant permission to SGS Locations to utilize the photographs for considering whether to represent your property.</li>
-                    <li>Upon acceptance and entry into a representation agreement, SGS Locations may use, display, copy, post, publish, exhibit and/or distribute for marketing purposes.</li>
-                    <li>Any photographs submitted will not be returned to you.</li>
-                  </ol>
+                <div className="max-h-[300px] overflow-y-auto border border-gray-300 rounded p-4 bg-gray-50 text-sm leading-relaxed whitespace-pre-line">
+                  {termsContent || 'Loading terms and conditions...'}
                 </div>
               </section>
 

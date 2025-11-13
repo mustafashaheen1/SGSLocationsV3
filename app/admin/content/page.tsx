@@ -7,6 +7,7 @@ import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -96,6 +97,9 @@ export default function ContentManagementPage() {
   // About Page Content States
   const [aboutSections, setAboutSections] = useState<any[]>([]);
 
+  // Terms & Conditions State
+  const [termsContent, setTermsContent] = useState('');
+
   // Contact Page Grid States
   const [contactGrid, setContactGrid] = useState<any[]>([]);
 
@@ -119,6 +123,12 @@ export default function ContentManagementPage() {
       fetchAboutContent();
     }
   }, [activeTab, aboutSections.length]);
+
+  useEffect(() => {
+    if (activeTab === 'other') {
+      fetchTermsAndConditions();
+    }
+  }, [activeTab]);
 
   async function fetchAllContent() {
     setLoading(true);
@@ -556,6 +566,52 @@ export default function ContentManagementPage() {
       alert('Contact grid saved successfully!');
     } catch (error: any) {
       alert('Error saving: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function fetchTermsAndConditions() {
+    try {
+      const { data } = await supabase
+        .from('terms_and_conditions')
+        .select('*')
+        .eq('is_active', true)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setTermsContent(data.content);
+      }
+    } catch (error) {
+      console.error('Error fetching terms:', error);
+    }
+  }
+
+  async function saveTermsAndConditions() {
+    setSaving(true);
+    try {
+      // Deactivate old versions
+      await supabase
+        .from('terms_and_conditions')
+        .update({ is_active: false })
+        .eq('is_active', true);
+
+      // Insert new version
+      const { error } = await supabase
+        .from('terms_and_conditions')
+        .insert({
+          content: termsContent,
+          version: new Date().getTime(),
+          is_active: true,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      alert('Terms and Conditions updated successfully!');
+    } catch (error: any) {
+      alert('Error saving terms: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -1684,11 +1740,38 @@ export default function ContentManagementPage() {
         </TabsContent>
 
         {/* OTHER PAGES TAB */}
-        <TabsContent value="other">
+        <TabsContent value="other" className="space-y-6">
           <Card>
-            <CardContent className="py-8 text-center">
-              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600">Other pages content management coming soon...</p>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>List Your Property - Terms & Conditions</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Edit the terms and conditions for property listings</p>
+                </div>
+                <Button
+                  onClick={saveTermsAndConditions}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Terms'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label>Terms and Conditions Content</Label>
+                  <p className="text-xs text-gray-500 mb-2">Use line breaks for paragraphs. Number items for lists.</p>
+                  <Textarea
+                    value={termsContent}
+                    onChange={(e) => setTermsContent(e.target.value)}
+                    rows={20}
+                    className="font-mono text-sm"
+                    placeholder="Enter terms and conditions..."
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
