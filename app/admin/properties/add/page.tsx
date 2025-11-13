@@ -98,22 +98,35 @@ export default function AddPropertyPage() {
 
   async function handleSmugmugImport() {
     if (!smugmugUrl) {
-      alert('Please enter a SmugMug album URL or key');
+      alert('Please enter a SmugMug album URL');
       return;
     }
 
     setImportingFromSmugmug(true);
-    setImportProgress('Connecting to SmugMug...');
+    setImportProgress('Extracting album key...');
 
     try {
       let albumKey = smugmugUrl;
 
       if (smugmugUrl.includes('smugmug.com')) {
-        const parts = smugmugUrl.split('/');
-        albumKey = parts[parts.length - 1] || parts[parts.length - 2];
-      }
+        const keyResponse = await fetch('/api/get-smugmug-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: smugmugUrl }),
+        });
 
-      setImportProgress('Fetching images from SmugMug...');
+        if (!keyResponse.ok) {
+          throw new Error('Could not extract album key from URL');
+        }
+
+        const keyData = await keyResponse.json();
+        albumKey = keyData.albumKey;
+
+        console.log('Extracted album key:', albumKey);
+        setImportProgress(`Found album: ${albumKey}. Fetching images...`);
+      } else {
+        setImportProgress('Fetching images from SmugMug...');
+      }
 
       const response = await fetch('/api/import-smugmug', {
         method: 'POST',
