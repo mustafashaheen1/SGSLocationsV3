@@ -93,6 +93,9 @@ export default function ContentManagementPage() {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
 
+  // About Page Content States
+  const [aboutSections, setAboutSections] = useState<any[]>([]);
+
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -101,6 +104,12 @@ export default function ContentManagementPage() {
   useEffect(() => {
     fetchAllContent();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'about') {
+      fetchAboutContent();
+    }
+  }, [activeTab]);
 
   async function fetchAllContent() {
     setLoading(true);
@@ -338,12 +347,90 @@ export default function ContentManagementPage() {
     }
   }
 
+  async function fetchAboutContent() {
+    try {
+      const { data } = await supabase
+        .from('about_page_content')
+        .select('*')
+        .order('section, display_order');
+
+      if (data) {
+        const sections = [];
+        for (let i = 1; i <= 11; i++) {
+          const sectionData: any = {};
+          const sectionKey = `section_${i}`;
+
+          const sectionContent = data.filter(item => item.section === sectionKey);
+          sectionContent.forEach(item => {
+            const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
+            sectionData[item.key] = value;
+          });
+
+          if (Object.keys(sectionData).length === 0) {
+            // Set defaults for each section
+            if (i === 1) {
+              sectionData.image = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800';
+              sectionData.title = 'The Art of Locations™';
+              sectionData.subtitle = 'SGS Locations: Your Premier Destination for Exclusive Filming Locations in Dallas-Fort Worth';
+              sectionData.content = 'For over 20 years, SGS Locations has been a leading provider...';
+            } else if (i === 2) {
+              sectionData.title = 'Discover Our Locations';
+              sectionData.content = "Whether you're looking for a sprawling ranch...";
+              sectionData.videoUrl = 'https://player.vimeo.com/video/616445043';
+            }
+          }
+
+          sections.push(sectionData);
+        }
+        setAboutSections(sections);
+      }
+    } catch (error) {
+      console.error('Error fetching about content:', error);
+    }
+  }
+
+  async function saveAboutSection(sectionIndex: number, key: string, value: any) {
+    try {
+      const { error } = await supabase
+        .from('about_page_content')
+        .upsert({
+          section: `section_${sectionIndex + 1}`,
+          key: key,
+          value: JSON.stringify(value),
+          type: 'text',
+          display_order: 0,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'section,key'
+        });
+
+      if (error) throw error;
+
+      alert(`Section ${sectionIndex + 1} ${key} saved!`);
+    } catch (error: any) {
+      alert('Error saving: ' + error.message);
+    }
+  }
+
+  async function handleAboutImageUpload(sectionIndex: number, file: File) {
+    try {
+      const url = await uploadImageToS3(file);
+      await saveAboutSection(sectionIndex, 'image', url);
+
+      const newSections = [...aboutSections];
+      newSections[sectionIndex] = { ...newSections[sectionIndex], image: url };
+      setAboutSections(newSections);
+    } catch (error) {
+      alert('Error uploading image');
+    }
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Content Management System</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="home">
             <Home className="w-4 h-4 mr-2" />
             Home Page
@@ -351,6 +438,10 @@ export default function ContentManagementPage() {
           <TabsTrigger value="footer">
             <Globe className="w-4 h-4 mr-2" />
             Footer
+          </TabsTrigger>
+          <TabsTrigger value="about">
+            <FileText className="w-4 h-4 mr-2" />
+            About Page
           </TabsTrigger>
           <TabsTrigger value="search">
             <Search className="w-4 h-4 mr-2" />
@@ -977,6 +1068,208 @@ export default function ContentManagementPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* ABOUT PAGE TAB */}
+        <TabsContent value="about" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>About Page Content Management</CardTitle>
+              <p className="text-sm text-gray-600">Edit all 11 sections of the About page</p>
+            </CardHeader>
+            <CardContent className="space-y-6 max-h-[600px] overflow-y-auto">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((index) => (
+                <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                  <h4 className="font-semibold mb-3 text-lg">
+                    Section {index + 1}
+                    {index === 0 && ' - Main Hero Section'}
+                    {index === 1 && ' - Video Section'}
+                    {index === 2 && ' - Trusted by Major Productions'}
+                    {index === 3 && ' - Dallas Business Journal'}
+                    {index === 4 && ' - Film Industry Member'}
+                    {index === 5 && ' - Texas Film Commission'}
+                    {index === 6 && ' - DFWFC Partnership'}
+                    {index === 7 && ' - Media Coverage'}
+                    {index === 8 && ' - Recent Recognition'}
+                    {index === 9 && ' - Licensed & Insured'}
+                    {index === 10 && ' - Code of Conduct'}
+                  </h4>
+
+                  <div className="space-y-3">
+                    {/* Image upload for sections that have images */}
+                    {index !== 1 && index !== 2 && index !== 10 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Image</label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={aboutSections[index]?.image || ''}
+                            onChange={(e) => {
+                              const newSections = [...aboutSections];
+                              if (!newSections[index]) newSections[index] = {};
+                              newSections[index].image = e.target.value;
+                              setAboutSections(newSections);
+                            }}
+                            placeholder="Image URL"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => document.getElementById(`about-img-${index}`)?.click()}
+                          >
+                            <Upload className="w-4 h-4" />
+                          </Button>
+                          <input
+                            id={`about-img-${index}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleAboutImageUpload(index, file);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Video URL for section 2 */}
+                    {index === 1 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Vimeo Video URL</label>
+                        <Input
+                          value={aboutSections[index]?.videoUrl || ''}
+                          onChange={(e) => {
+                            const newSections = [...aboutSections];
+                            if (!newSections[index]) newSections[index] = {};
+                            newSections[index].videoUrl = e.target.value;
+                            setAboutSections(newSections);
+                          }}
+                          placeholder="https://player.vimeo.com/video/..."
+                        />
+                        <Button
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => saveAboutSection(index, 'videoUrl', aboutSections[index]?.videoUrl)}
+                        >
+                          Save Video URL
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Title field */}
+                    {index !== 10 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Title</label>
+                        <Input
+                          value={aboutSections[index]?.title || ''}
+                          onChange={(e) => {
+                            const newSections = [...aboutSections];
+                            if (!newSections[index]) newSections[index] = {};
+                            newSections[index].title = e.target.value;
+                            setAboutSections(newSections);
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => saveAboutSection(index, 'title', aboutSections[index]?.title)}
+                        >
+                          Save Title
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Subtitle for section 1 */}
+                    {index === 0 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Subtitle</label>
+                        <Input
+                          value={aboutSections[index]?.subtitle || ''}
+                          onChange={(e) => {
+                            const newSections = [...aboutSections];
+                            if (!newSections[index]) newSections[index] = {};
+                            newSections[index].subtitle = e.target.value;
+                            setAboutSections(newSections);
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => saveAboutSection(index, 'subtitle', aboutSections[index]?.subtitle)}
+                        >
+                          Save Subtitle
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Content field */}
+                    {index !== 10 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Content</label>
+                        <Textarea
+                          value={aboutSections[index]?.content || ''}
+                          onChange={(e) => {
+                            const newSections = [...aboutSections];
+                            if (!newSections[index]) newSections[index] = {};
+                            newSections[index].content = e.target.value;
+                            setAboutSections(newSections);
+                          }}
+                          rows={3}
+                        />
+                        <Button
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => saveAboutSection(index, 'content', aboutSections[index]?.content)}
+                        >
+                          Save Content
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Link fields for sections that have them */}
+                    {(index === 2 || index === 3 || index === 6 || index === 7 || index === 8 || index === 10) && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Link Text</label>
+                          <Input
+                            value={aboutSections[index]?.linkText || ''}
+                            onChange={(e) => {
+                              const newSections = [...aboutSections];
+                              if (!newSections[index]) newSections[index] = {};
+                              newSections[index].linkText = e.target.value;
+                              setAboutSections(newSections);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Link URL</label>
+                          <Input
+                            value={aboutSections[index]?.linkUrl || ''}
+                            onChange={(e) => {
+                              const newSections = [...aboutSections];
+                              if (!newSections[index]) newSections[index] = {};
+                              newSections[index].linkUrl = e.target.value;
+                              setAboutSections(newSections);
+                            }}
+                          />
+                          <Button
+                            size="sm"
+                            className="mt-1"
+                            onClick={() => {
+                              saveAboutSection(index, 'linkText', aboutSections[index]?.linkText);
+                              saveAboutSection(index, 'linkUrl', aboutSections[index]?.linkUrl);
+                            }}
+                          >
+                            Save Link
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* SEARCH PAGE TAB */}
