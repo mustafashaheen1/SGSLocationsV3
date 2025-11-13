@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Info } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -97,21 +97,6 @@ export default function ContentManagementPage() {
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [newLogoForm, setNewLogoForm] = useState(false);
-
-  // About Page Content States
-  const [aboutContent, setAboutContent] = useState<any>({
-    heroVideo: '',
-    heroTitle: '',
-    heroSubtitle: '',
-    missionTitle: '',
-    missionContent: '',
-    missionImage: '',
-    statsProperties: '65+',
-    statsProductions: '1000+',
-    statsYears: '20+',
-    statsClients: '500+',
-    teamMembers: []
-  });
 
   useEffect(() => {
     fetchAllContent();
@@ -358,14 +343,10 @@ export default function ContentManagementPage() {
       <h1 className="text-3xl font-bold mb-6">Content Management System</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 mb-6">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="home">
             <Home className="w-4 h-4 mr-2" />
             Home Page
-          </TabsTrigger>
-          <TabsTrigger value="about">
-            <Info className="w-4 h-4 mr-2" />
-            About Us
           </TabsTrigger>
           <TabsTrigger value="footer">
             <Globe className="w-4 h-4 mr-2" />
@@ -890,32 +871,6 @@ export default function ContentManagementPage() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* ABOUT US TAB */}
-        <TabsContent value="about">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>About Page - Coming Soon</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  About page content management is currently being developed. You can edit the content directly in the database table <code className="bg-gray-100 px-2 py-1 rounded">about_page_content</code>.
-                </p>
-                <div className="mt-4">
-                  <p className="text-sm text-gray-500">Available sections:</p>
-                  <ul className="list-disc list-inside text-sm text-gray-600 mt-2">
-                    <li>Hero Section (title, subtitle, video)</li>
-                    <li>Mission Section (title, content, image)</li>
-                    <li>Statistics (4 stats with numbers and labels)</li>
-                    <li>Values (title and list of values)</li>
-                    <li>Team Members (name, role, bio, image)</li>
-                  </ul>
-                </div>
               </CardContent>
             </Card>
           </div>
