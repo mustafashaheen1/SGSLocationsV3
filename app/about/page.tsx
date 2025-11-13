@@ -24,7 +24,14 @@ export default function AboutPage() {
           const sectionContent = data.filter(item => item.section === `section_${i}`);
 
           sectionContent.forEach(item => {
-            const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
+            let value = item.value;
+            if (typeof value === 'string' && value.startsWith('"')) {
+              try {
+                value = JSON.parse(value);
+              } catch (e) {
+                // Use as is if parse fails
+              }
+            }
             section[item.key] = value;
           });
 

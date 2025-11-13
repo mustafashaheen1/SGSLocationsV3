@@ -356,21 +356,32 @@ export default function ContentManagementPage() {
 
       if (data && data.length > 0) {
         const sections = [];
+
         for (let i = 1; i <= 11; i++) {
           const sectionData: any = {};
           const sectionKey = `section_${i}`;
 
           const sectionContent = data.filter(item => item.section === sectionKey);
           sectionContent.forEach(item => {
-            const value = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
+            // Parse the value - it's stored as JSON string
+            let value = item.value;
+            if (typeof value === 'string' && value.startsWith('"')) {
+              try {
+                value = JSON.parse(value);
+              } catch (e) {
+                // If parse fails, use as is
+              }
+            }
             sectionData[item.key] = value;
           });
 
           sections.push(sectionData);
         }
+
         setAboutSections(sections);
+        console.log('Loaded About sections from database:', sections);
       } else {
-        // Set default content that matches what's currently on the About page
+        console.log('No data found, using defaults');
         setAboutSections([
           {
             image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800',
