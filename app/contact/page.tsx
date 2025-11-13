@@ -1051,34 +1051,37 @@ export default function ContactPage() {
                     </div>
                   )}
 
-                  {entry.entry_type === 'company' && entry.external_url && (
-                    <a href={entry.external_url} className="d-block" target="_blank" rel="noopener noreferrer">
-                      <div className="il-profile-card">
-                        {entry.image_url && (
-                          <img
-                            src={entry.image_url}
-                            alt={entry.company_name || 'Company'}
-                            onError={(e) => {
-                              e.currentTarget.src = `https://via.placeholder.com/231x165/333/ffffff?text=${encodeURIComponent(entry.company_name || 'Company')}`;
-                            }}
-                          />
-                        )}
-                      </div>
-                    </a>
-                  )}
-
-                  {entry.entry_type === 'company' && !entry.external_url && (
-                    <div className="il-profile-card">
-                      {entry.image_url && (
-                        <img
-                          src={entry.image_url}
-                          alt={entry.company_name || 'Company'}
-                          onError={(e) => {
-                            e.currentTarget.src = `https://via.placeholder.com/231x165/333/ffffff?text=${encodeURIComponent(entry.company_name || 'Company')}`;
-                          }}
-                        />
+                  {entry.entry_type === 'company' && (
+                    <>
+                      {/* Company - only link if URL is not # or empty */}
+                      {entry.external_url && entry.external_url !== '#' ? (
+                        <a href={entry.external_url} className="d-block" target="_blank" rel="noopener noreferrer">
+                          <div className="il-profile-card">
+                            {entry.image_url && (
+                              <img
+                                src={entry.image_url}
+                                alt={entry.company_name || 'Company'}
+                                onError={(e) => {
+                                  e.currentTarget.src = `https://via.placeholder.com/231x165/333/ffffff?text=${encodeURIComponent(entry.company_name || 'Company')}`;
+                                }}
+                              />
+                            )}
+                          </div>
+                        </a>
+                      ) : (
+                        <div className="il-profile-card">
+                          {entry.image_url && (
+                            <img
+                              src={entry.image_url}
+                              alt={entry.company_name || 'Company'}
+                              onError={(e) => {
+                                e.currentTarget.src = `https://via.placeholder.com/231x165/333/ffffff?text=${encodeURIComponent(entry.company_name || 'Company')}`;
+                              }}
+                            />
+                          )}
+                        </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               ))}
