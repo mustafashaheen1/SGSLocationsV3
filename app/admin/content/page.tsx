@@ -389,33 +389,45 @@ export default function ContentManagementPage() {
     }
   }
 
-  async function saveAboutSection(sectionIndex: number, key: string, value: any) {
+  async function saveAllAboutContent() {
+    setSaving(true);
     try {
-      const { error } = await supabase
-        .from('about_page_content')
-        .upsert({
-          section: `section_${sectionIndex + 1}`,
-          key: key,
-          value: JSON.stringify(value),
-          type: 'text',
-          display_order: 0,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'section,key'
+      const promises: Promise<any>[] = [];
+
+      aboutSections.forEach((section, index) => {
+        Object.keys(section).forEach(key => {
+          if (section[key]) {
+            promises.push(
+              (async () => {
+                const { error } = await supabase.from('about_page_content').upsert({
+                  section: `section_${index + 1}`,
+                  key: key,
+                  value: JSON.stringify(section[key]),
+                  type: 'text',
+                  display_order: 0,
+                  updated_at: new Date().toISOString()
+                }, {
+                  onConflict: 'section,key'
+                });
+                if (error) throw error;
+              })()
+            );
+          }
         });
+      });
 
-      if (error) throw error;
-
-      alert(`Section ${sectionIndex + 1} ${key} saved!`);
+      await Promise.all(promises);
+      alert('About page content saved successfully!');
     } catch (error: any) {
       alert('Error saving: ' + error.message);
+    } finally {
+      setSaving(false);
     }
   }
 
   async function handleAboutImageUpload(sectionIndex: number, file: File) {
     try {
       const url = await uploadImageToS3(file);
-      await saveAboutSection(sectionIndex, 'image', url);
 
       const newSections = [...aboutSections];
       newSections[sectionIndex] = { ...newSections[sectionIndex], image: url };
@@ -968,114 +980,154 @@ export default function ContentManagementPage() {
         </TabsContent>
 
         {/* FOOTER TAB */}
-        <TabsContent value="footer">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
+        <TabsContent value="footer" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
                 <CardTitle>Footer Content</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                <Button
+                  onClick={saveFooterContent}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Footer Description</label>
+                <Textarea
+                  value={footerDescription}
+                  onChange={(e) => setFooterDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Dallas Fort Worth's largest location database..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Footer Description</label>
-                  <Textarea
-                    value={footerDescription}
-                    onChange={(e) => setFooterDescription(e.target.value)}
-                    rows={3}
+                  <label className="block text-sm font-medium mb-2">Contact Phone</label>
+                  <Input
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="(214) 555-0100"
                   />
                 </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Phone</label>
-                    <Input
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Email</label>
-                    <Input
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Address</label>
-                    <Input
-                      value={contactAddress}
-                      onChange={(e) => setContactAddress(e.target.value)}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Contact Email</label>
+                  <Input
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="info@sgslocations.com"
+                  />
                 </div>
+              </div>
 
-                <Button onClick={saveFooterContent} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Footer Content
-                </Button>
-              </CardContent>
-            </Card>
+              <div>
+                <label className="block text-sm font-medium mb-2">Contact Address</label>
+                <Input
+                  value={contactAddress}
+                  onChange={(e) => setContactAddress(e.target.value)}
+                  placeholder="123 Main Street, Dallas, TX 75201"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
                 <CardTitle>Social Media Links</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {socialLinks.map(link => (
-                  <div key={link.id} className="flex items-center space-x-4">
-                    <span className="w-24">{link.platform}:</span>
-                    <Input
-                      value={link.url}
-                      onChange={(e) => {
-                        const updated = [...socialLinks];
-                        const index = updated.findIndex(l => l.id === link.id);
-                        updated[index].url = e.target.value;
-                        setSocialLinks(updated);
-                      }}
-                      placeholder={`https://${link.platform.toLowerCase()}.com/...`}
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => updateSocialLink(link.id, link.url)}
-                    >
-                      Save
-                    </Button>
+                <Button
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      const promises = socialLinks.map(link =>
+                        supabase
+                          .from('social_links')
+                          .update({ url: link.url })
+                          .eq('id', link.id)
+                      );
+                      await Promise.all(promises);
+                      alert('Social links saved successfully!');
+                    } catch (error) {
+                      alert('Error saving social links');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Social Links'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {socialLinks.map(link => (
+                <div key={link.id} className="flex items-center gap-4">
+                  <span className="w-24">{link.platform}:</span>
+                  <Input
+                    value={link.url}
+                    onChange={(e) => {
+                      const updated = [...socialLinks];
+                      const index = updated.findIndex(l => l.id === link.id);
+                      updated[index].url = e.target.value;
+                      setSocialLinks(updated);
+                    }}
+                    placeholder={`https://${link.platform.toLowerCase()}.com/...`}
+                  />
+                </div>
+              ))}
+              <p className="text-sm text-gray-500 mt-2">
+                * Leave empty to hide the social icon from footer
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Location Categories (from Database)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-4">
+                These categories are pulled automatically from the database.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {categories.map(cat => (
+                  <div key={cat.id} className="text-sm">
+                    • {cat.name}
                   </div>
                 ))}
-                <p className="text-sm text-gray-500 mt-2">
-                  * Leave empty to hide the social icon from footer
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Location Categories (from Database)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  These categories are pulled automatically from the database and displayed in the footer.
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {categories.map(cat => (
-                    <div key={cat.id} className="text-sm">
-                      • {cat.name}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-4">
-                  To edit categories, go to the Categories management page.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-4">
+                To edit categories, go to the Categories management page.
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ABOUT PAGE TAB */}
         <TabsContent value="about" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>About Page Content Management</CardTitle>
-              <p className="text-sm text-gray-600">Edit all 11 sections of the About page</p>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>About Page Content Management</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Edit all 11 sections of the About page</p>
+                </div>
+                <Button
+                  onClick={saveAllAboutContent}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6 max-h-[600px] overflow-y-auto">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((index) => (
@@ -1146,13 +1198,6 @@ export default function ContentManagementPage() {
                           }}
                           placeholder="https://player.vimeo.com/video/..."
                         />
-                        <Button
-                          size="sm"
-                          className="mt-1"
-                          onClick={() => saveAboutSection(index, 'videoUrl', aboutSections[index]?.videoUrl)}
-                        >
-                          Save Video URL
-                        </Button>
                       </div>
                     )}
 
@@ -1169,13 +1214,6 @@ export default function ContentManagementPage() {
                             setAboutSections(newSections);
                           }}
                         />
-                        <Button
-                          size="sm"
-                          className="mt-1"
-                          onClick={() => saveAboutSection(index, 'title', aboutSections[index]?.title)}
-                        >
-                          Save Title
-                        </Button>
                       </div>
                     )}
 
@@ -1192,13 +1230,6 @@ export default function ContentManagementPage() {
                             setAboutSections(newSections);
                           }}
                         />
-                        <Button
-                          size="sm"
-                          className="mt-1"
-                          onClick={() => saveAboutSection(index, 'subtitle', aboutSections[index]?.subtitle)}
-                        >
-                          Save Subtitle
-                        </Button>
                       </div>
                     )}
 
@@ -1216,13 +1247,6 @@ export default function ContentManagementPage() {
                           }}
                           rows={3}
                         />
-                        <Button
-                          size="sm"
-                          className="mt-1"
-                          onClick={() => saveAboutSection(index, 'content', aboutSections[index]?.content)}
-                        >
-                          Save Content
-                        </Button>
                       </div>
                     )}
 
@@ -1252,16 +1276,6 @@ export default function ContentManagementPage() {
                               setAboutSections(newSections);
                             }}
                           />
-                          <Button
-                            size="sm"
-                            className="mt-1"
-                            onClick={() => {
-                              saveAboutSection(index, 'linkText', aboutSections[index]?.linkText);
-                              saveAboutSection(index, 'linkUrl', aboutSections[index]?.linkUrl);
-                            }}
-                          >
-                            Save Link
-                          </Button>
                         </div>
                       </>
                     )}
