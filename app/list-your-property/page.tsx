@@ -538,8 +538,9 @@ export default function ListYourPropertyPage() {
               {/* Image Upload */}
               <section className="mb-6">
                 <label className="block font-medium text-gray-700 text-sm mb-1">
-                  Please Include 4-8 Images
+                  Please Include At Least 10 Images
                 </label>
+                <p className="text-sm text-gray-600 mb-2">Minimum 10 images required. No maximum limit.</p>
                 <p className="text-sm text-gray-500 mb-2">(Only JPGs and PNGs accepted.)</p>
                 <div
                   onDragOver={handleDragOver}
