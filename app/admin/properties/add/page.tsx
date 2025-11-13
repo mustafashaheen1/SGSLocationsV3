@@ -98,41 +98,42 @@ export default function AddPropertyPage() {
 
   async function handleSmugmugImport() {
     if (!smugmugUrl) {
-      alert('Please enter a SmugMug album URL');
+      alert('Please enter a SmugMug album URL or album key');
       return;
     }
 
     setImportingFromSmugmug(true);
-    setImportProgress('Extracting album key...');
+    setImportProgress('Processing...');
 
     try {
-      let albumKey = smugmugUrl;
+      let albumKey = smugmugUrl.trim();
 
-      if (smugmugUrl.includes('smugmug.com')) {
+      if (albumKey.includes('smugmug.com')) {
+        setImportProgress('Extracting album key from URL...');
+
         const keyResponse = await fetch('/api/get-smugmug-key', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: smugmugUrl }),
+          body: JSON.stringify({ url: albumKey }),
         });
 
         if (!keyResponse.ok) {
-          throw new Error('Could not extract album key from URL');
+          const errorData = await keyResponse.json();
+          throw new Error(errorData.suggestion || errorData.error || 'Could not extract album key');
         }
 
         const keyData = await keyResponse.json();
         albumKey = keyData.albumKey;
-
-        console.log('Extracted album key:', albumKey);
-        setImportProgress(`Found album: ${albumKey}. Fetching images...`);
+        console.log('✓ Extracted album key:', albumKey);
       } else {
-        setImportProgress('Fetching images from SmugMug...');
+        console.log('Using provided album key:', albumKey);
       }
+
+      setImportProgress(`Fetching images from album ${albumKey}...`);
 
       const response = await fetch('/api/import-smugmug', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           albumKey: albumKey,
           propertyId: null
@@ -140,15 +141,21 @@ export default function AddPropertyPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to import images');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to import images');
       }
 
       const data = await response.json();
 
-      setImportProgress(`Successfully imported ${data.imported} of ${data.total} images!`);
+      setImportProgress(`✓ Successfully imported ${data.imported} of ${data.total} images!`);
 
       const newImageUrls = data.urls;
       setImagePreviews(prev => [...prev, ...newImageUrls]);
+
+      const placeholderFiles = newImageUrls.map((url: string) => {
+        return { name: url, uploaded: true } as any;
+      });
+      setUploadedImages(prev => [...prev, ...placeholderFiles]);
 
       setTimeout(() => {
         setImportProgress('');
@@ -157,7 +164,7 @@ export default function AddPropertyPage() {
     } catch (error: any) {
       console.error('SmugMug import error:', error);
       setImportProgress('');
-      alert('Failed to import from SmugMug: ' + error.message);
+      alert(error.message || 'Failed to import from SmugMug');
     } finally {
       setImportingFromSmugmug(false);
     }
@@ -372,20 +379,27 @@ export default function AddPropertyPage() {
                     SmugMug Album URL or Album Key
                   </label>
                   <Input
-                    placeholder="e.g., https://username.smugmug.com/album-name or album-key"
+                    placeholder="Full URL or just the album key (e.g., ABC123xyz)"
                     value={smugmugUrl}
                     onChange={(e) => setSmugmugUrl(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Paste the SmugMug album URL or just the album key
-                  </p>
+                  <div className="mt-2 p-3 bg-white rounded border border-blue-200">
+                    <p className="text-xs text-gray-700 font-medium mb-1">💡 How to find your album key:</p>
+                    <ol className="text-xs text-gray-600 space-y-1 ml-4 list-decimal">
+                      <li>Open your SmugMug album in a browser</li>
+                      <li>Right-click → "View Page Source"</li>
+                      <li>Press Ctrl+F (Cmd+F on Mac) and search for: <code className="bg-gray-100 px-1 rounded">"AlbumKey"</code></li>
+                      <li>Copy the key value (e.g., "AlbumKey":"ABC123xyz")</li>
+                      <li>Paste just the key part (ABC123xyz) or the full URL here</li>
+                    </ol>
+                  </div>
                 </div>
 
                 <Button
                   type="button"
                   onClick={handleSmugmugImport}
                   disabled={!smugmugUrl || importingFromSmugmug}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {importingFromSmugmug ? (
                     <>
@@ -401,8 +415,14 @@ export default function AddPropertyPage() {
                 </Button>
 
                 {importProgress && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">{importProgress}</p>
+                  <div className={`p-3 rounded ${
+                    importProgress.includes('✓') ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'
+                  }`}>
+                    <p className={`text-sm ${
+                      importProgress.includes('✓') ? 'text-green-700' : 'text-blue-700'
+                    }`}>
+                      {importProgress}
+                    </p>
                   </div>
                 )}
               </div>
