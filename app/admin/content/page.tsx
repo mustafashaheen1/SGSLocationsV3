@@ -106,10 +106,10 @@ export default function ContentManagementPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'about') {
+    if (activeTab === 'about' && aboutSections.length === 0) {
       fetchAboutContent();
     }
-  }, [activeTab]);
+  }, [activeTab, aboutSections.length]);
 
   async function fetchAllContent() {
     setLoading(true);
@@ -354,7 +354,7 @@ export default function ContentManagementPage() {
         .select('*')
         .order('section, display_order');
 
-      if (data) {
+      if (data && data.length > 0) {
         const sections = [];
         for (let i = 1; i <= 11; i++) {
           const sectionData: any = {};
@@ -366,23 +366,78 @@ export default function ContentManagementPage() {
             sectionData[item.key] = value;
           });
 
-          if (Object.keys(sectionData).length === 0) {
-            // Set defaults for each section
-            if (i === 1) {
-              sectionData.image = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800';
-              sectionData.title = 'The Art of Locations™';
-              sectionData.subtitle = 'SGS Locations: Your Premier Destination for Exclusive Filming Locations in Dallas-Fort Worth';
-              sectionData.content = 'For over 20 years, SGS Locations has been a leading provider...';
-            } else if (i === 2) {
-              sectionData.title = 'Discover Our Locations';
-              sectionData.content = "Whether you're looking for a sprawling ranch...";
-              sectionData.videoUrl = 'https://player.vimeo.com/video/616445043';
-            }
-          }
-
           sections.push(sectionData);
         }
         setAboutSections(sections);
+      } else {
+        // Set default content that matches what's currently on the About page
+        setAboutSections([
+          {
+            image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800',
+            title: 'The Art of Locations™',
+            subtitle: 'SGS Locations: Your Premier Destination for Exclusive Filming Locations in Dallas-Fort Worth',
+            content: `For over 20 years, SGS Locations has been a leading provider of exclusive filming locations in the Dallas-Fort Worth metroplex.\n\nSGS Locations specializes in a wide range of productions, including commercials, television series, feature films, and still photography.\n\nOur dedicated team includes location scouts, photographers, permitting specialists, and production coordinators.`
+          },
+          {
+            title: 'Discover Our Locations',
+            content: "Whether you're looking for a sprawling ranch, modern architecture, historic properties, or urban settings, SGS Locations has the perfect backdrop for your production needs.",
+            videoUrl: 'https://player.vimeo.com/video/616445043'
+          },
+          {
+            title: 'Trusted by Major Productions',
+            content: 'SGS Locations provides exclusive filming locations to the entertainment industry for motion picture, television, commercial, and print projects across the Dallas-Fort Worth area.',
+            linkText: 'Learn More About Our Services →',
+            linkUrl: '/search'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800',
+            title: 'Dallas Business Journal | SGS Locations Brings Professional Location Services to DFW',
+            content: 'SGS Locations has been featured in the Dallas Business Journal for its innovative approach to connecting property owners with production companies.',
+            linkText: 'Read Article →',
+            linkUrl: '#'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800',
+            title: 'SGS Locations is a proud member of the Film Industry',
+            content: 'We are committed to upholding the highest professional standards in the location services industry.'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=800',
+            title: 'SGS Locations is in full compliance with the Texas Film Commission',
+            content: 'As a licensed location service operating in Texas, we maintain full compliance with all Texas Film Commission regulations.'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=800',
+            title: 'SGS Locations partners with DFWFC',
+            content: 'We proudly partner with the Dallas-Fort Worth Film Commission to promote the region as a premier destination.',
+            linkText: 'Visit DFWFC Website →',
+            linkUrl: 'https://www.dfwfilmtx.com'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=800',
+            title: 'Featured in Local Media Coverage',
+            content: 'SGS Locations has been featured in numerous local media outlets for our role in bringing major productions to the Dallas-Fort Worth area.',
+            linkText: 'View Media Coverage →',
+            linkUrl: '#'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=800',
+            title: 'Check out recent recognition we received:',
+            content: 'SGS Locations has been recognized by the Dallas business community for excellence in location services.',
+            linkText: 'Read More →',
+            linkUrl: '#'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1554224311-beee460c201f?w=800',
+            title: 'Licensed & Insured',
+            content: 'SGS Locations maintains all required business licenses and comprehensive insurance coverage.'
+          },
+          {
+            title: 'Professional Filmmakers Code of Conduct',
+            linkText: 'Professional Filmmakers Code of Conduct PDF',
+            linkUrl: '/pdfs/code-of-conduct.pdf'
+          }
+        ]);
       }
     } catch (error) {
       console.error('Error fetching about content:', error);
@@ -425,17 +480,6 @@ export default function ContentManagementPage() {
     }
   }
 
-  async function handleAboutImageUpload(sectionIndex: number, file: File) {
-    try {
-      const url = await uploadImageToS3(file);
-
-      const newSections = [...aboutSections];
-      newSections[sectionIndex] = { ...newSections[sectionIndex], image: url };
-      setAboutSections(newSections);
-    } catch (error) {
-      alert('Error uploading image');
-    }
-  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -1130,13 +1174,13 @@ export default function ContentManagementPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6 max-h-[600px] overflow-y-auto">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((index) => (
+              {aboutSections.map((section, index) => (
                 <div key={index} className="border rounded-lg p-4 bg-gray-50">
                   <h4 className="font-semibold mb-3 text-lg">
                     Section {index + 1}
                     {index === 0 && ' - Main Hero Section'}
                     {index === 1 && ' - Video Section'}
-                    {index === 2 && ' - Trusted by Major Productions'}
+                    {index === 2 && ' - Trusted by Major Productions (Centered)'}
                     {index === 3 && ' - Dallas Business Journal'}
                     {index === 4 && ' - Film Industry Member'}
                     {index === 5 && ' - Texas Film Commission'}
@@ -1144,60 +1188,85 @@ export default function ContentManagementPage() {
                     {index === 7 && ' - Media Coverage'}
                     {index === 8 && ' - Recent Recognition'}
                     {index === 9 && ' - Licensed & Insured'}
-                    {index === 10 && ' - Code of Conduct'}
+                    {index === 10 && ' - Code of Conduct (Centered)'}
                   </h4>
 
                   <div className="space-y-3">
-                    {/* Image upload for sections that have images */}
+                    {/* Image preview and upload for sections with images */}
                     {index !== 1 && index !== 2 && index !== 10 && (
                       <div>
                         <label className="block text-sm font-medium mb-1">Image</label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={aboutSections[index]?.image || ''}
-                            onChange={(e) => {
-                              const newSections = [...aboutSections];
-                              if (!newSections[index]) newSections[index] = {};
-                              newSections[index].image = e.target.value;
-                              setAboutSections(newSections);
-                            }}
-                            placeholder="Image URL"
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => document.getElementById(`about-img-${index}`)?.click()}
-                          >
-                            <Upload className="w-4 h-4" />
-                          </Button>
-                          <input
-                            id={`about-img-${index}`}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleAboutImageUpload(index, file);
+                        {section?.image && (
+                          <img
+                            src={section.image}
+                            alt={`Section ${index + 1}`}
+                            className="w-full max-w-md h-48 object-cover rounded mb-2"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
                             }}
                           />
-                        </div>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => document.getElementById(`about-img-${index}`)?.click()}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          {section?.image ? 'Change Image' : 'Upload Image'}
+                        </Button>
+                        <input
+                          id={`about-img-${index}`}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const url = await uploadImageToS3(file);
+                                const newSections = [...aboutSections];
+                                if (!newSections[index]) newSections[index] = {};
+                                newSections[index].image = url;
+                                setAboutSections(newSections);
+                              } catch (error) {
+                                alert('Error uploading image');
+                              }
+                            }
+                          }}
+                        />
                       </div>
                     )}
 
-                    {/* Video URL for section 2 */}
+                    {/* Video preview and URL for section 2 */}
                     {index === 1 && (
                       <div>
-                        <label className="block text-sm font-medium mb-1">Vimeo Video URL</label>
-                        <Input
-                          value={aboutSections[index]?.videoUrl || ''}
-                          onChange={(e) => {
-                            const newSections = [...aboutSections];
-                            if (!newSections[index]) newSections[index] = {};
-                            newSections[index].videoUrl = e.target.value;
-                            setAboutSections(newSections);
-                          }}
-                          placeholder="https://player.vimeo.com/video/..."
-                        />
+                        <label className="block text-sm font-medium mb-1">Video Preview</label>
+                        {section?.videoUrl && (
+                          <div className="w-full max-w-md mb-2">
+                            <div className="relative" style={{ paddingBottom: '56.25%' }}>
+                              <iframe
+                                src={section.videoUrl}
+                                className="absolute top-0 left-0 w-full h-full rounded"
+                                frameBorder="0"
+                                allow="autoplay; fullscreen"
+                                allowFullScreen
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Vimeo Video URL</label>
+                          <Input
+                            value={section?.videoUrl || ''}
+                            onChange={(e) => {
+                              const newSections = [...aboutSections];
+                              if (!newSections[index]) newSections[index] = {};
+                              newSections[index].videoUrl = e.target.value;
+                              setAboutSections(newSections);
+                            }}
+                            placeholder="https://player.vimeo.com/video/..."
+                          />
+                        </div>
                       </div>
                     )}
 
@@ -1206,13 +1275,14 @@ export default function ContentManagementPage() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Title</label>
                         <Input
-                          value={aboutSections[index]?.title || ''}
+                          value={section?.title || ''}
                           onChange={(e) => {
                             const newSections = [...aboutSections];
                             if (!newSections[index]) newSections[index] = {};
                             newSections[index].title = e.target.value;
                             setAboutSections(newSections);
                           }}
+                          placeholder="Enter section title..."
                         />
                       </div>
                     )}
@@ -1222,62 +1292,73 @@ export default function ContentManagementPage() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Subtitle</label>
                         <Input
-                          value={aboutSections[index]?.subtitle || ''}
+                          value={section?.subtitle || ''}
                           onChange={(e) => {
                             const newSections = [...aboutSections];
                             if (!newSections[index]) newSections[index] = {};
                             newSections[index].subtitle = e.target.value;
                             setAboutSections(newSections);
                           }}
+                          placeholder="Enter subtitle..."
                         />
                       </div>
                     )}
 
-                    {/* Content field */}
+                    {/* Content field with proper line breaks support */}
                     {index !== 10 && (
                       <div>
-                        <label className="block text-sm font-medium mb-1">Content</label>
+                        <label className="block text-sm font-medium mb-1">
+                          Content
+                          <span className="text-xs text-gray-500 ml-2">(Use double line breaks for paragraphs)</span>
+                        </label>
                         <Textarea
-                          value={aboutSections[index]?.content || ''}
+                          value={section?.content || ''}
                           onChange={(e) => {
                             const newSections = [...aboutSections];
                             if (!newSections[index]) newSections[index] = {};
                             newSections[index].content = e.target.value;
                             setAboutSections(newSections);
                           }}
-                          rows={3}
+                          rows={5}
+                          placeholder="Enter section content..."
+                          className="font-mono text-sm"
                         />
                       </div>
                     )}
 
                     {/* Link fields for sections that have them */}
                     {(index === 2 || index === 3 || index === 6 || index === 7 || index === 8 || index === 10) && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Link Text</label>
-                          <Input
-                            value={aboutSections[index]?.linkText || ''}
-                            onChange={(e) => {
-                              const newSections = [...aboutSections];
-                              if (!newSections[index]) newSections[index] = {};
-                              newSections[index].linkText = e.target.value;
-                              setAboutSections(newSections);
-                            }}
-                          />
+                      <div className="border-t pt-3">
+                        <h5 className="text-sm font-medium mb-2">Link Settings</h5>
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Link Text</label>
+                            <Input
+                              value={section?.linkText || ''}
+                              onChange={(e) => {
+                                const newSections = [...aboutSections];
+                                if (!newSections[index]) newSections[index] = {};
+                                newSections[index].linkText = e.target.value;
+                                setAboutSections(newSections);
+                              }}
+                              placeholder="e.g., Learn More →"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Link URL</label>
+                            <Input
+                              value={section?.linkUrl || ''}
+                              onChange={(e) => {
+                                const newSections = [...aboutSections];
+                                if (!newSections[index]) newSections[index] = {};
+                                newSections[index].linkUrl = e.target.value;
+                                setAboutSections(newSections);
+                              }}
+                              placeholder="e.g., /search or https://..."
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Link URL</label>
-                          <Input
-                            value={aboutSections[index]?.linkUrl || ''}
-                            onChange={(e) => {
-                              const newSections = [...aboutSections];
-                              if (!newSections[index]) newSections[index] = {};
-                              newSections[index].linkUrl = e.target.value;
-                              setAboutSections(newSections);
-                            }}
-                          />
-                        </div>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
