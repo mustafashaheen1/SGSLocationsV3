@@ -154,15 +154,42 @@ export default function SearchFiltersPage() {
     }
 
     try {
-      const { error } = await supabase
+      const filterToDelete = filters.find(f => f.id === id);
+      if (!filterToDelete) {
+        throw new Error('Filter not found');
+      }
+
+      const deletedOrder = filterToDelete.display_order;
+
+      const { error: deleteError } = await supabase
         .from('search_filters')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      const filtersToReorder = filters.filter(
+        filter => filter.display_order > deletedOrder
+      );
+
+      for (const filter of filtersToReorder) {
+        const { error: updateError } = await supabase
+          .from('search_filters')
+          .update({ display_order: filter.display_order - 1 })
+          .eq('id', filter.id);
+
+        if (updateError) {
+          console.error('Error reordering filter:', updateError);
+          throw updateError;
+        }
+      }
+
+      console.log(`Deleted filter at position ${deletedOrder}, reordered ${filtersToReorder.length} filters`);
+
       fetchFilters();
     } catch (error: any) {
       alert('Error deleting filter: ' + error.message);
+      console.error('Delete error:', error);
     }
   }
 
