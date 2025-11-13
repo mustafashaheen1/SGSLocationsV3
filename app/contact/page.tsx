@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function ContactPage() {
+  const [gridData, setGridData] = useState<any[]>([]);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -24,6 +27,22 @@ export default function ContactPage() {
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    async function fetchContactGrid() {
+      const { data } = await supabase
+        .from('contact_grid')
+        .select('*')
+        .eq('is_active', true)
+        .order('position');
+
+      if (data) {
+        setGridData(data);
+      }
+    }
+
+    fetchContactGrid();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1004,187 +1023,67 @@ export default function ContactPage() {
             </div>
           </form>
 
-          {/* Team/Partner Grid Section */}
+          {/* Team/Partner Grid Section - CMS Managed */}
           <div className="container-fluid il-profiles" style={{ marginTop: '3rem' }}>
             <div className="row px-1">
-              {/* Red Contact Card */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                <div
-                  className="il-profile-card d-flex align-items-center justify-content-center"
-                  style={{
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    fontSize: '14px',
-                    textAlign: 'center'
-                  }}
-                >
-                  <div style={{ position: 'absolute', padding: '20px' }}>
-                    <p style={{ margin: '5px 0' }}>✉ Paul@ImageLocations.com</p>
-                    <p style={{ margin: '5px 0' }}>☎ (310) 871-8004</p>
-                    <p style={{ margin: '5px 0' }}>
-                      9663 Santa Monica Blvd,<br />
-                      Suite 842 Beverly Hills,<br />
-                      CA, 90210
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Paul Kim */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-profile-card">
-                  <img
-                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/314885/conversions/paul-kim-medium.jpg?t=1744325466"
-                    alt="Paul Kim"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Paul+Kim';
-                    }}
-                  />
-                  <div className="il-profile-info-overlay">
-                    <h6>Paul Kim</h6>
-                    <p>Business Development</p>
-                    <a href="mailto:paul@imagelocations.com">paul@imagelocations.com</a>
-                  </div>
-                </div>
-              </div>
-
-              {/* List Your Property - Green */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                <a href="/list-your-property" className="d-block">
-                  <div
-                    className="il-profile-card d-flex align-items-center justify-content-center"
-                    style={{
-                      backgroundColor: '#85c53b',
-                      color: 'white',
-                      textAlign: 'center'
-                    }}
-                  >
-                    <div style={{ position: 'absolute' }}>
-                      <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>List</h3>
-                      <p style={{ fontSize: '16px', margin: 0 }}>MY HOME</p>
+              {gridData.map((entry) => (
+                <div key={entry.position} className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                  {entry.entry_type === 'team' && (
+                    <div className="il-profile-section">
+                      <div className="il-profile-card">
+                        {entry.image_url && (
+                          <img
+                            src={entry.image_url}
+                            alt={entry.name || 'Team Member'}
+                            onError={(e) => {
+                              e.currentTarget.src = `https://via.placeholder.com/231x165/808080/ffffff?text=${encodeURIComponent(entry.name || 'Team')}`;
+                            }}
+                          />
+                        )}
+                        <div className="il-profile-info-overlay">
+                          {entry.name && <h6>{entry.name}</h6>}
+                          {entry.title && <p>{entry.title}</p>}
+                          {entry.email && <a href={`mailto:${entry.email}`}>{entry.email}</a>}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </a>
-              </div>
+                  )}
 
-              {/* Alice Kim */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-profile-card">
-                  <img
-                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188750/conversions/alice-kim-medium.jpg"
-                    alt="Alice Kim"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Alice+Kim';
-                    }}
-                  />
-                  <div className="il-profile-info-overlay">
-                    <h6>Alice Kim</h6>
-                    <p>Executive Location Agent</p>
-                    <a href="mailto:alice@imagelocations.com">alice@imagelocations.com</a>
-                  </div>
-                </div>
-              </div>
+                  {entry.entry_type === 'company' && entry.external_url && (
+                    <a href={entry.external_url} className="d-block" target="_blank" rel="noopener noreferrer">
+                      <div className="il-profile-card">
+                        {entry.image_url && (
+                          <img
+                            src={entry.image_url}
+                            alt={entry.company_name || 'Company'}
+                            onError={(e) => {
+                              e.currentTarget.src = `https://via.placeholder.com/231x165/333/ffffff?text=${encodeURIComponent(entry.company_name || 'Company')}`;
+                            }}
+                          />
+                        )}
+                      </div>
+                    </a>
+                  )}
 
-              {/* Jason Radspinner */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-profile-card">
-                  <img
-                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188751/conversions/jason-radspinner-medium.jpg"
-                    alt="Jason Radspinner"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Jason';
-                    }}
-                  />
-                  <div className="il-profile-info-overlay">
-                    <h6>Jason Radspinner</h6>
-                    <p>Executive Location Agent</p>
-                    <a href="mailto:jason@imagelocations.com">jason@imagelocations.com</a>
-                  </div>
-                </div>
-              </div>
+                  {entry.entry_type === 'company' && !entry.external_url && (
+                    <div className="il-profile-card">
+                      {entry.image_url && (
+                        <img
+                          src={entry.image_url}
+                          alt={entry.company_name || 'Company'}
+                          onError={(e) => {
+                            e.currentTarget.src = `https://via.placeholder.com/231x165/333/ffffff?text=${encodeURIComponent(entry.company_name || 'Company')}`;
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
 
-              {/* Crew Parking - Yellow */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                <a href="https://crewparking.com/" className="d-block" target="_blank" rel="noopener noreferrer">
-                  <div
-                    className="il-profile-card d-flex align-items-center justify-content-center"
-                    style={{
-                      backgroundColor: '#eed437',
-                      textAlign: 'center'
-                    }}
-                  >
-                    <img
-                      src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188752/conversions/contact-section-5-medium.jpg"
-                      alt="Crew Parking"
-                      style={{ position: 'absolute', width: 'auto', height: '60%' }}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                </a>
-              </div>
-
-              {/* Marisa Sullivan */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-profile-card">
-                  <img
-                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188753/conversions/marisa-sullivan-medium.jpg"
-                    alt="Marisa Sullivan"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Marisa';
-                    }}
-                  />
-                  <div className="il-profile-info-overlay">
-                    <h6>Marisa Sullivan</h6>
-                    <p>Location Agent</p>
-                    <a href="mailto:marisa@imagelocations.com">marisa@imagelocations.com</a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Camilla More */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6 il-profile-section">
-                <div className="il-profile-card">
-                  <img
-                    src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188754/conversions/camilla-more-medium.jpg"
-                    alt="Camilla More"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/231x165/808080/ffffff?text=Camilla';
-                    }}
-                  />
-                  <div className="il-profile-info-overlay">
-                    <h6>Camilla More</h6>
-                    <p>Location Supervisor</p>
-                    <a href="mailto:info@imagelocations.com">info@imagelocations.com</a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sky Studio */}
-              <div className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                <a href="/skystudio" className="d-block">
-                  <div className="il-profile-card">
-                    <img
-                      src="https://imagelocations-laravel.s3.us-west-1.amazonaws.com/media/188755/conversions/contact-section-8-medium.jpg"
-                      alt="Sky Studio"
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/231x165/333/ffffff?text=SKY+STUDIO';
-                      }}
-                    />
-                  </div>
-                </a>
-              </div>
-
-              {/* Additional placeholder tiles */}
-              {[...Array(15)].map((_, i) => (
-                <div key={i} className="px-1 py-1 col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                  <div className="il-profile-card">
-                    <img
-                      src={`https://via.placeholder.com/231x165/f0f0f0/666666?text=Tile+${i+10}`}
-                      alt=""
-                    />
-                  </div>
+                  {entry.entry_type === 'empty' && (
+                    <div className="il-profile-card" style={{ backgroundColor: '#f0f0f0' }}>
+                      {/* Empty slot */}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

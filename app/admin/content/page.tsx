@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -96,6 +96,9 @@ export default function ContentManagementPage() {
   // About Page Content States
   const [aboutSections, setAboutSections] = useState<any[]>([]);
 
+  // Contact Page Grid States
+  const [contactGrid, setContactGrid] = useState<any[]>([]);
+
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -104,6 +107,12 @@ export default function ContentManagementPage() {
   useEffect(() => {
     fetchAllContent();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'contact') {
+      fetchContactGrid();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === 'about' && aboutSections.length === 0) {
@@ -491,24 +500,99 @@ export default function ContentManagementPage() {
     }
   }
 
+  async function fetchContactGrid() {
+    try {
+      const { data } = await supabase
+        .from('contact_grid')
+        .select('*')
+        .order('position');
+
+      if (data) {
+        // Ensure we have all 24 positions
+        const grid = [];
+        for (let i = 1; i <= 24; i++) {
+          const entry = data.find(d => d.position === i) || {
+            position: i,
+            entry_type: 'empty',
+            image_url: null,
+            name: null,
+            title: null,
+            email: null,
+            company_name: null,
+            external_url: null
+          };
+          grid.push(entry);
+        }
+        setContactGrid(grid);
+      }
+    } catch (error) {
+      console.error('Error fetching contact grid:', error);
+    }
+  }
+
+  async function saveContactGrid() {
+    setSaving(true);
+    try {
+      const promises = contactGrid.map(entry => {
+        return supabase
+          .from('contact_grid')
+          .upsert({
+            position: entry.position,
+            entry_type: entry.entry_type || 'empty',
+            image_url: entry.image_url,
+            name: entry.name,
+            title: entry.title,
+            email: entry.email,
+            company_name: entry.company_name,
+            external_url: entry.external_url,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'position'
+          });
+      });
+
+      await Promise.all(promises);
+      alert('Contact grid saved successfully!');
+    } catch (error: any) {
+      alert('Error saving: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleContactImageUpload(position: number, file: File) {
+    try {
+      const url = await uploadImageToS3(file);
+      const newGrid = [...contactGrid];
+      newGrid[position - 1].image_url = url;
+      setContactGrid(newGrid);
+    } catch (error) {
+      alert('Error uploading image');
+    }
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Content Management System</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 mb-6">
+        <TabsList className="grid w-full grid-cols-6 mb-6">
           <TabsTrigger value="home">
             <Home className="w-4 h-4 mr-2" />
             Home Page
+          </TabsTrigger>
+          <TabsTrigger value="about">
+            <Info className="w-4 h-4 mr-2" />
+            About Page
           </TabsTrigger>
           <TabsTrigger value="footer">
             <Globe className="w-4 h-4 mr-2" />
             Footer
           </TabsTrigger>
-          <TabsTrigger value="about">
-            <FileText className="w-4 h-4 mr-2" />
-            About Page
+          <TabsTrigger value="contact">
+            <Mail className="w-4 h-4 mr-2" />
+            Contact
           </TabsTrigger>
           <TabsTrigger value="search">
             <Search className="w-4 h-4 mr-2" />
@@ -1161,6 +1245,189 @@ export default function ContentManagementPage() {
               <p className="text-xs text-gray-500 mt-4">
                 To edit categories, go to the Categories management page.
               </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* CONTACT PAGE TAB */}
+        <TabsContent value="contact" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Contact Page Grid Management</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Manage the 24-slot grid (Team Members & Companies)</p>
+                </div>
+                <Button
+                  onClick={saveContactGrid}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-4">
+                {contactGrid.map((entry, index) => (
+                  <div key={entry.position} className="border rounded-lg p-3 bg-gray-50">
+                    <div className="mb-2">
+                      <span className="text-xs font-semibold text-gray-500">Position {entry.position}</span>
+                    </div>
+
+                    {/* Entry Type Selector */}
+                    <div className="mb-2">
+                      <select
+                        value={entry.entry_type || 'empty'}
+                        onChange={(e) => {
+                          const newGrid = [...contactGrid];
+                          newGrid[index] = {
+                            ...newGrid[index],
+                            entry_type: e.target.value,
+                            // Clear fields when changing type
+                            name: null,
+                            title: null,
+                            email: null,
+                            company_name: null,
+                            external_url: null
+                          };
+                          setContactGrid(newGrid);
+                        }}
+                        className="w-full text-sm border rounded px-2 py-1"
+                      >
+                        <option value="empty">Empty Slot</option>
+                        <option value="team">Team Member</option>
+                        <option value="company">Company</option>
+                      </select>
+                    </div>
+
+                    {entry.entry_type !== 'empty' && (
+                      <>
+                        {/* Image Upload */}
+                        <div className="mb-2">
+                          {entry.image_url && (
+                            <img
+                              src={entry.image_url}
+                              alt={`Position ${entry.position}`}
+                              className="w-full h-24 object-cover rounded mb-1"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://via.placeholder.com/200x200?text=No+Image';
+                              }}
+                            />
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => document.getElementById(`contact-img-${entry.position}`)?.click()}
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            {entry.image_url ? 'Change' : 'Upload'}
+                          </Button>
+                          <input
+                            id={`contact-img-${entry.position}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleContactImageUpload(entry.position, file);
+                            }}
+                          />
+                        </div>
+
+                        {/* Team Member Fields */}
+                        {entry.entry_type === 'team' && (
+                          <>
+                            <Input
+                              placeholder="Name"
+                              value={entry.name || ''}
+                              onChange={(e) => {
+                                const newGrid = [...contactGrid];
+                                newGrid[index].name = e.target.value;
+                                setContactGrid(newGrid);
+                              }}
+                              className="mb-1 text-sm"
+                            />
+                            <Input
+                              placeholder="Title"
+                              value={entry.title || ''}
+                              onChange={(e) => {
+                                const newGrid = [...contactGrid];
+                                newGrid[index].title = e.target.value;
+                                setContactGrid(newGrid);
+                              }}
+                              className="mb-1 text-sm"
+                            />
+                            <Input
+                              placeholder="Email"
+                              type="email"
+                              value={entry.email || ''}
+                              onChange={(e) => {
+                                const newGrid = [...contactGrid];
+                                newGrid[index].email = e.target.value;
+                                setContactGrid(newGrid);
+                              }}
+                              className="text-sm"
+                            />
+                          </>
+                        )}
+
+                        {/* Company Fields */}
+                        {entry.entry_type === 'company' && (
+                          <>
+                            <Input
+                              placeholder="Company Name"
+                              value={entry.company_name || ''}
+                              onChange={(e) => {
+                                const newGrid = [...contactGrid];
+                                newGrid[index].company_name = e.target.value;
+                                setContactGrid(newGrid);
+                              }}
+                              className="mb-1 text-sm"
+                            />
+                            <Input
+                              placeholder="External URL"
+                              type="url"
+                              value={entry.external_url || ''}
+                              onChange={(e) => {
+                                const newGrid = [...contactGrid];
+                                newGrid[index].external_url = e.target.value;
+                                setContactGrid(newGrid);
+                              }}
+                              className="text-sm"
+                            />
+                          </>
+                        )}
+
+                        {/* Clear Button */}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full mt-2 text-red-600"
+                          onClick={() => {
+                            const newGrid = [...contactGrid];
+                            newGrid[index] = {
+                              position: entry.position,
+                              entry_type: 'empty',
+                              image_url: null,
+                              name: null,
+                              title: null,
+                              email: null,
+                              company_name: null,
+                              external_url: null
+                            };
+                            setContactGrid(newGrid);
+                          }}
+                        >
+                          Clear Slot
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
