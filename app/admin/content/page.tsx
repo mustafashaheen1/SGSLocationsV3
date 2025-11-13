@@ -1285,12 +1285,13 @@ export default function ContentManagementPage() {
                           newGrid[index] = {
                             ...newGrid[index],
                             entry_type: e.target.value,
-                            // Clear fields when changing type
+                            // Clear fields when changing type but keep position
                             name: null,
                             title: null,
                             email: null,
                             company_name: null,
-                            external_url: null
+                            external_url: null,
+                            image_url: null
                           };
                           setContactGrid(newGrid);
                         }}
@@ -1302,51 +1303,65 @@ export default function ContentManagementPage() {
                       </select>
                     </div>
 
+                    {/* Show content for non-empty slots */}
                     {entry.entry_type !== 'empty' && (
                       <>
-                        {/* Image Upload - Show for both team AND company */}
-                        {(entry.entry_type === 'team' || entry.entry_type === 'company') && (
-                          <div className="mb-2">
-                            {entry.image_url && (
+                        {/* Image Section - FIXED FOR BOTH TYPES */}
+                        <div className="mb-2">
+                          <div className="w-full h-24 bg-gray-200 rounded mb-1 overflow-hidden">
+                            {entry.image_url ? (
                               <img
                                 src={entry.image_url}
-                                alt={`Position ${entry.position}`}
-                                className="w-full h-24 object-cover rounded mb-1"
+                                alt={entry.entry_type === 'team' ? entry.name : entry.company_name}
+                                className="w-full h-full object-cover"
                                 onError={(e) => {
-                                  e.currentTarget.src = 'https://via.placeholder.com/200x200?text=No+Image';
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-xs text-gray-500">No Image</div>`;
+                                  }
                                 }}
                               />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                                No Image
+                              </div>
                             )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => document.getElementById(`contact-img-${entry.position}`)?.click()}
-                            >
-                              <Upload className="w-3 h-3 mr-1" />
-                              {entry.image_url ? 'Change' : 'Upload'}
-                            </Button>
-                            <input
-                              id={`contact-img-${entry.position}`}
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  try {
-                                    const url = await uploadImageToS3(file);
-                                    const newGrid = [...contactGrid];
-                                    newGrid[index].image_url = url;
-                                    setContactGrid(newGrid);
-                                  } catch (error) {
-                                    alert('Error uploading image');
-                                  }
-                                }
-                              }}
-                            />
                           </div>
-                        )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => document.getElementById(`contact-img-${entry.position}`)?.click()}
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            {entry.image_url ? 'Change Image' : 'Upload Image'}
+                          </Button>
+                          <input
+                            id={`contact-img-${entry.position}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  setUploadingLogo(true);
+                                  const url = await uploadImageToS3(file);
+                                  const newGrid = [...contactGrid];
+                                  newGrid[index].image_url = url;
+                                  setContactGrid(newGrid);
+                                } catch (error) {
+                                  console.error('Upload error:', error);
+                                  alert('Error uploading image');
+                                } finally {
+                                  setUploadingLogo(false);
+                                }
+                              }
+                            }}
+                          />
+                        </div>
 
                         {/* Team Member Fields */}
                         {entry.entry_type === 'team' && (
@@ -1416,20 +1431,22 @@ export default function ContentManagementPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="w-full mt-2 text-red-600"
+                          className="w-full mt-2 text-red-600 hover:bg-red-50"
                           onClick={() => {
-                            const newGrid = [...contactGrid];
-                            newGrid[index] = {
-                              position: entry.position,
-                              entry_type: 'empty',
-                              image_url: null,
-                              name: null,
-                              title: null,
-                              email: null,
-                              company_name: null,
-                              external_url: null
-                            };
-                            setContactGrid(newGrid);
+                            if (confirm('Clear this slot?')) {
+                              const newGrid = [...contactGrid];
+                              newGrid[index] = {
+                                position: entry.position,
+                                entry_type: 'empty',
+                                image_url: null,
+                                name: null,
+                                title: null,
+                                email: null,
+                                company_name: null,
+                                external_url: null
+                              };
+                              setContactGrid(newGrid);
+                            }
                           }}
                         >
                           Clear Slot
