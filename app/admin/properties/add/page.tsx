@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, X } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,6 +32,9 @@ export default function AddPropertyPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [smugmugUrl, setSmugmugUrl] = useState('');
+  const [importingFromSmugmug, setImportingFromSmugmug] = useState(false);
+  const [importProgress, setImportProgress] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -91,6 +94,60 @@ export default function AddPropertyPage() {
   function removeImage(index: number) {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleSmugmugImport() {
+    if (!smugmugUrl) {
+      alert('Please enter a SmugMug album URL or key');
+      return;
+    }
+
+    setImportingFromSmugmug(true);
+    setImportProgress('Connecting to SmugMug...');
+
+    try {
+      let albumKey = smugmugUrl;
+
+      if (smugmugUrl.includes('smugmug.com')) {
+        const parts = smugmugUrl.split('/');
+        albumKey = parts[parts.length - 1] || parts[parts.length - 2];
+      }
+
+      setImportProgress('Fetching images from SmugMug...');
+
+      const response = await fetch('/api/import-smugmug', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          albumKey: albumKey,
+          propertyId: null
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to import images');
+      }
+
+      const data = await response.json();
+
+      setImportProgress(`Successfully imported ${data.imported} of ${data.total} images!`);
+
+      const newImageUrls = data.urls;
+      setImagePreviews(prev => [...prev, ...newImageUrls]);
+
+      setTimeout(() => {
+        setImportProgress('');
+        setSmugmugUrl('');
+      }, 3000);
+    } catch (error: any) {
+      console.error('SmugMug import error:', error);
+      setImportProgress('');
+      alert('Failed to import from SmugMug: ' + error.message);
+    } finally {
+      setImportingFromSmugmug(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -290,6 +347,54 @@ export default function AddPropertyPage() {
           </div>
 
           <div className="col-span-2">
+            <div className="mb-8 p-6 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Camera className="w-5 h-5 text-blue-600" />
+                Import from SmugMug
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    SmugMug Album URL or Album Key
+                  </label>
+                  <Input
+                    placeholder="e.g., https://username.smugmug.com/album-name or album-key"
+                    value={smugmugUrl}
+                    onChange={(e) => setSmugmugUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Paste the SmugMug album URL or just the album key
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleSmugmugImport}
+                  disabled={!smugmugUrl || importingFromSmugmug}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {importingFromSmugmug ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" />
+                      Import Photos from SmugMug
+                    </>
+                  )}
+                </Button>
+
+                {importProgress && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">{importProgress}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <label className="block text-sm font-medium mb-2">
               Property Images * (Minimum 10 images required)
             </label>
