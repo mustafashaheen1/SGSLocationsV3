@@ -133,16 +133,6 @@ export function Navbar() {
               </Button>
             </form>
 
-            {isAuthenticated && (
-              <Button
-                onClick={handleSignOut}
-                variant="outline"
-                size="sm"
-                className="ml-2"
-              >
-                Sign Out
-              </Button>
-            )}
           </div>
 
           <button
@@ -212,22 +202,6 @@ export function Navbar() {
               </Button>
             </form>
 
-            {isAuthenticated && (
-              <div className="w-full mb-4 pb-4 border-b border-gray-700">
-                <div className="flex items-center gap-2 text-white mb-3">
-                  <User className="w-5 h-5" />
-                  <span className="text-sm">{userEmail}</span>
-                </div>
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Sign Out
-                </Button>
-              </div>
-            )}
 
             {navItems.map((item) => (
               item.label === 'LOGIN' && item.isButton ? (

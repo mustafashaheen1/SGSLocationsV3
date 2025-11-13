@@ -40,13 +40,16 @@ export default function ProductionDashboard() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
+        console.log('No authenticated user, redirecting to home');
         router.push('/');
         return;
       }
 
+      console.log('Authenticated user ID:', user.id);
+
       const { data: userDetails, error: userError } = await supabase
         .from('users')
-        .select('full_name, email, company, phone')
+        .select('full_name, email, company_name, phone')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -55,13 +58,15 @@ export default function ProductionDashboard() {
       }
 
       if (userDetails) {
+        console.log('User details loaded:', userDetails);
         setUserData({
           fullName: userDetails.full_name || '',
           email: userDetails.email || user.email || '',
-          company: userDetails.company || '',
+          company: userDetails.company_name || '',
           phone: userDetails.phone || ''
         });
       } else {
+        console.log('No user details found in database, using auth metadata');
         setUserData({
           fullName: user.user_metadata?.full_name || '',
           email: user.email || '',
@@ -114,7 +119,7 @@ export default function ProductionDashboard() {
         .from('users')
         .update({
           full_name: userData.fullName,
-          company: userData.company,
+          company_name: userData.company,
           phone: userData.phone,
           updated_at: new Date().toISOString()
         })
@@ -193,11 +198,23 @@ export default function ProductionDashboard() {
   return (
     <div className="min-h-screen bg-gray-50" style={{ paddingTop: '110px' }}>
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'acumin-pro-wide' }}>
-            Production Dashboard
-          </h1>
-          <p className="text-gray-600 mt-1">Welcome back, {userData.fullName || 'User'}</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'acumin-pro-wide' }}>
+              Production Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">Welcome back, {userData.fullName || 'User'}</p>
+          </div>
+          <Button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.push('/');
+            }}
+            variant="outline"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            Sign Out
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
