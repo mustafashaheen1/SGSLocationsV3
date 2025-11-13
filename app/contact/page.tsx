@@ -37,7 +37,9 @@ export default function ContactPage() {
         .order('position');
 
       if (data) {
-        setGridData(data);
+        // Filter out empty slots for display
+        const activeEntries = data.filter(entry => entry.entry_type !== 'empty');
+        setGridData(activeEntries);
       }
     }
 
@@ -1076,12 +1078,6 @@ export default function ContactPage() {
                           }}
                         />
                       )}
-                    </div>
-                  )}
-
-                  {entry.entry_type === 'empty' && (
-                    <div className="il-profile-card" style={{ backgroundColor: '#f0f0f0' }}>
-                      {/* Empty slot */}
                     </div>
                   )}
                 </div>

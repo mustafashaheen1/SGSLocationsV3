@@ -1304,38 +1304,49 @@ export default function ContentManagementPage() {
 
                     {entry.entry_type !== 'empty' && (
                       <>
-                        {/* Image Upload */}
-                        <div className="mb-2">
-                          {entry.image_url && (
-                            <img
-                              src={entry.image_url}
-                              alt={`Position ${entry.position}`}
-                              className="w-full h-24 object-cover rounded mb-1"
-                              onError={(e) => {
-                                e.currentTarget.src = 'https://via.placeholder.com/200x200?text=No+Image';
+                        {/* Image Upload - Show for both team AND company */}
+                        {(entry.entry_type === 'team' || entry.entry_type === 'company') && (
+                          <div className="mb-2">
+                            {entry.image_url && (
+                              <img
+                                src={entry.image_url}
+                                alt={`Position ${entry.position}`}
+                                className="w-full h-24 object-cover rounded mb-1"
+                                onError={(e) => {
+                                  e.currentTarget.src = 'https://via.placeholder.com/200x200?text=No+Image';
+                                }}
+                              />
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => document.getElementById(`contact-img-${entry.position}`)?.click()}
+                            >
+                              <Upload className="w-3 h-3 mr-1" />
+                              {entry.image_url ? 'Change' : 'Upload'}
+                            </Button>
+                            <input
+                              id={`contact-img-${entry.position}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const url = await uploadImageToS3(file);
+                                    const newGrid = [...contactGrid];
+                                    newGrid[index].image_url = url;
+                                    setContactGrid(newGrid);
+                                  } catch (error) {
+                                    alert('Error uploading image');
+                                  }
+                                }
                               }}
                             />
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => document.getElementById(`contact-img-${entry.position}`)?.click()}
-                          >
-                            <Upload className="w-3 h-3 mr-1" />
-                            {entry.image_url ? 'Change' : 'Upload'}
-                          </Button>
-                          <input
-                            id={`contact-img-${entry.position}`}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleContactImageUpload(entry.position, file);
-                            }}
-                          />
-                        </div>
+                          </div>
+                        )}
 
                         {/* Team Member Fields */}
                         {entry.entry_type === 'team' && (
