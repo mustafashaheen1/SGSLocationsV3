@@ -10,7 +10,7 @@ function createS3Client() {
   const region = process.env.AWS_REGION;
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-  const bucketName = process.env.AWS_S3_BUCKET_NAME;
+  const bucketName = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
 
   console.log('AWS Credentials Check:');
   console.log('  - Region:', region);
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
 
         const s3Client = createS3Client();
         await s3Client.send(new PutObjectCommand({
-          Bucket: process.env.AWS_S3_BUCKET_NAME!,
+          Bucket: process.env.NEXT_PUBLIC_AWS_S3_BUCKET!,
           Key: fileName,
           Body: Buffer.from(imageBuffer.data),
           ContentType: 'image/jpeg',
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
 
         const s3Url = process.env.NEXT_PUBLIC_CLOUDFRONT_URL
           ? `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${fileName}`
-          : `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+          : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
         uploadedUrls.push(s3Url);
         console.log(`  ✓ Uploaded: ${s3Url.substring(0, 60)}...`);
