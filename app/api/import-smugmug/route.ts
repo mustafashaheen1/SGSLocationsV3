@@ -37,6 +37,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    console.log('Environment Variables Check:');
+    console.log('  - API Key:', apiKey);
+    console.log('  - API Secret (first 15):', apiSecret.substring(0, 15));
+    console.log('  - API Secret length:', apiSecret.length);
+
     console.log('📡 Fetching stored access tokens...');
 
     const { data: tokenData, error: tokenError } = await supabase
@@ -67,15 +72,39 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = `https://api.smugmug.com/api/v2/album/${albumKey}!images`;
 
-    const oauthParams = createOAuthParams(apiKey, tokenData.access_token);
+    const oauthParams = createOAuthParams(apiKey, tokenData.access_token.trim());
+
+    console.log('OAuth Parameters:');
+    Object.keys(oauthParams).forEach(key => {
+      console.log(`  ${key}: ${oauthParams[key as keyof typeof oauthParams]}`);
+    });
+
+    console.log('\nSignature Generation:');
+    console.log('  - Method: GET');
+    console.log('  - URL:', baseUrl);
+    console.log('  - Consumer Secret (first 15):', apiSecret.substring(0, 15));
+    console.log('  - Token Secret (first 15):', tokenData.access_token_secret.substring(0, 15));
 
     const signature = generateOAuthSignature(
       'GET',
       baseUrl,
       oauthParams,
-      apiSecret,
-      tokenData.access_token_secret
+      apiSecret.trim(),
+      tokenData.access_token_secret.trim()
     );
+
+    console.log('  - Generated Signature:', signature.substring(0, 30) + '...');
+
+    const sortedParams = Object.keys(oauthParams)
+      .sort()
+      .map(key => {
+        const value = oauthParams[key as keyof typeof oauthParams];
+        return `${encodeURIComponent(key)}=${encodeURIComponent(value || '')}`;
+      })
+      .join('&');
+
+    const ourSBS = `GET&${encodeURIComponent(baseUrl)}&${encodeURIComponent(sortedParams)}`;
+    console.log('  - Our SBS:', ourSBS);
 
     const allParams = {
       ...oauthParams,

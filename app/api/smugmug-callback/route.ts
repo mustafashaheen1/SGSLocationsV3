@@ -102,14 +102,14 @@ export async function GET(request: NextRequest) {
     console.log('✓ SmugMug response received');
 
     const params = new URLSearchParams(response.data);
-    const accessToken = params.get('oauth_token');
-    const accessTokenSecret = params.get('oauth_token_secret');
+    const accessToken = params.get('oauth_token')?.trim();
+    const accessTokenSecret = params.get('oauth_token_secret')?.trim();
 
     console.log('Token Exchange Result:');
-    console.log('  - Response data:', response.data);
-    console.log('  - accessToken:', accessToken ? `${accessToken.substring(0, 20)}...` : 'NULL');
-    console.log('  - accessTokenSecret:', accessTokenSecret ? `${accessTokenSecret.substring(0, 20)}...` : 'NULL');
+    console.log('  - Raw response:', response.data);
+    console.log('  - accessToken:', accessToken);
     console.log('  - accessToken length:', accessToken?.length || 0);
+    console.log('  - accessTokenSecret:', accessTokenSecret);
     console.log('  - accessTokenSecret length:', accessTokenSecret?.length || 0);
 
     if (!accessToken || !accessTokenSecret) {
