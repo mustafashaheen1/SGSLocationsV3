@@ -56,27 +56,45 @@ export default function AddPropertyPage() {
 
     const params = new URLSearchParams(window.location.search);
     if (params.get('smugmug_auth') === 'success') {
+      console.log('✓ Authorization success detected');
       setSmugmugAuthorized(true);
       setAuthorizing(false);
+      setCheckingAuth(false);
       alert('✓ SmugMug authorized successfully!');
 
       window.history.replaceState({}, '', '/admin/properties/add');
+
+      setTimeout(() => {
+        checkSmugMugAuth();
+      }, 1000);
     }
 
     if (params.get('error')) {
       const error = params.get('error');
       alert('Authorization failed: ' + error);
       setAuthorizing(false);
+      setCheckingAuth(false);
     }
   }, []);
 
   async function checkSmugMugAuth() {
+    console.log('🔍 Checking SmugMug authorization status...');
     try {
       const response = await fetch('/api/smugmug/check-auth');
       const data = await response.json();
+
+      console.log('Authorization status:', data);
+
       setSmugmugAuthorized(data.authorized);
+
+      if (data.authorized) {
+        console.log('✅ SmugMug is authorized');
+      } else {
+        console.log('❌ SmugMug not authorized');
+      }
     } catch (error) {
       console.error('Error checking SmugMug auth:', error);
+      setSmugmugAuthorized(false);
     } finally {
       setCheckingAuth(false);
     }
@@ -84,11 +102,14 @@ export default function AddPropertyPage() {
 
   async function handleSmugMugAuthorize() {
     setAuthorizing(true);
+    console.log('🔑 Starting SmugMug authorization...');
+
     try {
       const response = await fetch('/api/smugmug/request-token');
       const data = await response.json();
 
       if (data.authUrl) {
+        console.log('Redirecting to SmugMug authorization...');
         window.location.href = data.authUrl;
       } else {
         throw new Error(data.error || 'Failed to get authorization URL');
