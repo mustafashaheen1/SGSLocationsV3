@@ -5,13 +5,36 @@ import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 
-const s3Client = new S3Client({
-  region: process.env.NEXT_PUBLIC_AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!,
-  },
-});
+function createS3Client() {
+  const region = process.env.NEXT_PUBLIC_AWS_REGION;
+  const accessKeyId = process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY;
+
+  console.log('AWS Credentials Check:');
+  console.log('  - Region:', region);
+  console.log('  - Access Key exists:', !!accessKeyId);
+  console.log('  - Access Key length:', accessKeyId?.length || 0);
+  console.log('  - Access Key (first 10):', accessKeyId?.substring(0, 10) || 'MISSING');
+  console.log('  - Secret Key exists:', !!secretAccessKey);
+  console.log('  - Secret Key length:', secretAccessKey?.length || 0);
+  console.log('  - Secret Key (first 10):', secretAccessKey?.substring(0, 10) || 'MISSING');
+
+  if (!region || !accessKeyId || !secretAccessKey) {
+    throw new Error('AWS credentials not configured. Check NEXT_PUBLIC_AWS_REGION, NEXT_PUBLIC_AWS_ACCESS_KEY_ID, NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY');
+  }
+
+  if (accessKeyId.length < 16 || secretAccessKey.length < 40) {
+    throw new Error('AWS credentials appear invalid. Access key should be 20 chars, secret should be 40 chars.');
+  }
+
+  return new S3Client({
+    region,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+}
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -228,6 +251,7 @@ export async function POST(request: NextRequest) {
 
         console.log(`  ↑ Uploading to S3...`);
 
+        const s3Client = createS3Client();
         await s3Client.send(new PutObjectCommand({
           Bucket: process.env.NEXT_PUBLIC_AWS_S3_BUCKET!,
           Key: fileName,
