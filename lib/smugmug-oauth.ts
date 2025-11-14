@@ -12,6 +12,20 @@ export interface OAuthParams {
   oauth_verifier?: string;
 }
 
+/**
+ * Encode string according to RFC 3986 (OAuth 1.0a requirement)
+ * JavaScript's encodeURIComponent doesn't encode: ! ' ( ) *
+ * But OAuth requires all these to be percent-encoded
+ */
+function rfc3986Encode(str: string): string {
+  return encodeURIComponent(str)
+    .replace(/!/g, '%21')
+    .replace(/'/g, '%27')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29')
+    .replace(/\*/g, '%2A');
+}
+
 export function generateOAuthSignature(
   method: string,
   url: string,
@@ -20,19 +34,24 @@ export function generateOAuthSignature(
   tokenSecret: string = ''
 ): string {
   const paramObj = params as Record<string, string>;
+
+  // Sort and encode parameters using RFC 3986
   const sortedParams = Object.keys(paramObj)
     .sort()
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(paramObj[key])}`)
+    .map(key => `${rfc3986Encode(key)}=${rfc3986Encode(paramObj[key])}`)
     .join('&');
 
+  // Build signature base string with proper encoding
   const signatureBaseString = [
     method.toUpperCase(),
-    encodeURIComponent(url),
-    encodeURIComponent(sortedParams)
+    rfc3986Encode(url),
+    rfc3986Encode(sortedParams)
   ].join('&');
 
-  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+  // Build signing key
+  const signingKey = `${rfc3986Encode(consumerSecret)}&${rfc3986Encode(tokenSecret)}`;
 
+  // Generate HMAC-SHA1 signature
   const signature = crypto
     .createHmac('sha1', signingKey)
     .update(signatureBaseString)
