@@ -35,6 +35,9 @@ export default function AddPropertyPage() {
   const [smugmugUrl, setSmugmugUrl] = useState('');
   const [importingFromSmugmug, setImportingFromSmugmug] = useState(false);
   const [importProgress, setImportProgress] = useState('');
+  const [smugmugAuthorized, setSmugmugAuthorized] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authorizing, setAuthorizing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -49,7 +52,52 @@ export default function AddPropertyPage() {
 
   useEffect(() => {
     fetchCategories();
+    checkSmugMugAuth();
   }, []);
+
+  async function checkSmugMugAuth() {
+    try {
+      const response = await fetch('/api/smugmug/check-auth');
+      const data = await response.json();
+      setSmugmugAuthorized(data.authorized);
+    } catch (error) {
+      console.error('Error checking SmugMug auth:', error);
+    } finally {
+      setCheckingAuth(false);
+    }
+  }
+
+  async function handleSmugMugAuthorize() {
+    setAuthorizing(true);
+    try {
+      const response = await fetch('/api/smugmug/request-token');
+      const data = await response.json();
+
+      if (data.authUrl) {
+        sessionStorage.setItem('smugmug_request_token_secret', data.requestTokenSecret);
+
+        window.open(data.authUrl, 'SmugMug Authorization', 'width=800,height=600');
+
+        const pollInterval = setInterval(async () => {
+          const authCheck = await fetch('/api/smugmug/check-auth');
+          const authData = await authCheck.json();
+
+          if (authData.authorized) {
+            clearInterval(pollInterval);
+            setSmugmugAuthorized(true);
+            setAuthorizing(false);
+            alert('✓ SmugMug authorized successfully!');
+          }
+        }, 2000);
+
+        setTimeout(() => clearInterval(pollInterval), 300000);
+      }
+    } catch (error: any) {
+      console.error('Authorization error:', error);
+      alert('Failed to start authorization: ' + error.message);
+      setAuthorizing(false);
+    }
+  }
 
   async function fetchCategories() {
     try {
@@ -373,32 +421,60 @@ export default function AddPropertyPage() {
                 Import from SmugMug
               </h3>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    SmugMug Album URL or Album Key
-                  </label>
-                  <Input
-                    placeholder="Full URL or just the album key (e.g., ABC123xyz)"
-                    value={smugmugUrl}
-                    onChange={(e) => setSmugmugUrl(e.target.value)}
-                  />
-                  <div className="mt-2 p-3 bg-white rounded border border-blue-200">
-                    <p className="text-xs text-gray-700 font-medium mb-1">💡 How to find your album key:</p>
-                    <ol className="text-xs text-gray-600 space-y-1 ml-4 list-decimal">
-                      <li>Open your SmugMug album in a browser</li>
-                      <li>Right-click → "View Page Source"</li>
-                      <li>Press Ctrl+F (Cmd+F on Mac) and search for: <code className="bg-gray-100 px-1 rounded">"AlbumKey"</code></li>
-                      <li>Copy the key value (e.g., "AlbumKey":"ABC123xyz")</li>
-                      <li>Paste just the key part (ABC123xyz) or the full URL here</li>
-                    </ol>
+              {checkingAuth ? (
+                <p className="text-sm text-gray-600">Checking authorization status...</p>
+              ) : !smugmugAuthorized ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-sm font-medium text-yellow-900 mb-2">
+                      🔐 Authorization Required
+                    </p>
+                    <p className="text-sm text-yellow-800 mb-3">
+                      You need to authorize SGS Locations to access your SmugMug account. This is a one-time setup.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleSmugMugAuthorize}
+                      disabled={authorizing}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                    >
+                      {authorizing ? 'Authorizing...' : 'Authorize SmugMug Access'}
+                    </Button>
                   </div>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-3 bg-green-50 border border-green-200 rounded mb-4">
+                    <p className="text-sm font-medium text-green-900">
+                      ✓ SmugMug Authorized
+                    </p>
+                  </div>
 
-                <Button
-                  type="button"
-                  onClick={handleSmugmugImport}
-                  disabled={!smugmugUrl || importingFromSmugmug}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SmugMug Album URL or Album Key
+                    </label>
+                    <Input
+                      placeholder="Full URL or just the album key (e.g., ABC123xyz)"
+                      value={smugmugUrl}
+                      onChange={(e) => setSmugmugUrl(e.target.value)}
+                    />
+                    <div className="mt-2 p-3 bg-white rounded border border-blue-200">
+                      <p className="text-xs text-gray-700 font-medium mb-1">💡 How to find your album key:</p>
+                      <ol className="text-xs text-gray-600 space-y-1 ml-4 list-decimal">
+                        <li>Open your SmugMug album in a browser</li>
+                        <li>Right-click → "View Page Source"</li>
+                        <li>Press Ctrl+F (Cmd+F on Mac) and search for: <code className="bg-gray-100 px-1 rounded">"AlbumKey"</code></li>
+                        <li>Copy the key value (e.g., "AlbumKey":"ABC123xyz")</li>
+                        <li>Paste just the key part (ABC123xyz) or the full URL here</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleSmugmugImport}
+                    disabled={!smugmugUrl || importingFromSmugmug}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {importingFromSmugmug ? (
@@ -414,18 +490,19 @@ export default function AddPropertyPage() {
                   )}
                 </Button>
 
-                {importProgress && (
-                  <div className={`p-3 rounded ${
-                    importProgress.includes('✓') ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'
-                  }`}>
-                    <p className={`text-sm ${
-                      importProgress.includes('✓') ? 'text-green-700' : 'text-blue-700'
+                  {importProgress && (
+                    <div className={`p-3 rounded ${
+                      importProgress.includes('✓') ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'
                     }`}>
-                      {importProgress}
-                    </p>
-                  </div>
-                )}
-              </div>
+                      <p className={`text-sm ${
+                        importProgress.includes('✓') ? 'text-green-700' : 'text-blue-700'
+                      }`}>
+                        {importProgress}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <label className="block text-sm font-medium mb-2">

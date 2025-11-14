@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { supabase } from '@/lib/supabase';
+import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
-import crypto from 'crypto';
 
 const s3Client = new S3Client({
   region: process.env.NEXT_PUBLIC_AWS_REGION!,
@@ -12,40 +13,12 @@ const s3Client = new S3Client({
   },
 });
 
-function generateOAuthSignature(
-  method: string,
-  url: string,
-  params: Record<string, string>,
-  consumerSecret: string
-): string {
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
-    .join('&');
-
-  const signatureBaseString = [
-    method.toUpperCase(),
-    encodeURIComponent(url),
-    encodeURIComponent(sortedParams)
-  ].join('&');
-
-  const signingKey = `${encodeURIComponent(consumerSecret)}&`;
-
-  const signature = crypto
-    .createHmac('sha1', signingKey)
-    .update(signatureBaseString)
-    .digest('base64');
-
-  return signature;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { albumKey, propertyId } = await request.json();
 
     console.log('=== SMUGMUG IMPORT DEBUG ===');
     console.log('Album Key:', albumKey);
-    console.log('Property ID:', propertyId);
 
     if (!albumKey) {
       return NextResponse.json({ error: 'Album key required' }, { status: 400 });
@@ -54,45 +27,52 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.NEXT_PUBLIC_SMUGMUG_API_KEY;
     const apiSecret = process.env.SMUGMUG_API_SECRET;
 
-    console.log('API Key configured:', !!apiKey);
-    console.log('API Secret configured:', !!apiSecret);
-    console.log('API Key (first 10 chars):', apiKey?.substring(0, 10));
-
     if (!apiKey || !apiSecret) {
       return NextResponse.json({
-        error: 'SmugMug credentials not configured',
-        details: 'Please add NEXT_PUBLIC_SMUGMUG_API_KEY and SMUGMUG_API_SECRET to environment variables.'
+        error: 'SmugMug credentials not configured'
       }, { status: 500 });
     }
 
-    console.log('Starting SmugMug import with OAuth 1.0a...');
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('smugmug_tokens')
+      .select('access_token, access_token_secret')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (tokenError || !tokenData) {
+      return NextResponse.json({
+        error: 'SmugMug not authorized',
+        details: 'Please authorize SmugMug access first using the "Authorize SmugMug" button.',
+        needsAuth: true
+      }, { status: 401 });
+    }
+
+    console.log('✓ Using stored access token');
 
     const baseUrl = `https://api.smugmug.com/api/v2/album/${albumKey}!images`;
-    console.log('Request URL:', baseUrl);
 
-    const oauthParams: Record<string, string> = {
-      oauth_consumer_key: apiKey,
-      oauth_nonce: crypto.randomBytes(16).toString('hex'),
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-      oauth_version: '1.0',
+    const oauthParams = {
+      ...createOAuthParams(apiKey, tokenData.access_token),
       _accept: 'application/json'
     };
 
-    console.log('OAuth params:', {
-      ...oauthParams,
-      oauth_consumer_key: oauthParams.oauth_consumer_key.substring(0, 10) + '...'
-    });
+    const signature = generateOAuthSignature(
+      'GET',
+      baseUrl,
+      oauthParams,
+      apiSecret,
+      tokenData.access_token_secret
+    );
 
-    const signature = generateOAuthSignature('GET', baseUrl, oauthParams, apiSecret);
-    oauthParams.oauth_signature = signature;
+    const allParams = { ...oauthParams, oauth_signature: signature };
 
-    console.log('OAuth signature generated:', signature.substring(0, 20) + '...');
+    console.log('Fetching album images...');
 
     let albumResponse;
     try {
       albumResponse = await axios.get(baseUrl, {
-        params: oauthParams,
+        params: allParams,
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'SGS-Locations/1.0'
@@ -101,22 +81,19 @@ export async function POST(request: NextRequest) {
       });
       console.log('✓ Album fetch successful');
     } catch (albumError: any) {
-      console.error('✗ Album fetch failed:', {
-        status: albumError.response?.status,
-        statusText: albumError.response?.statusText,
-        data: albumError.response?.data,
-        message: albumError.message
-      });
+      console.error('✗ Album fetch failed:', albumError.response?.data);
+
+      if (albumError.response?.status === 401) {
+        return NextResponse.json({
+          error: 'Authorization expired',
+          details: 'Please reauthorize SmugMug access.',
+          needsReauth: true
+        }, { status: 401 });
+      }
 
       return NextResponse.json({
         error: 'SmugMug API request failed',
-        details: albumError.response?.data?.Message || albumError.message,
-        statusCode: albumError.response?.status,
-        hint: albumError.response?.status === 401
-          ? 'Invalid API credentials. Please verify your SmugMug API Key and Secret in Vercel environment variables.'
-          : albumError.response?.status === 404
-          ? 'Album not found. Please check the album key.'
-          : 'Unknown error occurred. Check Vercel logs for details.'
+        details: albumError.response?.data?.Message || albumError.message
       }, { status: albumError.response?.status || 500 });
     }
 
@@ -124,13 +101,12 @@ export async function POST(request: NextRequest) {
 
     if (images.length === 0) {
       return NextResponse.json({
-        error: 'No images found in this album',
-        hint: 'The album might be empty or the album key might be incorrect.'
+        error: 'No images found in this album'
       }, { status: 400 });
     }
 
-    console.log(`✓ Found ${images.length} images in album`);
-    console.log('Processing first 20 images...');
+    console.log(`✓ Found ${images.length} images`);
+    console.log('Processing first 20...');
 
     const uploadedUrls: string[] = [];
     const errors: string[] = [];
@@ -140,58 +116,43 @@ export async function POST(request: NextRequest) {
       const image = imagesToProcess[i];
 
       try {
-        console.log(`[${i + 1}/${imagesToProcess.length}] Processing: ${image.FileName}`);
+        console.log(`[${i + 1}/${imagesToProcess.length}] ${image.FileName}`);
 
         const imageUri = image.Uris?.Image?.Uri;
-        if (!imageUri) {
-          throw new Error('No image URI');
-        }
+        if (!imageUri) throw new Error('No image URI');
 
         const imageUrl = `https://api.smugmug.com${imageUri}`;
-        const imageOAuthParams: Record<string, string> = {
-          oauth_consumer_key: apiKey,
-          oauth_nonce: crypto.randomBytes(16).toString('hex'),
-          oauth_signature_method: 'HMAC-SHA1',
-          oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-          oauth_version: '1.0',
+        const imageOAuthParams = {
+          ...createOAuthParams(apiKey, tokenData.access_token),
           _accept: 'application/json'
         };
-        const imageSig = generateOAuthSignature('GET', imageUrl, imageOAuthParams, apiSecret);
-        imageOAuthParams.oauth_signature = imageSig;
+        const imageSig = generateOAuthSignature('GET', imageUrl, imageOAuthParams, apiSecret, tokenData.access_token_secret);
+        const imageAllParams = { ...imageOAuthParams, oauth_signature: imageSig };
 
         const imageResponse = await axios.get(imageUrl, {
-          params: imageOAuthParams,
+          params: imageAllParams,
           timeout: 20000
         });
 
         const imageData = imageResponse.data.Response?.Image;
-        if (!imageData?.Uris?.LargestImage?.Uri) {
-          throw new Error('No largest image URI');
-        }
+        if (!imageData?.Uris?.LargestImage?.Uri) throw new Error('No largest image URI');
 
         const largestUrl = `https://api.smugmug.com${imageData.Uris.LargestImage.Uri}`;
-        const largestOAuthParams: Record<string, string> = {
-          oauth_consumer_key: apiKey,
-          oauth_nonce: crypto.randomBytes(16).toString('hex'),
-          oauth_signature_method: 'HMAC-SHA1',
-          oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-          oauth_version: '1.0',
+        const largestOAuthParams = {
+          ...createOAuthParams(apiKey, tokenData.access_token),
           _accept: 'application/json'
         };
-        const largestSig = generateOAuthSignature('GET', largestUrl, largestOAuthParams, apiSecret);
-        largestOAuthParams.oauth_signature = largestSig;
+        const largestSig = generateOAuthSignature('GET', largestUrl, largestOAuthParams, apiSecret, tokenData.access_token_secret);
+        const largestAllParams = { ...largestOAuthParams, oauth_signature: largestSig };
 
         const largestResponse = await axios.get(largestUrl, {
-          params: largestOAuthParams,
+          params: largestAllParams,
           timeout: 20000
         });
 
         const downloadUrl = largestResponse.data.Response?.LargestImage?.Url;
-        if (!downloadUrl) {
-          throw new Error('No download URL');
-        }
+        if (!downloadUrl) throw new Error('No download URL');
 
-        console.log(`  Downloading from: ${downloadUrl.substring(0, 50)}...`);
         const imgDownload = await axios.get(downloadUrl, {
           responseType: 'arraybuffer',
           timeout: 30000,
@@ -203,7 +164,6 @@ export async function POST(request: NextRequest) {
         const ext = contentType.split('/')[1] || 'jpg';
         const fileName = `properties/${propertyId || 'temp'}/${randomUUID()}.${ext}`;
 
-        console.log(`  Uploading to S3: ${fileName}`);
         await s3Client.send(new PutObjectCommand({
           Bucket: process.env.NEXT_PUBLIC_AWS_S3_BUCKET!,
           Key: fileName,
@@ -217,19 +177,18 @@ export async function POST(request: NextRequest) {
           : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileName}`;
 
         uploadedUrls.push(url);
-        console.log(`  ✓ Success: ${image.FileName}`);
+        console.log(`  ✓ Success`);
 
         await new Promise(resolve => setTimeout(resolve, 500));
 
       } catch (err: any) {
-        console.error(`  ✗ Failed ${image.FileName}:`, err.message);
+        console.error(`  ✗ Failed:`, err.message);
         errors.push(`${image.FileName}: ${err.message}`);
       }
     }
 
-    console.log('=== IMPORT COMPLETE ===');
-    console.log(`Success: ${uploadedUrls.length}/${imagesToProcess.length}`);
-    console.log(`Errors: ${errors.length}`);
+    console.log('=== COMPLETE ===');
+    console.log(`Success: ${uploadedUrls.length}`);
 
     return NextResponse.json({
       success: true,
@@ -237,19 +196,14 @@ export async function POST(request: NextRequest) {
       total: images.length,
       urls: uploadedUrls,
       errors: errors.length > 0 ? errors : undefined,
-      note: images.length > 20 ? 'Imported first 20 images to avoid timeout' : undefined
+      note: images.length > 20 ? 'Imported first 20 images' : undefined
     });
 
   } catch (error: any) {
-    console.error('=== IMPORT ERROR ===');
-    console.error('Error:', error);
-    console.error('Status:', error.response?.status);
-    console.error('Response:', error.response?.data);
-
+    console.error('Import error:', error);
     return NextResponse.json({
       error: error.message || 'Import failed',
-      details: error.response?.data?.Message || error.toString(),
-      statusCode: error.response?.status
-    }, { status: error.response?.status || 500 });
+      details: error.response?.data?.Message || error.toString()
+    }, { status: 500 });
   }
 }
