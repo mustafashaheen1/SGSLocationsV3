@@ -13,11 +13,15 @@ const s3Client = new S3Client({
   },
 });
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   try {
     const { albumKey, propertyId } = await request.json();
 
-    console.log('=== SMUGMUG IMPORT DEBUG ===');
+    console.log('=== SMUGMUG IMPORT STARTED ===');
     console.log('Album Key:', albumKey);
 
     if (!albumKey) {
@@ -33,29 +37,30 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    console.log('📡 Fetching stored access tokens...');
+
     const { data: tokenData, error: tokenError } = await supabase
       .from('smugmug_tokens')
       .select('access_token, access_token_secret')
+      .eq('is_temporary', false)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (tokenError || !tokenData) {
+    if (tokenError || !tokenData || !tokenData.access_token || !tokenData.access_token_secret) {
+      console.error('❌ No valid tokens found');
       return NextResponse.json({
         error: 'SmugMug not authorized',
-        details: 'Please authorize SmugMug access first using the "Authorize SmugMug" button.',
+        details: 'Please authorize SmugMug access first.',
         needsAuth: true
       }, { status: 401 });
     }
 
-    console.log('✓ Using stored access token');
+    console.log('✓ Access tokens retrieved');
 
     const baseUrl = `https://api.smugmug.com/api/v2/album/${albumKey}!images`;
 
-    const oauthParams = {
-      ...createOAuthParams(apiKey, tokenData.access_token),
-      _accept: 'application/json'
-    };
+    const oauthParams = createOAuthParams(apiKey, tokenData.access_token);
 
     const signature = generateOAuthSignature(
       'GET',
@@ -65,9 +70,13 @@ export async function POST(request: NextRequest) {
       tokenData.access_token_secret
     );
 
-    const allParams = { ...oauthParams, oauth_signature: signature };
+    const allParams = {
+      ...oauthParams,
+      oauth_signature: signature,
+      _accept: 'application/json'
+    };
 
-    console.log('Fetching album images...');
+    console.log('📸 Fetching album images from SmugMug...');
 
     let albumResponse;
     try {
@@ -81,12 +90,14 @@ export async function POST(request: NextRequest) {
       });
       console.log('✓ Album fetch successful');
     } catch (albumError: any) {
-      console.error('✗ Album fetch failed:', albumError.response?.data);
+      console.error('❌ Album fetch failed');
+      console.error('Status:', albumError.response?.status);
+      console.error('Error:', albumError.response?.data);
 
       if (albumError.response?.status === 401) {
         return NextResponse.json({
           error: 'Authorization expired',
-          details: 'Please reauthorize SmugMug access.',
+          details: 'Please reauthorize SmugMug access using the "Authorize SmugMug" button.',
           needsReauth: true
         }, { status: 401 });
       }
@@ -101,12 +112,13 @@ export async function POST(request: NextRequest) {
 
     if (images.length === 0) {
       return NextResponse.json({
-        error: 'No images found in this album'
+        error: 'No images found in album',
+        details: 'This album appears to be empty.'
       }, { status: 400 });
     }
 
-    console.log(`✓ Found ${images.length} images`);
-    console.log('Processing first 20...');
+    console.log(`✓ Found ${images.length} images in album`);
+    console.log('📥 Processing first 20 images...');
 
     const uploadedUrls: string[] = [];
     const errors: string[] = [];
@@ -116,94 +128,114 @@ export async function POST(request: NextRequest) {
       const image = imagesToProcess[i];
 
       try {
-        console.log(`[${i + 1}/${imagesToProcess.length}] ${image.FileName}`);
+        console.log(`[${i + 1}/${imagesToProcess.length}] Processing ${image.FileName}`);
 
         const imageUri = image.Uris?.Image?.Uri;
-        if (!imageUri) throw new Error('No image URI');
+        if (!imageUri) {
+          throw new Error('No image URI found');
+        }
 
         const imageUrl = `https://api.smugmug.com${imageUri}`;
-        const imageOAuthParams = {
-          ...createOAuthParams(apiKey, tokenData.access_token),
+
+        const imageOAuthParams = createOAuthParams(apiKey, tokenData.access_token);
+        const imageSig = generateOAuthSignature('GET', imageUrl, imageOAuthParams, apiSecret, tokenData.access_token_secret);
+        const imageAllParams = {
+          ...imageOAuthParams,
+          oauth_signature: imageSig,
           _accept: 'application/json'
         };
-        const imageSig = generateOAuthSignature('GET', imageUrl, imageOAuthParams, apiSecret, tokenData.access_token_secret);
-        const imageAllParams = { ...imageOAuthParams, oauth_signature: imageSig };
 
         const imageResponse = await axios.get(imageUrl, {
           params: imageAllParams,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'SGS-Locations/1.0'
+          },
           timeout: 20000
         });
 
         const imageData = imageResponse.data.Response?.Image;
-        if (!imageData?.Uris?.LargestImage?.Uri) throw new Error('No largest image URI');
+        if (!imageData?.Uris?.LargestImage?.Uri) {
+          throw new Error('No largest image URI found');
+        }
 
         const largestUrl = `https://api.smugmug.com${imageData.Uris.LargestImage.Uri}`;
-        const largestOAuthParams = {
-          ...createOAuthParams(apiKey, tokenData.access_token),
+
+        const largestOAuthParams = createOAuthParams(apiKey, tokenData.access_token);
+        const largestSig = generateOAuthSignature('GET', largestUrl, largestOAuthParams, apiSecret, tokenData.access_token_secret);
+        const largestAllParams = {
+          ...largestOAuthParams,
+          oauth_signature: largestSig,
           _accept: 'application/json'
         };
-        const largestSig = generateOAuthSignature('GET', largestUrl, largestOAuthParams, apiSecret, tokenData.access_token_secret);
-        const largestAllParams = { ...largestOAuthParams, oauth_signature: largestSig };
 
         const largestResponse = await axios.get(largestUrl, {
           params: largestAllParams,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'SGS-Locations/1.0'
+          },
           timeout: 20000
         });
 
         const downloadUrl = largestResponse.data.Response?.LargestImage?.Url;
-        if (!downloadUrl) throw new Error('No download URL');
+        if (!downloadUrl) {
+          throw new Error('No download URL found');
+        }
 
-        const imgDownload = await axios.get(downloadUrl, {
+        console.log(`  ↓ Downloading from SmugMug...`);
+
+        const imageBuffer = await axios.get(downloadUrl, {
           responseType: 'arraybuffer',
-          timeout: 30000,
-          maxContentLength: 50 * 1024 * 1024
+          timeout: 30000
         });
 
-        const buffer = Buffer.from(imgDownload.data);
-        const contentType = imgDownload.headers['content-type'] || 'image/jpeg';
-        const ext = contentType.split('/')[1] || 'jpg';
-        const fileName = `properties/${propertyId || 'temp'}/${randomUUID()}.${ext}`;
+        const fileName = `properties/${randomUUID()}.jpg`;
+
+        console.log(`  ↑ Uploading to S3...`);
 
         await s3Client.send(new PutObjectCommand({
           Bucket: process.env.NEXT_PUBLIC_AWS_S3_BUCKET!,
           Key: fileName,
-          Body: buffer,
-          ContentType: contentType,
+          Body: Buffer.from(imageBuffer.data),
+          ContentType: 'image/jpeg',
           ACL: 'public-read',
         }));
 
-        const url = process.env.NEXT_PUBLIC_CLOUDFRONT_URL
+        const s3Url = process.env.NEXT_PUBLIC_CLOUDFRONT_URL
           ? `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${fileName}`
           : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileName}`;
 
-        uploadedUrls.push(url);
-        console.log(`  ✓ Success`);
+        uploadedUrls.push(s3Url);
+        console.log(`  ✓ Uploaded: ${s3Url.substring(0, 60)}...`);
 
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-      } catch (err: any) {
-        console.error(`  ✗ Failed:`, err.message);
-        errors.push(`${image.FileName}: ${err.message}`);
+      } catch (error: any) {
+        console.error(`  ✗ Failed: ${error.message}`);
+        errors.push(`${image.FileName}: ${error.message}`);
       }
     }
 
-    console.log('=== COMPLETE ===');
-    console.log(`Success: ${uploadedUrls.length}`);
+    console.log('=== IMPORT COMPLETE ===');
+    console.log(`✓ Successfully imported: ${uploadedUrls.length}`);
+    console.log(`✗ Failed: ${errors.length}`);
 
     return NextResponse.json({
       success: true,
-      imported: uploadedUrls.length,
+      uploadedUrls,
       total: images.length,
-      urls: uploadedUrls,
+      imported: uploadedUrls.length,
       errors: errors.length > 0 ? errors : undefined,
-      note: images.length > 20 ? 'Imported first 20 images' : undefined
+      message: `Successfully imported ${uploadedUrls.length} of ${imagesToProcess.length} images`
     });
 
   } catch (error: any) {
-    console.error('Import error:', error);
+    console.error('=== IMPORT ERROR ===');
+    console.error('Error:', error.message);
+    console.error('Stack:', error.stack);
+
     return NextResponse.json({
-      error: error.message || 'Import failed',
-      details: error.response?.data?.Message || error.toString()
+      error: 'Import failed',
+      details: error.message
     }, { status: 500 });
   }
 }
