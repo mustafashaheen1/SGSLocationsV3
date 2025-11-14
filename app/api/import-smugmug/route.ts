@@ -47,6 +47,13 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
+    console.log('Token Validation:');
+    console.log('  - tokenData:', !!tokenData);
+    console.log('  - access_token:', tokenData?.access_token ? `${tokenData.access_token.substring(0, 20)}...` : 'MISSING');
+    console.log('  - access_token length:', tokenData?.access_token?.length || 0);
+    console.log('  - access_token_secret:', tokenData?.access_token_secret ? `${tokenData.access_token_secret.substring(0, 20)}...` : 'MISSING');
+    console.log('  - secret length:', tokenData?.access_token_secret?.length || 0);
+
     if (tokenError || !tokenData || !tokenData.access_token || !tokenData.access_token_secret) {
       console.error('❌ No valid tokens found');
       return NextResponse.json({
