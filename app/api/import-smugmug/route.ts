@@ -79,11 +79,11 @@ export async function POST(request: NextRequest) {
 
     const allParams = {
       ...oauthParams,
-      oauth_signature: signature,
-      _accept: 'application/json'
+      oauth_signature: signature
     };
 
     console.log('📸 Fetching album images from SmugMug...');
+    console.log('  - Using OAuth params only (no _accept)');
 
     let albumResponse;
     try {
@@ -148,8 +148,7 @@ export async function POST(request: NextRequest) {
         const imageSig = generateOAuthSignature('GET', imageUrl, imageOAuthParams, apiSecret, tokenData.access_token_secret);
         const imageAllParams = {
           ...imageOAuthParams,
-          oauth_signature: imageSig,
-          _accept: 'application/json'
+          oauth_signature: imageSig
         };
 
         const imageResponse = await axios.get(imageUrl, {
@@ -172,8 +171,7 @@ export async function POST(request: NextRequest) {
         const largestSig = generateOAuthSignature('GET', largestUrl, largestOAuthParams, apiSecret, tokenData.access_token_secret);
         const largestAllParams = {
           ...largestOAuthParams,
-          oauth_signature: largestSig,
-          _accept: 'application/json'
+          oauth_signature: largestSig
         };
 
         const largestResponse = await axios.get(largestUrl, {
@@ -229,6 +227,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       uploadedUrls,
+      urls: uploadedUrls,
       total: images.length,
       imported: uploadedUrls.length,
       errors: errors.length > 0 ? errors : undefined,
