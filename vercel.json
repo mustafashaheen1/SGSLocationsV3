@@ -2,8 +2,8 @@
   "version": 2,
   "routes": [
     {
-      "src": "/api/smugmug/callback",
-      "dest": "/api/smugmug/callback"
+      "src": "/api/smugmug-callback",
+      "dest": "/api/smugmug-callback"
     }
   ]
 }

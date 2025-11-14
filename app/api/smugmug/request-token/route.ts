@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     const baseUrl = request.nextUrl.origin;
-    const callbackUrl = `${baseUrl}/api/smugmug/callback`;
+    const callbackUrl = `${baseUrl}/api/smugmug-callback`;
 
     console.log('Callback URL:', callbackUrl);
 
