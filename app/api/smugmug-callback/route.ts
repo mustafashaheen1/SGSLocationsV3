@@ -40,17 +40,31 @@ export async function GET(request: NextRequest) {
 
     console.log('✓ Credentials found');
 
+    console.log('🔍 Looking up request token in database...');
+    console.log('Request token to find:', oauthToken);
+
+    const { data: allTokens, error: allError } = await supabase
+      .from('smugmug_tokens')
+      .select('*');
+
+    console.log('All tokens in database:', allTokens);
+
     const { data: tempToken, error: fetchError } = await supabase
       .from('smugmug_tokens')
-      .select('request_token_secret')
+      .select('request_token_secret, request_token')
       .eq('request_token', oauthToken)
       .eq('is_temporary', true)
       .maybeSingle();
 
+    console.log('Temp token query result:', { tempToken, fetchError });
+
     if (fetchError || !tempToken) {
-      console.error('❌ Request token not found:', fetchError);
+      console.error('❌ Request token not found in database');
+      console.error('Fetch error:', fetchError);
+      console.error('Expected token:', oauthToken);
+      console.error('Available tokens:', allTokens);
       return NextResponse.redirect(
-        new URL('/admin/properties/add?error=token_not_found', request.url)
+        new URL('/admin/properties/add?error=token_not_found&details=' + encodeURIComponent('Token ' + oauthToken.substring(0, 10) + ' not in database'), request.url)
       );
     }
 

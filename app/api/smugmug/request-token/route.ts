@@ -15,52 +15,53 @@ export async function GET(request: NextRequest) {
     const apiSecret = process.env.SMUGMUG_API_SECRET;
 
     if (!apiKey || !apiSecret) {
+      console.error('❌ Missing API credentials');
       return NextResponse.json({
         error: 'SmugMug credentials not configured'
       }, { status: 500 });
     }
 
     const callbackUrl = 'https://sgs-locations-v3.vercel.app/api/smugmug-callback';
-
-    console.log('Callback URL (MUST match SmugMug config):', callbackUrl);
+    console.log('Callback URL:', callbackUrl);
 
     const requestTokenUrl = 'https://api.smugmug.com/services/oauth/1.0a/getRequestToken';
-
     const oauthParams = createOAuthParams(apiKey, undefined, callbackUrl);
-
     const signature = generateOAuthSignature('GET', requestTokenUrl, oauthParams, apiSecret);
     const allParams = { ...oauthParams, oauth_signature: signature };
 
-    console.log('Requesting token from SmugMug...');
+    console.log('📡 Requesting token from SmugMug...');
 
     const response = await axios.get(requestTokenUrl, {
       params: allParams,
-      headers: {
-        'Accept': 'text/plain'
-      },
+      headers: { 'Accept': 'text/plain' },
       timeout: 30000
     });
 
-    console.log('✓ Response received from SmugMug');
-
     const params = new URLSearchParams(response.data);
-
     const requestToken = params.get('oauth_token');
     const requestTokenSecret = params.get('oauth_token_secret');
 
     if (!requestToken || !requestTokenSecret) {
-      console.error('❌ Missing tokens in response:', response.data);
+      console.error('❌ Missing tokens in SmugMug response:', response.data);
       throw new Error('Failed to get request token from SmugMug');
     }
 
-    console.log('✓ Request token obtained');
+    console.log('✓ Request token obtained:', requestToken.substring(0, 10) + '...');
 
-    await supabase
+    console.log('🗑️  Cleaning up old temporary tokens...');
+    const { error: deleteError } = await supabase
       .from('smugmug_tokens')
       .delete()
       .eq('is_temporary', true);
 
-    await supabase
+    if (deleteError) {
+      console.error('⚠️  Delete error (non-critical):', deleteError);
+    } else {
+      console.log('✓ Old tokens cleaned up');
+    }
+
+    console.log('💾 Storing temporary token...');
+    const { data: insertData, error: insertError } = await supabase
       .from('smugmug_tokens')
       .insert({
         request_token: requestToken,
@@ -68,13 +69,32 @@ export async function GET(request: NextRequest) {
         access_token: '',
         access_token_secret: '',
         is_temporary: true
-      });
+      })
+      .select();
 
-    console.log('✓ Temporary tokens stored');
+    if (insertError) {
+      console.error('❌ Failed to store temporary token:', insertError);
+      console.error('Insert error details:', JSON.stringify(insertError, null, 2));
+      throw new Error(`Database insert failed: ${insertError.message}`);
+    }
+
+    console.log('✓ Temporary token stored successfully:', insertData);
+
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('smugmug_tokens')
+      .select('*')
+      .eq('request_token', requestToken)
+      .eq('is_temporary', true)
+      .maybeSingle();
+
+    if (verifyError || !verifyData) {
+      console.error('❌ Failed to verify stored token:', verifyError);
+      throw new Error('Token storage verification failed');
+    }
+
+    console.log('✓ Token storage verified');
 
     const authUrl = `https://api.smugmug.com/services/oauth/1.0a/authorize?oauth_token=${requestToken}&Access=Full&Permissions=Read`;
-
-    console.log('✓ Authorization URL generated');
 
     return NextResponse.json({
       success: true,
@@ -83,10 +103,11 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Request token error:', error.response?.data || error.message);
+    console.error('❌ Request token error:', error.message);
+    console.error('Stack:', error.stack);
     return NextResponse.json({
       error: 'Failed to get request token',
-      details: error.response?.data || error.message
+      details: error.message
     }, { status: 500 });
   }
 }
