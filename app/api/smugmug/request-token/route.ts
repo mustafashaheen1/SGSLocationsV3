@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
+import { supabase } from '@/lib/supabase';
 import axios from 'axios';
 
 export async function GET(request: NextRequest) {
@@ -27,34 +28,46 @@ export async function GET(request: NextRequest) {
     const signature = generateOAuthSignature('GET', requestTokenUrl, oauthParams, apiSecret);
     const allParams = { ...oauthParams, oauth_signature: signature };
 
-    console.log('Requesting token with params:', {
-      ...allParams,
-      oauth_consumer_key: allParams.oauth_consumer_key.substring(0, 10) + '...',
-      oauth_signature: allParams.oauth_signature.substring(0, 20) + '...'
-    });
+    console.log('Requesting token...');
 
     const response = await axios.get(requestTokenUrl, {
       params: allParams,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'text/plain'
       },
       timeout: 30000
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response data:', response.data);
+    console.log('Response received');
 
-    const responseData = response.data.Response || response.data;
-    const params = new URLSearchParams(responseData);
+    const params = new URLSearchParams(response.data);
 
     const requestToken = params.get('oauth_token');
     const requestTokenSecret = params.get('oauth_token_secret');
 
     if (!requestToken || !requestTokenSecret) {
+      console.error('Missing tokens in response:', response.data);
       throw new Error('Failed to get request token from SmugMug');
     }
 
     console.log('✓ Request token obtained');
+
+    await supabase
+      .from('smugmug_tokens')
+      .delete()
+      .eq('is_temporary', true);
+
+    await supabase
+      .from('smugmug_tokens')
+      .insert({
+        request_token: requestToken,
+        request_token_secret: requestTokenSecret,
+        access_token: '',
+        access_token_secret: '',
+        is_temporary: true
+      });
+
+    console.log('✓ Tokens stored temporarily');
 
     const authUrl = `https://api.smugmug.com/services/oauth/1.0a/authorize?oauth_token=${requestToken}&Access=Full&Permissions=Read`;
 
@@ -63,8 +76,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       authUrl,
-      requestToken,
-      requestTokenSecret
+      requestToken
     });
 
   } catch (error: any) {

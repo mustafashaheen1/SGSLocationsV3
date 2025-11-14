@@ -11,10 +11,11 @@ export async function GET(request: NextRequest) {
     const oauthToken = searchParams.get('oauth_token');
     const oauthVerifier = searchParams.get('oauth_verifier');
 
-    console.log('Callback params:', { oauthToken, oauthVerifier });
+    console.log('Callback received:', { oauthToken: oauthToken?.substring(0, 10), oauthVerifier: oauthVerifier?.substring(0, 10) });
 
     if (!oauthToken || !oauthVerifier) {
-      return NextResponse.redirect(new URL('/admin/properties/add?error=oauth_failed', request.url));
+      console.error('Missing parameters');
+      return NextResponse.redirect(new URL('/admin/properties/add?error=missing_params', request.url));
     }
 
     const apiKey = process.env.NEXT_PUBLIC_SMUGMUG_API_KEY;
@@ -24,6 +25,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin/properties/add?error=config_missing', request.url));
     }
 
+    console.log('Fetching request token secret...');
+    const { data: tempToken, error: fetchError } = await supabase
+      .from('smugmug_tokens')
+      .select('request_token_secret')
+      .eq('request_token', oauthToken)
+      .eq('is_temporary', true)
+      .maybeSingle();
+
+    if (fetchError || !tempToken) {
+      console.error('Failed to fetch request token secret:', fetchError);
+      return NextResponse.redirect(new URL('/admin/properties/add?error=token_not_found', request.url));
+    }
+
+    const requestTokenSecret = tempToken.request_token_secret;
+    console.log('✓ Request token secret retrieved');
+
     const accessTokenUrl = 'https://api.smugmug.com/services/oauth/1.0a/getAccessToken';
 
     const oauthParams = {
@@ -31,7 +48,7 @@ export async function GET(request: NextRequest) {
       oauth_verifier: oauthVerifier
     };
 
-    const signature = generateOAuthSignature('GET', accessTokenUrl, oauthParams, apiSecret, '');
+    const signature = generateOAuthSignature('GET', accessTokenUrl, oauthParams, apiSecret, requestTokenSecret);
     const allParams = { ...oauthParams, oauth_signature: signature };
 
     console.log('Exchanging for access token...');
@@ -39,17 +56,20 @@ export async function GET(request: NextRequest) {
     const response = await axios.get(accessTokenUrl, {
       params: allParams,
       headers: {
-        'Accept': 'application/json'
-      }
+        'Accept': 'text/plain'
+      },
+      timeout: 30000
     });
 
-    const responseData = response.data.Response || response.data;
-    const params = new URLSearchParams(responseData);
+    console.log('Response received');
+
+    const params = new URLSearchParams(response.data);
 
     const accessToken = params.get('oauth_token');
     const accessTokenSecret = params.get('oauth_token_secret');
 
     if (!accessToken || !accessTokenSecret) {
+      console.error('Missing access tokens in response:', response.data);
       throw new Error('Failed to get access token');
     }
 
@@ -64,12 +84,15 @@ export async function GET(request: NextRequest) {
       .from('smugmug_tokens')
       .insert({
         access_token: accessToken,
-        access_token_secret: accessTokenSecret
+        access_token_secret: accessTokenSecret,
+        request_token: '',
+        request_token_secret: '',
+        is_temporary: false
       });
 
-    console.log('✓ Tokens stored in database');
+    console.log('✓ Permanent tokens stored');
 
-    return NextResponse.redirect(new URL('/admin/properties/add?smugmug_authorized=true', request.url));
+    return NextResponse.redirect(new URL('/admin/properties/add?smugmug_auth=success', request.url));
 
   } catch (error: any) {
     console.error('Callback error:', error.response?.data || error.message);
