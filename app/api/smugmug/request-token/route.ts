@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const callbackUrl = 'https://sgs-locations.vercel.app/api/smugmug-callback';
+    const callbackUrl = 'https://sgs-locations-v3.vercel.app/api/smugmug-callback';
 
     console.log('Callback URL (MUST match SmugMug config):', callbackUrl);
 
