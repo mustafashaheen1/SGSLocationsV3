@@ -5,11 +5,13 @@ import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
-  try {
-    console.log('=== SMUGMUG CALLBACK START ===');
+  console.log('=== SMUGMUG CALLBACK RECEIVED ===');
+  console.log('Full URL:', request.url);
 
+  try {
     const searchParams = request.nextUrl.searchParams;
     const oauthToken = searchParams.get('oauth_token');
     const oauthVerifier = searchParams.get('oauth_verifier');
@@ -18,14 +20,20 @@ export async function GET(request: NextRequest) {
     console.log('OAuth Verifier:', oauthVerifier);
 
     if (!oauthToken || !oauthVerifier) {
-      return NextResponse.redirect(new URL('/admin/properties/add?error=missing_params', request.url));
+      console.error('Missing OAuth parameters');
+      return NextResponse.redirect(
+        new URL('/admin/properties/add?error=missing_params', request.url)
+      );
     }
 
     const apiKey = process.env.NEXT_PUBLIC_SMUGMUG_API_KEY;
     const apiSecret = process.env.SMUGMUG_API_SECRET;
 
     if (!apiKey || !apiSecret) {
-      return NextResponse.redirect(new URL('/admin/properties/add?error=missing_credentials', request.url));
+      console.error('Missing credentials');
+      return NextResponse.redirect(
+        new URL('/admin/properties/add?error=missing_credentials', request.url)
+      );
     }
 
     const { data: tempToken, error: fetchError } = await supabase
@@ -37,7 +45,9 @@ export async function GET(request: NextRequest) {
 
     if (fetchError || !tempToken) {
       console.error('Token not found:', fetchError);
-      return NextResponse.redirect(new URL('/admin/properties/add?error=token_not_found', request.url));
+      return NextResponse.redirect(
+        new URL('/admin/properties/add?error=token_not_found', request.url)
+      );
     }
 
     const requestTokenSecret = tempToken.request_token_secret;
@@ -71,13 +81,17 @@ export async function GET(request: NextRequest) {
       timeout: 30000
     });
 
+    console.log('SmugMug response received');
+
     const params = new URLSearchParams(response.data);
     const accessToken = params.get('oauth_token');
     const accessTokenSecret = params.get('oauth_token_secret');
 
     if (!accessToken || !accessTokenSecret) {
       console.error('Failed to extract tokens:', response.data);
-      return NextResponse.redirect(new URL('/admin/properties/add?error=token_exchange_failed', request.url));
+      return NextResponse.redirect(
+        new URL('/admin/properties/add?error=token_exchange_failed', request.url)
+      );
     }
 
     console.log('✓ Access tokens obtained');
@@ -99,16 +113,25 @@ export async function GET(request: NextRequest) {
 
     if (insertError) {
       console.error('Failed to store tokens:', insertError);
-      return NextResponse.redirect(new URL('/admin/properties/add?error=storage_failed', request.url));
+      return NextResponse.redirect(
+        new URL('/admin/properties/add?error=storage_failed', request.url)
+      );
     }
 
     console.log('✓ Tokens stored successfully');
     console.log('=== CALLBACK COMPLETE ===');
 
-    return NextResponse.redirect(new URL('/admin/properties/add?smugmug_auth=success', request.url));
+    return NextResponse.redirect(
+      new URL('/admin/properties/add?smugmug_auth=success', request.url)
+    );
 
   } catch (error: any) {
-    console.error('Callback error:', error.message);
-    return NextResponse.redirect(new URL('/admin/properties/add?error=callback_failed', request.url));
+    console.error('=== CALLBACK ERROR ===');
+    console.error('Error:', error.message);
+    console.error('Stack:', error.stack);
+
+    return NextResponse.redirect(
+      new URL('/admin/properties/add?error=callback_failed', request.url)
+    );
   }
 }
