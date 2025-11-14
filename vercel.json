@@ -1,9 +1,20 @@
 {
   "version": 2,
-  "routes": [
+  "functions": {
+    "app/api/smugmug-callback/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/smugmug/request-token/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/import-smugmug/route.ts": {
+      "maxDuration": 300
+    }
+  },
+  "rewrites": [
     {
-      "src": "/api/smugmug-callback",
-      "dest": "/api/smugmug-callback"
+      "source": "/api/smugmug-callback",
+      "destination": "/api/smugmug-callback"
     }
   ]
 }
