@@ -167,74 +167,68 @@ export default function AddPropertyPage() {
   }
 
   async function handleSmugmugImport() {
-    if (!smugmugUrl) {
-      alert('Please enter a SmugMug album URL or album key');
+    if (!smugmugUrl.trim()) {
+      alert('Please enter a SmugMug album URL or key');
       return;
     }
 
     setImportingFromSmugmug(true);
-    setImportProgress('Processing...');
+    setImportProgress('🔍 Extracting album key...');
 
     try {
-      let albumKey = smugmugUrl.trim();
+      const albumKeyMatch = smugmugUrl.match(/\/([A-Za-z0-9]+)$/);
+      let albumKey = albumKeyMatch ? albumKeyMatch[1] : smugmugUrl.trim();
 
-      if (albumKey.includes('smugmug.com')) {
-        setImportProgress('Extracting album key from URL...');
-
-        const keyResponse = await fetch('/api/get-smugmug-key', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: albumKey }),
-        });
-
-        if (!keyResponse.ok) {
-          const errorData = await keyResponse.json();
-          throw new Error(errorData.suggestion || errorData.error || 'Could not extract album key');
-        }
-
-        const keyData = await keyResponse.json();
-        albumKey = keyData.albumKey;
-        console.log('✓ Extracted album key:', albumKey);
-      } else {
-        console.log('Using provided album key:', albumKey);
+      if (!albumKey) {
+        throw new Error('Could not extract album key from URL');
       }
 
-      setImportProgress(`Fetching images from album ${albumKey}...`);
+      setImportProgress(`📡 Importing from album: ${albumKey}...`);
 
       const response = await fetch('/api/import-smugmug', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          albumKey: albumKey,
-          propertyId: null
-        }),
+        body: JSON.stringify({ albumKey }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to import images');
-      }
 
       const data = await response.json();
+      console.log('Import response:', data);
 
-      setImportProgress(`✓ Successfully imported ${data.imported} of ${data.total} images!`);
-
-      const newImageUrls = data.urls;
-      setImagePreviews(prev => [...prev, ...newImageUrls]);
-
-      const placeholderFiles = newImageUrls.map((url: string) => {
-        return { name: url, uploaded: true } as any;
-      });
-      setUploadedImages(prev => [...prev, ...placeholderFiles]);
-
-      setTimeout(() => {
+      if (!response.ok) {
+        if (data.needsReauth) {
+          alert('⚠️ SmugMug authorization expired. Please reauthorize.');
+          setSmugmugAuthorized(false);
+        } else {
+          alert(`Import failed: ${data.error || 'Unknown error'}\n\n${data.details || ''}`);
+        }
         setImportProgress('');
-        setSmugmugUrl('');
-      }, 3000);
+        setImportingFromSmugmug(false);
+        return;
+      }
+
+      const imported = data.imported || 0;
+      const total = data.total || 0;
+      const imageUrls = data.uploadedUrls || data.urls || [];
+
+      console.log('Imported URLs:', imageUrls);
+
+      if (imported > 0 && imageUrls.length > 0) {
+        const fullUrls = imageUrls.map((url: string) =>
+          url.startsWith('http') ? url : `https://${url}`
+        );
+
+        setImagePreviews(prev => [...prev, ...fullUrls]);
+        setImportProgress(`✓ Successfully imported ${imported} of ${total} images!`);
+        alert(`✓ Successfully imported ${imported} images from SmugMug!`);
+      } else {
+        setImportProgress('');
+        alert(`❌ Import failed - no images were imported`);
+      }
+
     } catch (error: any) {
-      console.error('SmugMug import error:', error);
+      console.error('Import error:', error);
+      alert('Import failed: ' + error.message);
       setImportProgress('');
-      alert(error.message || 'Failed to import from SmugMug');
     } finally {
       setImportingFromSmugmug(false);
     }
@@ -526,6 +520,48 @@ export default function AddPropertyPage() {
                 </div>
               )}
             </div>
+
+            {imagePreviews.length > 0 && (
+              <div className="mt-6 border-t pt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Imported Images ({imagePreviews.length})</h3>
+                  <button
+                    type="button"
+                    onClick={() => setImagePreviews([])}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {imagePreviews.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Import ${index + 1}`}
+                        className="w-full h-40 object-cover rounded-lg border-2 border-gray-200"
+                        onError={(e) => {
+                          console.error('Image failed to load:', url);
+                          e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Failed+to+Load';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagePreviews(prev => prev.filter((_, i) => i !== index));
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
+                        Image {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <label className="block text-sm font-medium mb-2">
               Property Images * (Minimum 10 images required)
