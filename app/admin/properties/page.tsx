@@ -50,10 +50,11 @@ export default function AdminPropertiesPage() {
     const { data: admin } = await supabase
       .from('admins')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('email', session.user.email)
       .maybeSingle();
 
     if (!admin) {
+      console.log('User not found in admins table');
       router.push('/admin/login');
     }
   }
