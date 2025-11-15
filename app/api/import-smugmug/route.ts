@@ -180,11 +180,11 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`✓ Found ${images.length} images in album`);
-    console.log('📥 Processing first 20 images...');
+    console.log(`📥 Processing all ${images.length} images...`);
 
     const uploadedUrls: string[] = [];
     const errors: string[] = [];
-    const imagesToProcess = images.slice(0, 20);
+    const imagesToProcess = images;
 
     for (let i = 0; i < imagesToProcess.length; i++) {
       const image = imagesToProcess[i];
