@@ -641,7 +641,7 @@ export default function AddPropertyPage() {
         <div className="flex gap-4 pt-4 border-t">
           <Button
             type="submit"
-            disabled={loading || uploadedImages.length < 10}
+            disabled={loading || (uploadedImages.length + uploadedImageUrls.length) < 10}
             className="bg-[#e11921] hover:bg-red-700"
           >
             {loading ? 'Adding Property...' : 'Add Property'}
@@ -651,7 +651,7 @@ export default function AddPropertyPage() {
           </Button>
         </div>
 
-        {uploadedImages.length < 10 && (
+        {(uploadedImages.length + uploadedImageUrls.length) < 10 && (
           <p className="text-sm text-red-600">
             * Please upload at least 10 images before submitting
           </p>
