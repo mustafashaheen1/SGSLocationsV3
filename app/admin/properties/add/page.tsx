@@ -575,22 +575,26 @@ export default function AddPropertyPage() {
                     )}
                   </p>
                 </div>
-                <div className="grid grid-cols-5 gap-4">
-                  {imagePreviews.map((preview, index) => (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {imagePreviews.map((url, index) => (
                     <div key={index} className="relative group">
-                      <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-24 object-cover rounded border border-gray-200"
-                      />
+                      <div className="relative w-full h-40 bg-gray-200 rounded-lg border-2 border-gray-300">
+                        <img
+                          src={url}
+                          alt={`Image ${index + 1}`}
+                          className="w-full h-full object-cover rounded-lg"
+                          loading="eager"
+                          style={{ minHeight: '160px' }}
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center rounded-b-lg">
                         {index + 1}
                       </div>
                     </div>
