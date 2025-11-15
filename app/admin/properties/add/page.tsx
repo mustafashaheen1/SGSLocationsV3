@@ -217,8 +217,15 @@ export default function AddPropertyPage() {
           url.startsWith('http') ? url : `https://${url}`
         );
 
-        setImagePreviews(prev => [...prev, ...fullUrls]);
-        setImportProgress(`✓ Successfully imported ${imported} of ${total} images!`);
+        // Convert URLs to File-like objects for the uploaded images display
+        const newImages = fullUrls.map((url: string, idx: number) => {
+          return { url, name: `SmugMug Import ${imported - fullUrls.length + idx + 1}` };
+        });
+
+        // Add to uploadedImages state (merge with existing uploads)
+        setUploadedImages((prev: any[]) => [...prev, ...fullUrls]);
+        setImagePreviews((prev: string[]) => [...prev, ...fullUrls]);
+        setImportProgress(`✓ Imported ${imported} images - scroll down to see them below`);
         alert(`✓ Successfully imported ${imported} images from SmugMug!`);
       } else {
         setImportProgress('');
@@ -521,47 +528,6 @@ export default function AddPropertyPage() {
               )}
             </div>
 
-            {imagePreviews.length > 0 && (
-              <div className="mt-6 border-t pt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Imported Images ({imagePreviews.length})</h3>
-                  <button
-                    type="button"
-                    onClick={() => setImagePreviews([])}
-                    className="text-sm text-red-600 hover:text-red-700"
-                  >
-                    Clear All
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {imagePreviews.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Import ${index + 1}`}
-                        className="w-full h-40 object-cover rounded-lg border-2 border-gray-200"
-                        onError={(e) => {
-                          console.error('Image failed to load:', url);
-                          e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Failed+to+Load';
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImagePreviews(prev => prev.filter((_, i) => i !== index));
-                        }}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
-                        Image {index + 1}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <label className="block text-sm font-medium mb-2">
               Property Images * (Minimum 10 images required)
