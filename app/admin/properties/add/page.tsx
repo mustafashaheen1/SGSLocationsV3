@@ -570,32 +570,65 @@ export default function AddPropertyPage() {
                         (Need {10 - (uploadedImages.length + uploadedImageUrls.length)} more)
                       </span>
                     )}
-                    {uploadedImages.length >= 10 && (
+                    {(uploadedImages.length + uploadedImageUrls.length) >= 10 && (
                       <span className="text-green-600 ml-2">✓ Minimum met</span>
                     )}
                   </p>
+                  {imagePreviews.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUploadedImages([]);
+                        setUploadedImageUrls([]);
+                        setImagePreviews([]);
+                      }}
+                      className="text-sm text-red-600 hover:text-red-700"
+                    >
+                      Clear All
+                    </button>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {imagePreviews.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <div className="relative w-full h-40 bg-gray-200 rounded-lg border-2 border-gray-300">
+                    <div key={index} className="relative group" style={{ aspectRatio: '4/3' }}>
+                      <div
+                        className="absolute inset-0 bg-gray-200 rounded-lg border-2 border-gray-300 overflow-hidden"
+                      >
                         <img
                           src={url}
-                          alt={`Image ${index + 1}`}
-                          className="w-full h-full object-cover rounded-lg"
-                          loading="eager"
-                          style={{ minHeight: '160px' }}
+                          alt={`Property ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            height: '100%'
+                          }}
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            // If CloudFront fails, try direct S3 URL
+                            if (url.includes('cloudfront.net') && !target.dataset.retried) {
+                              target.dataset.retried = 'true';
+                              const s3Url = url.replace(
+                                /https:\/\/.*\.cloudfront\.net/,
+                                'https://sgs-locations-images.s3.us-west-1.amazonaws.com'
+                              );
+                              target.src = s3Url;
+                            } else {
+                              // Final fallback
+                              target.src = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Image+' + (index + 1);
+                            }
+                          }}
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center rounded-b-lg">
-                        {index + 1}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs py-1 px-2 text-center">
+                        Image {index + 1}
                       </div>
                     </div>
                   ))}
