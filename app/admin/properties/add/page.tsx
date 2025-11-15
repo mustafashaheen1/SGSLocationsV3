@@ -32,6 +32,7 @@ export default function AddPropertyPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]); // For SmugMug imports
   const [smugmugUrl, setSmugmugUrl] = useState('');
   const [importingFromSmugmug, setImportingFromSmugmug] = useState(false);
   const [importProgress, setImportProgress] = useState('');
@@ -217,13 +218,8 @@ export default function AddPropertyPage() {
           url.startsWith('http') ? url : `https://${url}`
         );
 
-        // Convert URLs to File-like objects for the uploaded images display
-        const newImages = fullUrls.map((url: string, idx: number) => {
-          return { url, name: `SmugMug Import ${imported - fullUrls.length + idx + 1}` };
-        });
-
-        // Add to uploadedImages state (merge with existing uploads)
-        setUploadedImages((prev: any[]) => [...prev, ...fullUrls]);
+        // SmugMug images are already uploaded - store as URLs, not Files
+        setUploadedImageUrls((prev: string[]) => [...prev, ...fullUrls]);
         setImagePreviews((prev: string[]) => [...prev, ...fullUrls]);
         setImportProgress(`✓ Imported ${imported} images - scroll down to see them below`);
         alert(`✓ Successfully imported ${imported} images from SmugMug!`);
@@ -249,8 +245,9 @@ export default function AddPropertyPage() {
       return;
     }
 
-    if (uploadedImages.length < 10) {
-      alert('Please upload at least 10 property images');
+    const totalImages = uploadedImages.length + uploadedImageUrls.length;
+    if (totalImages < 10) {
+      alert(`Please upload at least 10 property images (currently have ${totalImages})`);
       return;
     }
 
@@ -261,9 +258,17 @@ export default function AddPropertyPage() {
         throw new Error('Invalid category selected');
       }
 
-      console.log(`Uploading ${uploadedImages.length} images...`);
-      const imageUrls = await uploadMultipleImages(uploadedImages, 'properties');
-      console.log('Images uploaded successfully');
+      // Upload manual files to S3 (if any)
+      let manualUploadUrls: string[] = [];
+      if (uploadedImages.length > 0) {
+        console.log(`Uploading ${uploadedImages.length} manual images...`);
+        manualUploadUrls = await uploadMultipleImages(uploadedImages, 'properties');
+        console.log('Manual images uploaded successfully');
+      }
+
+      // Combine manual uploads with SmugMug URLs (already uploaded)
+      const allImageUrls = [...uploadedImageUrls, ...manualUploadUrls];
+      console.log(`Total images: ${allImageUrls.length}`);
 
       const { error } = await supabase.from('properties').insert([{
         name: formData.name,
@@ -284,8 +289,8 @@ export default function AddPropertyPage() {
         permits_available: false,
         permit_details: null,
         daily_rate: 0,
-        images: imageUrls,
-        primary_image: imageUrls[0],
+        images: allImageUrls,
+        primary_image: allImageUrls[0],
         status: 'active',
         owner_id: null,
         is_featured: formData.is_featured,
@@ -559,10 +564,10 @@ export default function AddPropertyPage() {
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-gray-700">
-                    Uploaded Images: {uploadedImages.length}
-                    {uploadedImages.length < 10 && (
+                    Uploaded Images: {uploadedImages.length + uploadedImageUrls.length}
+                    {(uploadedImages.length + uploadedImageUrls.length) < 10 && (
                       <span className="text-red-600 ml-2">
-                        (Need {10 - uploadedImages.length} more)
+                        (Need {10 - (uploadedImages.length + uploadedImageUrls.length)} more)
                       </span>
                     )}
                     {uploadedImages.length >= 10 && (
