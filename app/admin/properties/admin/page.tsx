@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, X, Eye, Trash2, Star, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { deleteImageFromS3 } from '@/lib/s3-upload';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -58,18 +59,45 @@ export default function AdminPropertiesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this property? This will also delete all associated images from S3.')) {
       return;
     }
 
     try {
+      // First, fetch the property to get all image URLs
+      const { data: property, error: fetchError } = await supabase
+        .from('properties')
+        .select('images, primary_image')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete all images from S3
+      const allImages = [...(property.images || [])];
+      if (property.primary_image && !allImages.includes(property.primary_image)) {
+        allImages.push(property.primary_image);
+      }
+
+      console.log(`Deleting ${allImages.length} images from S3...`);
+
+      for (const imageUrl of allImages) {
+        try {
+          await deleteImageFromS3(imageUrl);
+          console.log(`✓ Deleted: ${imageUrl}`);
+        } catch (error) {
+          console.error(`✗ Failed to delete: ${imageUrl}`, error);
+        }
+      }
+
+      // Then delete the property from database
       const { error } = await supabase
         .from('properties')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      showSuccess('Property deleted successfully');
+      showSuccess(`Property and ${allImages.length} images deleted successfully`);
       fetchProperties();
     } catch (error: any) {
       alert('Error deleting property: ' + error.message);
