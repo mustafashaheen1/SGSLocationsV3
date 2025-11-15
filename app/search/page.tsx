@@ -21,20 +21,16 @@ interface FilterCategory {
   options: string[];
 }
 
-function generatePropertyImages(propertyId: string | number, count: number = 50): string[] {
-  const images: string[] = [];
-  for (let i = 0; i < count; i++) {
-    images.push(`https://picsum.photos/seed/${propertyId}-${i}/800/600`);
-  }
-  return images;
-}
-
 function PropertyCard({ property }: { property: Property }) {
   const router = useRouter();
   const [showLightbox, setShowLightbox] = useState(false);
   const swiperRef = useRef<any>(null);
 
-  const images = generatePropertyImages(property.id, 50);
+  const images = property.images && property.images.length > 0
+    ? property.images
+    : property.primary_image
+      ? [property.primary_image]
+      : ['https://via.placeholder.com/800x600/e5e7eb/6b7280?text=No+Image'];
 
   return (
     <>
@@ -76,8 +72,18 @@ function PropertyCard({ property }: { property: Property }) {
                         objectFit: 'cover',
                         display: 'block'
                       }}
+                      loading="lazy"
                       onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/400x300';
+                        const target = e.currentTarget;
+                        if (img.includes('cloudfront.net') && !target.dataset.retried) {
+                          target.dataset.retried = 'true';
+                          target.src = img.replace(
+                            /https:\/\/.*\.cloudfront\.net/,
+                            'https://sgs-locations-images.s3.us-west-1.amazonaws.com'
+                          );
+                        } else {
+                          target.src = 'https://via.placeholder.com/800x600/e5e7eb/6b7280?text=No+Image';
+                        }
                       }}
                     />
                   </Link>
