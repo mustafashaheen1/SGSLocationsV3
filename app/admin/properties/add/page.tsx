@@ -645,32 +645,23 @@ export default function AddPropertyPage() {
             <label className="block text-sm font-medium mb-2">
               Property Images * (Minimum 10 images required)
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
+
+            <div className="mb-4">
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
                 multiple
+                accept="image/*"
                 onChange={handleImageSelect}
-                className="hidden"
-                id="imageUpload"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               />
-              <label htmlFor="imageUpload" className="cursor-pointer">
-                <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-sm text-gray-600 mb-1">
-                  Click to upload images or drag and drop
-                </p>
-                <p className="text-xs text-gray-500">
-                  PNG, JPG, or WebP • Minimum 10 images • No maximum limit
-                </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  {images.length} / 10 minimum uploaded
-                </p>
-              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                {images.length} / 10 minimum images uploaded
+              </p>
             </div>
 
             {images.length > 0 && (
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between mb-3">
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-medium text-gray-700">
                     Uploaded Images: {images.length}
                     {images.length < 10 && (
@@ -682,127 +673,173 @@ export default function AddPropertyPage() {
                       <span className="text-green-600 ml-2">✓ Minimum met</span>
                     )}
                   </p>
-                  {images.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImages([]);
-                        setSelectedImageIndex(null);
-                      }}
-                      className="text-sm text-red-600 hover:text-red-700"
-                    >
-                      Clear All
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImages([]);
+                      setSelectedImageIndex(null);
+                    }}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Clear All
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-4 gap-4">
-                  {images.map((img, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer" onClick={() => setSelectedImageIndex(index)}>
-                        <img
-                          src={img.url}
-                          alt={`Image ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            if (img.url.includes('cloudfront.net') && !target.dataset.retried) {
-                              target.dataset.retried = 'true';
-                              const s3Url = img.url.replace(
-                                /https:\/\/.*\.cloudfront\.net/,
-                                'https://sgs-locations-images.s3.us-west-1.amazonaws.com'
-                              );
-                              target.src = s3Url;
-                            } else {
-                              target.src = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Image+' + (index + 1);
-                            }
-                          }}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-2">
-                        <div className="flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          <span>{img.tags.length} tags</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {selectedImageIndex !== null && (
-                  <div className="border rounded-lg p-4 bg-gray-50">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold">
-                        Assign Tags to Image {selectedImageIndex + 1}
-                      </h4>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedImageIndex(null)}
-                      >
-                        Close
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="aspect-square bg-white rounded-lg overflow-hidden">
-                        <img
-                          src={images[selectedImageIndex].url}
-                          alt="Selected"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      <div className="space-y-4 overflow-y-auto max-h-96">
-                        {Object.entries(tagsByFilter).map(([filterName, tags]) => (
-                          <div key={filterName}>
-                            <h5 className="font-medium text-sm text-gray-700 mb-2 flex items-center">
-                              {filterName}
-                              <ChevronDown className="w-4 h-4 ml-1" />
-                            </h5>
-                            <div className="space-y-1">
-                              {tags.map(tag => (
-                                <label
-                                  key={tag.id}
-                                  className="flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={images[selectedImageIndex].tags.includes(tag.name)}
-                                    onChange={() => toggleImageTag(selectedImageIndex, tag.name)}
-                                    className="rounded text-red-600"
-                                  />
-                                  <span className="text-sm">{tag.name}</span>
-                                </label>
-                              ))}
+                <div className="grid grid-cols-3 gap-6">
+                  {/* LEFT: Image Grid */}
+                  <div className="col-span-1 space-y-4">
+                    <h4 className="font-semibold text-sm">
+                      Click image to assign tags
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 max-h-[600px] overflow-y-auto p-2">
+                      {images.map((img, index) => (
+                        <div
+                          key={index}
+                          onClick={() => setSelectedImageIndex(index)}
+                          className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                            selectedImageIndex === index
+                              ? 'border-red-500 ring-2 ring-red-200'
+                              : 'border-gray-200 hover:border-gray-400'
+                          }`}
+                        >
+                          <div className="aspect-square bg-gray-100">
+                            <img
+                              src={img.url}
+                              alt={`Image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                if (img.url.includes('cloudfront.net') && !target.dataset.retried) {
+                                  target.dataset.retried = 'true';
+                                  const s3Url = img.url.replace(
+                                    /https:\/\/.*\.cloudfront\.net/,
+                                    'https://sgs-locations-images.s3.us-west-1.amazonaws.com'
+                                  );
+                                  target.src = s3Url;
+                                } else {
+                                  target.src = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Image+' + (index + 1);
+                                }
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeImage(index);
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
+                            <div className="flex items-center gap-1 text-white text-xs">
+                              <Tag className="w-3 h-3" />
+                              <span className="font-medium">{img.tags.length} tags</span>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-600">
-                        Selected tags ({images[selectedImageIndex].tags.length}):
-                        {images[selectedImageIndex].tags.length > 0 ? (
-                          <span className="ml-2 font-medium">
-                            {images[selectedImageIndex].tags.join(', ')}
-                          </span>
-                        ) : (
-                          <span className="ml-2 text-gray-400">None selected</span>
-                        )}
-                      </p>
+                          {selectedImageIndex === index && (
+                            <div className="absolute inset-0 bg-red-500 bg-opacity-20 pointer-events-none" />
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                )}
+
+                  {/* RIGHT: Tag Assignment Panel */}
+                  <div className="col-span-2 bg-gray-50 rounded-lg p-4 border">
+                    {selectedImageIndex === null ? (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        <div className="text-center">
+                          <Tag className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                          <p className="text-sm">Click an image to assign tags</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b pb-3">
+                          <h4 className="font-semibold">
+                            Assign Tags to Image {selectedImageIndex + 1}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                              {images[selectedImageIndex].tags.length} tags selected
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedImageIndex(null)}
+                            >
+                              Done
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Image Preview */}
+                          <div>
+                            <img
+                              src={images[selectedImageIndex].url}
+                              alt="Selected"
+                              className="w-full rounded-lg"
+                            />
+                            {images[selectedImageIndex].tags.length > 0 && (
+                              <div className="mt-2 p-2 bg-white rounded border">
+                                <p className="text-xs font-medium text-gray-700 mb-1">Selected Tags:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {images[selectedImageIndex].tags.map(tag => (
+                                    <span
+                                      key={tag}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs"
+                                    >
+                                      {tag}
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleImageTag(selectedImageIndex, tag)}
+                                        className="hover:text-red-900"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Tag Selection */}
+                          <div className="max-h-[500px] overflow-y-auto space-y-3">
+                            {Object.entries(tagsByFilter).map(([filterName, tags]) => (
+                              <div key={filterName} className="bg-white rounded-lg p-3 border">
+                                <h5 className="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                                  <ChevronDown className="w-4 h-4 mr-1" />
+                                  {filterName}
+                                </h5>
+                                <div className="space-y-1 pl-5">
+                                  {tags.map(tag => (
+                                    <label
+                                      key={tag.id}
+                                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={images[selectedImageIndex].tags.includes(tag.name)}
+                                        onChange={() => toggleImageTag(selectedImageIndex, tag.name)}
+                                        className="rounded text-red-600 focus:ring-red-500"
+                                      />
+                                      <span className="text-sm">{tag.name}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
