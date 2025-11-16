@@ -47,6 +47,7 @@ export default function AddPropertyPage() {
   const [images, setImages] = useState<ImageWithTags[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
+  const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   const [smugmugUrl, setSmugmugUrl] = useState('');
   const [importingFromSmugmug, setImportingFromSmugmug] = useState(false);
   const [importProgress, setImportProgress] = useState('');
@@ -232,6 +233,18 @@ export default function AddPropertyPage() {
       }
       return img;
     }));
+  }
+
+  function toggleFilterExpanded(filterName: string) {
+    setExpandedFilters(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(filterName)) {
+        newSet.delete(filterName);
+      } else {
+        newSet.add(filterName);
+      }
+      return newSet;
+    });
   }
 
   async function handleSmugmugImport() {
@@ -810,30 +823,51 @@ export default function AddPropertyPage() {
 
                           {/* Tag Selection */}
                           <div className="max-h-[500px] overflow-y-auto space-y-3">
-                            {Object.entries(tagsByFilter).map(([filterName, tags]) => (
-                              <div key={filterName} className="bg-white rounded-lg p-3 border">
-                                <h5 className="font-medium text-sm text-gray-900 mb-2 flex items-center">
-                                  <ChevronDown className="w-4 h-4 mr-1" />
-                                  {filterName}
-                                </h5>
-                                <div className="space-y-1 pl-5">
-                                  {tags.map(tag => (
-                                    <label
-                                      key={tag.id}
-                                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={images[selectedImageIndex].tags.includes(tag.name)}
-                                        onChange={() => toggleImageTag(selectedImageIndex, tag.name)}
-                                        className="rounded text-red-600 focus:ring-red-500"
+                            {Object.entries(tagsByFilter).map(([filterName, tags]) => {
+                              const isExpanded = expandedFilters.has(filterName);
+                              return (
+                                <div key={filterName} className="bg-white rounded-lg border">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleFilterExpanded(filterName)}
+                                    className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <h5 className="font-medium text-sm text-gray-900 flex items-center">
+                                      <ChevronDown
+                                        className={`w-4 h-4 mr-2 transition-transform ${
+                                          isExpanded ? 'rotate-0' : '-rotate-90'
+                                        }`}
                                       />
-                                      <span className="text-sm">{tag.name}</span>
-                                    </label>
-                                  ))}
+                                      {filterName}
+                                    </h5>
+                                    <span className="text-xs text-gray-500">
+                                      {images[selectedImageIndex].tags.filter(tag =>
+                                        tags.some(t => t.name === tag)
+                                      ).length} / {tags.length}
+                                    </span>
+                                  </button>
+
+                                  {isExpanded && (
+                                    <div className="space-y-1 px-3 pb-3 pl-8">
+                                      {tags.map(tag => (
+                                        <label
+                                          key={tag.id}
+                                          className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={images[selectedImageIndex].tags.includes(tag.name)}
+                                            onChange={() => toggleImageTag(selectedImageIndex, tag.name)}
+                                            className="rounded text-red-600 focus:ring-red-500"
+                                          />
+                                          <span className="text-sm">{tag.name}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
