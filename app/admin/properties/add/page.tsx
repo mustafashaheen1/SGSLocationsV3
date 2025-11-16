@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, X, Camera, Download } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Download, Tag, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,13 +26,27 @@ interface Category {
   slug: string;
 }
 
+interface ImageWithTags {
+  url: string;
+  file?: File;
+  tags: string[];
+  isSmugmug: boolean;
+}
+
+interface FilterTag {
+  id: string;
+  name: string;
+  filter_id: string;
+  filter_name: string;
+}
+
 export default function AddPropertyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]); // For SmugMug imports
+  const [images, setImages] = useState<ImageWithTags[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [smugmugUrl, setSmugmugUrl] = useState('');
   const [importingFromSmugmug, setImportingFromSmugmug] = useState(false);
   const [importProgress, setImportProgress] = useState('');
@@ -53,6 +67,7 @@ export default function AddPropertyPage() {
 
   useEffect(() => {
     fetchCategories();
+    fetchSearchFilterTags();
     checkSmugMugAuth();
 
     const params = new URLSearchParams(window.location.search);
@@ -137,6 +152,43 @@ export default function AddPropertyPage() {
     }
   }
 
+  async function fetchSearchFilterTags() {
+    try {
+      const { data: filters } = await supabase
+        .from('search_filters')
+        .select('id, name, slug')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (!filters) return;
+
+      const allTags: FilterTag[] = [];
+
+      for (const filter of filters) {
+        const { data: tags } = await supabase
+          .from('search_filter_tags')
+          .select('id, name')
+          .eq('filter_id', filter.id)
+          .eq('is_active', true)
+          .order('display_order');
+
+        if (tags) {
+          tags.forEach(tag => {
+            allTags.push({
+              ...tag,
+              filter_id: filter.id,
+              filter_name: filter.name
+            });
+          });
+        }
+      }
+
+      setAvailableTags(allTags);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  }
+
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value, type } = e.target;
 
@@ -151,20 +203,35 @@ export default function AddPropertyPage() {
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      setUploadedImages(prev => [...prev, ...files]);
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreviews(prev => [...prev, reader.result as string]);
-        };
-        reader.readAsDataURL(file);
-      });
+      const newImages: ImageWithTags[] = files.map(file => ({
+        url: URL.createObjectURL(file),
+        file,
+        tags: [],
+        isSmugmug: false
+      }));
+      setImages(prev => [...prev, ...newImages]);
     }
   }
 
   function removeImage(index: number) {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setImages(prev => prev.filter((_, i) => i !== index));
+    if (selectedImageIndex === index) {
+      setSelectedImageIndex(null);
+    } else if (selectedImageIndex !== null && selectedImageIndex > index) {
+      setSelectedImageIndex(selectedImageIndex - 1);
+    }
+  }
+
+  function toggleImageTag(imageIndex: number, tagName: string) {
+    setImages(prev => prev.map((img, i) => {
+      if (i === imageIndex) {
+        const tags = img.tags.includes(tagName)
+          ? img.tags.filter(t => t !== tagName)
+          : [...img.tags, tagName];
+        return { ...img, tags };
+      }
+      return img;
+    }));
   }
 
   async function handleSmugmugImport() {
@@ -208,7 +275,6 @@ export default function AddPropertyPage() {
       }
 
       const imported = data.imported || 0;
-      const total = data.total || 0;
       const imageUrls = data.uploadedUrls || data.urls || [];
 
       console.log('Imported URLs:', imageUrls);
@@ -218,11 +284,16 @@ export default function AddPropertyPage() {
           url.startsWith('http') ? url : `https://${url}`
         );
 
-        // SmugMug images are already uploaded - store as URLs, not Files
-        setUploadedImageUrls((prev: string[]) => [...prev, ...fullUrls]);
-        setImagePreviews((prev: string[]) => [...prev, ...fullUrls]);
-        setImportProgress(`✓ Imported ${imported} images - scroll down to see them below`);
+        const importedImages: ImageWithTags[] = fullUrls.map((url: string) => ({
+          url,
+          tags: [],
+          isSmugmug: true
+        }));
+
+        setImages(prev => [...prev, ...importedImages]);
+        setImportProgress(`✓ Imported ${imported} images - scroll down to assign tags`);
         alert(`✓ Successfully imported ${imported} images from SmugMug!`);
+        setSmugmugUrl('');
       } else {
         setImportProgress('');
         alert(`❌ Import failed - no images were imported`);
@@ -245,9 +316,8 @@ export default function AddPropertyPage() {
       return;
     }
 
-    const totalImages = uploadedImages.length + uploadedImageUrls.length;
-    if (totalImages < 10) {
-      alert(`Please upload at least 10 property images (currently have ${totalImages})`);
+    if (images.length < 10) {
+      alert(`Please upload at least 10 property images (currently have ${images.length})`);
       return;
     }
 
@@ -258,19 +328,23 @@ export default function AddPropertyPage() {
         throw new Error('Invalid category selected');
       }
 
-      // Upload manual files to S3 (if any)
-      let manualUploadUrls: string[] = [];
-      if (uploadedImages.length > 0) {
-        console.log(`Uploading ${uploadedImages.length} manual images...`);
-        manualUploadUrls = await uploadMultipleImages(uploadedImages, 'properties');
+      // Upload manual files to S3
+      const filesToUpload = images.filter(img => img.file).map(img => img.file!);
+      let uploadedUrls: string[] = [];
+
+      if (filesToUpload.length > 0) {
+        console.log(`Uploading ${filesToUpload.length} manual images...`);
+        uploadedUrls = await uploadMultipleImages(filesToUpload, 'properties');
         console.log('Manual images uploaded successfully');
       }
 
-      // Combine manual uploads with SmugMug URLs (already uploaded)
-      const allImageUrls = [...uploadedImageUrls, ...manualUploadUrls];
+      // Combine SmugMug URLs and uploaded URLs
+      const smugmugUrls = images.filter(img => img.isSmugmug).map(img => img.url);
+      const allImageUrls = [...smugmugUrls, ...uploadedUrls];
       console.log(`Total images: ${allImageUrls.length}`);
 
-      const { error } = await supabase.from('properties').insert([{
+      // Create property
+      const { data: property, error: propertyError } = await supabase.from('properties').insert([{
         name: formData.name,
         description: formData.description || null,
         address: formData.address,
@@ -295,9 +369,36 @@ export default function AddPropertyPage() {
         owner_id: null,
         is_featured: formData.is_featured,
         is_exclusive: formData.is_exclusive,
-      }]);
+      }]).select().single();
 
-      if (error) throw error;
+      if (propertyError) throw propertyError;
+
+      // Save image metadata with tags to property_images table
+      let uploadIndex = 0;
+      const imageRecords = images.map((img, index) => {
+        let finalUrl: string;
+        if (img.isSmugmug) {
+          finalUrl = img.url;
+        } else {
+          finalUrl = uploadedUrls[uploadIndex];
+          uploadIndex++;
+        }
+
+        return {
+          property_id: property.id,
+          image_url: finalUrl,
+          display_order: index,
+          tags: img.tags
+        };
+      });
+
+      const { error: imagesError } = await supabase
+        .from('property_images')
+        .insert(imageRecords);
+
+      if (imagesError) {
+        console.error('Error saving image metadata:', imagesError);
+      }
 
       alert('Property added successfully!');
       router.push('/admin/properties');
@@ -308,6 +409,14 @@ export default function AddPropertyPage() {
       setLoading(false);
     }
   }
+
+  const tagsByFilter = availableTags.reduce((acc, tag) => {
+    if (!acc[tag.filter_name]) {
+      acc[tag.filter_name] = [];
+    }
+    acc[tag.filter_name].push(tag);
+    return acc;
+  }, {} as Record<string, FilterTag[]>);
 
   return (
     <div className="space-y-6">
@@ -503,20 +612,20 @@ export default function AddPropertyPage() {
                     type="button"
                     onClick={handleSmugmugImport}
                     disabled={!smugmugUrl || importingFromSmugmug}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {importingFromSmugmug ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4 mr-2" />
-                      Import Photos from SmugMug
-                    </>
-                  )}
-                </Button>
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {importingFromSmugmug ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Import Photos from SmugMug
+                      </>
+                    )}
+                  </Button>
 
                   {importProgress && (
                     <div className={`p-3 rounded ${
@@ -532,7 +641,6 @@ export default function AddPropertyPage() {
                 </div>
               )}
             </div>
-
 
             <label className="block text-sm font-medium mb-2">
               Property Images * (Minimum 10 images required)
@@ -555,32 +663,31 @@ export default function AddPropertyPage() {
                   PNG, JPG, or WebP • Minimum 10 images • No maximum limit
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
-                  {uploadedImages.length} / 10 minimum uploaded
+                  {images.length} / 10 minimum uploaded
                 </p>
               </label>
             </div>
 
-            {imagePreviews.length > 0 && (
-              <div className="mt-4">
+            {images.length > 0 && (
+              <div className="mt-6 space-y-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-gray-700">
-                    Uploaded Images: {uploadedImages.length + uploadedImageUrls.length}
-                    {(uploadedImages.length + uploadedImageUrls.length) < 10 && (
+                    Uploaded Images: {images.length}
+                    {images.length < 10 && (
                       <span className="text-red-600 ml-2">
-                        (Need {10 - (uploadedImages.length + uploadedImageUrls.length)} more)
+                        (Need {10 - images.length} more)
                       </span>
                     )}
-                    {(uploadedImages.length + uploadedImageUrls.length) >= 10 && (
+                    {images.length >= 10 && (
                       <span className="text-green-600 ml-2">✓ Minimum met</span>
                     )}
                   </p>
-                  {imagePreviews.length > 0 && (
+                  {images.length > 0 && (
                     <button
                       type="button"
                       onClick={() => {
-                        setUploadedImages([]);
-                        setUploadedImageUrls([]);
-                        setImagePreviews([]);
+                        setImages([]);
+                        setSelectedImageIndex(null);
                       }}
                       className="text-sm text-red-600 hover:text-red-700"
                     >
@@ -588,33 +695,25 @@ export default function AddPropertyPage() {
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {imagePreviews.map((url, index) => (
-                    <div key={index} className="relative group" style={{ aspectRatio: '4/3' }}>
-                      <div
-                        className="absolute inset-0 bg-gray-200 rounded-lg border-2 border-gray-300 overflow-hidden"
-                      >
+
+                <div className="grid grid-cols-4 gap-4">
+                  {images.map((img, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer" onClick={() => setSelectedImageIndex(index)}>
                         <img
-                          src={url}
-                          alt={`Property ${index + 1}`}
+                          src={img.url}
+                          alt={`Image ${index + 1}`}
                           className="w-full h-full object-cover"
-                          style={{
-                            display: 'block',
-                            width: '100%',
-                            height: '100%'
-                          }}
                           onError={(e) => {
                             const target = e.currentTarget;
-                            // If CloudFront fails, try direct S3 URL
-                            if (url.includes('cloudfront.net') && !target.dataset.retried) {
+                            if (img.url.includes('cloudfront.net') && !target.dataset.retried) {
                               target.dataset.retried = 'true';
-                              const s3Url = url.replace(
+                              const s3Url = img.url.replace(
                                 /https:\/\/.*\.cloudfront\.net/,
                                 'https://sgs-locations-images.s3.us-west-1.amazonaws.com'
                               );
                               target.src = s3Url;
                             } else {
-                              // Final fallback
                               target.src = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Image+' + (index + 1);
                             }
                           }}
@@ -623,16 +722,87 @@ export default function AddPropertyPage() {
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs py-1 px-2 text-center">
-                        Image {index + 1}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-2">
+                        <div className="flex items-center gap-1">
+                          <Tag className="w-3 h-3" />
+                          <span>{img.tags.length} tags</span>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {selectedImageIndex !== null && (
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold">
+                        Assign Tags to Image {selectedImageIndex + 1}
+                      </h4>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedImageIndex(null)}
+                      >
+                        Close
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="aspect-square bg-white rounded-lg overflow-hidden">
+                        <img
+                          src={images[selectedImageIndex].url}
+                          alt="Selected"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="space-y-4 overflow-y-auto max-h-96">
+                        {Object.entries(tagsByFilter).map(([filterName, tags]) => (
+                          <div key={filterName}>
+                            <h5 className="font-medium text-sm text-gray-700 mb-2 flex items-center">
+                              {filterName}
+                              <ChevronDown className="w-4 h-4 ml-1" />
+                            </h5>
+                            <div className="space-y-1">
+                              {tags.map(tag => (
+                                <label
+                                  key={tag.id}
+                                  className="flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={images[selectedImageIndex].tags.includes(tag.name)}
+                                    onChange={() => toggleImageTag(selectedImageIndex, tag.name)}
+                                    className="rounded text-red-600"
+                                  />
+                                  <span className="text-sm">{tag.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600">
+                        Selected tags ({images[selectedImageIndex].tags.length}):
+                        {images[selectedImageIndex].tags.length > 0 ? (
+                          <span className="ml-2 font-medium">
+                            {images[selectedImageIndex].tags.join(', ')}
+                          </span>
+                        ) : (
+                          <span className="ml-2 text-gray-400">None selected</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -641,7 +811,7 @@ export default function AddPropertyPage() {
         <div className="flex gap-4 pt-4 border-t">
           <Button
             type="submit"
-            disabled={loading || (uploadedImages.length + uploadedImageUrls.length) < 10}
+            disabled={loading || images.length < 10}
             className="bg-[#e11921] hover:bg-red-700"
           >
             {loading ? 'Adding Property...' : 'Add Property'}
@@ -651,7 +821,7 @@ export default function AddPropertyPage() {
           </Button>
         </div>
 
-        {(uploadedImages.length + uploadedImageUrls.length) < 10 && (
+        {images.length < 10 && (
           <p className="text-sm text-red-600">
             * Please upload at least 10 images before submitting
           </p>
