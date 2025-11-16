@@ -350,49 +350,108 @@ export default function SearchPage() {
       const to = from + ITEMS_PER_PAGE - 1;
       const query = searchParams.get('q');
 
-      let supabaseQuery = supabase
-        .from('properties')
-        .select('*')
-        .eq('status', 'active')
-        .range(from, to);
+      // If no filters are active, show all active properties
+      if (activeFilters.length === 0 && !query) {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .range(from, to);
 
-      if (query) {
-        supabaseQuery = supabaseQuery.ilike('title', `%${query}%`);
-      }
+        if (error) throw error;
 
-      const areaFilters = activeFilters.find(f => f.category === 'Area');
-      if (areaFilters && areaFilters.values.length > 0) {
-        supabaseQuery = supabaseQuery.in('city', areaFilters.values);
-      }
-
-      const featuresFilters = activeFilters.find(f => f.category === 'Features');
-      if (featuresFilters && featuresFilters.values.length > 0) {
-        supabaseQuery = supabaseQuery.overlaps('features', featuresFilters.values);
-      }
-
-      const residentialFilters = activeFilters.find(f => f.category === 'Residential');
-      if (residentialFilters && residentialFilters.values.length > 0) {
-        supabaseQuery = supabaseQuery.overlaps('categories', residentialFilters.values);
-      }
-
-      const commercialFilters = activeFilters.find(f => f.category === 'Commercial');
-      if (commercialFilters && commercialFilters.values.length > 0) {
-        supabaseQuery = supabaseQuery.overlaps('categories', commercialFilters.values);
-      }
-
-      const { data, error } = await supabaseQuery;
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setProperties(prev => [...prev, ...data]);
-        setPage(prev => prev + 1);
-
-        if (data.length < ITEMS_PER_PAGE) {
+        if (data && data.length > 0) {
+          setProperties(prev => [...prev, ...data]);
+          setPage(prev => prev + 1);
+          if (data.length < ITEMS_PER_PAGE) {
+            setHasMore(false);
+          }
+        } else {
           setHasMore(false);
         }
-      } else {
-        setHasMore(false);
+
+        setLoading(false);
+        return;
+      }
+
+      // Build array of selected tag names from all active filters
+      const selectedTags: string[] = [];
+      activeFilters.forEach(filter => {
+        selectedTags.push(...filter.values);
+      });
+
+      console.log('Searching with tags:', selectedTags);
+
+      // If we have tag filters, search property_images table
+      if (selectedTags.length > 0) {
+        // Find all property_ids that have images with ANY of the selected tags
+        const { data: propertyImages, error: imagesError } = await supabase
+          .from('property_images')
+          .select('property_id')
+          .overlaps('tags', selectedTags);
+
+        if (imagesError) throw imagesError;
+
+        // Get unique property IDs
+        const propertyIds = Array.from(new Set(propertyImages?.map(img => img.property_id) || []));
+
+        console.log('Found properties with matching tags:', propertyIds.length);
+
+        if (propertyIds.length === 0) {
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch the actual properties
+        let propertiesQuery = supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active')
+          .in('id', propertyIds)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        // Apply text search if present
+        if (query) {
+          propertiesQuery = propertiesQuery.or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%`);
+        }
+
+        const { data, error } = await propertiesQuery;
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          setProperties(prev => [...prev, ...data]);
+          setPage(prev => prev + 1);
+          if (data.length < ITEMS_PER_PAGE) {
+            setHasMore(false);
+          }
+        } else {
+          setHasMore(false);
+        }
+      } else if (query) {
+        // Just text search, no tag filters
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active')
+          .or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%`)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          setProperties(prev => [...prev, ...data]);
+          setPage(prev => prev + 1);
+          if (data.length < ITEMS_PER_PAGE) {
+            setHasMore(false);
+          }
+        } else {
+          setHasMore(false);
+        }
       }
     } catch (error) {
       console.error('Error loading properties:', error);
