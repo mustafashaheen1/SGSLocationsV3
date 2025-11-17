@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
+import { generateLocationPDF } from '@/lib/pdf-generator';
 
 interface ImageWithCategory {
   url: string;
@@ -44,6 +45,7 @@ export default function PropertyDetailPage() {
   const [allImages, setAllImages] = useState<Array<{ url: string; categories: string[] }>>([]);
   const [displayedImages, setDisplayedImages] = useState<Array<{ url: string; categories: string[] }>>([]);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   const updateRedBarPosition = (category: string) => {
     const element = categoryRefs.current[category];
@@ -167,8 +169,35 @@ export default function PropertyDetailPage() {
     console.log('Downloading images...');
   };
 
-  const handleDownloadPDF = () => {
-    console.log('Generating PDF...');
+  const handleDownloadPDF = async () => {
+    setGeneratingPDF(true);
+
+    try {
+      const response = await fetch(`/api/generate-pdf/${property?.id}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate PDF');
+      }
+
+      const pdfBlob = await generateLocationPDF(data.property, data.images);
+
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${data.property.name.replace(/[^a-z0-9]/gi, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      alert('PDF downloaded successfully!');
+    } catch (error: any) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF: ' + error.message);
+    } finally {
+      setGeneratingPDF(false);
+    }
   };
 
   if (loading) {
@@ -729,45 +758,56 @@ export default function PropertyDetailPage() {
                   { icon: ImageIcon, text: 'THUMBNAILS' },
                   { icon: Download, text: 'DOWNLOAD IMAGES' },
                   { icon: FileText, text: 'LOCATION PDF' }
-                ].map((btn, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      if (btn.text === 'CONTACT US') setShowContactModal(true);
-                      else if (btn.text === 'THUMBNAILS') setShowThumbnails(true);
-                      else if (btn.text === 'DOWNLOAD IMAGES') handleDownloadImages();
-                      else if (btn.text === 'LOCATION PDF') handleDownloadPDF();
-                    }}
-                    style={{
-                      background: 'rgb(225, 25, 33)',
-                      color: '#fff',
-                      border: '1px solid rgb(225, 25, 33)',
-                      borderRadius: '3.2px',
-                      padding: '8px 12px',
-                      fontSize: '13px',
-                      fontWeight: 400,
-                      cursor: 'pointer',
-                      fontFamily: 'acumin-pro-wide, sans-serif',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      transition: 'all 0.15s ease-in-out',
-                      whiteSpace: 'nowrap',
-                      minWidth: 'auto'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#bf151c';
-                      e.currentTarget.style.borderColor = '#bf151c';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgb(225, 25, 33)';
-                      e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
-                    }}
-                  >
-                    <btn.icon style={{ width: '14px', height: '14px' }} />
-                    {btn.text}
-                  </button>
-                ))}
+                ].map((btn, index) => {
+                  const isLocationPDF = btn.text === 'LOCATION PDF';
+                  const isDisabled = isLocationPDF && generatingPDF;
+
+                  return (
+                    <button
+                      key={index}
+                      disabled={isDisabled}
+                      onClick={() => {
+                        if (btn.text === 'CONTACT US') setShowContactModal(true);
+                        else if (btn.text === 'THUMBNAILS') setShowThumbnails(true);
+                        else if (btn.text === 'DOWNLOAD IMAGES') handleDownloadImages();
+                        else if (btn.text === 'LOCATION PDF') handleDownloadPDF();
+                      }}
+                      style={{
+                        background: isDisabled ? '#999' : 'rgb(225, 25, 33)',
+                        color: '#fff',
+                        border: isDisabled ? '1px solid #999' : '1px solid rgb(225, 25, 33)',
+                        borderRadius: '3.2px',
+                        padding: '8px 12px',
+                        fontSize: '13px',
+                        fontWeight: 400,
+                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                        fontFamily: 'acumin-pro-wide, sans-serif',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        transition: 'all 0.15s ease-in-out',
+                        whiteSpace: 'nowrap',
+                        minWidth: 'auto',
+                        opacity: isDisabled ? 0.6 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isDisabled) {
+                          e.currentTarget.style.background = '#bf151c';
+                          e.currentTarget.style.borderColor = '#bf151c';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isDisabled) {
+                          e.currentTarget.style.background = 'rgb(225, 25, 33)';
+                          e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
+                        }
+                      }}
+                    >
+                      <btn.icon style={{ width: '14px', height: '14px' }} />
+                      {isLocationPDF && generatingPDF ? 'GENERATING...' : btn.text}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* SGS Verified Logo */}
