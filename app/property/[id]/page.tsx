@@ -46,6 +46,7 @@ export default function PropertyDetailPage() {
   const [displayedImages, setDisplayedImages] = useState<Array<{ url: string; categories: string[] }>>([]);
   const [showContactModal, setShowContactModal] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [downloadingImages, setDownloadingImages] = useState(false);
 
   const updateRedBarPosition = (category: string) => {
     const element = categoryRefs.current[category];
@@ -165,8 +166,41 @@ export default function PropertyDetailPage() {
     alert('Link copied to clipboard!');
   };
 
-  const handleDownloadImages = () => {
-    console.log('Downloading images...');
+  const handleDownloadImages = async () => {
+    if (!property) return;
+
+    setDownloadingImages(true);
+
+    try {
+      console.log('Starting image download...');
+
+      const response = await fetch(`/api/download-images/${property.id}`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to download images');
+      }
+
+      const blob = await response.blob();
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${property.name.replace(/[^a-z0-9]/gi, '-')}-images.zip`;
+      document.body.appendChild(a);
+      a.click();
+
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      console.log('✓ Images downloaded successfully');
+
+    } catch (error: any) {
+      console.error('Download error:', error);
+      alert('Failed to download images: ' + error.message);
+    } finally {
+      setDownloadingImages(false);
+    }
   };
 
   const handleDownloadPDF = async () => {
@@ -760,7 +794,8 @@ export default function PropertyDetailPage() {
                   { icon: FileText, text: 'LOCATION PDF' }
                 ].map((btn, index) => {
                   const isLocationPDF = btn.text === 'LOCATION PDF';
-                  const isDisabled = isLocationPDF && generatingPDF;
+                  const isDownloadImages = btn.text === 'DOWNLOAD IMAGES';
+                  const isDisabled = (isLocationPDF && generatingPDF) || (isDownloadImages && downloadingImages);
 
                   return (
                     <button
@@ -804,7 +839,9 @@ export default function PropertyDetailPage() {
                       }}
                     >
                       <btn.icon style={{ width: '14px', height: '14px' }} />
-                      {isLocationPDF && generatingPDF ? 'GENERATING...' : btn.text}
+                      {isLocationPDF && generatingPDF ? 'GENERATING...' :
+                       isDownloadImages && downloadingImages ? 'DOWNLOADING...' :
+                       btn.text}
                     </button>
                   );
                 })}
