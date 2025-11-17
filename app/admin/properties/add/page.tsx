@@ -1,7 +1,14 @@
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { ArrowLeft, Upload, X, Camera, Download, Tag, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +61,8 @@ export default function AddPropertyPage() {
   const [smugmugAuthorized, setSmugmugAuthorized] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authorizing, setAuthorizing] = useState(false);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -116,6 +125,63 @@ export default function AddPropertyPage() {
       setCheckingAuth(false);
     }
   }
+
+  useEffect(() => {
+    if (googleMapsLoaded && addressInputRef.current && window.google) {
+      const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' }
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+
+        if (!place.geometry || !place.address_components) {
+          console.log('No details available for input');
+          return;
+        }
+
+        let streetNumber = '';
+        let route = '';
+        let city = '';
+        let state = '';
+        let zipCode = '';
+
+        // Parse address components
+        place.address_components.forEach((component: any) => {
+          const types = component.types;
+
+          if (types.includes('street_number')) {
+            streetNumber = component.long_name;
+          }
+          if (types.includes('route')) {
+            route = component.long_name;
+          }
+          if (types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (types.includes('administrative_area_level_1')) {
+            state = component.long_name;
+          }
+          if (types.includes('postal_code')) {
+            zipCode = component.long_name;
+          }
+        });
+
+        // Build full address
+        const fullAddress = `${streetNumber} ${route}`.trim();
+
+        // Update form data
+        setFormData(prev => ({
+          ...prev,
+          address: fullAddress,
+          city: city,
+          state: state || 'Texas',
+          zipcode: zipCode
+        }));
+      });
+    }
+  }, [googleMapsLoaded]);
 
   async function handleSmugMugAuthorize() {
     setAuthorizing(true);
@@ -432,7 +498,19 @@ export default function AddPropertyPage() {
   }, {} as Record<string, FilterTag[]>);
 
   return (
-    <div className="space-y-6">
+    <>
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyC2n37KlKpvsdMSG7y-2hUZWxz5kIxRTf8&libraries=places`}
+        onLoad={() => {
+          console.log('Google Maps script loaded');
+          setGoogleMapsLoaded(true);
+        }}
+        onError={(e) => {
+          console.error('Error loading Google Maps script:', e);
+        }}
+      />
+
+      <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -468,12 +546,17 @@ export default function AddPropertyPage() {
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Address *</label>
             <Input
+              ref={addressInputRef}
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="123 Main Street"
+              placeholder="Start typing address..."
               required
+              autoComplete="off"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Start typing and select from the dropdown suggestions
+            </p>
           </div>
 
           <div>
@@ -899,5 +982,6 @@ export default function AddPropertyPage() {
         )}
       </form>
     </div>
+    </>
   );
 }
