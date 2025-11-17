@@ -138,6 +138,12 @@ export default function CategoriesPage() {
       setUploading(true);
 
       const imageUrl = await uploadImageToS3(uploadedImage, 'categories');
+      console.log('✅ Uploaded image URL:', imageUrl);
+
+      // Verify it's a full URL
+      if (!imageUrl.startsWith('http')) {
+        throw new Error('Invalid image URL returned from S3 upload: ' + imageUrl);
+      }
 
       const { error } = await supabase
         .from('categories')
@@ -158,6 +164,7 @@ export default function CategoriesPage() {
       setImagePreview('');
       fetchCategories();
     } catch (error: any) {
+      console.error('Error adding category:', error);
       alert('Error adding category: ' + error.message);
     } finally {
       setUploading(false);
@@ -308,7 +315,17 @@ export default function CategoriesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Categories Management</h1>
         <Button onClick={() => {
-          setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+          const nextOrder = categories.length > 0
+            ? Math.max(...categories.map(c => c.display_order)) + 1
+            : 1;
+
+          setFormData({
+            name: '',
+            slug: '',
+            description: '',
+            image: '',
+            display_order: nextOrder
+          });
           setEditingCategory(null);
           setUploadedImage(null);
           setImagePreview('');
@@ -468,7 +485,14 @@ export default function CategoriesPage() {
                 <div className="space-y-2">
                   {imagePreview && (
                     <div className="relative">
-                      <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-lg"
+                        onError={(e) => {
+                          console.error('Preview error:', imagePreview);
+                        }}
+                      />
                       <button
                         type="button"
                         onClick={removeImage}
@@ -560,7 +584,15 @@ export default function CategoriesPage() {
                 <td className="px-6 py-4">{category.display_order}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <img src={category.image} alt={category.name} className="w-16 h-16 object-cover rounded" />
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-16 h-16 object-cover rounded"
+                      onError={(e) => {
+                        console.error('Image load error:', category.image);
+                        e.currentTarget.src = '/placeholder.jpg';
+                      }}
+                    />
                     <button
                       onClick={() => router.push(`/admin/categories/${category.id}`)}
                       className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
