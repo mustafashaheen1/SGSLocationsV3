@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, X, Tag, ChevronDown, Upload } from 'lucide-react';
+import { ArrowLeft, X, Tag, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,6 @@ export default function EditPropertyPage() {
         is_exclusive: property.is_exclusive || false,
       });
 
-      // Set selected category
       if (property.categories && property.categories.length > 0) {
         const { data: categoryData } = await supabase
           .from('categories')
@@ -94,7 +93,6 @@ export default function EditPropertyPage() {
         }
       }
 
-      // Load existing images with tags from property_images table
       const { data: propertyImages, error: imagesError } = await supabase
         .from('property_images')
         .select('*')
@@ -242,7 +240,6 @@ export default function EditPropertyPage() {
     setSaving(true);
 
     try {
-      // Upload new images to S3
       const filesToUpload = images.filter(img => img.file).map(img => img.file!);
 
       let uploadedUrls: string[] = [];
@@ -252,7 +249,6 @@ export default function EditPropertyPage() {
         console.log('New images uploaded successfully');
       }
 
-      // Build final image URL list
       let uploadIndex = 0;
       const allImageUrls = images.map(img => {
         if (img.file) {
@@ -262,7 +258,6 @@ export default function EditPropertyPage() {
         }
       });
 
-      // Update property in database
       const { error: propertyError } = await supabase
         .from('properties')
         .update({
@@ -283,7 +278,6 @@ export default function EditPropertyPage() {
 
       if (propertyError) throw propertyError;
 
-      // Delete all existing property_images records
       const { error: deleteError } = await supabase
         .from('property_images')
         .delete()
@@ -291,7 +285,6 @@ export default function EditPropertyPage() {
 
       if (deleteError) console.error('Error deleting old image records:', deleteError);
 
-      // Insert new property_images records with tags
       uploadIndex = 0;
       const imageRecords = images.map((img, index) => {
         let finalUrl: string;
@@ -358,7 +351,6 @@ export default function EditPropertyPage() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
         <div className="grid grid-cols-2 gap-6">
-          {/* Property Name */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Property Name *</label>
             <Input
@@ -369,7 +361,6 @@ export default function EditPropertyPage() {
             />
           </div>
 
-          {/* Description */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Description</label>
             <Textarea
@@ -380,7 +371,6 @@ export default function EditPropertyPage() {
             />
           </div>
 
-          {/* Address */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Address *</label>
             <Input
@@ -391,7 +381,6 @@ export default function EditPropertyPage() {
             />
           </div>
 
-          {/* City */}
           <div>
             <label className="block text-sm font-medium mb-2">City *</label>
             <Input
@@ -402,7 +391,6 @@ export default function EditPropertyPage() {
             />
           </div>
 
-          {/* State */}
           <div>
             <label className="block text-sm font-medium mb-2">State *</label>
             <Input
@@ -413,7 +401,6 @@ export default function EditPropertyPage() {
             />
           </div>
 
-          {/* Zip Code */}
           <div>
             <label className="block text-sm font-medium mb-2">Zip Code</label>
             <Input
@@ -423,7 +410,6 @@ export default function EditPropertyPage() {
             />
           </div>
 
-          {/* Category */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Category *</label>
             <div className="grid grid-cols-4 gap-3">
@@ -444,7 +430,6 @@ export default function EditPropertyPage() {
             </div>
           </div>
 
-          {/* Featured & Exclusive */}
           <div className="col-span-2 flex gap-4">
             <label className="flex items-center gap-2">
               <input
@@ -468,39 +453,62 @@ export default function EditPropertyPage() {
             </label>
           </div>
 
-          {/* IMAGES & TAGGING SECTION */}
           <div className="col-span-2">
-            <div className="mb-4 flex justify-between items-center">
-              <label className="block text-sm font-medium">Upload Images * (Min 10 images)</label>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById('imageUpload')?.click()}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Images
-              </Button>
+            <label className="block text-sm font-medium mb-2">
+              Property Images * (Minimum 10 images required)
+            </label>
+
+            <div className="mb-4">
               <input
-                id="imageUpload"
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={handleImageSelect}
-                className="hidden"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {images.length} / 10 minimum images uploaded
+              </p>
             </div>
 
             {images.length > 0 && (
-              <div className="border rounded-lg p-4">
-                <div className="grid grid-cols-5 gap-4">
-                  {/* LEFT: Image Grid (3 columns) */}
-                  <div className="col-span-3">
-                    <div className="grid grid-cols-3 gap-3 max-h-[600px] overflow-y-auto pr-2">
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-medium text-gray-700">
+                    Uploaded Images: {images.length}
+                    {images.length < 10 && (
+                      <span className="text-red-600 ml-2">
+                        (Need {10 - images.length} more)
+                      </span>
+                    )}
+                    {images.length >= 10 && (
+                      <span className="text-green-600 ml-2">✓ Minimum met</span>
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImages([]);
+                      setSelectedImageIndex(null);
+                    }}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Clear All
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-6">
+                  {/* LEFT: Image Grid - Takes 1/3 of space */}
+                  <div className="col-span-1 space-y-4">
+                    <h4 className="font-semibold text-sm">
+                      Click image to assign tags
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 max-h-[600px] overflow-y-auto p-2">
                       {images.map((img, index) => (
                         <div
                           key={index}
                           onClick={() => setSelectedImageIndex(index)}
-                          className={`relative group cursor-pointer rounded border-2 overflow-hidden transition-all ${
+                          className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
                             selectedImageIndex === index
                               ? 'border-red-500 ring-2 ring-red-200'
                               : 'border-gray-200 hover:border-gray-400'
@@ -511,6 +519,19 @@ export default function EditPropertyPage() {
                               src={img.url}
                               alt={`Image ${index + 1}`}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                if (img.url.includes('cloudfront.net') && !target.dataset.retried) {
+                                  target.dataset.retried = 'true';
+                                  const s3Url = img.url.replace(
+                                    /https:\/\/.*\.cloudfront\.net/,
+                                    'https://sgs-locations-images.s3.us-west-1.amazonaws.com'
+                                  );
+                                  target.src = s3Url;
+                                } else {
+                                  target.src = 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Image+' + (index + 1);
+                                }
+                              }}
                             />
                           </div>
                           <button
@@ -537,7 +558,7 @@ export default function EditPropertyPage() {
                     </div>
                   </div>
 
-                  {/* RIGHT: Tag Assignment Panel (2 columns) */}
+                  {/* RIGHT: Tag Assignment Panel - Takes 2/3 of space */}
                   <div className="col-span-2 bg-gray-50 rounded-lg p-4 border">
                     {selectedImageIndex === null ? (
                       <div className="flex items-center justify-center h-full text-gray-500">
@@ -568,7 +589,6 @@ export default function EditPropertyPage() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                          {/* Image Preview */}
                           <div>
                             <img
                               src={images[selectedImageIndex].url}
@@ -599,7 +619,6 @@ export default function EditPropertyPage() {
                             )}
                           </div>
 
-                          {/* Tag Selection */}
                           <div className="max-h-[400px] overflow-y-auto">
                             {Object.entries(tagsByFilter).map(([filterName, tags]) => {
                               const isExpanded = expandedFilters.has(filterName);
@@ -672,7 +691,7 @@ export default function EditPropertyPage() {
 
         {images.length < 10 && (
           <p className="text-sm text-red-600">
-            * Please ensure you have at least 10 images before updating
+            * Please upload at least 10 images before submitting
           </p>
         )}
       </form>
