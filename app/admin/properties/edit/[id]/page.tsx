@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
+import { useState, useEffect, useRef } from 'react';
+import Script from 'next/script';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, X, Tag, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -64,12 +71,96 @@ export default function EditPropertyPage() {
 
   const [images, setImages] = useState<ImageWithTags[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
 
   useEffect(() => {
     fetchCategories();
     fetchSearchFilterTags();
     fetchProperty();
   }, [params.id]);
+
+  useEffect(() => {
+    if (!googleMapsLoaded || !addressInputRef.current) {
+      return;
+    }
+
+    const initAutocomplete = () => {
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        console.log('⏳ Waiting for Google Places library...');
+        setTimeout(initAutocomplete, 100);
+        return;
+      }
+
+      console.log('🔧 Initializing Google Places Autocomplete...');
+
+      try {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current!,
+          {
+            types: ['address'],
+            componentRestrictions: { country: 'us' },
+            fields: ['address_components', 'formatted_address', 'geometry']
+          }
+        );
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+
+          console.log('📍 Place selected:', place);
+
+          if (!place.geometry || !place.address_components) {
+            console.log('⚠️ No details available for input');
+            return;
+          }
+
+          let streetNumber = '';
+          let route = '';
+          let city = '';
+          let state = '';
+          let zipCode = '';
+
+          place.address_components.forEach((component: any) => {
+            const types = component.types;
+
+            if (types.includes('street_number')) {
+              streetNumber = component.long_name;
+            }
+            if (types.includes('route')) {
+              route = component.long_name;
+            }
+            if (types.includes('locality')) {
+              city = component.long_name;
+            }
+            if (types.includes('administrative_area_level_1')) {
+              state = component.long_name;
+            }
+            if (types.includes('postal_code')) {
+              zipCode = component.long_name;
+            }
+          });
+
+          const fullAddress = `${streetNumber} ${route}`.trim();
+
+          console.log('✅ Parsed address:', { fullAddress, city, state, zipCode });
+
+          setFormData(prev => ({
+            ...prev,
+            address: fullAddress,
+            city: city,
+            state: state || 'Texas',
+            zipcode: zipCode
+          }));
+        });
+
+        console.log('✅ Autocomplete initialized successfully');
+      } catch (error) {
+        console.error('❌ Error initializing autocomplete:', error);
+      }
+    };
+
+    initAutocomplete();
+  }, [googleMapsLoaded]);
 
   async function fetchProperty() {
     try {
@@ -357,7 +448,20 @@ export default function EditPropertyPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyCdaekMbRWya3ENTf1ceFu9H39Y72VYBvE&libraries=places&loading=async`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log('✅ Google Maps script loaded');
+          setGoogleMapsLoaded(true);
+        }}
+        onError={(e) => {
+          console.error('❌ Error loading Google Maps script:', e);
+        }}
+      />
+
+      <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -392,13 +496,20 @@ export default function EditPropertyPage() {
 
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Address *</label>
-            <Input
+            <input
+              ref={addressInputRef}
+              type="text"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="123 Main Street"
+              placeholder="Start typing address..."
               required
+              autoComplete="off"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Start typing and select from the dropdown suggestions
+            </p>
           </div>
 
           <div>
@@ -719,5 +830,6 @@ export default function EditPropertyPage() {
         )}
       </form>
     </div>
+    </>
   );
 }
