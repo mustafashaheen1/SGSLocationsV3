@@ -17,6 +17,8 @@ export async function generateLocationPDF(
   property: PropertyData,
   images: PropertyImage[]
 ): Promise<Blob> {
+  console.log(`Starting PDF generation for ${property.name} with ${images.length} images`);
+
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -43,8 +45,9 @@ export async function generateLocationPDF(
   pdf.setTextColor(0, 0, 0);
   pdf.setFontSize(24);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(property.name, margin, currentY);
-  currentY += 10;
+  const nameLines = pdf.splitTextToSize(property.name, contentWidth);
+  pdf.text(nameLines, margin, currentY);
+  currentY += (nameLines.length * 10);
 
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'normal');
@@ -56,42 +59,34 @@ export async function generateLocationPDF(
   const imageHeight = imageWidth * 0.67;
   const gap = 10;
 
-  let imageIndex = 0;
+  let imagesProcessed = 0;
+  let imagesFailed = 0;
+  let currentRow = 0;
 
-  for (const image of images) {
-    const col = imageIndex % imagesPerRow;
-    const row = Math.floor(imageIndex / imagesPerRow);
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i];
+    const col = i % imagesPerRow;
+    const row = Math.floor(i / imagesPerRow);
 
     const x = margin + (col * (imageWidth + gap));
-    const y = currentY + (row * (imageHeight + gap + 5));
+    const y = currentY + ((row - currentRow) * (imageHeight + gap + 5));
 
     if (y + imageHeight + 10 > pageHeight - margin) {
       pdf.addPage();
       currentY = margin;
-      imageIndex = 0;
+      currentRow = row;
+      const newY = currentY + ((row - currentRow) * (imageHeight + gap + 5));
+
+      const adjustedY = currentY;
+      await addImageToPDF(pdf, image, x, adjustedY, imageWidth, imageHeight);
       continue;
     }
 
-    try {
-      const imgData = await loadImage(image.url);
-      pdf.addImage(imgData, 'JPEG', x, y, imageWidth, imageHeight);
-
-      if (image.tags && image.tags.length > 0) {
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        const label = image.tags.slice(0, 2).join(', ');
-        pdf.text(label, x, y + imageHeight + 4);
-      }
-    } catch (error) {
-      console.error('Failed to load image:', image.url);
-      pdf.setFillColor(230, 230, 230);
-      pdf.rect(x, y, imageWidth, imageHeight, 'F');
-    }
-
-    imageIndex++;
-
-    if (col === imagesPerRow - 1) {
-      currentY = y + imageHeight + gap;
+    const success = await addImageToPDF(pdf, image, x, y, imageWidth, imageHeight);
+    if (success) {
+      imagesProcessed++;
+    } else {
+      imagesFailed++;
     }
   }
 
@@ -108,24 +103,65 @@ export async function generateLocationPDF(
     );
   }
 
+  console.log(`PDF generation complete: ${imagesProcessed} successful, ${imagesFailed} failed`);
+
   return pdf.output('blob');
 }
 
-async function loadImage(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+async function addImageToPDF(
+  pdf: jsPDF,
+  image: PropertyImage,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): Promise<boolean> {
+  try {
+    console.log(`Loading image: ${image.url.substring(0, 60)}...`);
 
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/jpeg', 0.8));
-    };
+    const response = await fetch('/api/fetch-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: image.url })
+    });
 
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = url;
-  });
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API error:', error);
+      throw new Error(error.error || 'Failed to fetch image');
+    }
+
+    const data = await response.json();
+
+    if (!data.base64) {
+      throw new Error('No base64 data returned');
+    }
+
+    pdf.addImage(data.base64, 'JPEG', x, y, width, height);
+
+    if (image.tags && image.tags.length > 0) {
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFont('helvetica', 'normal');
+      const label = image.tags.slice(0, 2).join(', ');
+      const truncatedLabel = label.length > 40 ? label.substring(0, 37) + '...' : label;
+      pdf.text(truncatedLabel, x, y + height + 4);
+    }
+
+    console.log(`✓ Image loaded successfully`);
+    return true;
+
+  } catch (error: any) {
+    console.error(`✗ Failed to load image:`, error.message);
+
+    pdf.setFillColor(230, 230, 230);
+    pdf.rect(x, y, width, height, 'F');
+
+    pdf.setFontSize(10);
+    pdf.setTextColor(150, 150, 150);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Image unavailable', x + width/2, y + height/2, { align: 'center' });
+
+    return false;
+  }
 }
