@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import archiver from 'archiver';
-import { PassThrough } from 'stream';
+import JSZip from 'jszip';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +10,8 @@ const supabase = createClient(
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+const BATCH_SIZE = 10;
 
 export async function GET(
   request: NextRequest,
@@ -46,118 +47,120 @@ export async function GET(
 
     console.log(`✓ Found ${images.length} images`);
 
+    const zip = new JSZip();
     const folderName = property.name.replace(/[^a-z0-9-\s]/gi, '').replace(/\s+/g, '-');
-    const zipFilename = `${folderName}-images.zip`;
+    const folder = zip.folder(folderName);
 
-    const archive = archiver('zip', {
-      zlib: { level: 6 }
-    });
+    if (!folder) {
+      throw new Error('Failed to create folder in ZIP');
+    }
 
-    const passThrough = new PassThrough();
-    archive.pipe(passThrough);
+    let successCount = 0;
+    let failCount = 0;
 
-    let archiveFinalized = false;
-    const finalizePromise = new Promise<void>((resolve, reject) => {
-      archive.on('end', () => {
-        console.log('✓ Archive finalized');
-        archiveFinalized = true;
-        resolve();
-      });
+    for (let batchStart = 0; batchStart < images.length; batchStart += BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, images.length);
+      const batch = images.slice(batchStart, batchEnd);
 
-      archive.on('error', (err) => {
-        console.error('❌ Archive error:', err);
-        reject(err);
-      });
-    });
+      console.log(`Processing batch ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(images.length / BATCH_SIZE)}`);
 
-    (async () => {
-      let successCount = 0;
-      let failCount = 0;
+      const batchResults = await Promise.allSettled(
+        batch.map(async (image, batchIndex) => {
+          const globalIndex = batchStart + batchIndex;
+          const imageNum = String(globalIndex + 1).padStart(3, '0');
 
-      for (let i = 0; i < images.length; i++) {
-        const image = images[i];
-        const imageNum = String(i + 1).padStart(3, '0');
+          try {
+            console.log(`  [${globalIndex + 1}/${images.length}] Fetching...`);
 
-        try {
-          console.log(`[${i + 1}/${images.length}] Fetching...`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-          const response = await fetch(image.image_url, {
-            signal: AbortSignal.timeout(15000)
-          });
+            const response = await fetch(image.image_url, {
+              signal: controller.signal
+            });
 
-          if (!response.ok) {
-            console.error(`✗ HTTP ${response.status}`);
-            failCount++;
-            continue;
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            const urlMatch = image.image_url.match(/\.([a-z0-9]+)(\?|$)/i);
+            const extension = urlMatch ? urlMatch[1] : 'jpg';
+
+            let filename = `${imageNum}`;
+            if (image.tags && image.tags.length > 0) {
+              const tagText = image.tags
+                .slice(0, 2)
+                .join('-')
+                .replace(/[^a-z0-9-]/gi, '-')
+                .substring(0, 30);
+              filename += `-${tagText}`;
+            }
+            filename += `.${extension}`;
+
+            folder.file(filename, buffer);
+
+            console.log(`  ✓ ${filename}`);
+            return { success: true, filename };
+
+          } catch (error: any) {
+            console.error(`  ✗ Failed image ${globalIndex + 1}:`, error.message);
+            return { success: false, error: error.message };
           }
+        })
+      );
 
-          const arrayBuffer = await response.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-
-          const urlMatch = image.image_url.match(/\.([a-z0-9]+)(\?|$)/i);
-          const extension = urlMatch ? urlMatch[1] : 'jpg';
-
-          let filename = `${imageNum}`;
-          if (image.tags && image.tags.length > 0) {
-            const tagText = image.tags
-              .slice(0, 2)
-              .join('-')
-              .replace(/[^a-z0-9-]/gi, '-')
-              .substring(0, 30);
-            filename += `-${tagText}`;
-          }
-          filename += `.${extension}`;
-
-          archive.append(buffer, { name: `${folderName}/${filename}` });
-
+      batchResults.forEach(result => {
+        if (result.status === 'fulfilled' && result.value.success) {
           successCount++;
-          console.log(`✓ Added: ${filename}`);
-
-        } catch (error: any) {
-          console.error(`✗ Error:`, error.message);
+        } else {
           failCount++;
         }
-      }
+      });
 
-      console.log(`Images complete: ${successCount} success, ${failCount} failed`);
+      console.log(`  Batch complete: ${successCount} total success, ${failCount} total failed so far`);
+    }
 
-      console.log('Finalizing archive...');
-      await archive.finalize();
-      console.log('Archive finalized successfully');
+    console.log(`All images processed: ${successCount} success, ${failCount} failed`);
 
-    })().catch(err => {
-      console.error('Error in image processing:', err);
-      archive.emit('error', err);
+    if (successCount === 0) {
+      return NextResponse.json(
+        { error: 'Failed to download any images' },
+        { status: 500 }
+      );
+    }
+
+    console.log('Generating ZIP file...');
+    const zipBuffer = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: {
+        level: 6
+      },
+      streamFiles: false
     });
 
-    const webStream = new ReadableStream({
-      start(controller) {
-        passThrough.on('data', (chunk) => {
-          controller.enqueue(chunk);
-        });
+    console.log(`✓ ZIP generated successfully: ${zipBuffer.length} bytes`);
 
-        passThrough.on('end', () => {
-          controller.close();
-        });
+    const zipFilename = `${folderName}-images.zip`;
 
-        passThrough.on('error', (err) => {
-          console.error('Stream error:', err);
-          controller.error(err);
-        });
-      }
-    });
-
-    return new Response(webStream, {
+    return new NextResponse(zipBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${zipFilename}"`,
-        'Cache-Control': 'no-cache',
+        'Content-Length': zipBuffer.length.toString(),
       },
     });
 
   } catch (error: any) {
     console.error('❌ Fatal error:', error);
+    console.error('Stack:', error.stack);
+
     return NextResponse.json(
       { error: 'Server error', message: error.message },
       { status: 500 }

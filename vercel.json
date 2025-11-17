@@ -17,7 +17,8 @@
       "maxDuration": 30
     },
     "app/api/download-images/[id]/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "memory": 3008
     }
   },
   "rewrites": [
