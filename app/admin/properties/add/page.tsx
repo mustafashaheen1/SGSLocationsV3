@@ -530,7 +530,7 @@ export default function AddPropertyPage() {
   return (
     <>
       <Script
-        src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyAj3c7-9x5BgXdX8zNYZhTREP2OX0f2ErI&libraries=places&loading=async`}
+        src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyDg-JIaXQb6eU2HNMawYlk80tc-Pxz4Spc&libraries=places&loading=async`}
         strategy="afterInteractive"
         onLoad={() => {
           console.log('✅ Google Maps script loaded');
