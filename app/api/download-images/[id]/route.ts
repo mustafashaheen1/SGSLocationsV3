@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import archiver from 'archiver';
-import { Readable } from 'stream';
+import { PassThrough } from 'stream';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +20,7 @@ export async function GET(
     const params = await context.params;
     const propertyId = params.id;
 
-    console.log('📦 Starting streaming ZIP for property:', propertyId);
+    console.log('📦 Starting ZIP generation for property:', propertyId);
 
     const { data: property, error: propertyError } = await supabase
       .from('properties')
@@ -29,10 +29,7 @@ export async function GET(
       .single();
 
     if (propertyError || !property) {
-      return new Response(JSON.stringify({ error: 'Property not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
 
     console.log('✓ Property:', property.name);
@@ -44,10 +41,7 @@ export async function GET(
       .order('display_order');
 
     if (imagesError || !images || images.length === 0) {
-      return new Response(JSON.stringify({ error: 'No images found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return NextResponse.json({ error: 'No images found' }, { status: 404 });
     }
 
     console.log(`✓ Found ${images.length} images`);
@@ -59,20 +53,21 @@ export async function GET(
       zlib: { level: 6 }
     });
 
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
+    const passThrough = new PassThrough();
+    archive.pipe(passThrough);
 
-    archive.on('data', (chunk) => {
-      writer.write(chunk);
-    });
+    let archiveFinalized = false;
+    const finalizePromise = new Promise<void>((resolve, reject) => {
+      archive.on('end', () => {
+        console.log('✓ Archive finalized');
+        archiveFinalized = true;
+        resolve();
+      });
 
-    archive.on('end', () => {
-      writer.close();
-    });
-
-    archive.on('error', (err) => {
-      console.error('Archive error:', err);
-      writer.abort(err);
+      archive.on('error', (err) => {
+        console.error('❌ Archive error:', err);
+        reject(err);
+      });
     });
 
     (async () => {
@@ -96,11 +91,8 @@ export async function GET(
             continue;
           }
 
-          if (!response.body) {
-            console.error('✗ No response body');
-            failCount++;
-            continue;
-          }
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
 
           const urlMatch = image.image_url.match(/\.([a-z0-9]+)(\?|$)/i);
           const extension = urlMatch ? urlMatch[1] : 'jpg';
@@ -116,8 +108,7 @@ export async function GET(
           }
           filename += `.${extension}`;
 
-          const nodeStream = Readable.fromWeb(response.body as any);
-          archive.append(nodeStream, { name: `${folderName}/${filename}` });
+          archive.append(buffer, { name: `${folderName}/${filename}` });
 
           successCount++;
           console.log(`✓ Added: ${filename}`);
@@ -128,12 +119,35 @@ export async function GET(
         }
       }
 
-      console.log(`✅ Complete: ${successCount} success, ${failCount} failed`);
+      console.log(`Images complete: ${successCount} success, ${failCount} failed`);
 
+      console.log('Finalizing archive...');
       await archive.finalize();
-    })();
+      console.log('Archive finalized successfully');
 
-    return new Response(readable, {
+    })().catch(err => {
+      console.error('Error in image processing:', err);
+      archive.emit('error', err);
+    });
+
+    const webStream = new ReadableStream({
+      start(controller) {
+        passThrough.on('data', (chunk) => {
+          controller.enqueue(chunk);
+        });
+
+        passThrough.on('end', () => {
+          controller.close();
+        });
+
+        passThrough.on('error', (err) => {
+          console.error('Stream error:', err);
+          controller.error(err);
+        });
+      }
+    });
+
+    return new Response(webStream, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
@@ -144,15 +158,9 @@ export async function GET(
 
   } catch (error: any) {
     console.error('❌ Fatal error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Server error',
-        message: error.message
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+    return NextResponse.json(
+      { error: 'Server error', message: error.message },
+      { status: 500 }
     );
   }
 }
