@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, X, Tag, ChevronDown, Camera, Upload } from 'lucide-react';
+import { ArrowLeft, X, Tag, ChevronDown, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,6 @@ interface ImageWithTags {
   url: string;
   file?: File;
   tags: string[];
-  isSmugmug: boolean;
   existingId?: string;
 }
 
@@ -45,31 +44,15 @@ export default function EditPropertyPage() {
     description: '',
     address: '',
     city: '',
-    county: '',
+    state: '',
     zipcode: '',
-    property_type: 'Residential',
-    square_footage: '',
-    lot_size: '',
-    bedrooms: '',
-    bathrooms: '',
-    parking_spaces: '',
-    year_built: '',
-    daily_rate: '',
-    permits_available: false,
-    permit_details: '',
     is_featured: false,
     is_exclusive: false,
-    status: 'active',
   });
 
   const [images, setImages] = useState<ImageWithTags[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
-
-  // SmugMug Import
-  const [smugmugUrl, setSmugmugUrl] = useState('');
-  const [importingFromSmugmug, setImportingFromSmugmug] = useState(false);
-  const [importProgress, setImportProgress] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -92,21 +75,10 @@ export default function EditPropertyPage() {
         description: property.description || '',
         address: property.address || '',
         city: property.city || '',
-        county: property.county || '',
+        state: property.county || '',
         zipcode: property.zipcode || '',
-        property_type: property.property_type || 'Residential',
-        square_footage: property.square_footage?.toString() || '',
-        lot_size: property.lot_size?.toString() || '',
-        bedrooms: property.bedrooms?.toString() || '',
-        bathrooms: property.bathrooms?.toString() || '',
-        parking_spaces: property.parking_spaces?.toString() || '',
-        year_built: property.year_built?.toString() || '',
-        daily_rate: property.daily_rate?.toString() || '',
-        permits_available: property.permits_available || false,
-        permit_details: property.permit_details || '',
         is_featured: property.is_featured || false,
         is_exclusive: property.is_exclusive || false,
-        status: property.status || 'active',
       });
 
       // Set selected category
@@ -133,16 +105,13 @@ export default function EditPropertyPage() {
         const loadedImages: ImageWithTags[] = propertyImages.map(img => ({
           url: img.image_url,
           tags: img.tags || [],
-          isSmugmug: false,
           existingId: img.id,
         }));
         setImages(loadedImages);
       } else if (property.images && property.images.length > 0) {
-        // Fallback: if no property_images records, use images array
         const fallbackImages: ImageWithTags[] = property.images.map((url: string) => ({
           url,
           tags: [],
-          isSmugmug: false,
         }));
         setImages(fallbackImages);
       }
@@ -202,7 +171,7 @@ export default function EditPropertyPage() {
     }
   }
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
@@ -219,7 +188,6 @@ export default function EditPropertyPage() {
         url: URL.createObjectURL(file),
         file,
         tags: [],
-        isSmugmug: false,
       }));
       setImages(prev => [...prev, ...newImages]);
     }
@@ -258,70 +226,6 @@ export default function EditPropertyPage() {
     });
   }
 
-  async function handleSmugmugImport() {
-    if (!smugmugUrl.trim()) {
-      alert('Please enter a SmugMug album URL or key');
-      return;
-    }
-
-    setImportingFromSmugmug(true);
-    setImportProgress('🔍 Extracting album key...');
-
-    try {
-      const albumKeyMatch = smugmugUrl.match(/\/([A-Za-z0-9]+)$/);
-      let albumKey = albumKeyMatch ? albumKeyMatch[1] : smugmugUrl.trim();
-
-      if (!albumKey) {
-        throw new Error('Could not extract album key from URL');
-      }
-
-      setImportProgress(`📡 Importing from album: ${albumKey}...`);
-
-      const response = await fetch('/api/import-smugmug', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ albumKey }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.needsReauth) {
-          alert('⚠️ SmugMug authorization expired. Please reauthorize.');
-          window.open('/api/smugmug/request-token', '_blank');
-          return;
-        }
-        throw new Error(data.error || 'Import failed');
-      }
-
-      if (!data.images || data.images.length === 0) {
-        throw new Error('No images found in album');
-      }
-
-      const smugmugImages: ImageWithTags[] = data.images.map((url: string) => ({
-        url,
-        tags: [],
-        isSmugmug: true,
-      }));
-
-      setImages(prev => [...prev, ...smugmugImages]);
-      setImportProgress(`✓ Successfully imported ${data.images.length} images!`);
-      setSmugmugUrl('');
-
-      setTimeout(() => {
-        setImportingFromSmugmug(false);
-        setImportProgress('');
-      }, 2000);
-    } catch (error: any) {
-      console.error('SmugMug import error:', error);
-      setImportProgress(`❌ Error: ${error.message}`);
-      setTimeout(() => {
-        setImportingFromSmugmug(false);
-        setImportProgress('');
-      }, 3000);
-    }
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -339,9 +243,7 @@ export default function EditPropertyPage() {
 
     try {
       // Upload new images to S3
-      const filesToUpload = images
-        .filter(img => img.file && !img.isSmugmug)
-        .map(img => img.file!);
+      const filesToUpload = images.filter(img => img.file).map(img => img.file!);
 
       let uploadedUrls: string[] = [];
       if (filesToUpload.length > 0) {
@@ -353,10 +255,10 @@ export default function EditPropertyPage() {
       // Build final image URL list
       let uploadIndex = 0;
       const allImageUrls = images.map(img => {
-        if (img.isSmugmug || !img.file) {
-          return img.url;
-        } else {
+        if (img.file) {
           return uploadedUrls[uploadIndex++];
+        } else {
+          return img.url;
         }
       });
 
@@ -368,31 +270,20 @@ export default function EditPropertyPage() {
           description: formData.description || null,
           address: formData.address,
           city: formData.city,
-          county: formData.county,
+          county: formData.state,
           zipcode: formData.zipcode || null,
-          property_type: formData.property_type,
-          square_footage: formData.square_footage ? parseInt(formData.square_footage) : null,
-          lot_size: formData.lot_size ? parseFloat(formData.lot_size) : null,
-          bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
-          bathrooms: formData.bathrooms ? parseFloat(formData.bathrooms) : null,
-          parking_spaces: formData.parking_spaces ? parseInt(formData.parking_spaces) : null,
-          year_built: formData.year_built ? parseInt(formData.year_built) : null,
-          daily_rate: formData.daily_rate ? parseFloat(formData.daily_rate) : 0,
-          permits_available: formData.permits_available,
-          permit_details: formData.permit_details || null,
           categories: [selectedCategory.name],
           images: allImageUrls,
           primary_image: allImageUrls[0],
           is_featured: formData.is_featured,
           is_exclusive: formData.is_exclusive,
-          status: formData.status,
           updated_at: new Date().toISOString(),
         })
         .eq('id', params.id);
 
       if (propertyError) throw propertyError;
 
-      // Delete all existing property_images records for this property
+      // Delete all existing property_images records
       const { error: deleteError } = await supabase
         .from('property_images')
         .delete()
@@ -404,10 +295,10 @@ export default function EditPropertyPage() {
       uploadIndex = 0;
       const imageRecords = images.map((img, index) => {
         let finalUrl: string;
-        if (img.isSmugmug || !img.file) {
-          finalUrl = img.url;
-        } else {
+        if (img.file) {
           finalUrl = uploadedUrls[uploadIndex++];
+        } else {
+          finalUrl = img.url;
         }
 
         return {
@@ -467,6 +358,7 @@ export default function EditPropertyPage() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
         <div className="grid grid-cols-2 gap-6">
+          {/* Property Name */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Property Name *</label>
             <Input
@@ -477,6 +369,7 @@ export default function EditPropertyPage() {
             />
           </div>
 
+          {/* Description */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Description</label>
             <Textarea
@@ -487,6 +380,7 @@ export default function EditPropertyPage() {
             />
           </div>
 
+          {/* Address */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Address *</label>
             <Input
@@ -497,6 +391,7 @@ export default function EditPropertyPage() {
             />
           </div>
 
+          {/* City */}
           <div>
             <label className="block text-sm font-medium mb-2">City *</label>
             <Input
@@ -507,16 +402,18 @@ export default function EditPropertyPage() {
             />
           </div>
 
+          {/* State */}
           <div>
-            <label className="block text-sm font-medium mb-2">County *</label>
+            <label className="block text-sm font-medium mb-2">State *</label>
             <Input
-              name="county"
-              value={formData.county}
+              name="state"
+              value={formData.state}
               onChange={handleInputChange}
               required
             />
           </div>
 
+          {/* Zip Code */}
           <div>
             <label className="block text-sm font-medium mb-2">Zip Code</label>
             <Input
@@ -526,6 +423,7 @@ export default function EditPropertyPage() {
             />
           </div>
 
+          {/* Category */}
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Category *</label>
             <div className="grid grid-cols-4 gap-3">
@@ -546,132 +444,7 @@ export default function EditPropertyPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Property Type *</label>
-            <select
-              name="property_type"
-              value={formData.property_type}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              required
-            >
-              <option value="Residential">Residential</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Industrial">Industrial</option>
-              <option value="Land">Land</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            >
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Square Footage</label>
-            <Input
-              name="square_footage"
-              value={formData.square_footage}
-              onChange={handleInputChange}
-              type="number"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Lot Size (acres)</label>
-            <Input
-              name="lot_size"
-              value={formData.lot_size}
-              onChange={handleInputChange}
-              type="number"
-              step="0.01"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Year Built</label>
-            <Input
-              name="year_built"
-              value={formData.year_built}
-              onChange={handleInputChange}
-              type="number"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Bedrooms</label>
-            <Input
-              name="bedrooms"
-              value={formData.bedrooms}
-              onChange={handleInputChange}
-              type="number"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Bathrooms</label>
-            <Input
-              name="bathrooms"
-              value={formData.bathrooms}
-              onChange={handleInputChange}
-              type="number"
-              step="0.5"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Parking Spaces</label>
-            <Input
-              name="parking_spaces"
-              value={formData.parking_spaces}
-              onChange={handleInputChange}
-              type="number"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Daily Rate ($)</label>
-            <Input
-              name="daily_rate"
-              value={formData.daily_rate}
-              onChange={handleInputChange}
-              type="number"
-              step="0.01"
-            />
-          </div>
-
-          <div className="col-span-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="permits_available"
-                checked={formData.permits_available}
-                onChange={handleInputChange}
-                className="rounded"
-              />
-              <span className="text-sm font-medium">Film Permits Available</span>
-            </label>
-          </div>
-
-          <div className="col-span-2">
-            <label className="block text-sm font-medium mb-2">Permit Details</label>
-            <Textarea
-              name="permit_details"
-              value={formData.permit_details}
-              onChange={handleInputChange}
-              rows={3}
-            />
-          </div>
-
+          {/* Featured & Exclusive */}
           <div className="col-span-2 flex gap-4">
             <label className="flex items-center gap-2">
               <input
@@ -695,49 +468,10 @@ export default function EditPropertyPage() {
             </label>
           </div>
 
-          {/* SMUGMUG IMPORT SECTION */}
-          <div className="col-span-2">
-            <div className="mb-8 p-6 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Camera className="w-5 h-5 text-blue-600" />
-                Import from SmugMug
-              </h3>
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Paste SmugMug album URL or album key (e.g., 2nwmNf)"
-                    value={smugmugUrl}
-                    onChange={(e) => setSmugmugUrl(e.target.value)}
-                    disabled={importingFromSmugmug}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleSmugmugImport}
-                    disabled={importingFromSmugmug || !smugmugUrl.trim()}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {importingFromSmugmug ? 'Importing...' : 'Import'}
-                  </Button>
-                </div>
-                {importProgress && (
-                  <p className={`text-sm ${
-                    importProgress.includes('❌') ? 'text-red-600' :
-                    importProgress.includes('✓') ? 'text-green-600' :
-                    'text-blue-600'
-                  }`}>
-                    {importProgress}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* IMAGES & TAGGING SECTION */}
           <div className="col-span-2">
             <div className="mb-4 flex justify-between items-center">
-              <label className="block text-sm font-medium">Property Images * (Min 10 images)</label>
+              <label className="block text-sm font-medium">Upload Images * (Min 10 images)</label>
               <Button
                 type="button"
                 variant="outline"
@@ -759,7 +493,7 @@ export default function EditPropertyPage() {
             {images.length > 0 && (
               <div className="border rounded-lg p-4">
                 <div className="grid grid-cols-5 gap-4">
-                  {/* LEFT: Image Grid */}
+                  {/* LEFT: Image Grid (3 columns) */}
                   <div className="col-span-3">
                     <div className="grid grid-cols-3 gap-3 max-h-[600px] overflow-y-auto pr-2">
                       {images.map((img, index) => (
@@ -803,7 +537,7 @@ export default function EditPropertyPage() {
                     </div>
                   </div>
 
-                  {/* RIGHT: Tag Assignment Panel */}
+                  {/* RIGHT: Tag Assignment Panel (2 columns) */}
                   <div className="col-span-2 bg-gray-50 rounded-lg p-4 border">
                     {selectedImageIndex === null ? (
                       <div className="flex items-center justify-center h-full text-gray-500">
