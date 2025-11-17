@@ -34,6 +34,8 @@ export default function AdminPropertiesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<string>('');
 
   useEffect(() => {
     checkAdminAccess();
@@ -126,8 +128,12 @@ export default function AdminPropertiesPage() {
     if (!confirm('Are you sure you want to delete this property? This will also delete all associated images from S3.'))
       return;
 
+    setDeletingPropertyId(id);
+    setDeleteProgress('Starting deletion...');
+
     try {
-      // First, fetch the property to get all image URLs
+      // Fetch property to get image URLs
+      setDeleteProgress('📥 Fetching property data...');
       const { data: property, error: fetchError } = await supabase
         .from('properties')
         .select('images, primary_image')
@@ -136,25 +142,28 @@ export default function AdminPropertiesPage() {
 
       if (fetchError) throw fetchError;
 
-      // Delete all images from S3
+      // Collect all image URLs
       const allImages = [...(property.images || [])];
       if (property.primary_image && !allImages.includes(property.primary_image)) {
         allImages.push(property.primary_image);
       }
 
-      console.log(`Deleting ${allImages.length} images from S3...`);
+      // Delete images from S3 with progress
+      if (allImages.length > 0) {
+        setDeleteProgress(`🗑️ Deleting ${allImages.length} images from S3...`);
 
-      for (const imageUrl of allImages) {
-        try {
-          await deleteImageFromS3(imageUrl);
-          console.log(`✓ Deleted: ${imageUrl}`);
-        } catch (error) {
-          console.error(`✗ Failed to delete: ${imageUrl}`, error);
-          // Continue deleting other images even if one fails
+        for (let i = 0; i < allImages.length; i++) {
+          try {
+            await deleteImageFromS3(allImages[i]);
+            setDeleteProgress(`🗑️ Deleting images... (${i + 1}/${allImages.length})`);
+          } catch (error) {
+            console.error(`Failed to delete image ${i + 1}:`, error);
+          }
         }
       }
 
-      // Then delete the property from database
+      // Delete from database
+      setDeleteProgress('🗄️ Removing from database...');
       const { error } = await supabase
         .from('properties')
         .delete()
@@ -162,10 +171,18 @@ export default function AdminPropertiesPage() {
 
       if (error) throw error;
 
-      alert(`Property and ${allImages.length} images deleted successfully`);
+      setDeleteProgress('✓ Property deleted successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       await fetchProperties();
     } catch (error: any) {
+      console.error('Error deleting property:', error);
       alert('Error deleting property: ' + error.message);
+    } finally {
+      setDeletingPropertyId(null);
+      setDeleteProgress('');
     }
   }
 
@@ -308,7 +325,12 @@ export default function AdminPropertiesPage() {
                       </button>
                       <button
                         onClick={() => deleteProperty(property.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
+                        disabled={deletingPropertyId === property.id}
+                        className={`p-2 rounded ${
+                          deletingPropertyId === property.id
+                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                            : 'text-red-600 hover:bg-red-50'
+                        }`}
                         title="Delete"
                       >
                         <Trash2 size={18} />
@@ -325,6 +347,28 @@ export default function AdminPropertiesPage() {
       {!loading && (
         <div className="mt-4 text-sm text-gray-600">
           Showing {filteredProperties.length} of {properties.length} properties
+        </div>
+      )}
+
+      {/* Deletion Progress Modal */}
+      {deletingPropertyId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Deleting Property</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                This may take a moment as we delete all images from storage...
+              </p>
+              {deleteProgress && (
+                <div className="bg-gray-50 rounded p-3 text-sm font-mono text-left">
+                  {deleteProgress}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
