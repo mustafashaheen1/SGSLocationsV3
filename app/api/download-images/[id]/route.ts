@@ -1,12 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-let JSZip: any;
-try {
-  JSZip = require('jszip');
-} catch (e) {
-  console.error('JSZip not installed. Run: npm install jszip');
-}
+import archiver from 'archiver';
+import { Readable } from 'stream';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,6 +10,7 @@ const supabase = createClient(
 
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest,
@@ -24,14 +20,7 @@ export async function GET(
     const params = await context.params;
     const propertyId = params.id;
 
-    console.log('📦 Starting ZIP generation for property:', propertyId);
-
-    if (!JSZip) {
-      return NextResponse.json(
-        { error: 'Server configuration error: JSZip not installed' },
-        { status: 500 }
-      );
-    }
+    console.log('📦 Starting streaming ZIP for property:', propertyId);
 
     const { data: property, error: propertyError } = await supabase
       .from('properties')
@@ -40,14 +29,13 @@ export async function GET(
       .single();
 
     if (propertyError || !property) {
-      console.error('Property not found:', propertyError);
-      return NextResponse.json(
-        { error: 'Property not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: 'Property not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log('✓ Property found:', property.name);
+    console.log('✓ Property:', property.name);
 
     const { data: images, error: imagesError } = await supabase
       .from('property_images')
@@ -55,116 +43,116 @@ export async function GET(
       .eq('property_id', propertyId)
       .order('display_order');
 
-    if (imagesError) {
-      console.error('Error fetching images:', imagesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch images' },
-        { status: 500 }
-      );
-    }
-
-    if (!images || images.length === 0) {
-      return NextResponse.json(
-        { error: 'No images found for this property' },
-        { status: 404 }
-      );
+    if (imagesError || !images || images.length === 0) {
+      return new Response(JSON.stringify({ error: 'No images found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     console.log(`✓ Found ${images.length} images`);
 
-    const zip = new JSZip();
-    const folderName = property.name.replace(/[^a-z0-9]/gi, '-');
-    const propertyFolder = zip.folder(folderName);
-
-    if (!propertyFolder) {
-      throw new Error('Failed to create ZIP folder');
-    }
-
-    let successCount = 0;
-    let failCount = 0;
-
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      const imageNum = String(i + 1).padStart(3, '0');
-
-      try {
-        console.log(`Downloading ${i + 1}/${images.length}: ${image.image_url.substring(0, 50)}...`);
-
-        const response = await fetch(image.image_url, {
-          signal: AbortSignal.timeout(15000)
-        });
-
-        if (!response.ok) {
-          console.error(`Failed to fetch: ${response.status}`);
-          failCount++;
-          continue;
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        const urlParts = image.image_url.split('.');
-        const extension = urlParts[urlParts.length - 1].split('?')[0] || 'jpg';
-
-        let filename = `${imageNum}`;
-        if (image.tags && image.tags.length > 0) {
-          const tagText = image.tags
-            .slice(0, 2)
-            .join('-')
-            .replace(/[^a-z0-9-]/gi, '-')
-            .substring(0, 30);
-          filename += `-${tagText}`;
-        }
-        filename += `.${extension}`;
-
-        propertyFolder.file(filename, buffer);
-        successCount++;
-        console.log(`✓ Added: ${filename}`);
-
-      } catch (error: any) {
-        console.error(`✗ Failed:`, error.message);
-        failCount++;
-      }
-    }
-
-    console.log(`ZIP complete: ${successCount} successful, ${failCount} failed`);
-
-    if (successCount === 0) {
-      return NextResponse.json(
-        { error: 'Failed to download any images' },
-        { status: 500 }
-      );
-    }
-
-    console.log('Generating ZIP file...');
-    const zipBuffer = await zip.generateAsync({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 }
-    });
-
-    console.log(`✓ ZIP generated: ${zipBuffer.length} bytes`);
-
+    const folderName = property.name.replace(/[^a-z0-9-\s]/gi, '').replace(/\s+/g, '-');
     const zipFilename = `${folderName}-images.zip`;
 
-    return new NextResponse(zipBuffer, {
+    const archive = archiver('zip', {
+      zlib: { level: 6 }
+    });
+
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+
+    archive.on('data', (chunk) => {
+      writer.write(chunk);
+    });
+
+    archive.on('end', () => {
+      writer.close();
+    });
+
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      writer.abort(err);
+    });
+
+    (async () => {
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        const imageNum = String(i + 1).padStart(3, '0');
+
+        try {
+          console.log(`[${i + 1}/${images.length}] Fetching...`);
+
+          const response = await fetch(image.image_url, {
+            signal: AbortSignal.timeout(15000)
+          });
+
+          if (!response.ok) {
+            console.error(`✗ HTTP ${response.status}`);
+            failCount++;
+            continue;
+          }
+
+          if (!response.body) {
+            console.error('✗ No response body');
+            failCount++;
+            continue;
+          }
+
+          const urlMatch = image.image_url.match(/\.([a-z0-9]+)(\?|$)/i);
+          const extension = urlMatch ? urlMatch[1] : 'jpg';
+
+          let filename = `${imageNum}`;
+          if (image.tags && image.tags.length > 0) {
+            const tagText = image.tags
+              .slice(0, 2)
+              .join('-')
+              .replace(/[^a-z0-9-]/gi, '-')
+              .substring(0, 30);
+            filename += `-${tagText}`;
+          }
+          filename += `.${extension}`;
+
+          const nodeStream = Readable.fromWeb(response.body as any);
+          archive.append(nodeStream, { name: `${folderName}/${filename}` });
+
+          successCount++;
+          console.log(`✓ Added: ${filename}`);
+
+        } catch (error: any) {
+          console.error(`✗ Error:`, error.message);
+          failCount++;
+        }
+      }
+
+      console.log(`✅ Complete: ${successCount} success, ${failCount} failed`);
+
+      await archive.finalize();
+    })();
+
+    return new Response(readable, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${zipFilename}"`,
-        'Content-Length': zipBuffer.length.toString(),
+        'Cache-Control': 'no-cache',
       },
     });
 
   } catch (error: any) {
-    console.error('❌ Error generating ZIP:', error);
-    return NextResponse.json(
+    console.error('❌ Fatal error:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Server error',
+        message: error.message
+      }),
       {
-        error: 'Failed to generate ZIP file',
-        details: error.message,
-        stack: error.stack
-      },
-      { status: 500 }
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 }
