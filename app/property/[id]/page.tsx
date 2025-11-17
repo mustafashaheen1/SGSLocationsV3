@@ -172,16 +172,36 @@ export default function PropertyDetailPage() {
     setDownloadingImages(true);
 
     try {
-      console.log('Starting image download...');
+      console.log('Starting image download for property:', property.id);
 
-      const response = await fetch(`/api/download-images/${property.id}`);
+      const response = await fetch(`/api/download-images/${property.id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/zip, application/json',
+        },
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+      const contentType = response.headers.get('content-type');
+
+      if (contentType?.includes('application/json')) {
+        const error = await response.json();
+        console.error('API error:', error);
+        throw new Error(error.error || error.details || 'Failed to download images');
+      }
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to download images');
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const blob = await response.blob();
+      console.log('ZIP blob size:', blob.size, 'bytes');
+
+      if (blob.size === 0) {
+        throw new Error('Received empty ZIP file');
+      }
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -190,10 +210,13 @@ export default function PropertyDetailPage() {
       document.body.appendChild(a);
       a.click();
 
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
 
       console.log('✓ Images downloaded successfully');
+      alert('Images downloaded successfully!');
 
     } catch (error: any) {
       console.error('Download error:', error);
