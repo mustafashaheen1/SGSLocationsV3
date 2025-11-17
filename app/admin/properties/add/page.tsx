@@ -127,17 +127,29 @@ export default function AddPropertyPage() {
   }
 
   useEffect(() => {
-    if (googleMapsLoaded && addressInputRef.current && window.google) {
-      const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-        types: ['address'],
-        componentRestrictions: { country: 'us' }
-      });
+    if (!googleMapsLoaded || !addressInputRef.current || !window.google) {
+      return;
+    }
+
+    console.log('🔧 Initializing Google Places Autocomplete...');
+
+    try {
+      const autocomplete = new window.google.maps.places.Autocomplete(
+        addressInputRef.current,
+        {
+          types: ['address'],
+          componentRestrictions: { country: 'us' },
+          fields: ['address_components', 'formatted_address', 'geometry']
+        }
+      );
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
 
+        console.log('📍 Place selected:', place);
+
         if (!place.geometry || !place.address_components) {
-          console.log('No details available for input');
+          console.log('⚠️ No details available for input');
           return;
         }
 
@@ -171,6 +183,8 @@ export default function AddPropertyPage() {
         // Build full address
         const fullAddress = `${streetNumber} ${route}`.trim();
 
+        console.log('✅ Parsed address:', { fullAddress, city, state, zipCode });
+
         // Update form data
         setFormData(prev => ({
           ...prev,
@@ -180,6 +194,10 @@ export default function AddPropertyPage() {
           zipcode: zipCode
         }));
       });
+
+      console.log('✅ Autocomplete initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing autocomplete:', error);
     }
   }, [googleMapsLoaded]);
 
@@ -500,13 +518,14 @@ export default function AddPropertyPage() {
   return (
     <>
       <Script
-        src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyAj3c7-9x5BgXdX8zNYZhTREP2OX0f2ErI&libraries=places`}
+        src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyAj3c7-9x5BgXdX8zNYZhTREP2OX0f2ErI&libraries=places&loading=async`}
+        strategy="afterInteractive"
         onLoad={() => {
-          console.log('Google Maps script loaded');
+          console.log('✅ Google Maps script loaded');
           setGoogleMapsLoaded(true);
         }}
         onError={(e) => {
-          console.error('Error loading Google Maps script:', e);
+          console.error('❌ Error loading Google Maps script:', e);
         }}
       />
 
@@ -545,14 +564,16 @@ export default function AddPropertyPage() {
 
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Address *</label>
-            <Input
+            <input
               ref={addressInputRef}
+              type="text"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
               placeholder="Start typing address..."
               required
               autoComplete="off"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
             />
             <p className="text-xs text-gray-500 mt-1">
               Start typing and select from the dropdown suggestions
