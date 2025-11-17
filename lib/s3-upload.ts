@@ -52,8 +52,13 @@ export async function uploadImageToS3(file: File, folder: string = 'properties')
     await s3Client.send(command);
 
     if (CLOUDFRONT_URL) {
-      return `${CLOUDFRONT_URL}/${fileName}`;
+      // Ensure CloudFront URL has https:// prefix
+      const baseUrl = CLOUDFRONT_URL.startsWith('http')
+        ? CLOUDFRONT_URL
+        : `https://${CLOUDFRONT_URL}`;
+      return `${baseUrl}/${fileName}`;
     }
+
     return `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileName}`;
   } catch (error: any) {
     console.error('Error uploading to S3:', error);
