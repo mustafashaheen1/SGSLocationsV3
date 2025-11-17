@@ -38,6 +38,8 @@ export default function CategoriesPage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<string>('');
 
   useEffect(() => {
     console.log('Categories page mounted');
@@ -217,13 +219,31 @@ export default function CategoriesPage() {
     }
   }
 
-  async function handleDelete(id: string, currentOrder: number) {
-    if (!confirm('Are you sure? This will remove this category from all properties.')) {
+  async function handleDelete(id: string, currentOrder: number, propertyCount: number, categoryName: string) {
+    // Check if category has properties
+    if (propertyCount > 0) {
+      alert(
+        `Cannot delete "${categoryName}" category!\n\n` +
+        `This category has ${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'} associated with it.\n\n` +
+        `To delete this category:\n` +
+        `1. Go to each property in this category\n` +
+        `2. Assign them to a different category\n` +
+        `3. Then you can delete this category\n\n` +
+        `You can view all properties in this category by clicking on the category name.`
+      );
       return;
     }
 
+    if (!confirm(`Are you sure you want to delete "${categoryName}" category?`)) {
+      return;
+    }
+
+    setDeletingCategoryId(id);
+    setDeleteProgress('Starting deletion...');
+
     try {
       // Step 1: Delete the category
+      setDeleteProgress('🗑️ Deleting category from database...');
       const { error: deleteError } = await supabase
         .from('categories')
         .delete()
@@ -232,13 +252,15 @@ export default function CategoriesPage() {
       if (deleteError) throw deleteError;
 
       // Step 2: Reorder remaining categories
-      // Get all categories with display_order greater than the deleted one
+      setDeleteProgress('🔄 Reordering remaining categories...');
       const categoriesToReorder = categories.filter(
         cat => cat.display_order > currentOrder
       );
 
-      // Update each category's display_order to decrease by 1
-      for (const cat of categoriesToReorder) {
+      for (let i = 0; i < categoriesToReorder.length; i++) {
+        const cat = categoriesToReorder[i];
+        setDeleteProgress(`🔄 Reordering... (${i + 1}/${categoriesToReorder.length})`);
+
         const { error: updateError } = await supabase
           .from('categories')
           .update({ display_order: cat.display_order - 1 })
@@ -247,10 +269,19 @@ export default function CategoriesPage() {
         if (updateError) throw updateError;
       }
 
+      setDeleteProgress('✓ Category deleted successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Step 3: Refresh the list
-      fetchCategories();
+      await fetchCategories();
     } catch (error: any) {
+      console.error('Error deleting category:', error);
       alert('Error deleting category: ' + error.message);
+    } finally {
+      setDeletingCategoryId(null);
+      setDeleteProgress('');
     }
   }
 
@@ -566,7 +597,14 @@ export default function CategoriesPage() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDelete(category.id, category.display_order)}
+                      onClick={() => handleDelete(
+                        category.id,
+                        category.display_order,
+                        category.property_count,
+                        category.name
+                      )}
+                      disabled={deletingCategoryId === category.id}
+                      className={deletingCategoryId === category.id ? 'opacity-50 cursor-not-allowed' : ''}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -577,6 +615,28 @@ export default function CategoriesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Deletion Progress Modal */}
+      {deletingCategoryId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Deleting Category</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please wait while we delete the category and reorder the remaining ones...
+              </p>
+              {deleteProgress && (
+                <div className="bg-gray-50 rounded p-3 text-sm font-mono text-left">
+                  {deleteProgress}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
