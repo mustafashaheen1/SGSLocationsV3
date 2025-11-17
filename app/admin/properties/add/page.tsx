@@ -127,78 +127,90 @@ export default function AddPropertyPage() {
   }
 
   useEffect(() => {
-    if (!googleMapsLoaded || !addressInputRef.current || !window.google) {
+    if (!googleMapsLoaded || !addressInputRef.current) {
       return;
     }
 
-    console.log('🔧 Initializing Google Places Autocomplete...');
+    // Wait for google.maps.places to be fully available
+    const initAutocomplete = () => {
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        console.log('⏳ Waiting for Google Places library...');
+        setTimeout(initAutocomplete, 100);
+        return;
+      }
 
-    try {
-      const autocomplete = new window.google.maps.places.Autocomplete(
-        addressInputRef.current,
-        {
-          types: ['address'],
-          componentRestrictions: { country: 'us' },
-          fields: ['address_components', 'formatted_address', 'geometry']
-        }
-      );
+      console.log('🔧 Initializing Google Places Autocomplete...');
 
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-
-        console.log('📍 Place selected:', place);
-
-        if (!place.geometry || !place.address_components) {
-          console.log('⚠️ No details available for input');
-          return;
-        }
-
-        let streetNumber = '';
-        let route = '';
-        let city = '';
-        let state = '';
-        let zipCode = '';
-
-        // Parse address components
-        place.address_components.forEach((component: any) => {
-          const types = component.types;
-
-          if (types.includes('street_number')) {
-            streetNumber = component.long_name;
+      try {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current!,
+          {
+            types: ['address'],
+            componentRestrictions: { country: 'us' },
+            fields: ['address_components', 'formatted_address', 'geometry']
           }
-          if (types.includes('route')) {
-            route = component.long_name;
+        );
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+
+          console.log('📍 Place selected:', place);
+
+          if (!place.geometry || !place.address_components) {
+            console.log('⚠️ No details available for input');
+            return;
           }
-          if (types.includes('locality')) {
-            city = component.long_name;
-          }
-          if (types.includes('administrative_area_level_1')) {
-            state = component.long_name;
-          }
-          if (types.includes('postal_code')) {
-            zipCode = component.long_name;
-          }
+
+          let streetNumber = '';
+          let route = '';
+          let city = '';
+          let state = '';
+          let zipCode = '';
+
+          // Parse address components
+          place.address_components.forEach((component: any) => {
+            const types = component.types;
+
+            if (types.includes('street_number')) {
+              streetNumber = component.long_name;
+            }
+            if (types.includes('route')) {
+              route = component.long_name;
+            }
+            if (types.includes('locality')) {
+              city = component.long_name;
+            }
+            if (types.includes('administrative_area_level_1')) {
+              state = component.long_name;
+            }
+            if (types.includes('postal_code')) {
+              zipCode = component.long_name;
+            }
+          });
+
+          // Build full address
+          const fullAddress = `${streetNumber} ${route}`.trim();
+
+          console.log('✅ Parsed address:', { fullAddress, city, state, zipCode });
+
+          // Update form data
+          setFormData(prev => ({
+            ...prev,
+            address: fullAddress,
+            city: city,
+            state: state || 'Texas',
+            zipcode: zipCode
+          }));
         });
 
-        // Build full address
-        const fullAddress = `${streetNumber} ${route}`.trim();
+        console.log('✅ Autocomplete initialized successfully');
+      } catch (error) {
+        console.error('❌ Error initializing autocomplete:', error);
+      }
+    };
 
-        console.log('✅ Parsed address:', { fullAddress, city, state, zipCode });
-
-        // Update form data
-        setFormData(prev => ({
-          ...prev,
-          address: fullAddress,
-          city: city,
-          state: state || 'Texas',
-          zipcode: zipCode
-        }));
-      });
-
-      console.log('✅ Autocomplete initialized successfully');
-    } catch (error) {
-      console.error('❌ Error initializing autocomplete:', error);
-    }
+    // Start initialization
+    initAutocomplete();
   }, [googleMapsLoaded]);
 
   async function handleSmugMugAuthorize() {
