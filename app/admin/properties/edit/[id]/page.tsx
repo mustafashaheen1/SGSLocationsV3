@@ -9,6 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 
+const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+  'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+  'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+  'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+  'Wisconsin', 'Wyoming'
+];
+
 interface Category {
   id: string;
   name: string;
@@ -37,26 +48,26 @@ export default function EditPropertyPage() {
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
 
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     address: '',
     city: '',
-    state: '',
+    state: 'Texas',
     zipcode: '',
+    category_id: '',
     is_featured: false,
     is_exclusive: false,
   });
 
   const [images, setImages] = useState<ImageWithTags[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-  const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchCategories();
-    fetchTags();
+    fetchSearchFilterTags();
     fetchProperty();
   }, [params.id]);
 
@@ -75,12 +86,14 @@ export default function EditPropertyPage() {
         description: property.description || '',
         address: property.address || '',
         city: property.city || '',
-        state: property.county || '',
+        state: property.county || 'Texas',
         zipcode: property.zipcode || '',
+        category_id: '',
         is_featured: property.is_featured || false,
         is_exclusive: property.is_exclusive || false,
       });
 
+      // Get category ID from category name
       if (property.categories && property.categories.length > 0) {
         const { data: categoryData } = await supabase
           .from('categories')
@@ -89,10 +102,11 @@ export default function EditPropertyPage() {
           .single();
 
         if (categoryData) {
-          setSelectedCategory(categoryData);
+          setFormData(prev => ({ ...prev, category_id: categoryData.id }));
         }
       }
 
+      // Load existing images with tags
       const { data: propertyImages, error: imagesError } = await supabase
         .from('property_images')
         .select('*')
@@ -132,7 +146,7 @@ export default function EditPropertyPage() {
     if (data) setCategories(data);
   }
 
-  async function fetchTags() {
+  async function fetchSearchFilterTags() {
     try {
       const { data: filters } = await supabase
         .from('search_filters')
@@ -169,7 +183,7 @@ export default function EditPropertyPage() {
     }
   }
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
@@ -232,7 +246,7 @@ export default function EditPropertyPage() {
       return;
     }
 
-    if (!selectedCategory) {
+    if (!formData.category_id) {
       alert('Please select a category');
       return;
     }
@@ -258,6 +272,9 @@ export default function EditPropertyPage() {
         }
       });
 
+      // Get category name from ID
+      const selectedCategory = categories.find(c => c.id === formData.category_id);
+
       const { error: propertyError } = await supabase
         .from('properties')
         .update({
@@ -267,7 +284,7 @@ export default function EditPropertyPage() {
           city: formData.city,
           county: formData.state,
           zipcode: formData.zipcode || null,
-          categories: [selectedCategory.name],
+          categories: selectedCategory ? [selectedCategory.name] : [],
           images: allImageUrls,
           primary_image: allImageUrls[0],
           is_featured: formData.is_featured,
@@ -357,6 +374,7 @@ export default function EditPropertyPage() {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
+              placeholder="e.g., Modern Downtown Loft"
               required
             />
           </div>
@@ -367,6 +385,7 @@ export default function EditPropertyPage() {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
+              placeholder="Detailed property description..."
               rows={4}
             />
           </div>
@@ -377,6 +396,7 @@ export default function EditPropertyPage() {
               name="address"
               value={formData.address}
               onChange={handleInputChange}
+              placeholder="123 Main Street"
               required
             />
           </div>
@@ -387,69 +407,74 @@ export default function EditPropertyPage() {
               name="city"
               value={formData.city}
               onChange={handleInputChange}
+              placeholder="Dallas"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">State *</label>
-            <Input
+            <select
               name="state"
               value={formData.state}
               onChange={handleInputChange}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
               required
-            />
+            >
+              {US_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Zip Code</label>
+            <label className="block text-sm font-medium mb-2">ZIP Code</label>
             <Input
               name="zipcode"
               value={formData.zipcode}
               onChange={handleInputChange}
+              placeholder="75201"
             />
           </div>
 
-          <div className="col-span-2">
+          <div>
             <label className="block text-sm font-medium mb-2">Category *</label>
-            <div className="grid grid-cols-4 gap-3">
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleInputChange}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+              required
+            >
+              <option value="">Select a category</option>
               {categories.map(category => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(category)}
-                  className={`p-3 border-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedCategory?.id === category.id
-                      ? 'border-red-600 bg-red-50 text-red-600'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
+                <option key={category.id} value={category.id}>
                   {category.name}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
-          <div className="col-span-2 flex gap-4">
-            <label className="flex items-center gap-2">
+          <div className="col-span-2 flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 name="is_featured"
                 checked={formData.is_featured}
                 onChange={handleInputChange}
-                className="rounded"
+                className="w-4 h-4 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
               />
-              <span className="text-sm font-medium">Featured Property</span>
+              <span className="text-sm font-medium text-gray-700">Featured Property</span>
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 name="is_exclusive"
                 checked={formData.is_exclusive}
                 onChange={handleInputChange}
-                className="rounded"
+                className="w-4 h-4 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
               />
-              <span className="text-sm font-medium">Exclusive Property</span>
+              <span className="text-sm font-medium text-gray-700">Exclusive Property</span>
             </label>
           </div>
 
@@ -498,7 +523,6 @@ export default function EditPropertyPage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-6">
-                  {/* LEFT: Image Grid - Takes 1/3 of space */}
                   <div className="col-span-1 space-y-4">
                     <h4 className="font-semibold text-sm">
                       Click image to assign tags
@@ -558,7 +582,6 @@ export default function EditPropertyPage() {
                     </div>
                   </div>
 
-                  {/* RIGHT: Tag Assignment Panel - Takes 2/3 of space */}
                   <div className="col-span-2 bg-gray-50 rounded-lg p-4 border">
                     {selectedImageIndex === null ? (
                       <div className="flex items-center justify-center h-full text-gray-500">
