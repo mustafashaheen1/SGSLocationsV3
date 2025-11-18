@@ -542,15 +542,27 @@ export default function AddPropertyPage() {
 
                 if (address) {
                   console.log('✓ Address extracted:', address);
+                  console.log('  Updating form fields:');
+                  console.log('    Address:', address.streetAddress);
+                  console.log('    City:', address.city);
+                  console.log('    State:', address.state);
+                  console.log('    Zip:', address.zipCode);
 
-                  setFormData(prev => ({
-                    ...prev,
-                    address: address.streetAddress,
-                    city: address.city,
-                    state: address.state,
-                    zipcode: address.zipCode
-                  }));
+                  setFormData(prev => {
+                    const updated = {
+                      ...prev,
+                      address: address.streetAddress || '',
+                      city: address.city || '',
+                      state: address.state || 'Texas',
+                      zipcode: address.zipCode || ''
+                    };
+                    console.log('  Form state after update:', updated);
+                    return updated;
+                  });
 
+                  await new Promise(resolve => setTimeout(resolve, 100));
+
+                  console.log('✓ Form updated with address');
                   setImportProgress(`✓ Imported ${imported} images, loaded album details, and extracted address!`);
                 } else {
                   console.log('⚠️ Address extraction failed');
@@ -647,14 +659,26 @@ export default function AddPropertyPage() {
 
         if (address) {
           console.log('✓ Address extracted:', address.fullAddress);
+          console.log('  Updating form fields:');
+          console.log('    Address:', address.streetAddress);
+          console.log('    City:', address.city);
+          console.log('    State:', address.state);
+          console.log('    Zip:', address.zipCode);
 
-          setFormData(prev => ({
-            ...prev,
-            address: address.streetAddress,
-            city: address.city,
-            state: address.state,
-            zipcode: address.zipCode
-          }));
+          setFormData(prev => {
+            const updated = {
+              ...prev,
+              address: address.streetAddress || '',
+              city: address.city || '',
+              state: address.state || 'Texas',
+              zipcode: address.zipCode || ''
+            };
+            console.log('  Form state after update:', updated);
+            return updated;
+          });
+
+          await new Promise(resolve => setTimeout(resolve, 100));
+          console.log('✓ Form updated with address');
         }
 
         setExtractingAddress(false);

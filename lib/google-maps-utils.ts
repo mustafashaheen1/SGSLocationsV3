@@ -62,6 +62,23 @@ async function expandShortenedUrl(shortUrl: string): Promise<string> {
 }
 
 /**
+ * Extract Place ID from Google Maps URL
+ */
+function extractPlaceId(url: string): string | null {
+  const placeMatch = url.match(/\/place\/([^\/]+)/);
+  if (placeMatch) {
+    return placeMatch[1];
+  }
+
+  const ftidMatch = url.match(/ftid=([^&]+)/);
+  if (ftidMatch) {
+    return ftidMatch[1];
+  }
+
+  return null;
+}
+
+/**
  * Extract coordinates from Google Maps URL
  */
 function extractCoordinates(url: string): { lat: number; lng: number } | null {
@@ -82,6 +99,40 @@ function extractCoordinates(url: string): { lat: number; lng: number } | null {
   }
 
   return null;
+}
+
+/**
+ * Parse formatted address into components
+ */
+function parseFormattedAddress(formattedAddress: string): AddressComponents | null {
+  console.log('  Parsing formatted address:', formattedAddress);
+
+  const parts = formattedAddress.split(',').map(p => p.trim());
+
+  if (parts.length < 3) {
+    console.log('  ⚠️ Cannot parse formatted address');
+    return null;
+  }
+
+  const streetAddress = parts[0];
+  const city = parts[1];
+
+  const stateZipMatch = parts[2].match(/([A-Z]{2})\s+(\d{5})/);
+  const state = stateZipMatch ? stateZipMatch[1] : '';
+  const zipCode = stateZipMatch ? stateZipMatch[2] : '';
+
+  const country = parts[3] || '';
+
+  console.log('  Parsed result:', { streetAddress, city, state, zipCode });
+
+  return {
+    streetAddress,
+    city,
+    state,
+    zipCode,
+    country,
+    fullAddress: formattedAddress
+  };
 }
 
 /**
@@ -124,9 +175,19 @@ async function geocodeCoordinates(lat: number, lng: number): Promise<AddressComp
       return null;
     }
 
-    console.log('  ✓ Geocoding successful, parsing address...');
+    console.log('  ✓ Geocoding successful');
 
     const result = data.results[0];
+
+    console.log('  Full formatted address:', result.formatted_address);
+
+    const parsedAddress = parseFormattedAddress(result.formatted_address);
+    if (parsedAddress && parsedAddress.streetAddress && parsedAddress.zipCode) {
+      console.log('  ✓ Successfully parsed from formatted address');
+      return parsedAddress;
+    }
+
+    console.log('  Falling back to component parsing...');
     const components = result.address_components;
 
     let streetNumber = '';
@@ -169,7 +230,7 @@ async function geocodeCoordinates(lat: number, lng: number): Promise<AddressComp
     console.log('    Zip:', zipCode);
 
     return {
-      streetAddress,
+      streetAddress: streetAddress || result.formatted_address.split(',')[0],
       city,
       state,
       zipCode,
