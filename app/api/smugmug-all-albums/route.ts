@@ -65,22 +65,28 @@ export async function GET(request: NextRequest) {
 
     console.log('✓ Got user albums URI:', userUri);
 
-    // Get all albums
+    // Get all albums - FIXED: Include count in signature
     const albumsUrl = `https://api.smugmug.com${userUri}`;
     const albumsParams = createOAuthParams(apiKey, tokenData.access_token);
+
+    // Add count parameter BEFORE signature generation
+    const albumsParamsWithCount = {
+      ...albumsParams,
+      count: '100'
+    };
+
     const albumsSig = generateOAuthSignature(
       'GET',
       albumsUrl,
-      albumsParams,
+      albumsParamsWithCount,
       apiSecret,
       tokenData.access_token_secret
     );
 
     const albumsResponse = await axios.get(albumsUrl, {
       params: {
-        ...albumsParams,
-        oauth_signature: albumsSig,
-        count: 100
+        ...albumsParamsWithCount,
+        oauth_signature: albumsSig
       },
       headers: {
         'Accept': 'application/json',
@@ -121,7 +127,7 @@ export async function GET(request: NextRequest) {
 
           const albumDetails = albumResponse.data.Response.Album;
 
-          // Get album images
+          // Get album images count
           const albumImagesUri = album.Uris?.AlbumImages?.Uri;
           let imageCount = 0;
           let thumbnailUrl = null;
@@ -129,19 +135,25 @@ export async function GET(request: NextRequest) {
           if (albumImagesUri) {
             const imagesUrl = `https://api.smugmug.com${albumImagesUri}`;
             const imagesParams = createOAuthParams(apiKey, tokenData.access_token);
+
+            // Add count for images request
+            const imagesParamsWithCount = {
+              ...imagesParams,
+              count: '1'
+            };
+
             const imagesSig = generateOAuthSignature(
               'GET',
               imagesUrl,
-              imagesParams,
+              imagesParamsWithCount,
               apiSecret,
               tokenData.access_token_secret
             );
 
             const imagesResponse = await axios.get(imagesUrl, {
               params: {
-                ...imagesParams,
-                oauth_signature: imagesSig,
-                count: 1
+                ...imagesParamsWithCount,
+                oauth_signature: imagesSig
               },
               headers: {
                 'Accept': 'application/json',
@@ -203,8 +215,8 @@ export async function GET(request: NextRequest) {
             sortMethod: albumDetails.SortMethod,
             lastUpdated: albumDetails.LastUpdated
           };
-        } catch (error) {
-          console.error(`Error getting metadata for album ${album.Name}:`, error);
+        } catch (error: any) {
+          console.error(`Error getting metadata for album ${album.Name}:`, error.message);
           return null;
         }
       })
