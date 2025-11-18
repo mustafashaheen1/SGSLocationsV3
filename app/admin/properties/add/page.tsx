@@ -7,7 +7,7 @@ declare global {
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { ArrowLeft, Upload, X, Camera, Download, Tag, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,8 @@ interface FilterTag {
 
 export default function AddPropertyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isBulkImport = searchParams.get('bulk_import') === 'true';
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<ImageWithTags[]>([]);
@@ -67,6 +69,9 @@ export default function AddPropertyPage() {
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0, status: '' });
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [propertyTags, setPropertyTags] = useState<string[]>([]);
+  const [importQueue, setImportQueue] = useState<any[]>([]);
+  const [currentImportIndex, setCurrentImportIndex] = useState(0);
+  const [loadingQueueImages, setLoadingQueueImages] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -83,6 +88,10 @@ export default function AddPropertyPage() {
     fetchCategories();
     fetchSearchFilterTags();
     checkSmugMugAuth();
+
+    if (isBulkImport) {
+      loadBulkImportQueue();
+    }
 
     const params = new URLSearchParams(window.location.search);
     if (params.get('smugmug_auth') === 'success') {
@@ -499,6 +508,105 @@ export default function AddPropertyPage() {
     }
   }
 
+  async function loadBulkImportQueue() {
+    try {
+      const queueData = localStorage.getItem('sgs_import_queue');
+      const currentIndex = parseInt(localStorage.getItem('sgs_import_current_index') || '0');
+
+      if (queueData) {
+        const queue = JSON.parse(queueData);
+        setImportQueue(queue);
+        setCurrentImportIndex(currentIndex);
+
+        if (currentIndex < queue.length) {
+          await loadCurrentAlbumData(queue[currentIndex]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading import queue:', error);
+    }
+  }
+
+  async function loadCurrentAlbumData(album: any) {
+    setLoadingQueueImages(true);
+
+    try {
+      setFormData(prev => ({
+        ...prev,
+        name: album.name,
+        description: album.description || '',
+        city: album.location?.city || '',
+        state: album.location?.state || 'Texas',
+      }));
+
+      const response = await fetch('/api/import-smugmug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          albumKey: album.albumKey
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.urls && data.urls.length > 0) {
+        setAnalyzingImages(true);
+        setAnalysisProgress({ current: 0, total: data.urls.length, status: 'Starting AI analysis...' });
+
+        const importedImages: ImageWithTags[] = [];
+
+        for (const url of data.urls) {
+          importedImages.push({ url, tags: [], isSmugmug: true });
+        }
+
+        for (let i = 0; i < importedImages.length; i++) {
+          const suggestedTags = await analyzeImageAndTag(importedImages[i].url, i, importedImages.length);
+          importedImages[i].tags = suggestedTags;
+        }
+
+        setImages(importedImages);
+        setAnalyzingImages(false);
+
+        if (album.keywords) {
+          const keywords = album.keywords.split(',').map((k: string) => k.trim());
+          const matchedTags = keywords.filter((keyword: string) =>
+            availableTags.some(tag =>
+              tag.name.toLowerCase() === keyword.toLowerCase()
+            )
+          );
+          if (matchedTags.length > 0) {
+            setPropertyTags(matchedTags);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading album data:', error);
+      alert('Error loading album: ' + error);
+    } finally {
+      setLoadingQueueImages(false);
+    }
+  }
+
+  function handleSkipProperty() {
+    if (confirm('Skip this property? It will not be saved.')) {
+      moveToNextProperty();
+    }
+  }
+
+  function moveToNextProperty() {
+    const nextIndex = currentImportIndex + 1;
+
+    if (nextIndex < importQueue.length) {
+      localStorage.setItem('sgs_import_current_index', nextIndex.toString());
+      window.location.reload();
+    } else {
+      localStorage.removeItem('sgs_import_queue');
+      localStorage.removeItem('sgs_import_current_index');
+      alert('All properties imported! Returning to properties list.');
+      router.push('/admin/properties');
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -592,8 +700,12 @@ export default function AddPropertyPage() {
         console.error('Error saving image metadata:', imagesError);
       }
 
-      alert('Property added successfully!');
-      router.push('/admin/properties');
+      if (isBulkImport) {
+        moveToNextProperty();
+      } else {
+        alert('Property added successfully!');
+        router.push('/admin/properties');
+      }
     } catch (error: any) {
       console.error('Error adding property:', error);
       alert('Error adding property: ' + error.message);
@@ -626,12 +738,76 @@ export default function AddPropertyPage() {
 
       <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (isBulkImport) {
+              if (confirm('Cancel bulk import? Remaining properties will not be imported.')) {
+                localStorage.removeItem('sgs_import_queue');
+                localStorage.removeItem('sgs_import_current_index');
+                router.push('/admin/properties');
+              }
+            } else {
+              router.push('/admin/properties');
+            }
+          }}
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          {isBulkImport ? 'Cancel Bulk Import' : 'Back to Properties'}
         </Button>
         <h1 className="text-3xl font-bold">Add New Property</h1>
       </div>
+
+      {isBulkImport && importQueue.length > 0 && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-blue-900">
+                Bulk Import Progress
+              </h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Property {currentImportIndex + 1} of {importQueue.length}:
+                <span className="font-medium ml-1">{importQueue[currentImportIndex]?.name}</span>
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Fill in the details below and click Save to move to the next property
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-900">
+                  {currentImportIndex + 1}/{importQueue.length}
+                </div>
+                <div className="text-xs text-blue-600">
+                  {importQueue.length - currentImportIndex - 1} remaining
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSkipProperty}
+                className="border-gray-300"
+              >
+                Skip
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-3 bg-blue-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentImportIndex + 1) / importQueue.length) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {loadingQueueImages && (
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex items-center gap-3">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600"></div>
+          <span className="text-yellow-800">Loading album images and metadata...</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
         <div className="grid grid-cols-2 gap-6">

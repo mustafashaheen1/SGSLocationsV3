@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Star, Upload, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { deleteImageFromS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ export default function AdminPropertiesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
+  const [bulkImportLoading, setBulkImportLoading] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -186,6 +187,28 @@ export default function AdminPropertiesPage() {
     }
   }
 
+  async function handleBulkImportProperties() {
+    setBulkImportLoading(true);
+
+    try {
+      const response = await fetch('/api/smugmug-all-albums');
+      const data = await response.json();
+
+      if (data.success && data.albums && data.albums.length > 0) {
+        localStorage.setItem('sgs_import_queue', JSON.stringify(data.albums));
+        localStorage.setItem('sgs_import_current_index', '0');
+
+        router.push('/admin/properties/add?bulk_import=true');
+      } else {
+        alert('No albums found to import or error occurred: ' + (data.error || 'No albums'));
+      }
+    } catch (error: any) {
+      alert('Error fetching albums: ' + error.message);
+    } finally {
+      setBulkImportLoading(false);
+    }
+  }
+
   const filteredProperties = properties.filter(property => {
     const matchesSearch =
       property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,14 +219,38 @@ export default function AdminPropertiesPage() {
 
   return (
     <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Properties</h1>
-        <Button
-          onClick={() => router.push('/admin/properties/add')}
-          className="bg-red-600 hover:bg-red-700"
-        >
-          + Add Property
-        </Button>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Properties</h1>
+          <p className="text-gray-600 mt-1">{filteredProperties.length} total properties</p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={handleBulkImportProperties}
+            disabled={bulkImportLoading}
+            className="border-[#e11921] text-[#e11921] hover:bg-red-50"
+          >
+            {bulkImportLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#e11921] mr-2"></div>
+                Loading Albums...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Bulk Import Properties
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={() => router.push('/admin/properties/add')}
+            className="bg-[#e11921] hover:bg-red-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Property
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 mb-6">
