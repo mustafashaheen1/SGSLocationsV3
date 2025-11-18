@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { normalizeUrl } from '@/lib/url-utils';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,6 +15,14 @@ export async function POST(request: NextRequest) {
         { error: 'Image URL is required' },
         { status: 400 }
       );
+    }
+
+    const normalizedUrl = normalizeUrl(imageUrl);
+
+    if (normalizedUrl !== imageUrl) {
+      console.log('  ⚠️ Added missing https:// prefix');
+      console.log('  Original URL:', imageUrl.substring(0, 60) + '...');
+      console.log('  Normalized URL:', normalizedUrl.substring(0, 60) + '...');
     }
 
     const tagsByCategory: Record<string, string[]> = {};
@@ -55,7 +64,7 @@ Example incorrect response format:
 
 Return only the JSON array, nothing else.`;
 
-    console.log(`🤖 Analyzing image: ${imageUrl.substring(0, 60)}...`);
+    console.log(`🤖 Analyzing image: ${normalizedUrl.substring(0, 60)}...`);
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -67,7 +76,7 @@ Return only the JSON array, nothing else.`;
             {
               type: "image_url",
               image_url: {
-                url: imageUrl,
+                url: normalizedUrl,
                 detail: "high"
               }
             }

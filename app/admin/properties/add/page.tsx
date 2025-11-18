@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 import { getAddressFromGoogleMapsLink, findGoogleMapsLinkInMetadata } from '@/lib/google-maps-utils';
+import { normalizeUrls } from '@/lib/url-utils';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -477,9 +478,9 @@ export default function AddPropertyPage() {
       console.log('Imported URLs:', imageUrls);
 
       if (imported > 0 && imageUrls.length > 0) {
-        const fullUrls = imageUrls.map((url: string) =>
-          url.startsWith('http') ? url : `https://${url}`
-        );
+        const fullUrls = normalizeUrls(imageUrls);
+
+        console.log('✓ Normalized URLs:', fullUrls.length);
 
         setImportProgress(`Successfully imported ${imported} images. Analyzing with AI...`);
         setAnalyzingImages(true);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { supabase } from '@/lib/supabase';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
+import { normalizeUrl } from '@/lib/url-utils';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 
@@ -263,9 +264,11 @@ export async function POST(request: NextRequest) {
           ACL: 'public-read',
         }));
 
-        const s3Url = process.env.NEXT_PUBLIC_CLOUDFRONT_URL
+        const rawUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL
           ? `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${fileName}`
-          : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+          : `${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+
+        const s3Url = normalizeUrl(rawUrl);
 
         uploadedUrls.push(s3Url);
         console.log(`  ✓ Uploaded: ${s3Url.substring(0, 60)}...`);
