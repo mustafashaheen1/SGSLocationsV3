@@ -45,8 +45,10 @@ interface ImageWithTags {
 interface FilterTag {
   id: string;
   name: string;
+  slug?: string;
   filter_id: string;
   filter_name: string;
+  filter_slug?: string;
 }
 
 export default function AddPropertyPage() {
@@ -273,7 +275,7 @@ export default function AddPropertyPage() {
     }
   }
 
-  async function fetchSearchFilterTags() {
+  async function fetchSearchFilterTags(): Promise<FilterTag[]> {
     try {
       console.log('🔍 Fetching search filter tags...');
 
@@ -301,7 +303,7 @@ export default function AddPropertyPage() {
         console.warn('⚠️ No active tags found in database');
         setAvailableTags([]);
         setTagsLoaded(true);
-        return;
+        return [];
       }
 
       console.log(`✅ Fetched ${data.length} tags from database`);
@@ -314,7 +316,7 @@ export default function AddPropertyPage() {
       const formattedTags = data.map((tag: any) => ({
         id: tag.id,
         name: tag.name,
-        slug: tag.slug,
+        slug: tag.slug || '',
         filter_id: tag.filter_id,
         filter_name: tag.search_filters?.name || 'Unknown',
         filter_slug: tag.search_filters?.slug || 'unknown'
@@ -332,15 +334,16 @@ export default function AddPropertyPage() {
 
       setAvailableTags(formattedTags);
       setTagsLoaded(true);
-
-      const filterNames = Array.from(new Set(formattedTags.map(t => t.filter_name)));
       setExpandedFilters(new Set());
+
+      return formattedTags;
 
     } catch (error) {
       console.error('Error fetching tags:', error);
       alert('Failed to load tags. Image analysis may not work properly.');
       setAvailableTags([]);
       setTagsLoaded(true);
+      return [];
     }
   }
 
@@ -416,10 +419,14 @@ export default function AddPropertyPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    if (!tagsLoaded || availableTags.length === 0) {
-      alert('Tags are still loading. Please wait a moment and try again.');
-      e.target.value = '';
-      return;
+    if (availableTags.length === 0) {
+      console.log('⏳ No tags available, loading...');
+      const tags = await fetchSearchFilterTags();
+      if (tags.length === 0) {
+        alert('Failed to load tags. Please refresh the page and try again.');
+        e.target.value = '';
+        return;
+      }
     }
 
     setAnalyzingImages(true);
@@ -428,7 +435,7 @@ export default function AddPropertyPage() {
 
     const newImages: ImageWithTags[] = [];
 
-    try{
+    try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setUploadProgress({ current: i + 1, total: files.length });
@@ -512,22 +519,23 @@ export default function AddPropertyPage() {
       return;
     }
 
-    if (!tagsLoaded || availableTags.length === 0) {
-      console.log('⏳ Tags not loaded yet, fetching...');
-      await fetchSearchFilterTags();
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      if (availableTags.length === 0) {
-        alert('No tags available for analysis. Please check your database.');
-        return;
-      }
-    }
-
     setImportingFromSmugmug(true);
     setImportProgress('🔍 Extracting album key...');
 
     try {
+      let tagsToUse = availableTags;
+      if (tagsToUse.length === 0) {
+        console.log('⏳ No tags loaded, fetching now...');
+        setImportProgress('Loading tags for analysis...');
+        tagsToUse = await fetchSearchFilterTags();
+
+        if (tagsToUse.length === 0) {
+          console.error('❌ Could not load tags');
+          alert('Failed to load tags for image analysis. Please refresh the page and try again.');
+          setImportingFromSmugmug(false);
+          return;
+        }
+      }
       const albumKeyMatch = smugmugUrl.match(/\/([A-Za-z0-9]+)$/);
       let albumKey = albumKeyMatch ? albumKeyMatch[1] : smugmugUrl.trim();
 
