@@ -99,8 +99,11 @@ export default function AddPropertyPage() {
 
       checkSmugMugAuth();
 
+      // Handle bulk import - wait a bit for tags to load
       if (isBulkImport) {
-        await loadBulkImportQueue();
+        setTimeout(() => {
+          loadBulkImportQueue();
+        }, 1000);
       }
     };
 
@@ -213,63 +216,159 @@ export default function AddPropertyPage() {
 
   async function loadBulkImportQueue() {
     console.log('📋 Loading bulk import queue...');
-    const queueData = localStorage.getItem('sgs_import_queue');
-    const currentIdx = localStorage.getItem('sgs_import_current_index');
 
-    if (queueData) {
-      const queue = JSON.parse(queueData);
-      const index = parseInt(currentIdx || '0');
+    try {
+      const queueData = localStorage.getItem('sgs_import_queue');
+      const currentIdx = localStorage.getItem('sgs_import_current_index');
 
-      console.log(`Found ${queue.length} albums to import, currently at index ${index}`);
+      if (queueData) {
+        const queue = JSON.parse(queueData);
+        const index = parseInt(currentIdx || '0');
 
-      setImportQueue(queue);
-      setCurrentImportIndex(index);
+        console.log(`Found ${queue.length} albums to import, currently at index ${index}`);
 
-      if (index < queue.length) {
-        await loadCurrentAlbumData(queue[index]);
+        setImportQueue(queue);
+        setCurrentImportIndex(index);
+
+        if (index < queue.length) {
+          // Wait for tags to load first
+          if (availableTags.length === 0) {
+            await fetchSearchFilterTags();
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+
+          // Load the current album data
+          const album = queue[index];
+          console.log('🎬 Loading album:', album.name || album.Name);
+
+          // Set form data from album
+          setFormData(prev => ({
+            ...prev,
+            name: album.name || album.Name || '',
+            description: album.description || album.Description || '',
+            city: album.location?.city || '',
+            state: album.location?.state || 'Texas',
+          }));
+
+          // If album has Google Maps link, extract address
+          if (album.googleMapsLink) {
+            console.log('📍 Found Google Maps link in album metadata');
+            setExtractingAddress(true);
+
+            const address = await getAddressFromGoogleMapsLink(album.googleMapsLink);
+
+            if (address) {
+              console.log('✓ Address extracted:', address.fullAddress);
+              setFormData(prev => ({
+                ...prev,
+                address: address.streetAddress || '',
+                city: address.city || prev.city,
+                state: address.state || prev.state,
+                zipcode: address.zipCode || ''
+              }));
+            }
+            setExtractingAddress(false);
+          }
+
+          // IMPORTANT: Process the album WITHOUT asking for URL
+          if (album.albumKey) {
+            console.log('📸 Auto-importing album with key:', album.albumKey);
+            setSmugmugUrl(album.albumKey);
+
+            // Call the import directly without user interaction
+            setTimeout(async () => {
+              await handleSmugmugImportForBulk(album.albumKey);
+            }, 500);
+          }
+        }
       }
+    } catch (error) {
+      console.error('Error loading import queue:', error);
     }
   }
 
-  async function loadCurrentAlbumData(album: any) {
-    setLoadingQueueImages(true);
+  async function handleSmugmugImportForBulk(albumKey: string) {
+    console.log('🚀 Starting bulk import for album:', albumKey);
+
+    setImportingFromSmugmug(true);
+    setImportProgress(`📡 Importing from album: ${albumKey}...`);
 
     try {
-      setFormData(prev => ({
-        ...prev,
-        name: album.name,
-        description: album.description || '',
-        city: album.location?.city || '',
-        state: album.location?.state || 'Texas',
-      }));
+      const response = await fetch('/api/import-smugmug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ albumKey }),
+      });
 
-      if (album.googleMapsLink) {
-        console.log('📍 Found Google Maps link in album metadata');
-        setExtractingAddress(true);
+      const data = await response.json();
+      console.log('Import response:', data);
 
-        const address = await getAddressFromGoogleMapsLink(album.googleMapsLink);
-
-        if (address) {
-          console.log('✓ Address extracted:', address.fullAddress);
-          setFormData(prev => ({
-            ...prev,
-            address: address.streetAddress || '',
-            city: address.city || '',
-            state: address.state || 'Texas',
-            zipcode: address.zipCode || ''
-          }));
+      if (!response.ok) {
+        if (data.needsReauth) {
+          alert('⚠️ SmugMug authorization expired. Please reauthorize.');
+          setSmugmugAuthorized(false);
+        } else {
+          console.error(`Import failed: ${data.error || 'Unknown error'}`);
         }
-        setExtractingAddress(false);
+        setImportProgress('');
+        setImportingFromSmugmug(false);
+        return;
       }
 
-      if (album.albumKey) {
-        setSmugmugUrl(album.albumKey);
-        await handleSmugmugImport();
+      const imported = data.imported || 0;
+      const imageUrls = data.uploadedUrls || data.urls || [];
+
+      console.log('Imported URLs:', imageUrls);
+
+      if (imported > 0 && imageUrls.length > 0) {
+        const fullUrls = imageUrls.map((url: string) => normalizeUrl(url));
+
+        console.log('✓ Normalized URLs:', fullUrls.length);
+
+        setImportProgress(`Successfully imported ${imported} images. Analyzing with AI...`);
+        setAnalyzingImages(true);
+
+        const importedImages: ImageWithTags[] = [];
+
+        for (const url of fullUrls) {
+          importedImages.push({ url, tags: [], isSmugmug: true });
+        }
+
+        // Analyze images if tags are available
+        if (availableTags.length > 0) {
+          for (let i = 0; i < importedImages.length; i++) {
+            const suggestedTags = await analyzeImageAndTag(importedImages[i].url, i, importedImages.length);
+            importedImages[i].tags = suggestedTags;
+          }
+        } else {
+          console.warn('⚠️ No tags available, skipping analysis');
+        }
+
+        setImages(prev => [...prev, ...importedImages]);
+        setImportProgress(`✓ Imported and analyzed ${imported} images`);
+        setAnalyzingImages(false);
+
+        // Auto-set first image as primary
+        if (importedImages.length > 0) {
+          setSelectedImageIndex(0);
+        }
+
+        setTimeout(() => {
+          setImportProgress('');
+          setSmugmugUrl('');
+        }, 2000);
+      } else {
+        setImportProgress('No images found in album');
+        setTimeout(() => {
+          setImportProgress('');
+        }, 2000);
       }
-    } catch (error) {
-      console.error('Error loading album data:', error);
+    } catch (error: any) {
+      console.error('SmugMug import error:', error);
+      setImportProgress('');
     } finally {
-      setLoadingQueueImages(false);
+      setImportingFromSmugmug(false);
+      setAnalyzingImages(false);
     }
   }
 
@@ -410,12 +509,14 @@ export default function AddPropertyPage() {
 
       console.log(`\n🤖 Starting analysis for image ${imageIndex + 1}/${totalImages}`);
       console.log('  Image URL:', imageUrl.substring(0, 80) + '...');
-      console.log(`  📊 Using ${tags.length} available tags for analysis`);
 
+      // Just check if tags are available, don't wait
       if (tags.length === 0) {
         console.warn('⚠️ No tags available for analysis');
         return [];
       }
+
+      console.log(`  📊 Using ${tags.length} available tags for analysis`);
 
       setAnalysisProgress({
         current: imageIndex + 1,
