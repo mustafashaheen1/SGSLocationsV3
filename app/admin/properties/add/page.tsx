@@ -117,6 +117,13 @@ export default function AddPropertyPage() {
       setAuthorizing(false);
       setCheckingAuth(false);
     }
+  }, [isBulkImport]);
+
+  useEffect(() => {
+    if (availableTags.length === 0) {
+      console.log('🔄 Loading tags on component mount...');
+      fetchSearchFilterTags();
+    }
   }, []);
 
   async function checkSmugMugAuth() {
@@ -267,38 +274,69 @@ export default function AddPropertyPage() {
 
   async function fetchSearchFilterTags() {
     try {
-      const { data: filters } = await supabase
-        .from('search_filters')
-        .select('id, name, slug')
+      console.log('🔍 Fetching search filter tags...');
+
+      const { data, error } = await supabase
+        .from('search_filter_tags')
+        .select(`
+          id,
+          name,
+          slug,
+          filter_id,
+          search_filters!inner (
+            name,
+            slug
+          )
+        `)
         .eq('is_active', true)
-        .order('display_order');
+        .order('name');
 
-      if (!filters) return;
-
-      const allTags: FilterTag[] = [];
-
-      for (const filter of filters) {
-        const { data: tags } = await supabase
-          .from('search_filter_tags')
-          .select('id, name')
-          .eq('filter_id', filter.id)
-          .eq('is_active', true)
-          .order('display_order');
-
-        if (tags) {
-          tags.forEach(tag => {
-            allTags.push({
-              ...tag,
-              filter_id: filter.id,
-              filter_name: filter.name
-            });
-          });
-        }
+      if (error) {
+        console.error('❌ Error fetching tags:', error);
+        throw error;
       }
 
-      setAvailableTags(allTags);
+      if (!data || data.length === 0) {
+        console.warn('⚠️ No active tags found in database');
+        setAvailableTags([]);
+        return;
+      }
+
+      console.log(`✅ Fetched ${data.length} tags from database`);
+
+      console.log('Sample tags:', data.slice(0, 5).map((tag: any) => ({
+        name: tag.name,
+        filter: tag.search_filters?.name
+      })));
+
+      const formattedTags = data.map((tag: any) => ({
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+        filter_id: tag.filter_id,
+        filter_name: tag.search_filters?.name || 'Unknown',
+        filter_slug: tag.search_filters?.slug || 'unknown'
+      }));
+
+      const tagsByFilter = formattedTags.reduce((acc, tag) => {
+        if (!acc[tag.filter_name]) {
+          acc[tag.filter_name] = 0;
+        }
+        acc[tag.filter_name]++;
+        return acc;
+      }, {} as Record<string, number>);
+
+      console.log('📊 Tags by filter:', tagsByFilter);
+
+      setAvailableTags(formattedTags);
+
+      const filterNames = Array.from(new Set(formattedTags.map(t => t.filter_name)));
+      setExpandedFilters(new Set(filterNames));
+
     } catch (error) {
       console.error('Error fetching tags:', error);
+      alert('Failed to load tags. Image analysis may not work properly.');
+      setAvailableTags([]);
     }
   }
 
@@ -313,8 +351,26 @@ export default function AddPropertyPage() {
     }
   }
 
-  async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number) {
+  async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number): Promise<string[]> {
     try {
+      console.log(`\n🤖 Starting analysis for image ${imageIndex + 1}/${totalImages}`);
+      console.log('  Image URL:', imageUrl.substring(0, 80) + '...');
+
+      if (!availableTags || availableTags.length === 0) {
+        console.error('❌ No tags available for analysis!');
+        console.log('  Attempting to fetch tags...');
+        await fetchSearchFilterTags();
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        if (availableTags.length === 0) {
+          console.error('❌ Still no tags after fetching. Aborting analysis.');
+          return [];
+        }
+      }
+
+      console.log(`  📊 Using ${availableTags.length} available tags for analysis`);
+
       setAnalysisProgress({
         current: imageIndex + 1,
         total: totalImages,
@@ -331,11 +387,19 @@ export default function AddPropertyPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Analysis failed');
+        const errorData = await response.json();
+        console.error(`❌ Analysis failed:`, errorData);
+        throw new Error(errorData.error || 'Analysis failed');
       }
 
       const data = await response.json();
-      console.log(`✅ Image ${imageIndex + 1} analyzed:`, data.tags);
+      console.log(`✅ Image ${imageIndex + 1} analyzed successfully`);
+      console.log(`  Found ${data.tags?.length || 0} tags:`, data.tags || []);
+
+      if (!data.tags || data.tags.length === 0) {
+        console.warn(`⚠️ No tags returned for image ${imageIndex + 1}`);
+        console.log('  Raw AI response:', data.rawResponse);
+      }
 
       return data.tags || [];
     } catch (error) {
