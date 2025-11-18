@@ -63,6 +63,9 @@ export default function AddPropertyPage() {
   const [authorizing, setAuthorizing] = useState(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
+  const [analyzingImages, setAnalyzingImages] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0, status: '' });
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -297,16 +300,84 @@ export default function AddPropertyPage() {
     }
   }
 
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number) {
+    try {
+      setAnalysisProgress({
+        current: imageIndex + 1,
+        total: totalImages,
+        status: `Analyzing image ${imageIndex + 1} of ${totalImages}...`
+      });
+
+      const response = await fetch('/api/analyze-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl,
+          availableTags: availableTags
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Analysis failed');
+      }
+
+      const data = await response.json();
+      console.log(`✅ Image ${imageIndex + 1} analyzed:`, data.tags);
+
+      return data.tags || [];
+    } catch (error) {
+      console.error(`❌ Error analyzing image ${imageIndex + 1}:`, error);
+      return [];
+    }
+  }
+
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      const newImages: ImageWithTags[] = files.map(file => ({
-        url: URL.createObjectURL(file),
-        file,
-        tags: [],
-        isSmugmug: false
-      }));
+    if (files.length === 0) return;
+
+    setAnalyzingImages(true);
+    setUploadProgress({ current: 0, total: files.length });
+    setAnalysisProgress({ current: 0, total: files.length, status: 'Starting...' });
+
+    const newImages: ImageWithTags[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgress({ current: i + 1, total: files.length });
+        setAnalysisProgress({ current: 0, total: files.length, status: `Uploading image ${i + 1} of ${files.length}...` });
+
+        const imageUrl = await uploadMultipleImages([file], 'properties');
+
+        newImages.push({
+          url: imageUrl[0],
+          file,
+          tags: [],
+          isSmugmug: false
+        });
+      }
+
+      setAnalysisProgress({ current: 0, total: files.length, status: 'Starting AI analysis...' });
+
+      for (let i = 0; i < newImages.length; i++) {
+        const suggestedTags = await analyzeImageAndTag(newImages[i].url, i, files.length);
+        newImages[i].tags = suggestedTags;
+      }
+
       setImages(prev => [...prev, ...newImages]);
+
+      setAnalysisProgress({ current: files.length, total: files.length, status: 'Complete!' });
+
+      setTimeout(() => {
+        setAnalyzingImages(false);
+        setUploadProgress({ current: 0, total: 0 });
+        setAnalysisProgress({ current: 0, total: 0, status: '' });
+      }, 2000);
+
+    } catch (error: any) {
+      console.error('Error processing images:', error);
+      alert('Error processing images: ' + error.message);
+      setAnalyzingImages(false);
     }
   }
 
@@ -393,16 +464,26 @@ export default function AddPropertyPage() {
           url.startsWith('http') ? url : `https://${url}`
         );
 
-        const importedImages: ImageWithTags[] = fullUrls.map((url: string) => ({
-          url,
-          tags: [],
-          isSmugmug: true
-        }));
+        setImportProgress(`Successfully imported ${imported} images. Analyzing with AI...`);
+        setAnalyzingImages(true);
+
+        const importedImages: ImageWithTags[] = [];
+
+        for (const url of fullUrls) {
+          importedImages.push({ url, tags: [], isSmugmug: true });
+        }
+
+        for (let i = 0; i < importedImages.length; i++) {
+          const suggestedTags = await analyzeImageAndTag(importedImages[i].url, i, importedImages.length);
+          importedImages[i].tags = suggestedTags;
+        }
 
         setImages(prev => [...prev, ...importedImages]);
-        setImportProgress(`✓ Imported ${imported} images - scroll down to assign tags`);
-        alert(`✓ Successfully imported ${imported} images from SmugMug!`);
+        setImportProgress(`✓ Imported and analyzed ${imported} images`);
+        setAnalyzingImages(false);
         setSmugmugUrl('');
+
+        setTimeout(() => setImportProgress(''), 3000);
       } else {
         setImportProgress('');
         alert(`❌ Import failed - no images were imported`);
@@ -1014,6 +1095,59 @@ export default function AddPropertyPage() {
           </p>
         )}
       </form>
+
+      {/* AI Analysis Progress Modal */}
+      {analyzingImages && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#e11921]"></div>
+              </div>
+
+              <h3 className="text-lg font-semibold mb-4">Processing Images</h3>
+
+              {uploadProgress.total > 0 && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>Uploading to S3</span>
+                    <span>{uploadProgress.current}/{uploadProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {analysisProgress.total > 0 && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>AI Analysis</span>
+                    <span>{analysisProgress.current}/{analysisProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-[#e11921] h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(analysisProgress.current / analysisProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <p className="text-sm text-gray-600 mt-4">
+                {analysisProgress.status}
+              </p>
+
+              <p className="text-xs text-gray-500 mt-2">
+                Using GPT-4o to automatically tag images...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
