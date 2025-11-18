@@ -1,8 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, ChevronDown, X, Tag as TagIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image: string;
+}
+
+interface FilterTag {
+  id: string;
+  filter_id: string;
+  filter_name: string;
+  name: string;
+  slug: string;
+}
+
+interface ImageWithTags {
+  file: File;
+  preview: string;
+  tags: string[];
+}
 
 const TEXAS_COUNTIES = [
   'Dallas', 'Tarrant', 'Collin', 'Denton', 'Rockwall', 'Kaufman', 'Ellis', 'Johnson',
@@ -32,10 +53,17 @@ export default function ListYourPropertyPage() {
     agreeToTerms: false,
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<ImageWithTags[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
   const [termsContent, setTermsContent] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [propertyTags, setPropertyTags] = useState<string[]>([]);
+  const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [showImageTagModal, setShowImageTagModal] = useState(false);
 
   useEffect(() => {
     async function fetchTerms() {
@@ -53,7 +81,81 @@ export default function ListYourPropertyPage() {
     }
 
     fetchTerms();
+    fetchCategories();
+    fetchTags();
   }, []);
+
+  async function fetchCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }
+
+  async function fetchTags() {
+    try {
+      const { data: filters } = await supabase
+        .from('search_filters')
+        .select(`
+          id,
+          name,
+          search_filter_tags (
+            id,
+            name,
+            slug
+          )
+        `)
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (filters) {
+        const allTags: FilterTag[] = [];
+        filters.forEach(filter => {
+          const tags = filter.search_filter_tags as any[];
+          tags?.forEach(tag => {
+            allTags.push({
+              id: tag.id,
+              filter_id: filter.id,
+              filter_name: filter.name,
+              name: tag.name,
+              slug: tag.slug,
+            });
+          });
+        });
+        setAvailableTags(allTags);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  }
+
+  const tagsByFilter = availableTags.reduce((acc, tag) => {
+    if (!acc[tag.filter_name]) {
+      acc[tag.filter_name] = [];
+    }
+    acc[tag.filter_name].push(tag);
+    return acc;
+  }, {} as Record<string, FilterTag[]>);
+
+  function toggleFilterExpanded(filterName: string) {
+    setExpandedFilters(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(filterName)) {
+        newSet.delete(filterName);
+      } else {
+        newSet.add(filterName);
+      }
+      return newSet;
+    });
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -96,7 +198,14 @@ export default function ListYourPropertyPage() {
       const isValid = file.type === 'image/jpeg' || file.type === 'image/png';
       return isValid;
     });
-    setUploadedFiles(prev => [...prev, ...validFiles]);
+
+    const newImages: ImageWithTags[] = validFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      tags: []
+    }));
+
+    setUploadedFiles(prev => [...prev, ...newImages]);
     if (errors.files) {
       setErrors(prev => ({ ...prev, files: '' }));
     }
@@ -135,6 +244,7 @@ export default function ListYourPropertyPage() {
     if (formData.requestedUse.length === 0) newErrors.requestedUse = 'Select at least one option';
     if (formData.listedWith.length === 0) newErrors.listedWith = 'Select at least one option';
     if (formData.howDidYouHear.length === 0) newErrors.howDidYouHear = 'Select at least one option';
+    if (!selectedCategoryId) newErrors.category = 'Please select a category';
     if (uploadedFiles.length < 10) newErrors.files = 'Minimum 10 images required';
     if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms and conditions';
 
@@ -142,14 +252,68 @@ export default function ListYourPropertyPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
-      console.log('Uploaded files:', uploadedFiles);
-      alert('Form submitted successfully! Check console for details.');
-    } else {
+
+    if (!validateForm()) {
       alert('Please fill in all required fields.');
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('You must be logged in to submit a property');
+        return;
+      }
+
+      const { uploadMultipleImages } = await import('@/lib/s3-upload');
+      const imageFiles = uploadedFiles.map(img => img.file);
+      const uploadedImageUrls = await uploadMultipleImages(imageFiles, 'properties');
+
+      const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+
+      const { data: property, error: propertyError } = await supabase
+        .from('properties')
+        .insert([{
+          name: `${formData.streetAddress}, ${formData.city}`,
+          description: `Submitted by ${formData.firstName} ${formData.lastName}`,
+          address: formData.streetAddress,
+          city: formData.city,
+          county: formData.state,
+          zipcode: formData.zipCode,
+          owner_id: session.user.id,
+          categories: selectedCategory ? [selectedCategory.name] : [],
+          property_tags: propertyTags,
+          images: uploadedImageUrls,
+          primary_image: uploadedImageUrls[0],
+          status: 'pending',
+        }])
+        .select()
+        .single();
+
+      if (propertyError) throw propertyError;
+
+      const propertyImagesData = uploadedFiles.map((img, index) => ({
+        property_id: property.id,
+        image_url: uploadedImageUrls[index],
+        tags: img.tags,
+        display_order: index,
+      }));
+
+      const { error: imagesError } = await supabase
+        .from('property_images')
+        .insert(propertyImagesData);
+
+      if (imagesError) throw imagesError;
+
+      alert('Property submitted successfully! We will review it and get back to you soon.');
+      window.location.reload();
+
+    } catch (error: any) {
+      console.error('Error submitting property:', error);
+      alert('Error submitting property: ' + error.message);
     }
   };
 
@@ -531,6 +695,127 @@ export default function ListYourPropertyPage() {
                   {errors.howDidYouHear && <p className="text-red-600 text-sm mt-1">{errors.howDidYouHear}</p>}
                 </div>
               </section>
+
+              {/* CATEGORY SELECTION */}
+              <section className="mb-6">
+                <label htmlFor="category" className="block font-medium text-gray-700 text-sm mb-1">
+                  Property Category <span className="text-red-600">*</span>
+                </label>
+                <select
+                  id="category"
+                  value={selectedCategoryId}
+                  onChange={(e) => {
+                    setSelectedCategoryId(e.target.value);
+                    if (errors.category) {
+                      setErrors(prev => ({ ...prev, category: '' }));
+                    }
+                  }}
+                  className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
+                    errors.category ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">-- Select a category --</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && <p className="text-red-600 text-sm mt-1">{errors.category}</p>}
+              </section>
+
+              {/* PROPERTY TAGS SECTION */}
+              <section className="mb-6">
+                <label className="block font-medium text-gray-700 text-sm mb-1">
+                  Property Features & Tags
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  Select tags that describe your property to help production companies find your location.
+                </p>
+
+                {propertyTags.length > 0 && (
+                  <div className="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-gray-700">Selected: {propertyTags.length}</p>
+                      <button
+                        type="button"
+                        onClick={() => setPropertyTags([])}
+                        className="text-xs text-red-600 hover:text-red-700"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {propertyTags.map(tagName => (
+                        <span
+                          key={tagName}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-600 text-white text-xs rounded-full"
+                        >
+                          {tagName}
+                          <button
+                            type="button"
+                            onClick={() => setPropertyTags(prev => prev.filter(t => t !== tagName))}
+                            className="hover:bg-red-700 rounded-full"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5 max-h-64 overflow-y-auto border rounded">
+                  {Object.entries(tagsByFilter).map(([filterName, tags]) => (
+                    <div key={filterName} className="border-b last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleFilterExpanded(filterName)}
+                        className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium">{filterName}</span>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                            {tags.filter(t => propertyTags.includes(t.name)).length}/{tags.length}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={`w-3 h-3 text-gray-500 transition-transform ${
+                            expandedFilters.has(filterName) ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+
+                      {expandedFilters.has(filterName) && (
+                        <div className="px-3 py-2 bg-gray-50">
+                          <div className="flex flex-wrap gap-1.5">
+                            {tags.map(tag => (
+                              <button
+                                key={tag.id}
+                                type="button"
+                                onClick={() => {
+                                  setPropertyTags(prev =>
+                                    prev.includes(tag.name)
+                                      ? prev.filter(t => t !== tag.name)
+                                      : [...prev, tag.name]
+                                  );
+                                }}
+                                className={`px-2 py-1 text-xs rounded-full border transition-colors ${
+                                  propertyTags.includes(tag.name)
+                                    ? 'bg-red-600 text-white border-red-600'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:border-red-600'
+                                }`}
+                              >
+                                {tag.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
 
             {/* RIGHT COLUMN */}
@@ -562,17 +847,53 @@ export default function ListYourPropertyPage() {
                     className="hidden"
                   />
                   {uploadedFiles.length > 0 && (
-                    <div className="mt-4 w-full">
-                      <p className="font-medium text-gray-700 mb-2 text-sm">{uploadedFiles.length} file(s) selected:</p>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {uploadedFiles.map((file, index) => (
-                          <li key={index} className="truncate">{file.name}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    <p className="mt-2 text-sm text-gray-600">{uploadedFiles.length} image(s) uploaded</p>
                   )}
                 </div>
                 {errors.files && <p className="text-red-600 text-sm mt-1">{errors.files}</p>}
+
+                {/* Image Preview Grid */}
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {uploadedFiles.map((img, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={img.preview}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-24 object-cover rounded border border-gray-300"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedImageIndex(index);
+                            setShowImageTagModal(true);
+                          }}
+                          className="absolute bottom-1.5 left-1.5 bg-white px-1.5 py-0.5 rounded text-xs font-medium border border-gray-300 hover:bg-gray-50 flex items-center gap-1"
+                        >
+                          <TagIcon className="w-3 h-3" />
+                          {img.tags.length > 0 ? `${img.tags.length}` : '+'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+                          }}
+                          className="absolute top-1.5 right-1.5 bg-red-600 text-white p-0.5 rounded-full hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+
+                        {img.tags.length > 0 && (
+                          <div className="absolute top-1.5 left-1.5 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
+                            {img.tags.length}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
               {/* Additional Notes */}
@@ -640,6 +961,146 @@ export default function ListYourPropertyPage() {
             </button>
           </div>
         </form>
+
+        {/* Image Tag Modal */}
+        {showImageTagModal && selectedImageIndex !== null && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between p-6 border-b">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Tag Image {selectedImageIndex + 1}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowImageTagModal(false);
+                    setSelectedImageIndex(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <img
+                      src={uploadedFiles[selectedImageIndex].preview}
+                      alt={`Image ${selectedImageIndex + 1}`}
+                      className="w-full h-auto rounded-lg border border-gray-300"
+                    />
+
+                    {uploadedFiles[selectedImageIndex].tags.length > 0 && (
+                      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Selected Tags:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {uploadedFiles[selectedImageIndex].tags.map(tagName => (
+                            <span
+                              key={tagName}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded-full"
+                            >
+                              {tagName}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUploadedFiles(prev => prev.map((img, i) =>
+                                    i === selectedImageIndex
+                                      ? { ...img, tags: img.tags.filter(t => t !== tagName) }
+                                      : img
+                                  ));
+                                }}
+                                className="hover:bg-red-700 rounded-full"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Select tags that describe what's visible in this specific photo.
+                    </p>
+
+                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                      {Object.entries(tagsByFilter).map(([filterName, tags]) => (
+                        <div key={filterName} className="border rounded-lg">
+                          <button
+                            type="button"
+                            onClick={() => toggleFilterExpanded(filterName)}
+                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">{filterName}</span>
+                              <span className="text-xs text-gray-500">
+                                ({tags.filter(t => uploadedFiles[selectedImageIndex].tags.includes(t.name)).length}/{tags.length})
+                              </span>
+                            </div>
+                            <ChevronDown
+                              className={`w-4 h-4 transition-transform ${
+                                expandedFilters.has(filterName) ? 'rotate-180' : ''
+                              }`}
+                            />
+                          </button>
+
+                          {expandedFilters.has(filterName) && (
+                            <div className="px-4 py-3 border-t bg-gray-50">
+                              <div className="flex flex-wrap gap-2">
+                                {tags.map(tag => {
+                                  const isSelected = uploadedFiles[selectedImageIndex].tags.includes(tag.name);
+                                  return (
+                                    <button
+                                      key={tag.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setUploadedFiles(prev => prev.map((img, i) => {
+                                          if (i === selectedImageIndex) {
+                                            const newTags = isSelected
+                                              ? img.tags.filter(t => t !== tag.name)
+                                              : [...img.tags, tag.name];
+                                            return { ...img, tags: newTags };
+                                          }
+                                          return img;
+                                        }));
+                                      }}
+                                      className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                                        isSelected
+                                          ? 'bg-red-600 text-white'
+                                          : 'bg-white border border-gray-300 text-gray-700 hover:border-red-600'
+                                      }`}
+                                    >
+                                      {tag.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImageTagModal(false);
+                    setSelectedImageIndex(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
