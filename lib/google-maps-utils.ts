@@ -31,17 +31,32 @@ export function extractGoogleMapsLink(text: string): string | null {
 }
 
 /**
- * Expand shortened Google Maps URL
+ * Expand shortened Google Maps URL using backend
  */
 async function expandShortenedUrl(shortUrl: string): Promise<string> {
   try {
-    const response = await fetch(shortUrl, {
-      method: 'HEAD',
-      redirect: 'follow'
+    console.log('  Calling backend to expand URL...');
+
+    const response = await fetch('/api/expand-google-maps-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: shortUrl })
     });
-    return response.url;
+
+    if (!response.ok) {
+      throw new Error('Backend expansion failed');
+    }
+
+    const data = await response.json();
+
+    if (data.success && data.expandedUrl) {
+      console.log('  ✓ URL expanded:', data.expandedUrl);
+      return data.expandedUrl;
+    }
+
+    return shortUrl;
   } catch (error) {
-    console.error('Error expanding URL:', error);
+    console.error('  Error expanding URL, using original:', error);
     return shortUrl;
   }
 }
@@ -76,21 +91,40 @@ async function geocodeCoordinates(lat: number, lng: number): Promise<AddressComp
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    console.error('Google Maps API key not configured');
+    console.error('❌ Google Maps API key not configured');
+    console.error('  Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in environment variables');
     return null;
   }
 
-  try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
-    );
+  console.log('  API Key present:', apiKey.substring(0, 10) + '...');
 
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+    console.log('  Geocoding URL:', url.replace(apiKey, 'API_KEY_HIDDEN'));
+
+    const response = await fetch(url);
     const data = await response.json();
 
-    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      console.error('Geocoding failed:', data.status);
+    console.log('  Geocoding response status:', data.status);
+
+    if (data.status === 'REQUEST_DENIED') {
+      console.error('  ❌ API Key is invalid or Geocoding API not enabled');
+      console.error('  Error message:', data.error_message);
       return null;
     }
+
+    if (data.status === 'OVER_QUERY_LIMIT') {
+      console.error('  ❌ API quota exceeded');
+      return null;
+    }
+
+    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+      console.error('  ❌ Geocoding failed with status:', data.status);
+      console.error('  Error:', data.error_message);
+      return null;
+    }
+
+    console.log('  ✓ Geocoding successful, parsing address...');
 
     const result = data.results[0];
     const components = result.address_components;
@@ -127,6 +161,13 @@ async function geocodeCoordinates(lat: number, lng: number): Promise<AddressComp
 
     const streetAddress = `${streetNumber} ${route}`.trim();
 
+    console.log('  Parsed components:');
+    console.log('    Street Number:', streetNumber);
+    console.log('    Route:', route);
+    console.log('    City:', city);
+    console.log('    State:', state);
+    console.log('    Zip:', zipCode);
+
     return {
       streetAddress,
       city,
@@ -135,8 +176,9 @@ async function geocodeCoordinates(lat: number, lng: number): Promise<AddressComp
       country,
       fullAddress: result.formatted_address
     };
-  } catch (error) {
-    console.error('Error geocoding:', error);
+  } catch (error: any) {
+    console.error('  ❌ Geocoding error:', error);
+    console.error('  Error message:', error.message);
     return null;
   }
 }
@@ -148,33 +190,48 @@ export async function getAddressFromGoogleMapsLink(
   mapsLink: string
 ): Promise<AddressComponents | null> {
   try {
-    console.log('📍 Extracting address from Google Maps link:', mapsLink);
+    console.log('📍 Starting address extraction...');
+    console.log('  Input URL:', mapsLink);
 
     let fullUrl = mapsLink;
     if (mapsLink.includes('maps.app.goo.gl') || mapsLink.includes('goo.gl/maps')) {
-      console.log('  Expanding shortened URL...');
+      console.log('  URL is shortened, expanding...');
       fullUrl = await expandShortenedUrl(mapsLink);
-      console.log('  Expanded to:', fullUrl);
+      console.log('  Expanded URL:', fullUrl);
+    } else {
+      console.log('  URL is not shortened');
     }
 
+    console.log('  Extracting coordinates...');
     const coords = extractCoordinates(fullUrl);
 
     if (!coords) {
-      console.error('  Could not extract coordinates from URL');
+      console.error('  ❌ Could not extract coordinates from URL');
+      console.error('  URL tried:', fullUrl);
       return null;
     }
 
-    console.log(`  Coordinates: ${coords.lat}, ${coords.lng}`);
+    console.log(`  ✓ Coordinates found: ${coords.lat}, ${coords.lng}`);
+    console.log('  Calling Google Geocoding API...');
 
     const address = await geocodeCoordinates(coords.lat, coords.lng);
 
     if (address) {
-      console.log('  ✓ Address extracted:', address.fullAddress);
+      console.log('  ✓ Address extracted successfully!');
+      console.log('  Street:', address.streetAddress);
+      console.log('  City:', address.city);
+      console.log('  State:', address.state);
+      console.log('  Zip:', address.zipCode);
+      console.log('  Full:', address.fullAddress);
+    } else {
+      console.error('  ❌ Geocoding failed');
     }
 
     return address;
-  } catch (error) {
-    console.error('Error extracting address:', error);
+  } catch (error: any) {
+    console.error('❌ Error in getAddressFromGoogleMapsLink:', error);
+    console.error('  Error message:', error.message);
+    console.error('  Error stack:', error.stack);
     return null;
   }
 }
