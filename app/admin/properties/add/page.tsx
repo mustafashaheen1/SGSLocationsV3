@@ -75,6 +75,7 @@ export default function AddPropertyPage() {
   const [currentImportIndex, setCurrentImportIndex] = useState(0);
   const [loadingQueueImages, setLoadingQueueImages] = useState(false);
   const [extractingAddress, setExtractingAddress] = useState(false);
+  const [tagsLoaded, setTagsLoaded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -299,6 +300,7 @@ export default function AddPropertyPage() {
       if (!data || data.length === 0) {
         console.warn('⚠️ No active tags found in database');
         setAvailableTags([]);
+        setTagsLoaded(true);
         return;
       }
 
@@ -329,14 +331,16 @@ export default function AddPropertyPage() {
       console.log('📊 Tags by filter:', tagsByFilter);
 
       setAvailableTags(formattedTags);
+      setTagsLoaded(true);
 
       const filterNames = Array.from(new Set(formattedTags.map(t => t.filter_name)));
-      setExpandedFilters(new Set(filterNames));
+      setExpandedFilters(new Set());
 
     } catch (error) {
       console.error('Error fetching tags:', error);
       alert('Failed to load tags. Image analysis may not work properly.');
       setAvailableTags([]);
+      setTagsLoaded(true);
     }
   }
 
@@ -356,16 +360,16 @@ export default function AddPropertyPage() {
       console.log(`\n🤖 Starting analysis for image ${imageIndex + 1}/${totalImages}`);
       console.log('  Image URL:', imageUrl.substring(0, 80) + '...');
 
-      if (!availableTags || availableTags.length === 0) {
-        console.error('❌ No tags available for analysis!');
-        console.log('  Attempting to fetch tags...');
-        await fetchSearchFilterTags();
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        if (availableTags.length === 0) {
-          console.error('❌ Still no tags after fetching. Aborting analysis.');
-          return [];
+      if (!tagsLoaded || availableTags.length === 0) {
+        console.log('⏳ Waiting for tags to be loaded...');
+        let attempts = 0;
+        while (!tagsLoaded || availableTags.length === 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          attempts++;
+          if (attempts > 10) {
+            console.error('❌ Timeout waiting for tags to load');
+            return [];
+          }
         }
       }
 
@@ -412,13 +416,19 @@ export default function AddPropertyPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    if (!tagsLoaded || availableTags.length === 0) {
+      alert('Tags are still loading. Please wait a moment and try again.');
+      e.target.value = '';
+      return;
+    }
+
     setAnalyzingImages(true);
     setUploadProgress({ current: 0, total: files.length });
     setAnalysisProgress({ current: 0, total: files.length, status: 'Starting...' });
 
     const newImages: ImageWithTags[] = [];
 
-    try {
+    try{
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setUploadProgress({ current: i + 1, total: files.length });
@@ -500,6 +510,18 @@ export default function AddPropertyPage() {
     if (!smugmugUrl.trim()) {
       alert('Please enter a SmugMug album URL or key');
       return;
+    }
+
+    if (!tagsLoaded || availableTags.length === 0) {
+      console.log('⏳ Tags not loaded yet, fetching...');
+      await fetchSearchFilterTags();
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (availableTags.length === 0) {
+        alert('No tags available for analysis. Please check your database.');
+        return;
+      }
     }
 
     setImportingFromSmugmug(true);
@@ -715,6 +737,19 @@ export default function AddPropertyPage() {
         city: album.location?.city || '',
         state: album.location?.state || 'Texas',
       }));
+
+      if (!tagsLoaded) {
+        console.log('⏳ Waiting for tags to load...');
+        let attempts = 0;
+        while (!tagsLoaded) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          attempts++;
+          if (attempts > 20) {
+            console.error('❌ Timeout waiting for tags');
+            break;
+          }
+        }
+      }
 
       if (album.googleMapsLink) {
         console.log('📍 Found Google Maps link in album metadata');
