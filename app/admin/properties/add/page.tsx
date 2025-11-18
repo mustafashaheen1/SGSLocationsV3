@@ -502,19 +502,47 @@ export default function AddPropertyPage() {
         try {
           const albumKey = extractAlbumKey(smugmugUrl);
           if (albumKey) {
+            console.log('📋 Fetching album metadata...');
+            setImportProgress(`Fetching album details...`);
+
             const metadataResponse = await fetch(`/api/smugmug-album-metadata?albumKey=${albumKey}`);
             const metadata = await metadataResponse.json();
 
             if (metadata.success) {
+              console.log('✓ Album metadata received:', metadata);
+
+              const albumData: any = {
+                name: metadata.name || '',
+                description: metadata.description || ''
+              };
+
+              if (metadata.location?.city) {
+                albumData.city = metadata.location.city;
+              }
+              if (metadata.location?.state) {
+                albumData.state = metadata.location.state;
+              }
+
+              console.log('📝 Pre-filling form with album data:', albumData);
+              setFormData(prev => ({
+                ...prev,
+                ...albumData
+              }));
+
+              setImportProgress(`✓ Album details loaded`);
+
               const mapsLink = findGoogleMapsLinkInMetadata(metadata);
 
               if (mapsLink) {
+                console.log('📍 Found Google Maps link:', mapsLink);
                 setExtractingAddress(true);
                 setImportProgress('Found Google Maps link, extracting address...');
 
                 const address = await getAddressFromGoogleMapsLink(mapsLink);
 
                 if (address) {
+                  console.log('✓ Address extracted:', address);
+
                   setFormData(prev => ({
                     ...prev,
                     address: address.streetAddress,
@@ -523,17 +551,45 @@ export default function AddPropertyPage() {
                     zipcode: address.zipCode
                   }));
 
-                  setImportProgress(`✓ Imported ${imported} images and extracted address!`);
+                  setImportProgress(`✓ Imported ${imported} images, loaded album details, and extracted address!`);
                 } else {
-                  setImportProgress(`✓ Imported ${imported} images (address extraction failed)`);
+                  console.log('⚠️ Address extraction failed');
+                  setImportProgress(`✓ Imported ${imported} images and loaded album details (address extraction failed)`);
                 }
 
                 setExtractingAddress(false);
+              } else {
+                console.log('ℹ️ No Google Maps link found in album metadata');
+                setImportProgress(`✓ Imported ${imported} images and loaded album details`);
               }
+
+              if (metadata.keywords) {
+                const keywords = metadata.keywords.split(',').map((k: string) => k.trim()).filter(Boolean);
+                console.log('🏷️ Found keywords:', keywords);
+
+                const matchedTags = keywords
+                  .map((keyword: string) => {
+                    const tag = availableTags.find(t =>
+                      t.name.toLowerCase() === keyword.toLowerCase()
+                    );
+                    return tag?.name;
+                  })
+                  .filter(Boolean) as string[];
+
+                if (matchedTags.length > 0) {
+                  console.log('✓ Matched tags:', matchedTags);
+                  setPropertyTags(matchedTags);
+                }
+              }
+
+            } else {
+              console.log('⚠️ Failed to fetch album metadata');
+              setImportProgress(`✓ Imported ${imported} images (metadata fetch failed)`);
             }
           }
-        } catch (error) {
-          console.error('Error extracting address:', error);
+        } catch (error: any) {
+          console.error('Error fetching album metadata:', error);
+          setImportProgress(`✓ Imported ${imported} images (metadata fetch failed)`);
         }
 
         setSmugmugUrl('');
