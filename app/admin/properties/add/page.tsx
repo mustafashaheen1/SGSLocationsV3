@@ -15,8 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
-import { getAddressFromGoogleMapsLink, findGoogleMapsLinkInMetadata } from '@/lib/google-maps-utils';
-import { normalizeUrls } from '@/lib/url-utils';
+import { getAddressFromGoogleMapsLink } from '@/lib/google-maps-utils';
+import { normalizeUrl } from '@/lib/url-utils';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -77,7 +77,6 @@ export default function AddPropertyPage() {
   const [currentImportIndex, setCurrentImportIndex] = useState(0);
   const [loadingQueueImages, setLoadingQueueImages] = useState(false);
   const [extractingAddress, setExtractingAddress] = useState(false);
-  const [tagsLoaded, setTagsLoaded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -90,15 +89,24 @@ export default function AddPropertyPage() {
     is_exclusive: false,
   });
 
+  // Initialize everything on mount
   useEffect(() => {
-    fetchCategories();
-    fetchSearchFilterTags();
-    checkSmugMugAuth();
+    const initializePage = async () => {
+      await Promise.all([
+        fetchCategories(),
+        fetchSearchFilterTags()
+      ]);
 
-    if (isBulkImport) {
-      loadBulkImportQueue();
-    }
+      checkSmugMugAuth();
 
+      if (isBulkImport) {
+        await loadBulkImportQueue();
+      }
+    };
+
+    initializePage();
+
+    // Handle SmugMug auth callbacks
     const params = new URLSearchParams(window.location.search);
     if (params.get('smugmug_auth') === 'success') {
       console.log('✓ Authorization success detected');
@@ -107,11 +115,9 @@ export default function AddPropertyPage() {
       setCheckingAuth(false);
       alert('✓ SmugMug authorized successfully!');
 
+      const newParams = new URLSearchParams(params);
+      newParams.delete('smugmug_auth');
       window.history.replaceState({}, '', '/admin/properties/add');
-
-      setTimeout(() => {
-        checkSmugMugAuth();
-      }, 1000);
     }
 
     if (params.get('error')) {
@@ -120,44 +126,28 @@ export default function AddPropertyPage() {
       setAuthorizing(false);
       setCheckingAuth(false);
     }
-  }, [isBulkImport]);
+  }, []);
 
+  // Load Google Maps API
   useEffect(() => {
-    if (availableTags.length === 0) {
-      console.log('🔄 Loading tags on component mount...');
-      fetchSearchFilterTags();
+    if (!window.google && process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.onload = () => {
+        setGoogleMapsLoaded(true);
+        initializeAutocomplete();
+      };
+      document.body.appendChild(script);
+    } else if (window.google) {
+      setGoogleMapsLoaded(true);
+      initializeAutocomplete();
     }
   }, []);
 
-  async function checkSmugMugAuth() {
-    console.log('🔍 Checking SmugMug authorization status...');
-    try {
-      const response = await fetch('/api/smugmug/check-auth');
-      const data = await response.json();
+  function initializeAutocomplete() {
+    if (!addressInputRef.current || !window.google) return;
 
-      console.log('Authorization status:', data);
-
-      setSmugmugAuthorized(data.authorized);
-
-      if (data.authorized) {
-        console.log('✅ SmugMug is authorized');
-      } else {
-        console.log('❌ SmugMug not authorized');
-      }
-    } catch (error) {
-      console.error('Error checking SmugMug auth:', error);
-      setSmugmugAuthorized(false);
-    } finally {
-      setCheckingAuth(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!googleMapsLoaded || !addressInputRef.current) {
-      return;
-    }
-
-    // Wait for google.maps.places to be fully available
     const initAutocomplete = () => {
       if (!window.google || !window.google.maps || !window.google.maps.places) {
         console.log('⏳ Waiting for Google Places library...');
@@ -165,43 +155,32 @@ export default function AddPropertyPage() {
         return;
       }
 
-      console.log('🔧 Initializing Google Places Autocomplete...');
-
       try {
         const autocomplete = new window.google.maps.places.Autocomplete(
           addressInputRef.current!,
           {
             types: ['address'],
-            componentRestrictions: { country: 'us' },
-            fields: ['address_components', 'formatted_address', 'geometry']
+            componentRestrictions: { country: 'us' }
           }
         );
 
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
-
-          console.log('📍 Place selected:', place);
-
-          if (!place.geometry || !place.address_components) {
-            console.log('⚠️ No details available for input');
-            return;
-          }
+          if (!place.address_components) return;
 
           let streetNumber = '';
-          let route = '';
+          let streetName = '';
           let city = '';
           let state = '';
-          let zipCode = '';
+          let zipcode = '';
 
-          // Parse address components
           place.address_components.forEach((component: any) => {
             const types = component.types;
-
             if (types.includes('street_number')) {
               streetNumber = component.long_name;
             }
             if (types.includes('route')) {
-              route = component.long_name;
+              streetName = component.long_name;
             }
             if (types.includes('locality')) {
               city = component.long_name;
@@ -210,72 +189,156 @@ export default function AddPropertyPage() {
               state = component.long_name;
             }
             if (types.includes('postal_code')) {
-              zipCode = component.long_name;
+              zipcode = component.long_name;
             }
           });
 
-          // Build full address
-          const fullAddress = `${streetNumber} ${route}`.trim();
+          const fullAddress = streetNumber ? `${streetNumber} ${streetName}` : streetName;
 
-          console.log('✅ Parsed address:', { fullAddress, city, state, zipCode });
-
-          // Update form data
           setFormData(prev => ({
             ...prev,
             address: fullAddress,
-            city: city,
-            state: state || 'Texas',
-            zipcode: zipCode
+            city,
+            state,
+            zipcode
           }));
         });
-
-        console.log('✅ Autocomplete initialized successfully');
       } catch (error) {
-        console.error('❌ Error initializing autocomplete:', error);
+        console.error('Error initializing autocomplete:', error);
       }
     };
 
-    // Start initialization
     initAutocomplete();
-  }, [googleMapsLoaded]);
+  }
 
-  async function handleSmugMugAuthorize() {
+  async function loadBulkImportQueue() {
+    console.log('📋 Loading bulk import queue...');
+    const queueData = localStorage.getItem('sgs_import_queue');
+    const currentIdx = localStorage.getItem('sgs_import_current_index');
+
+    if (queueData) {
+      const queue = JSON.parse(queueData);
+      const index = parseInt(currentIdx || '0');
+
+      console.log(`Found ${queue.length} albums to import, currently at index ${index}`);
+
+      setImportQueue(queue);
+      setCurrentImportIndex(index);
+
+      if (index < queue.length) {
+        await loadCurrentAlbumData(queue[index]);
+      }
+    }
+  }
+
+  async function loadCurrentAlbumData(album: any) {
+    setLoadingQueueImages(true);
+
+    try {
+      setFormData(prev => ({
+        ...prev,
+        name: album.name,
+        description: album.description || '',
+        city: album.location?.city || '',
+        state: album.location?.state || 'Texas',
+      }));
+
+      if (album.googleMapsLink) {
+        console.log('📍 Found Google Maps link in album metadata');
+        setExtractingAddress(true);
+
+        const address = await getAddressFromGoogleMapsLink(album.googleMapsLink);
+
+        if (address) {
+          console.log('✓ Address extracted:', address.fullAddress);
+          setFormData(prev => ({
+            ...prev,
+            address: address.streetAddress || '',
+            city: address.city || '',
+            state: address.state || 'Texas',
+            zipcode: address.zipCode || ''
+          }));
+        }
+        setExtractingAddress(false);
+      }
+
+      if (album.albumKey) {
+        setSmugmugUrl(album.albumKey);
+        await handleSmugmugImport();
+      }
+    } catch (error) {
+      console.error('Error loading album data:', error);
+    } finally {
+      setLoadingQueueImages(false);
+    }
+  }
+
+  function handleSkipProperty() {
+    if (confirm('Skip this property? It will not be saved.')) {
+      moveToNextProperty();
+    }
+  }
+
+  function moveToNextProperty() {
+    const nextIndex = currentImportIndex + 1;
+
+    if (nextIndex < importQueue.length) {
+      localStorage.setItem('sgs_import_current_index', nextIndex.toString());
+      window.location.reload();
+    } else {
+      localStorage.removeItem('sgs_import_queue');
+      localStorage.removeItem('sgs_import_current_index');
+      alert('All properties imported! Returning to properties list.');
+      router.push('/admin/properties');
+    }
+  }
+
+  async function checkSmugMugAuth() {
+    console.log('🔍 Checking SmugMug authorization status...');
+    try {
+      const response = await fetch('/api/smugmug/check-auth');
+      const data = await response.json();
+
+      console.log('Authorization status:', data);
+      setSmugmugAuthorized(data.authorized);
+    } catch (error) {
+      console.error('Error checking SmugMug auth:', error);
+      setSmugmugAuthorized(false);
+    } finally {
+      setCheckingAuth(false);
+    }
+  }
+
+  async function handleAuthorizeSmugMug() {
     setAuthorizing(true);
-    console.log('🔑 Starting SmugMug authorization...');
-
     try {
       const response = await fetch('/api/smugmug/request-token');
       const data = await response.json();
 
-      if (data.authUrl) {
-        console.log('Redirecting to SmugMug authorization...');
-        window.location.href = data.authUrl;
+      if (data.authorizeUrl) {
+        window.location.href = data.authorizeUrl;
       } else {
-        throw new Error(data.error || 'Failed to get authorization URL');
+        throw new Error('Failed to get authorization URL');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Authorization error:', error);
-      alert('Failed to start authorization: ' + error.message);
+      alert('Failed to start authorization process');
       setAuthorizing(false);
     }
   }
 
   async function fetchCategories() {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name, slug')
-        .eq('is_active', true)
-        .order('display_order');
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name');
 
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
+    if (!error && data) {
+      setCategories(data);
     }
   }
 
-  async function fetchSearchFilterTags(): Promise<FilterTag[]> {
+  async function fetchSearchFilterTags() {
     try {
       console.log('🔍 Fetching search filter tags...');
 
@@ -302,16 +365,10 @@ export default function AddPropertyPage() {
       if (!data || data.length === 0) {
         console.warn('⚠️ No active tags found in database');
         setAvailableTags([]);
-        setTagsLoaded(true);
         return [];
       }
 
       console.log(`✅ Fetched ${data.length} tags from database`);
-
-      console.log('Sample tags:', data.slice(0, 5).map((tag: any) => ({
-        name: tag.name,
-        filter: tag.search_filters?.name
-      })));
 
       const formattedTags = data.map((tag: any) => ({
         id: tag.id,
@@ -322,27 +379,15 @@ export default function AddPropertyPage() {
         filter_slug: tag.search_filters?.slug || 'unknown'
       }));
 
-      const tagsByFilter = formattedTags.reduce((acc, tag) => {
-        if (!acc[tag.filter_name]) {
-          acc[tag.filter_name] = 0;
-        }
-        acc[tag.filter_name]++;
-        return acc;
-      }, {} as Record<string, number>);
-
-      console.log('📊 Tags by filter:', tagsByFilter);
-
       setAvailableTags(formattedTags);
-      setTagsLoaded(true);
       setExpandedFilters(new Set());
 
       return formattedTags;
 
     } catch (error) {
       console.error('Error fetching tags:', error);
-      alert('Failed to load tags. Image analysis may not work properly.');
+      alert('Failed to load tags. Please refresh the page.');
       setAvailableTags([]);
-      setTagsLoaded(true);
       return [];
     }
   }
@@ -358,25 +403,19 @@ export default function AddPropertyPage() {
     }
   }
 
-  async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number): Promise<string[]> {
+  // SIMPLIFIED analyze function - no waiting logic
+  async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number, tagsToUse?: FilterTag[]): Promise<string[]> {
     try {
+      const tags = tagsToUse || availableTags;
+
       console.log(`\n🤖 Starting analysis for image ${imageIndex + 1}/${totalImages}`);
       console.log('  Image URL:', imageUrl.substring(0, 80) + '...');
+      console.log(`  📊 Using ${tags.length} available tags for analysis`);
 
-      if (!tagsLoaded || availableTags.length === 0) {
-        console.log('⏳ Waiting for tags to be loaded...');
-        let attempts = 0;
-        while (!tagsLoaded || availableTags.length === 0) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          attempts++;
-          if (attempts > 10) {
-            console.error('❌ Timeout waiting for tags to load');
-            return [];
-          }
-        }
+      if (tags.length === 0) {
+        console.warn('⚠️ No tags available for analysis');
+        return [];
       }
-
-      console.log(`  📊 Using ${availableTags.length} available tags for analysis`);
 
       setAnalysisProgress({
         current: imageIndex + 1,
@@ -389,24 +428,19 @@ export default function AddPropertyPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl,
-          availableTags: availableTags
+          availableTags: tags
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error(`❌ Analysis failed:`, errorData);
-        throw new Error(errorData.error || 'Analysis failed');
+        return [];
       }
 
       const data = await response.json();
       console.log(`✅ Image ${imageIndex + 1} analyzed successfully`);
       console.log(`  Found ${data.tags?.length || 0} tags:`, data.tags || []);
-
-      if (!data.tags || data.tags.length === 0) {
-        console.warn(`⚠️ No tags returned for image ${imageIndex + 1}`);
-        console.log('  Raw AI response:', data.rawResponse);
-      }
 
       return data.tags || [];
     } catch (error) {
@@ -419,10 +453,12 @@ export default function AddPropertyPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    if (availableTags.length === 0) {
+    // Get fresh tags if needed
+    let tagsToUse = availableTags;
+    if (tagsToUse.length === 0) {
       console.log('⏳ No tags available, loading...');
-      const tags = await fetchSearchFilterTags();
-      if (tags.length === 0) {
+      tagsToUse = await fetchSearchFilterTags();
+      if (tagsToUse.length === 0) {
         alert('Failed to load tags. Please refresh the page and try again.');
         e.target.value = '';
         return;
@@ -436,6 +472,7 @@ export default function AddPropertyPage() {
     const newImages: ImageWithTags[] = [];
 
     try {
+      // Upload images first
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setUploadProgress({ current: i + 1, total: files.length });
@@ -451,10 +488,11 @@ export default function AddPropertyPage() {
         });
       }
 
+      // Analyze with the tags we have
       setAnalysisProgress({ current: 0, total: files.length, status: 'Starting AI analysis...' });
 
       for (let i = 0; i < newImages.length; i++) {
-        const suggestedTags = await analyzeImageAndTag(newImages[i].url, i, files.length);
+        const suggestedTags = await analyzeImageAndTag(newImages[i].url, i, files.length, tagsToUse);
         newImages[i].tags = suggestedTags;
       }
 
@@ -496,6 +534,14 @@ export default function AddPropertyPage() {
     }));
   }
 
+  function togglePropertyTag(tagName: string) {
+    setPropertyTags(prev =>
+      prev.includes(tagName)
+        ? prev.filter(t => t !== tagName)
+        : [...prev, tagName]
+    );
+  }
+
   function toggleFilterExpanded(filterName: string) {
     setExpandedFilters(prev => {
       const newSet = new Set(prev);
@@ -519,25 +565,22 @@ export default function AddPropertyPage() {
       return;
     }
 
+    // Get fresh tags if needed
+    let tagsToUse = availableTags;
+    if (tagsToUse.length === 0) {
+      console.log('⏳ No tags available, loading...');
+      tagsToUse = await fetchSearchFilterTags();
+      if (tagsToUse.length === 0) {
+        alert('Failed to load tags. Please refresh the page and try again.');
+        return;
+      }
+    }
+
     setImportingFromSmugmug(true);
     setImportProgress('🔍 Extracting album key...');
 
     try {
-      let tagsToUse = availableTags;
-      if (tagsToUse.length === 0) {
-        console.log('⏳ No tags loaded, fetching now...');
-        setImportProgress('Loading tags for analysis...');
-        tagsToUse = await fetchSearchFilterTags();
-
-        if (tagsToUse.length === 0) {
-          console.error('❌ Could not load tags');
-          alert('Failed to load tags for image analysis. Please refresh the page and try again.');
-          setImportingFromSmugmug(false);
-          return;
-        }
-      }
-      const albumKeyMatch = smugmugUrl.match(/\/([A-Za-z0-9]+)$/);
-      let albumKey = albumKeyMatch ? albumKeyMatch[1] : smugmugUrl.trim();
+      let albumKey = extractAlbumKey(smugmugUrl);
 
       if (!albumKey) {
         throw new Error('Could not extract album key from URL');
@@ -572,7 +615,7 @@ export default function AddPropertyPage() {
       console.log('Imported URLs:', imageUrls);
 
       if (imported > 0 && imageUrls.length > 0) {
-        const fullUrls = normalizeUrls(imageUrls);
+        const fullUrls = imageUrls.map((url: string) => normalizeUrl(url));
 
         console.log('✓ Normalized URLs:', fullUrls.length);
 
@@ -585,8 +628,9 @@ export default function AddPropertyPage() {
           importedImages.push({ url, tags: [], isSmugmug: true });
         }
 
+        // Analyze images with the tags we have
         for (let i = 0; i < importedImages.length; i++) {
-          const suggestedTags = await analyzeImageAndTag(importedImages[i].url, i, importedImages.length);
+          const suggestedTags = await analyzeImageAndTag(importedImages[i].url, i, importedImages.length, tagsToUse);
           importedImages[i].tags = suggestedTags;
         }
 
@@ -594,6 +638,7 @@ export default function AddPropertyPage() {
         setImportProgress(`✓ Imported and analyzed ${imported} images`);
         setAnalyzingImages(false);
 
+        // Try to get album metadata
         try {
           const albumKey = extractAlbumKey(smugmugUrl);
           if (albumKey) {
@@ -626,342 +671,104 @@ export default function AddPropertyPage() {
 
               setImportProgress(`✓ Album details loaded`);
 
-              const mapsLink = findGoogleMapsLinkInMetadata(metadata);
-
-              if (mapsLink) {
-                console.log('📍 Found Google Maps link:', mapsLink);
+              // Handle Google Maps link if present
+              if (metadata.location?.googleMapsLink) {
+                console.log('📍 Found Google Maps link:', metadata.location.googleMapsLink);
                 setExtractingAddress(true);
                 setImportProgress('Found Google Maps link, extracting address...');
 
-                const address = await getAddressFromGoogleMapsLink(mapsLink);
+                const address = await getAddressFromGoogleMapsLink(metadata.location.googleMapsLink);
 
                 if (address) {
                   console.log('✓ Address extracted:', address);
-                  console.log('  Updating form fields:');
-                  console.log('    Address:', address.streetAddress);
-                  console.log('    City:', address.city);
-                  console.log('    State:', address.state);
-                  console.log('    Zip:', address.zipCode);
 
-                  setFormData(prev => {
-                    const updated = {
-                      ...prev,
-                      address: address.streetAddress || '',
-                      city: address.city || '',
-                      state: address.state || 'Texas',
-                      zipcode: address.zipCode || ''
-                    };
-                    console.log('  Form state after update:', updated);
-                    return updated;
-                  });
+                  setFormData(prev => ({
+                    ...prev,
+                    address: address.streetAddress || prev.address,
+                    city: address.city || prev.city,
+                    state: address.state || prev.state,
+                    zipcode: address.zipCode || prev.zipcode
+                  }));
 
-                  await new Promise(resolve => setTimeout(resolve, 100));
-
-                  console.log('✓ Form updated with address');
-                  setImportProgress(`✓ Imported ${imported} images, loaded album details, and extracted address!`);
+                  setImportProgress('✓ Address extracted successfully');
                 } else {
-                  console.log('⚠️ Address extraction failed');
-                  setImportProgress(`✓ Imported ${imported} images and loaded album details (address extraction failed)`);
+                  console.log('❌ Could not extract address from Google Maps link');
+                  setImportProgress('⚠️ Could not extract address');
                 }
-
                 setExtractingAddress(false);
-              } else {
-                console.log('ℹ️ No Google Maps link found in album metadata');
-                setImportProgress(`✓ Imported ${imported} images and loaded album details`);
               }
-
-              if (metadata.keywords) {
-                const keywords = metadata.keywords.split(',').map((k: string) => k.trim()).filter(Boolean);
-                console.log('🏷️ Found keywords:', keywords);
-
-                const matchedTags = keywords
-                  .map((keyword: string) => {
-                    const tag = availableTags.find(t =>
-                      t.name.toLowerCase() === keyword.toLowerCase()
-                    );
-                    return tag?.name;
-                  })
-                  .filter(Boolean) as string[];
-
-                if (matchedTags.length > 0) {
-                  console.log('✓ Matched tags:', matchedTags);
-                  setPropertyTags(matchedTags);
-                }
-              }
-
-            } else {
-              console.log('⚠️ Failed to fetch album metadata');
-              setImportProgress(`✓ Imported ${imported} images (metadata fetch failed)`);
             }
           }
-        } catch (error: any) {
-          console.error('Error fetching album metadata:', error);
-          setImportProgress(`✓ Imported ${imported} images (metadata fetch failed)`);
+        } catch (metadataError) {
+          console.log('Could not fetch metadata:', metadataError);
         }
 
-        setSmugmugUrl('');
-        setTimeout(() => setImportProgress(''), 3000);
+        setTimeout(() => {
+          setImportProgress('');
+          setSmugmugUrl('');
+        }, 3000);
       } else {
-        setImportProgress('');
-        alert(`❌ Import failed - no images were imported`);
+        setImportProgress('No images found in album');
+        setTimeout(() => {
+          setImportProgress('');
+        }, 3000);
       }
-
     } catch (error: any) {
-      console.error('Import error:', error);
-      alert('Import failed: ' + error.message);
+      console.error('SmugMug import error:', error);
+      alert(`Import error: ${error.message}`);
       setImportProgress('');
     } finally {
       setImportingFromSmugmug(false);
-    }
-  }
-
-  async function loadBulkImportQueue() {
-    try {
-      const queueData = localStorage.getItem('sgs_import_queue');
-      const currentIndex = parseInt(localStorage.getItem('sgs_import_current_index') || '0');
-
-      if (queueData) {
-        const queue = JSON.parse(queueData);
-        setImportQueue(queue);
-        setCurrentImportIndex(currentIndex);
-
-        if (currentIndex < queue.length) {
-          await loadCurrentAlbumData(queue[currentIndex]);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading import queue:', error);
-    }
-  }
-
-  async function loadCurrentAlbumData(album: any) {
-    setLoadingQueueImages(true);
-
-    try {
-      setFormData(prev => ({
-        ...prev,
-        name: album.name,
-        description: album.description || '',
-        city: album.location?.city || '',
-        state: album.location?.state || 'Texas',
-      }));
-
-      if (!tagsLoaded) {
-        console.log('⏳ Waiting for tags to load...');
-        let attempts = 0;
-        while (!tagsLoaded) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          attempts++;
-          if (attempts > 20) {
-            console.error('❌ Timeout waiting for tags');
-            break;
-          }
-        }
-      }
-
-      if (album.googleMapsLink) {
-        console.log('📍 Found Google Maps link in album metadata');
-        setExtractingAddress(true);
-
-        const address = await getAddressFromGoogleMapsLink(album.googleMapsLink);
-
-        if (address) {
-          console.log('✓ Address extracted:', address.fullAddress);
-          console.log('  Updating form fields:');
-          console.log('    Address:', address.streetAddress);
-          console.log('    City:', address.city);
-          console.log('    State:', address.state);
-          console.log('    Zip:', address.zipCode);
-
-          setFormData(prev => {
-            const updated = {
-              ...prev,
-              address: address.streetAddress || '',
-              city: address.city || '',
-              state: address.state || 'Texas',
-              zipcode: address.zipCode || ''
-            };
-            console.log('  Form state after update:', updated);
-            return updated;
-          });
-
-          await new Promise(resolve => setTimeout(resolve, 100));
-          console.log('✓ Form updated with address');
-        }
-
-        setExtractingAddress(false);
-      }
-
-      const response = await fetch('/api/import-smugmug', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          albumKey: album.albumKey
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.urls && data.urls.length > 0) {
-        setAnalyzingImages(true);
-        setAnalysisProgress({ current: 0, total: data.urls.length, status: 'Starting AI analysis...' });
-
-        const importedImages: ImageWithTags[] = [];
-
-        for (const url of data.urls) {
-          importedImages.push({ url, tags: [], isSmugmug: true });
-        }
-
-        for (let i = 0; i < importedImages.length; i++) {
-          const suggestedTags = await analyzeImageAndTag(importedImages[i].url, i, importedImages.length);
-          importedImages[i].tags = suggestedTags;
-        }
-
-        setImages(importedImages);
-        setAnalyzingImages(false);
-
-        if (album.keywords) {
-          const keywords = album.keywords.split(',').map((k: string) => k.trim());
-          const matchedTags = keywords.filter((keyword: string) =>
-            availableTags.some(tag =>
-              tag.name.toLowerCase() === keyword.toLowerCase()
-            )
-          );
-          if (matchedTags.length > 0) {
-            setPropertyTags(matchedTags);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading album data:', error);
-      alert('Error loading album: ' + error);
-    } finally {
-      setLoadingQueueImages(false);
-    }
-  }
-
-  function handleSkipProperty() {
-    if (confirm('Skip this property? It will not be saved.')) {
-      moveToNextProperty();
-    }
-  }
-
-  function moveToNextProperty() {
-    const nextIndex = currentImportIndex + 1;
-
-    if (nextIndex < importQueue.length) {
-      localStorage.setItem('sgs_import_current_index', nextIndex.toString());
-      window.location.reload();
-    } else {
-      localStorage.removeItem('sgs_import_queue');
-      localStorage.removeItem('sgs_import_current_index');
-      alert('All properties imported! Returning to properties list.');
-      router.push('/admin/properties');
+      setAnalyzingImages(false);
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!formData.name || !formData.address || !formData.city || !formData.category_id) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
     if (images.length < 10) {
-      alert(`Please upload at least 10 property images (currently have ${images.length})`);
+      alert('Please upload at least 10 images');
       return;
     }
 
     setLoading(true);
+
     try {
-      const selectedCategory = categories.find(cat => cat.id === formData.category_id);
-      if (!selectedCategory) {
-        throw new Error('Invalid category selected');
-      }
-
-      // Upload manual files to S3
-      const filesToUpload = images.filter(img => img.file).map(img => img.file!);
-      let uploadedUrls: string[] = [];
-
-      if (filesToUpload.length > 0) {
-        console.log(`Uploading ${filesToUpload.length} manual images...`);
-        uploadedUrls = await uploadMultipleImages(filesToUpload, 'properties');
-        console.log('Manual images uploaded successfully');
-      }
-
-      // Combine SmugMug URLs and uploaded URLs
-      const smugmugUrls = images.filter(img => img.isSmugmug).map(img => img.url);
-      const allImageUrls = [...smugmugUrls, ...uploadedUrls];
-      console.log(`Total images: ${allImageUrls.length}`);
-
-      // Create property
-      const { data: property, error: propertyError } = await supabase.from('properties').insert([{
-        name: formData.name,
-        description: formData.description || null,
-        address: formData.address,
-        city: formData.city,
-        county: formData.state,
-        zipcode: formData.zipcode || null,
-        property_type: 'Residential',
-        square_footage: null,
-        lot_size: null,
-        bedrooms: null,
-        bathrooms: null,
-        parking_spaces: null,
-        year_built: null,
-        features: [],
-        categories: [selectedCategory.name],
-        permits_available: false,
-        permit_details: null,
-        daily_rate: 0,
-        images: allImageUrls,
-        primary_image: allImageUrls[0],
-        status: 'active',
-        owner_id: null,
-        is_featured: formData.is_featured,
-        is_exclusive: formData.is_exclusive,
-        property_tags: propertyTags,
-      }]).select().single();
+      const { data: property, error: propertyError } = await supabase
+        .from('properties')
+        .insert([{
+          ...formData,
+          status: 'pending',
+          user_id: null,
+          search_tags: propertyTags
+        }])
+        .select()
+        .single();
 
       if (propertyError) throw propertyError;
 
-      // Save image metadata with tags to property_images table
-      let uploadIndex = 0;
-      const imageRecords = images.map((img, index) => {
-        let finalUrl: string;
-        if (img.isSmugmug) {
-          finalUrl = img.url;
-        } else {
-          finalUrl = uploadedUrls[uploadIndex];
-          uploadIndex++;
-        }
-
-        return {
-          property_id: property.id,
-          image_url: finalUrl,
-          display_order: index,
-          tags: img.tags
-        };
-      });
+      const propertyImages = images.map((img, index) => ({
+        property_id: property.id,
+        url: img.url,
+        is_primary: index === 0,
+        display_order: index,
+        search_tags: img.tags
+      }));
 
       const { error: imagesError } = await supabase
         .from('property_images')
-        .insert(imageRecords);
+        .insert(propertyImages);
 
-      if (imagesError) {
-        console.error('Error saving image metadata:', imagesError);
-      }
+      if (imagesError) throw imagesError;
 
-      if (isBulkImport) {
+      if (isBulkImport && importQueue.length > 0) {
         moveToNextProperty();
       } else {
-        alert('Property added successfully!');
         router.push('/admin/properties');
       }
     } catch (error: any) {
-      console.error('Error adding property:', error);
-      alert('Error adding property: ' + error.message);
+      console.error('Error creating property:', error);
+      alert('Error creating property: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -1334,7 +1141,7 @@ export default function AddPropertyPage() {
                     </p>
                     <Button
                       type="button"
-                      onClick={handleSmugMugAuthorize}
+                      onClick={handleAuthorizeSmugMug}
                       disabled={authorizing}
                       className="bg-yellow-600 hover:bg-yellow-700 text-white"
                     >
