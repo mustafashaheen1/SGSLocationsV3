@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { supabase } from '@/lib/supabase';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
+import { extractGoogleMapsLink } from '@/lib/google-maps-utils';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -213,7 +214,10 @@ export async function GET(request: NextRequest) {
             protected: albumDetails.Protected,
             privacy: albumDetails.Privacy,
             sortMethod: albumDetails.SortMethod,
-            lastUpdated: albumDetails.LastUpdated
+            lastUpdated: albumDetails.LastUpdated,
+            googleMapsLink: extractGoogleMapsLink(
+              albumDetails.Description || albumDetails.Keywords || ''
+            )
           };
         } catch (error: any) {
           console.error(`Error getting metadata for album ${album.Name}:`, error.message);

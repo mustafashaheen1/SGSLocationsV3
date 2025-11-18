@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
+import { getAddressFromGoogleMapsLink, findGoogleMapsLinkInMetadata } from '@/lib/google-maps-utils';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -72,6 +73,7 @@ export default function AddPropertyPage() {
   const [importQueue, setImportQueue] = useState<any[]>([]);
   const [currentImportIndex, setCurrentImportIndex] = useState(0);
   const [loadingQueueImages, setLoadingQueueImages] = useState(false);
+  const [extractingAddress, setExtractingAddress] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -424,6 +426,11 @@ export default function AddPropertyPage() {
     });
   }
 
+  function extractAlbumKey(url: string): string | null {
+    const albumKeyMatch = url.match(/\/([A-Za-z0-9]+)$/);
+    return albumKeyMatch ? albumKeyMatch[1] : url.trim() || null;
+  }
+
   async function handleSmugmugImport() {
     if (!smugmugUrl.trim()) {
       alert('Please enter a SmugMug album URL or key');
@@ -491,8 +498,45 @@ export default function AddPropertyPage() {
         setImages(prev => [...prev, ...importedImages]);
         setImportProgress(`✓ Imported and analyzed ${imported} images`);
         setAnalyzingImages(false);
-        setSmugmugUrl('');
 
+        try {
+          const albumKey = extractAlbumKey(smugmugUrl);
+          if (albumKey) {
+            const metadataResponse = await fetch(`/api/smugmug-album-metadata?albumKey=${albumKey}`);
+            const metadata = await metadataResponse.json();
+
+            if (metadata.success) {
+              const mapsLink = findGoogleMapsLinkInMetadata(metadata);
+
+              if (mapsLink) {
+                setExtractingAddress(true);
+                setImportProgress('Found Google Maps link, extracting address...');
+
+                const address = await getAddressFromGoogleMapsLink(mapsLink);
+
+                if (address) {
+                  setFormData(prev => ({
+                    ...prev,
+                    address: address.streetAddress,
+                    city: address.city,
+                    state: address.state,
+                    zipcode: address.zipCode
+                  }));
+
+                  setImportProgress(`✓ Imported ${imported} images and extracted address!`);
+                } else {
+                  setImportProgress(`✓ Imported ${imported} images (address extraction failed)`);
+                }
+
+                setExtractingAddress(false);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error extracting address:', error);
+        }
+
+        setSmugmugUrl('');
         setTimeout(() => setImportProgress(''), 3000);
       } else {
         setImportProgress('');
@@ -538,6 +582,27 @@ export default function AddPropertyPage() {
         city: album.location?.city || '',
         state: album.location?.state || 'Texas',
       }));
+
+      if (album.googleMapsLink) {
+        console.log('📍 Found Google Maps link in album metadata');
+        setExtractingAddress(true);
+
+        const address = await getAddressFromGoogleMapsLink(album.googleMapsLink);
+
+        if (address) {
+          console.log('✓ Address extracted:', address.fullAddress);
+
+          setFormData(prev => ({
+            ...prev,
+            address: address.streetAddress,
+            city: address.city,
+            state: address.state,
+            zipcode: address.zipCode
+          }));
+        }
+
+        setExtractingAddress(false);
+      }
 
       const response = await fetch('/api/import-smugmug', {
         method: 'POST',
@@ -1136,6 +1201,13 @@ export default function AddPropertyPage() {
                       </>
                     )}
                   </Button>
+
+                  {extractingAddress && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <span className="text-sm text-blue-800">Extracting address from Google Maps link...</span>
+                    </div>
+                  )}
 
                   {importProgress && (
                     <div className={`p-3 rounded ${
