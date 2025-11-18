@@ -76,6 +76,7 @@ export default function EditPropertyPage() {
   const [analyzingImages, setAnalyzingImages] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0, status: '' });
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [propertyTags, setPropertyTags] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCategories();
@@ -199,6 +200,9 @@ export default function EditPropertyPage() {
           setFormData(prev => ({ ...prev, category_id: categoryData.id }));
         }
       }
+
+      // Load property-level tags
+      setPropertyTags(property.property_tags || []);
 
       // Load existing images with tags
       const { data: propertyImages, error: imagesError } = await supabase
@@ -451,6 +455,7 @@ export default function EditPropertyPage() {
           primary_image: allImageUrls[0],
           is_featured: formData.is_featured,
           is_exclusive: formData.is_exclusive,
+          property_tags: propertyTags,
           updated_at: new Date().toISOString(),
         })
         .eq('id', params.id);
@@ -637,27 +642,160 @@ export default function EditPropertyPage() {
             </select>
           </div>
 
-          <div className="col-span-2 flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="is_featured"
-                checked={formData.is_featured}
-                onChange={handleInputChange}
-                className="w-4 h-4 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
-              />
-              <span className="text-sm font-medium text-gray-700">Featured Property</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="is_exclusive"
-                checked={formData.is_exclusive}
-                onChange={handleInputChange}
-                className="w-4 h-4 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
-              />
-              <span className="text-sm font-medium text-gray-700">Exclusive Property</span>
-            </label>
+          <div className="col-span-2 grid grid-cols-2 gap-6">
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_featured"
+                  checked={formData.is_featured}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-900 block">Featured Property</span>
+                  <span className="text-xs text-gray-600">Display prominently on homepage</span>
+                </div>
+              </label>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_exclusive"
+                  checked={formData.is_exclusive}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-gray-900 block">Exclusive Property</span>
+                  <span className="text-xs text-gray-600">Mark as exclusive listing</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* PROPERTY-LEVEL TAGS SECTION */}
+          <div className="col-span-2 border-t pt-6">
+            <div className="bg-white rounded-lg border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Tag className="w-5 h-5" />
+                    Property Search Filter Tags
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Assign tags that describe this property overall (separate from individual image tags)
+                  </p>
+                </div>
+                {propertyTags.length > 0 && (
+                  <span className="px-3 py-1 bg-[#e11921] text-white text-sm font-medium rounded-full">
+                    {propertyTags.length} selected
+                  </span>
+                )}
+              </div>
+
+              {propertyTags.length > 0 && (
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-gray-700">Selected Property Tags:</p>
+                    <button
+                      type="button"
+                      onClick={() => setPropertyTags([])}
+                      className="text-xs text-[#e11921] hover:text-red-700 font-medium"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {propertyTags.map(tagName => {
+                      const tag = availableTags.find(t => t.name === tagName);
+                      return (
+                        <span
+                          key={tagName}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#e11921] text-white text-sm rounded-full"
+                        >
+                          {tag?.filter_name && (
+                            <span className="opacity-75 text-xs">{tag.filter_name}:</span>
+                          )}
+                          <span className="font-medium">{tagName}</span>
+                          <button
+                            type="button"
+                            onClick={() => setPropertyTags(prev => prev.filter(t => t !== tagName))}
+                            className="hover:bg-red-700 rounded-full p-0.5 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {Object.entries(tagsByFilter).map(([filterName, tags]) => {
+                  const selectedInFilter = tags.filter(t => propertyTags.includes(t.name)).length;
+                  return (
+                    <div key={filterName} className="border rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => toggleFilterExpanded(filterName)}
+                        className="w-full px-4 py-3 flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <ChevronDown
+                            className={`w-4 h-4 text-gray-500 transition-transform ${
+                              expandedFilters.has(filterName) ? 'rotate-180' : ''
+                            }`}
+                          />
+                          <span className="font-medium text-sm text-gray-900">{filterName}</span>
+                          {selectedInFilter > 0 && (
+                            <span className="px-2 py-0.5 bg-[#e11921] text-white text-xs font-medium rounded-full">
+                              {selectedInFilter}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {tags.length} tags
+                        </span>
+                      </button>
+
+                      {expandedFilters.has(filterName) && (
+                        <div className="px-4 py-3 bg-gray-50 border-t">
+                          <div className="flex flex-wrap gap-2">
+                            {tags.map(tag => {
+                              const isSelected = propertyTags.includes(tag.name);
+                              return (
+                                <button
+                                  key={tag.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setPropertyTags(prev =>
+                                      isSelected
+                                        ? prev.filter(t => t !== tag.name)
+                                        : [...prev, tag.name]
+                                    );
+                                  }}
+                                  className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-all ${
+                                    isSelected
+                                      ? 'bg-[#e11921] text-white border-[#e11921] shadow-sm'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#e11921] hover:text-[#e11921]'
+                                  }`}
+                                >
+                                  {tag.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           <div className="col-span-2">
