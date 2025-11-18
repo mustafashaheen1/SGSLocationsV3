@@ -35,7 +35,7 @@ function generateOAuthSignature(
 
 export async function GET(request: NextRequest) {
   try {
-    const apiKey = process.env.SMUGMUG_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_SMUGMUG_API_KEY;
     const apiSecret = process.env.SMUGMUG_API_SECRET;
 
     if (!apiKey || !apiSecret) {
