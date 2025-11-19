@@ -89,6 +89,23 @@ export default function AddPropertyPage() {
     is_exclusive: false,
   });
 
+  // Initialize Google Autocomplete when Maps loads
+  useEffect(() => {
+    // Wait for Google Maps to load, then initialize autocomplete
+    const waitForGoogleMaps = () => {
+      if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
+        console.log('✓ Google Maps loaded, initializing autocomplete');
+        initializeGoogleAutocomplete();
+      } else {
+        console.log('⏳ Waiting for Google Maps...');
+        setTimeout(waitForGoogleMaps, 300);
+      }
+    };
+
+    // Start checking after component mounts
+    setTimeout(waitForGoogleMaps, 500);
+  }, []); // Empty dependency array - only run on mount
+
   // Initialize everything on mount
   useEffect(() => {
     const initializePage = async () => {
@@ -98,13 +115,6 @@ export default function AddPropertyPage() {
       ]);
 
       checkSmugMugAuth();
-
-      // Initialize Google Autocomplete for non-bulk mode
-      if (!isBulkImport) {
-        setTimeout(() => {
-          initializeGoogleAutocomplete();
-        }, 500);
-      }
 
       // Handle bulk import - wait for tags to load
       if (isBulkImport) {
@@ -285,15 +295,20 @@ export default function AddPropertyPage() {
             setExtractingAddress(false);
           }
 
+          // Re-initialize Google Autocomplete after address is populated
+          setTimeout(() => {
+            const addressInput = document.querySelector('input[name="address"]') as HTMLInputElement;
+            if (addressInput) {
+              // Remove initialization flag to force re-init
+              addressInput.removeAttribute('data-autocomplete-initialized');
+            }
+            initializeGoogleAutocomplete();
+          }, 1000);
+
           // IMPORTANT: Process the album with tags available
           if (album.albumKey) {
             console.log('📸 Auto-importing album with key:', album.albumKey);
             setSmugmugUrl(album.albumKey);
-
-            // Re-initialize Google Autocomplete after setting address
-            setTimeout(() => {
-              initializeGoogleAutocomplete();
-            }, 300);
 
             // Call the import with tags ready
             setTimeout(async () => {
@@ -562,76 +577,89 @@ export default function AddPropertyPage() {
 
   // Initialize Google Autocomplete
   function initializeGoogleAutocomplete() {
-    const addressInput = document.getElementById('address-input') as HTMLInputElement;
+    const addressInput = document.querySelector('input[name="address"]') as HTMLInputElement;
 
     if (!addressInput) {
-      console.log('⚠️ Address input not found, retrying...');
-      setTimeout(initializeGoogleAutocomplete, 200);
+      console.log('⚠️ Address input not found');
+      return;
+    }
+
+    // Check if already initialized to avoid duplicates
+    if (addressInput.getAttribute('data-autocomplete-initialized') === 'true') {
+      console.log('✓ Autocomplete already initialized');
       return;
     }
 
     // Check if Google Maps is loaded
     if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
-      console.log('⚠️ Google Maps not loaded yet, retrying...');
-      setTimeout(initializeGoogleAutocomplete, 500);
+      console.log('⚠️ Google Maps not loaded yet');
       return;
     }
 
-    console.log('✓ Initializing Google Autocomplete');
+    console.log('🔧 Initializing Google Autocomplete');
 
-    const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
-      types: ['address'],
-      componentRestrictions: { country: 'us' }
-    });
-
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-
-      if (!place.address_components) {
-        console.log('No address components found');
-        return;
-      }
-
-      console.log('✓ Address selected from autocomplete');
-
-      let streetNumber = '';
-      let streetName = '';
-      let city = '';
-      let state = '';
-      let zipcode = '';
-
-      place.address_components.forEach((component: any) => {
-        const types = component.types;
-
-        if (types.includes('street_number')) {
-          streetNumber = component.long_name;
-        }
-        if (types.includes('route')) {
-          streetName = component.long_name;
-        }
-        if (types.includes('locality')) {
-          city = component.long_name;
-        }
-        if (types.includes('administrative_area_level_1')) {
-          state = component.short_name;
-        }
-        if (types.includes('postal_code')) {
-          zipcode = component.long_name;
-        }
+    try {
+      const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+        fields: ['address_components', 'formatted_address']
       });
 
-      const fullAddress = streetNumber && streetName
-        ? `${streetNumber} ${streetName}`
-        : streetName;
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
 
-      setFormData(prev => ({
-        ...prev,
-        address: fullAddress,
-        city,
-        state,
-        zipcode
-      }));
-    });
+        if (!place.address_components) {
+          console.log('No address components found');
+          return;
+        }
+
+        console.log('✓ Address selected from autocomplete');
+
+        let streetNumber = '';
+        let route = '';
+        let city = '';
+        let state = '';
+        let zipcode = '';
+
+        place.address_components.forEach((component: any) => {
+          const types = component.types;
+
+          if (types.includes('street_number')) {
+            streetNumber = component.long_name;
+          }
+          if (types.includes('route')) {
+            route = component.long_name;
+          }
+          if (types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (types.includes('administrative_area_level_1')) {
+            state = component.long_name;
+          }
+          if (types.includes('postal_code')) {
+            zipcode = component.long_name;
+          }
+        });
+
+        const fullAddress = streetNumber && route
+          ? `${streetNumber} ${route}`
+          : route;
+
+        setFormData(prev => ({
+          ...prev,
+          address: fullAddress,
+          city: city || prev.city,
+          state: state || prev.state,
+          zipcode: zipcode || prev.zipcode
+        }));
+      });
+
+      // Mark as initialized
+      addressInput.setAttribute('data-autocomplete-initialized', 'true');
+      console.log('✅ Google Autocomplete initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing autocomplete:', error);
+    }
   }
 
   // SIMPLIFIED analyze function - no waiting logic
@@ -1004,6 +1032,10 @@ export default function AddPropertyPage() {
         categories: selectedCategory ? [selectedCategory.name] : [],
         // Add property-level tags
         property_tags: propertyTags,
+        // Set primary_image to first image
+        primary_image: images[0]?.url || null,
+        // Set images array
+        images: images.map(img => img.url),
         features: [],
         permits_available: false,
         daily_rate: '0'
@@ -1025,12 +1057,11 @@ export default function AddPropertyPage() {
 
       console.log('✓ Property created:', property.id);
 
-      // Insert images with tags
+      // Insert images with tags - NO is_primary field
       const imageRecords = images.map((img, index) => ({
         property_id: property.id,
         image_url: img.url,
         display_order: index,
-        is_primary: index === 0,
         tags: img.tags || []
       }));
 
@@ -1193,7 +1224,6 @@ export default function AddPropertyPage() {
             <input
               ref={addressInputRef}
               type="text"
-              id="address-input"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
