@@ -68,6 +68,7 @@ export default function AddPropertyPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authorizing, setAuthorizing] = useState(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [analyzingImages, setAnalyzingImages] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0, status: '' });
@@ -88,23 +89,6 @@ export default function AddPropertyPage() {
     is_featured: false,
     is_exclusive: false,
   });
-
-  // Initialize Google Autocomplete when Maps loads
-  useEffect(() => {
-    // Wait for Google Maps to load, then initialize autocomplete
-    const waitForGoogleMaps = () => {
-      if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
-        console.log('✓ Google Maps loaded, initializing autocomplete');
-        initializeGoogleAutocomplete();
-      } else {
-        console.log('⏳ Waiting for Google Maps...');
-        setTimeout(waitForGoogleMaps, 300);
-      }
-    };
-
-    // Start checking after component mounts
-    setTimeout(waitForGoogleMaps, 500);
-  }, []); // Empty dependency array - only run on mount
 
   // Initialize everything on mount
   useEffect(() => {
@@ -147,89 +131,6 @@ export default function AddPropertyPage() {
       setCheckingAuth(false);
     }
   }, [isBulkImport]);
-
-  // Load Google Maps API
-  useEffect(() => {
-    if (!window.google && process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.onload = () => {
-        setGoogleMapsLoaded(true);
-        initializeAutocomplete();
-      };
-      document.body.appendChild(script);
-    } else if (window.google) {
-      setGoogleMapsLoaded(true);
-      initializeAutocomplete();
-    }
-  }, []);
-
-  function initializeAutocomplete() {
-    if (!addressInputRef.current || !window.google) return;
-
-    const initAutocomplete = () => {
-      if (!window.google || !window.google.maps || !window.google.maps.places) {
-        console.log('⏳ Waiting for Google Places library...');
-        setTimeout(initAutocomplete, 100);
-        return;
-      }
-
-      try {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-          addressInputRef.current!,
-          {
-            types: ['address'],
-            componentRestrictions: { country: 'us' }
-          }
-        );
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (!place.address_components) return;
-
-          let streetNumber = '';
-          let streetName = '';
-          let city = '';
-          let state = '';
-          let zipcode = '';
-
-          place.address_components.forEach((component: any) => {
-            const types = component.types;
-            if (types.includes('street_number')) {
-              streetNumber = component.long_name;
-            }
-            if (types.includes('route')) {
-              streetName = component.long_name;
-            }
-            if (types.includes('locality')) {
-              city = component.long_name;
-            }
-            if (types.includes('administrative_area_level_1')) {
-              state = component.long_name;
-            }
-            if (types.includes('postal_code')) {
-              zipcode = component.long_name;
-            }
-          });
-
-          const fullAddress = streetNumber ? `${streetNumber} ${streetName}` : streetName;
-
-          setFormData(prev => ({
-            ...prev,
-            address: fullAddress,
-            city,
-            state,
-            zipcode
-          }));
-        });
-      } catch (error) {
-        console.error('Error initializing autocomplete:', error);
-      }
-    };
-
-    initAutocomplete();
-  }
 
   async function loadBulkImportQueue() {
     console.log('📋 Loading bulk import queue...');
@@ -297,11 +198,6 @@ export default function AddPropertyPage() {
 
           // Re-initialize Google Autocomplete after address is populated
           setTimeout(() => {
-            const addressInput = document.querySelector('input[name="address"]') as HTMLInputElement;
-            if (addressInput) {
-              // Remove initialization flag to force re-init
-              addressInput.removeAttribute('data-autocomplete-initialized');
-            }
             initializeGoogleAutocomplete();
           }, 1000);
 
@@ -577,23 +473,31 @@ export default function AddPropertyPage() {
 
   // Initialize Google Autocomplete
   function initializeGoogleAutocomplete() {
-    const addressInput = document.querySelector('input[name="address"]') as HTMLInputElement;
+    const addressInput = addressInputRef.current || document.querySelector('input[name="address"]') as HTMLInputElement;
 
     if (!addressInput) {
       console.log('⚠️ Address input not found');
       return;
     }
 
-    // Check if already initialized to avoid duplicates
-    if (addressInput.getAttribute('data-autocomplete-initialized') === 'true') {
-      console.log('✓ Autocomplete already initialized');
+    // Check if Google Maps is loaded
+    if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
+      console.log('⚠️ Google Maps not loaded yet, will retry...');
+      // Retry after a short delay
+      setTimeout(() => initializeGoogleAutocomplete(), 500);
       return;
     }
 
-    // Check if Google Maps is loaded
-    if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
-      console.log('⚠️ Google Maps not loaded yet');
-      return;
+    // Clean up existing autocomplete instance if it exists
+    if (autocompleteRef.current) {
+      console.log('🧹 Cleaning up existing autocomplete instance');
+      try {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      } catch (e) {
+        console.log('Could not clear listeners:', e);
+      }
+      autocompleteRef.current = null;
+      addressInput.removeAttribute('data-autocomplete-initialized');
     }
 
     console.log('🔧 Initializing Google Autocomplete');
@@ -654,7 +558,8 @@ export default function AddPropertyPage() {
         }));
       });
 
-      // Mark as initialized
+      // Store the instance in ref
+      autocompleteRef.current = autocomplete;
       addressInput.setAttribute('data-autocomplete-initialized', 'true');
       console.log('✅ Google Autocomplete initialized successfully');
     } catch (error) {
@@ -1133,6 +1038,8 @@ export default function AddPropertyPage() {
         onLoad={() => {
           console.log('✅ Google Maps script loaded');
           setGoogleMapsLoaded(true);
+          // Initialize autocomplete after script loads
+          setTimeout(() => initializeGoogleAutocomplete(), 500);
         }}
         onError={(e) => {
           console.error('❌ Error loading Google Maps script:', e);
