@@ -1000,6 +1000,23 @@ export default function AddPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // DEBUG: Test admin authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔐 Session email:', session?.user?.email);
+
+    const { data: adminCheck } = await supabase
+      .from('admins')
+      .select('email')
+      .eq('email', session?.user?.email)
+      .single();
+
+    console.log('✅ Admin check:', adminCheck);
+
+    if (!adminCheck) {
+      alert('ERROR: You are not in the admins table!');
+      return;
+    }
+
     if (!formData.name || !formData.address || !formData.city) {
       alert('Please fill in all required fields');
       return;
