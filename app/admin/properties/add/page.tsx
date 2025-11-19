@@ -132,6 +132,26 @@ export default function AddPropertyPage() {
     }
   }, [isBulkImport]);
 
+  // Auto-refresh session every 5 minutes while on this page
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      console.log('🔄 [Property Add] Auto-refreshing session...');
+      const { error } = await supabase.auth.refreshSession();
+
+      if (error) {
+        console.error('❌ Session refresh failed:', error);
+        clearInterval(refreshInterval);
+        alert('Your session has expired. Please save your work and login again.');
+      } else {
+        console.log('✅ Session refreshed');
+      }
+    }, 5 * 60 * 1000); // Every 5 minutes
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, []);
+
   async function loadBulkImportQueue() {
     console.log('📋 Loading bulk import queue...');
 
@@ -905,23 +925,6 @@ export default function AddPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // DEBUG: Test admin authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('🔐 Session email:', session?.user?.email);
-
-    const { data: adminCheck } = await supabase
-      .from('admins')
-      .select('email')
-      .eq('email', session?.user?.email)
-      .single();
-
-    console.log('✅ Admin check:', adminCheck);
-
-    if (!adminCheck) {
-      alert('ERROR: You are not in the admins table!');
-      return;
-    }
-
     if (!formData.name || !formData.address || !formData.city) {
       alert('Please fill in all required fields');
       return;
@@ -935,6 +938,15 @@ export default function AddPropertyPage() {
     setLoading(true);
 
     try {
+      // Get current session (already being refreshed automatically)
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Your session has expired. Please login again.');
+        router.push('/admin/login');
+        return;
+      }
+
       // Get the selected category name
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 

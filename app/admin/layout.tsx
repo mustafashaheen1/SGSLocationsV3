@@ -39,10 +39,11 @@ export default function AdminLayout({
     if (hasCheckedAuth.current) return;
     hasCheckedAuth.current = true;
 
+    const supabase = createClient();
+
     const checkAuth = async () => {
       try {
         console.log('[Admin Layout] Checking auth...');
-        const supabase = createClient();
 
         // Timeout after 3 seconds
         const timeoutId = setTimeout(() => {
@@ -50,16 +51,18 @@ export default function AdminLayout({
           router.push('/admin/login');
         }, 3000);
 
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Refresh session on mount
+        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
 
         clearTimeout(timeoutId);
 
         if (sessionError || !session) {
-          console.log('[Admin Layout] No session');
+          console.log('[Admin Layout] Session expired');
           router.push('/admin/login');
           return;
         }
 
+        // Check admin status
         const { data: adminData, error: adminError } = await supabase
           .from('admins')
           .select('id, email, role')
@@ -67,7 +70,7 @@ export default function AdminLayout({
           .maybeSingle();
 
         if (adminError || !adminData) {
-          console.log('[Admin Layout] Not found in admins table');
+          console.log('[Admin Layout] Not an admin');
           await supabase.auth.signOut();
           router.push('/admin/login');
           return;
@@ -82,6 +85,25 @@ export default function AdminLayout({
     };
 
     checkAuth();
+
+    // Set up automatic session refresh every 5 minutes
+    const refreshInterval = setInterval(async () => {
+      console.log('🔄 Auto-refreshing session...');
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+
+      if (error || !session) {
+        console.error('❌ Session refresh failed:', error);
+        clearInterval(refreshInterval);
+        router.push('/admin/login');
+      } else {
+        console.log('✅ Session refreshed successfully');
+      }
+    }, 5 * 60 * 1000); // Refresh every 5 minutes
+
+    // Cleanup interval on unmount
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, [pathname, router]);
 
   const handleLogout = async () => {
