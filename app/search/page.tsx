@@ -22,16 +22,29 @@ interface FilterCategory {
   options: string[];
 }
 
-function PropertyCard({ property }: { property: Property }) {
+function PropertyCard({ property }: { property: Property & { matchingImages?: string[] } }) {
   const router = useRouter();
   const [showLightbox, setShowLightbox] = useState(false);
   const swiperRef = useRef<any>(null);
 
-  const images = property.images && property.images.length > 0
+  // Get base images
+  let baseImages = property.images && property.images.length > 0
     ? property.images
     : property.primary_image
       ? [property.primary_image]
       : ['https://via.placeholder.com/800x600/e5e7eb/6b7280?text=No+Image'];
+
+  // If there are matching images from tag filters, show one of them first
+  let images = baseImages;
+  if (property.matchingImages && property.matchingImages.length > 0) {
+    // Pick a random matching image
+    const randomIndex = Math.floor(Math.random() * property.matchingImages.length);
+    const selectedMatchingImage = property.matchingImages[randomIndex];
+
+    // Remove the selected image from base images if it exists, then add it to the front
+    const filteredImages = baseImages.filter(img => img !== selectedMatchingImage);
+    images = [selectedMatchingImage, ...filteredImages];
+  }
 
   return (
     <>
@@ -416,15 +429,24 @@ export default function SearchPage() {
       // If we have tag filters, search property_images table
       if (selectedTags.length > 0) {
         // Find all property_ids that have images with ANY of the selected tags
+        // Also get the image URLs that match the tags
         const { data: propertyImages, error: imagesError } = await supabase
           .from('property_images')
-          .select('property_id')
+          .select('property_id, image_url')
           .overlaps('tags', selectedTags);
 
         if (imagesError) throw imagesError;
 
-        // Get unique property IDs
+        // Get unique property IDs and group matching images by property
         const propertyIds = Array.from(new Set(propertyImages?.map(img => img.property_id) || []));
+        const matchingImagesByProperty = new Map<string, string[]>();
+
+        propertyImages?.forEach(img => {
+          if (!matchingImagesByProperty.has(img.property_id)) {
+            matchingImagesByProperty.set(img.property_id, []);
+          }
+          matchingImagesByProperty.get(img.property_id)!.push(img.image_url);
+        });
 
         console.log('Found properties with matching tags:', propertyIds.length);
 
@@ -453,7 +475,14 @@ export default function SearchPage() {
         // Sort by exclusivity and name, then apply pagination
         if (unsortedData && unsortedData.length > 0) {
           const sortedData = sortLocationsByExclusivity(unsortedData);
-          const paginatedData = sortedData.slice(from, to + 1);
+
+          // Attach matching images to each property
+          const dataWithMatchingImages = sortedData.map(prop => ({
+            ...prop,
+            matchingImages: matchingImagesByProperty.get(prop.id) || []
+          }));
+
+          const paginatedData = dataWithMatchingImages.slice(from, to + 1);
 
           setProperties(prev => [...prev, ...paginatedData]);
           setPage(prev => prev + 1);
