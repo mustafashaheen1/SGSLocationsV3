@@ -40,6 +40,24 @@ function createS3Client() {
   });
 }
 
+/**
+ * Check if an albumkey already exists in the database
+ */
+async function albumKeyExists(albumkey: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('albumkey', albumkey)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking albumkey:', error);
+    return false;
+  }
+
+  return !!data;
+}
+
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -50,9 +68,22 @@ export async function POST(request: NextRequest) {
 
     console.log('=== SMUGMUG IMPORT STARTED ===');
     console.log('Album Key:', albumKey);
+    console.log('Property ID:', propertyId);
 
     if (!albumKey) {
       return NextResponse.json({ error: 'Album key required' }, { status: 400 });
+    }
+
+    // Check if this albumkey already exists
+    const alreadyExists = await albumKeyExists(albumKey);
+    if (alreadyExists) {
+      console.log('⚠️ AlbumKey already exists in database, skipping import');
+      return NextResponse.json({
+        error: 'Album already imported',
+        details: 'This SmugMug album has already been imported. Each album can only be imported once.',
+        albumkey: albumKey,
+        skipped: true
+      }, { status: 409 });
     }
 
     const apiKey = process.env.NEXT_PUBLIC_SMUGMUG_API_KEY;
@@ -279,6 +310,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Save albumkey to the property if propertyId is provided
+    if (propertyId && uploadedUrls.length > 0) {
+      console.log('💾 Saving albumkey to property...');
+      const { error: updateError } = await supabase
+        .from('properties')
+        .update({ albumkey: albumKey })
+        .eq('id', propertyId);
+
+      if (updateError) {
+        console.error('Failed to save albumkey:', updateError);
+      } else {
+        console.log('✓ AlbumKey saved to property');
+      }
+    }
+
     console.log('=== IMPORT COMPLETE ===');
     console.log(`✓ Successfully imported: ${uploadedUrls.length}`);
     console.log(`✗ Failed: ${errors.length}`);
@@ -290,6 +336,7 @@ export async function POST(request: NextRequest) {
       total: images.length,
       imported: uploadedUrls.length,
       errors: errors.length > 0 ? errors : undefined,
+      albumkey: albumKey,
       message: `Successfully imported ${uploadedUrls.length} of ${imagesToProcess.length} images`
     });
 
