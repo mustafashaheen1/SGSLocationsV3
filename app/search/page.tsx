@@ -349,13 +349,40 @@ export default function SearchPage() {
       const from = (page - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
       const query = searchParams.get('q');
+      const categoryParam = searchParams.get('category');
 
-      // If no filters are active, show all active properties
-      if (activeFilters.length === 0 && !query) {
+      // If no filters are active and no category/query, show all active properties
+      if (activeFilters.length === 0 && !query && !categoryParam) {
         const { data, error } = await supabase
           .from('properties')
           .select('*')
           .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          setProperties(prev => [...prev, ...data]);
+          setPage(prev => prev + 1);
+          if (data.length < ITEMS_PER_PAGE) {
+            setHasMore(false);
+          }
+        } else {
+          setHasMore(false);
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      // Handle category filter from URL
+      if (categoryParam && activeFilters.length === 0 && !query) {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active')
+          .contains('categories', [categoryParam])
           .order('created_at', { ascending: false })
           .range(from, to);
 

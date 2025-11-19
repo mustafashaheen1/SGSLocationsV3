@@ -43,13 +43,15 @@ export default function HomePage() {
         .order('display_order');
 
       if (categoriesData) {
-        // Get count for each category
+        // Get count for each category by checking the categories array in properties
         const categoriesWithCounts = await Promise.all(
           categoriesData.map(async (cat) => {
+            // Query properties where the categories array contains this category name
             const { count } = await supabase
-              .from('property_categories')
+              .from('properties')
               .select('*', { count: 'exact', head: true })
-              .eq('category_id', cat.id);
+              .eq('status', 'active')
+              .contains('categories', [cat.name]);
 
             return {
               ...cat,
@@ -238,7 +240,7 @@ export default function HomePage() {
             {categories.map((category) => (
               <Link
                 key={category.id}
-                href={`/search?category=${category.slug}`}
+                href={`/search?category=${encodeURIComponent(category.name)}`}
                 className="group relative h-48 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all"
               >
                 <Image
