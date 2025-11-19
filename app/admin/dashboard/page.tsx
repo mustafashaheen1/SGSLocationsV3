@@ -46,9 +46,10 @@ export default function AdminDashboard() {
         totalInquiries: inquiriesCount || 0,
       });
 
+      // Fetch recent properties - NO USER JOIN
       const { data: recentProps } = await supabase
         .from('properties')
-        .select('*, users(full_name, email)')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(2);
 
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
                   <div className="flex-1">
                     <p className="text-gray-900 font-medium">{item.name}</p>
                     <p className="text-gray-600 text-sm mt-1">
-                      Listed by {item.users?.full_name || item.users?.email || 'Unknown'} • {new Date(item.created_at).toLocaleDateString()}
+                      {item.city}, Texas • {new Date(item.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${

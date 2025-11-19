@@ -19,9 +19,10 @@ export default function PendingPropertiesPage() {
   async function fetchProperties() {
     setLoading(true);
     try {
+      // Fetch pending properties - NO USER JOIN
       const { data, error } = await supabase
         .from('properties')
-        .select('*, users(full_name, email)')
+        .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -120,8 +121,7 @@ export default function PendingPropertiesPage() {
     return (
       property.name?.toLowerCase().includes(searchLower) ||
       property.city?.toLowerCase().includes(searchLower) ||
-      property.users?.full_name?.toLowerCase().includes(searchLower) ||
-      property.users?.email?.toLowerCase().includes(searchLower)
+      property.address?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -167,7 +167,7 @@ export default function PendingPropertiesPage() {
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Image</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Property</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Owner</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Location</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Submitted</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
@@ -188,8 +188,8 @@ export default function PendingPropertiesPage() {
                         <div className="text-sm text-gray-500">{property.property_type}</div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm text-gray-900">{property.users?.full_name || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{property.users?.email}</div>
+                        <div className="text-sm text-gray-900">{property.property_type || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{property.address}</div>
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-900">
                         {property.city}, {property.county}
