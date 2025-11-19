@@ -99,7 +99,7 @@ export default function AddPropertyPage() {
 
       checkSmugMugAuth();
 
-      // Handle bulk import - wait a bit for tags to load
+      // Handle bulk import - wait for tags to load
       if (isBulkImport) {
         setTimeout(() => {
           loadBulkImportQueue();
@@ -129,7 +129,7 @@ export default function AddPropertyPage() {
       setAuthorizing(false);
       setCheckingAuth(false);
     }
-  }, []);
+  }, [isBulkImport]);
 
   // Load Google Maps API
   useEffect(() => {
@@ -231,11 +231,19 @@ export default function AddPropertyPage() {
         setCurrentImportIndex(index);
 
         if (index < queue.length) {
-          // Wait for tags to load first
-          if (availableTags.length === 0) {
-            await fetchSearchFilterTags();
-            await new Promise(resolve => setTimeout(resolve, 100));
+          // CRITICAL: Ensure tags are loaded before importing
+          console.log('⏳ Ensuring tags are loaded before import...');
+
+          let tagsToUse = availableTags;
+          if (tagsToUse.length === 0) {
+            console.log('📊 Tags not loaded yet, fetching now...');
+            tagsToUse = await fetchSearchFilterTags();
+
+            // Wait a moment for state to update
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
+
+          console.log(`✓ Tags ready: ${tagsToUse.length} tags available`);
 
           // Load the current album data
           const album = queue[index];
@@ -270,14 +278,14 @@ export default function AddPropertyPage() {
             setExtractingAddress(false);
           }
 
-          // IMPORTANT: Process the album WITHOUT asking for URL
+          // IMPORTANT: Process the album with tags available
           if (album.albumKey) {
             console.log('📸 Auto-importing album with key:', album.albumKey);
             setSmugmugUrl(album.albumKey);
 
-            // Call the import directly without user interaction
+            // Call the import with tags ready
             setTimeout(async () => {
-              await handleSmugmugImportForBulk(album.albumKey);
+              await handleSmugmugImportForBulk(album.albumKey, tagsToUse);
             }, 500);
           }
         }
@@ -287,7 +295,7 @@ export default function AddPropertyPage() {
     }
   }
 
-  async function handleSmugmugImportForBulk(albumKey: string) {
+  async function handleSmugmugImportForBulk(albumKey: string, tagsForAnalysis?: FilterTag[]) {
     console.log('🚀 Starting bulk import for album:', albumKey);
 
     setImportingFromSmugmug(true);
@@ -334,11 +342,24 @@ export default function AddPropertyPage() {
           importedImages.push({ url, tags: [], isSmugmug: true });
         }
 
-        // Analyze images if tags are available
-        if (availableTags.length > 0) {
+        // Use the tags that were passed in or the current state
+        const tagsToUse = tagsForAnalysis || availableTags;
+
+        console.log(`🔍 Starting analysis with ${tagsToUse.length} tags`);
+
+        if (tagsToUse.length > 0) {
           for (let i = 0; i < importedImages.length; i++) {
-            const suggestedTags = await analyzeImageAndTag(importedImages[i].url, i, importedImages.length);
+            console.log(`\n📸 Analyzing image ${i + 1}/${importedImages.length}`);
+
+            const suggestedTags = await analyzeImageAndTag(
+              importedImages[i].url,
+              i,
+              importedImages.length,
+              tagsToUse // Pass tags explicitly to the function
+            );
+
             importedImages[i].tags = suggestedTags;
+            console.log(`✓ Image ${i + 1} tagged with ${suggestedTags.length} tags`);
           }
         } else {
           console.warn('⚠️ No tags available, skipping analysis');
@@ -479,7 +500,7 @@ export default function AddPropertyPage() {
       }));
 
       setAvailableTags(formattedTags);
-      setExpandedFilters(new Set());
+      setExpandedFilters(new Set<string>());
 
       return formattedTags;
 
