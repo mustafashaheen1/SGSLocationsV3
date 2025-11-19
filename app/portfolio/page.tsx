@@ -189,6 +189,7 @@ function getMockProperties(): Property[] {
     year_built: null,
     features: [],
     categories: [],
+    property_tags: [],
     permits_available: false,
     permit_details: null,
     daily_rate: 0,

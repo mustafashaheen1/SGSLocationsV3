@@ -51,6 +51,7 @@ export interface Property {
   year_built: number | null;
   features: string[];
   categories: string[];
+  property_tags: string[];
   permits_available: boolean;
   permit_details: string | null;
   daily_rate: number;

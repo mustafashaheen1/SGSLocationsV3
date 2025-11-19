@@ -92,23 +92,71 @@ export default function PropertyDetailPage() {
       if (propertyData) {
         setProperty(propertyData);
 
-        const { data: similarData } = await supabase
+        // Fetch all properties to filter on the client side
+        const { data: allProperties } = await supabase
           .from('properties')
           .select('*')
           .neq('id', propertyData.id)
-          .limit(4);
+          .eq('status', 'active');
 
-        const { data: nearbyData } = await supabase
-          .from('properties')
-          .select('*')
-          .neq('id', propertyData.id)
-          .limit(4);
+        if (allProperties) {
+          // Filter for similar locations (matching categories AND tags)
+          const currentCategories = propertyData.categories || [];
+          const currentTags = propertyData.property_tags || [];
 
-        setSimilarProperties(similarData || []);
-        setNearbyProperties(nearbyData || []);
+          const similarLocations = allProperties.filter(location => {
+            // Check if at least one category matches
+            const hasMatchingCategory = location.categories?.some((cat: string) =>
+              currentCategories.includes(cat)
+            );
+
+            // Check if at least one tag matches
+            const hasMatchingTag = location.property_tags?.some((tag: string) =>
+              currentTags.includes(tag)
+            );
+
+            // Must have both matching category AND matching tag
+            return hasMatchingCategory && hasMatchingTag;
+          });
+
+          // Sort by number of matching attributes (most relevant first)
+          similarLocations.sort((a, b) => {
+            const aMatches = countMatches(a, propertyData);
+            const bMatches = countMatches(b, propertyData);
+            return bMatches - aMatches;
+          });
+
+          // Limit to 12 results
+          setSimilarProperties(similarLocations.slice(0, 12));
+
+          // For nearby locations, just use other properties (can be enhanced with actual geo distance)
+          const nearbyLocations = allProperties
+            .filter(p => p.city === propertyData.city)
+            .slice(0, 12);
+          setNearbyProperties(nearbyLocations);
+        }
       }
       setLoading(false);
     }
+
+    // Helper function to count matching attributes
+    function countMatches(location: Property, currentProperty: Property): number {
+      const currentCategories = currentProperty.categories || [];
+      const currentTags = currentProperty.property_tags || [];
+      const locationCategories = location.categories || [];
+      const locationTags = location.property_tags || [];
+
+      const categoryMatches = locationCategories.filter((cat: string) =>
+        currentCategories.includes(cat)
+      ).length;
+
+      const tagMatches = locationTags.filter((tag: string) =>
+        currentTags.includes(tag)
+      ).length;
+
+      return categoryMatches + tagMatches;
+    }
+
     fetchData();
   }, [params.id]);
 
