@@ -42,6 +42,8 @@ export interface Property {
   city: string;
   county: string | null;
   zipcode: string | null;
+  latitude: number | null;
+  longitude: number | null;
   property_type: string;
   square_footage: number | null;
   lot_size: number | null;

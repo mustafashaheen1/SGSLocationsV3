@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 import { generateLocationPDF } from '@/lib/pdf-generator';
+import { calculateDistance, formatDistance } from '@/lib/distance';
 
 interface ImageWithCategory {
   url: string;
@@ -129,11 +130,30 @@ export default function PropertyDetailPage() {
           // Limit to 12 results
           setSimilarProperties(similarLocations.slice(0, 12));
 
-          // For nearby locations, just use other properties (can be enhanced with actual geo distance)
-          const nearbyLocations = allProperties
-            .filter(p => p.city === propertyData.city)
-            .slice(0, 12);
-          setNearbyProperties(nearbyLocations);
+          // For nearby locations, calculate actual distances if coordinates are available
+          if (propertyData.latitude && propertyData.longitude) {
+            const nearbyLocations = allProperties
+              .filter(p => p.latitude && p.longitude)
+              .map(prop => ({
+                ...prop,
+                distance: calculateDistance(
+                  propertyData.latitude!,
+                  propertyData.longitude!,
+                  prop.latitude!,
+                  prop.longitude!
+                )
+              }))
+              .sort((a, b) => a.distance - b.distance)
+              .slice(0, 12);
+
+            setNearbyProperties(nearbyLocations as any);
+          } else {
+            // Fallback: use same city if no coordinates
+            const nearbyLocations = allProperties
+              .filter(p => p.city === propertyData.city)
+              .slice(0, 12);
+            setNearbyProperties(nearbyLocations);
+          }
         }
       }
       setLoading(false);
@@ -1135,8 +1155,12 @@ function LocationSection({
           {title}
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-          {properties.map((prop, index) => (
-            <PropertyCard key={prop.id} property={prop} distance={showDistance ? `.${index + 1}2 miles away` : undefined} />
+          {properties.map((prop) => (
+            <PropertyCard
+              key={prop.id}
+              property={prop}
+              distance={showDistance && (prop as any).distance ? formatDistance((prop as any).distance) : undefined}
+            />
           ))}
         </div>
       </div>

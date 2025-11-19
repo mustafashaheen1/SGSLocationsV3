@@ -85,6 +85,8 @@ export default function AddPropertyPage() {
     city: '',
     state: 'Texas',
     zipcode: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     category_id: '',
     is_featured: false,
     is_exclusive: false,
@@ -526,7 +528,7 @@ export default function AddPropertyPage() {
       const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
-        fields: ['address_components', 'formatted_address']
+        fields: ['address_components', 'formatted_address', 'geometry']
       });
 
       autocomplete.addListener('place_changed', () => {
@@ -569,12 +571,22 @@ export default function AddPropertyPage() {
           ? `${streetNumber} ${route}`
           : route;
 
+        // Extract coordinates from geometry
+        const latitude = place.geometry?.location?.lat() || null;
+        const longitude = place.geometry?.location?.lng() || null;
+
+        if (latitude && longitude) {
+          console.log('📍 Coordinates captured:', { latitude, longitude });
+        }
+
         setFormData(prev => ({
           ...prev,
           address: fullAddress,
           city: city || prev.city,
           state: state || prev.state,
-          zipcode: zipcode || prev.zipcode
+          zipcode: zipcode || prev.zipcode,
+          latitude,
+          longitude
         }));
       });
 
@@ -958,6 +970,8 @@ export default function AddPropertyPage() {
         city: formData.city,
         county: formData.state, // Map state to county field
         zipcode: formData.zipcode || '',
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         is_featured: formData.is_featured,
         is_exclusive: formData.is_exclusive,
         status: 'active',

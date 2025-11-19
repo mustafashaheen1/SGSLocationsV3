@@ -180,6 +180,8 @@ function getMockProperties(): Property[] {
     city: 'Dallas',
     county: null,
     zipcode: null,
+    latitude: null,
+    longitude: null,
     property_type: 'Residential',
     square_footage: null,
     lot_size: null,
