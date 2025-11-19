@@ -13,7 +13,7 @@ import { ArrowLeft, Upload, X, Camera, Download, Tag, ChevronDown } from 'lucide
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabase';
+import { supabase, albumKeyExists } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 import { getAddressFromGoogleMapsLink } from '@/lib/google-maps-utils';
 import { normalizeUrl } from '@/lib/url-utils';
@@ -87,6 +87,7 @@ export default function AddPropertyPage() {
     zipcode: '',
     latitude: null as number | null,
     longitude: null as number | null,
+    albumkey: null as string | null,
     category_id: '',
     is_featured: false,
     is_exclusive: false,
@@ -196,6 +197,7 @@ export default function AddPropertyPage() {
             description: album.description || album.Description || '',
             city: album.location?.city || '',
             state: album.location?.state || 'Texas',
+            albumkey: album.albumKey || album.AlbumKey || null,
           }));
 
           // If album has Google Maps link, extract address
@@ -959,6 +961,25 @@ export default function AddPropertyPage() {
         return;
       }
 
+      // Check for duplicate albumkey if present
+      if (formData.albumkey) {
+        console.log('🔍 Checking for duplicate albumkey:', formData.albumkey);
+        const isDuplicate = await albumKeyExists(formData.albumkey);
+
+        if (isDuplicate) {
+          alert(`❌ This SmugMug album has already been imported!\n\nAlbumKey: ${formData.albumkey}\n\nSkipping to next property...`);
+
+          // If in bulk import mode, move to next property
+          if (isBulkImport && currentImportIndex < importQueue.length - 1) {
+            moveToNextProperty();
+          } else {
+            setLoading(false);
+          }
+          return;
+        }
+        console.log('✓ No duplicate found, proceeding with import');
+      }
+
       // Get the selected category name
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 
@@ -972,6 +993,7 @@ export default function AddPropertyPage() {
         zipcode: formData.zipcode || '',
         latitude: formData.latitude,
         longitude: formData.longitude,
+        albumkey: formData.albumkey,
         is_featured: formData.is_featured,
         is_exclusive: formData.is_exclusive,
         status: 'active',

@@ -199,6 +199,7 @@ function getMockProperties(): Property[] {
     primary_image: `https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800`,
     status: 'active',
     owner_id: null,
+    albumkey: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }));

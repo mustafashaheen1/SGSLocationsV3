@@ -34,6 +34,46 @@ export function createClient() {
 
 console.log('✅ Supabase client created');
 
+/**
+ * Check if a property with the given SmugMug albumkey already exists
+ * @param albumkey SmugMug album identifier
+ * @returns True if property exists, false otherwise
+ */
+export async function albumKeyExists(albumkey: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('albumkey', albumkey)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking albumkey:', error);
+    return false;
+  }
+
+  return data !== null;
+}
+
+/**
+ * Get property by SmugMug albumkey
+ * @param albumkey SmugMug album identifier
+ * @returns Property if found, null otherwise
+ */
+export async function getPropertyByAlbumKey(albumkey: string): Promise<Property | null> {
+  const { data, error } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('albumkey', albumkey)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching property by albumkey:', error);
+    return null;
+  }
+
+  return data;
+}
+
 export interface Property {
   id: string;
   name: string;
@@ -61,6 +101,7 @@ export interface Property {
   primary_image: string | null;
   status: string;
   owner_id: string | null;
+  albumkey: string | null;
   is_featured?: boolean;
   is_exclusive?: boolean;
   view_count?: number;
