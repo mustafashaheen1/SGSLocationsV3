@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Search, ChevronDown, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
+import { sortLocationsByExclusivity } from '@/lib/utils';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Scrollbar, FreeMode } from 'swiper/modules';
@@ -357,7 +358,8 @@ export default function SearchPage() {
           .from('properties')
           .select('*')
           .eq('status', 'active')
-          .order('created_at', { ascending: false })
+          .order('is_exclusive', { ascending: false, nullsFirst: false })
+          .order('name', { ascending: true })
           .range(from, to);
 
         if (error) throw error;
@@ -383,7 +385,8 @@ export default function SearchPage() {
           .select('*')
           .eq('status', 'active')
           .contains('categories', [categoryParam])
-          .order('created_at', { ascending: false })
+          .order('is_exclusive', { ascending: false, nullsFirst: false })
+          .order('name', { ascending: true })
           .range(from, to);
 
         if (error) throw error;
@@ -436,23 +439,25 @@ export default function SearchPage() {
           .from('properties')
           .select('*')
           .eq('status', 'active')
-          .in('id', propertyIds)
-          .order('created_at', { ascending: false })
-          .range(from, to);
+          .in('id', propertyIds);
 
         // Apply text search if present
         if (query) {
           propertiesQuery = propertiesQuery.or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%`);
         }
 
-        const { data, error } = await propertiesQuery;
+        const { data: unsortedData, error } = await propertiesQuery;
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
-          setProperties(prev => [...prev, ...data]);
+        // Sort by exclusivity and name, then apply pagination
+        if (unsortedData && unsortedData.length > 0) {
+          const sortedData = sortLocationsByExclusivity(unsortedData);
+          const paginatedData = sortedData.slice(from, to + 1);
+
+          setProperties(prev => [...prev, ...paginatedData]);
           setPage(prev => prev + 1);
-          if (data.length < ITEMS_PER_PAGE) {
+          if (paginatedData.length < ITEMS_PER_PAGE) {
             setHasMore(false);
           }
         } else {
@@ -465,7 +470,8 @@ export default function SearchPage() {
           .select('*')
           .eq('status', 'active')
           .or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%`)
-          .order('created_at', { ascending: false })
+          .order('is_exclusive', { ascending: false, nullsFirst: false })
+          .order('name', { ascending: true })
           .range(from, to);
 
         if (error) throw error;

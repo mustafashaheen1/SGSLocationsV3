@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
+import { sortLocationsByExclusivity } from '@/lib/utils';
 
 function PropertyCard({ property }: { property: Property }) {
   const images = property.images.length > 0 ? property.images : [property.primary_image || ''];
@@ -63,11 +64,14 @@ export default function LocationLibraryPage() {
     let query = supabase.from('properties').select('*').eq('status', 'active');
 
     if (category === 'exclusives') {
-      query = query.eq('is_exclusive', true);
+      query = query.eq('is_exclusive', true).order('name', { ascending: true });
     } else if (category === 'new') {
       query = query.order('created_at', { ascending: false }).limit(20);
     } else if (category === 'most-viewed') {
       query = query.order('created_at', { ascending: false }).limit(20);
+    } else {
+      // For 'all' and other categories, sort by exclusivity then name
+      query = query.order('is_exclusive', { ascending: false, nullsFirst: false }).order('name', { ascending: true });
     }
 
     const { data } = await query;
