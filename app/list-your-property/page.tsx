@@ -1,6 +1,13 @@
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Script from 'next/script';
 import { Upload, ChevronDown, X, Tag as TagIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -38,7 +45,6 @@ export default function ListYourPropertyPage() {
     phoneNumber: '',
     internationalPhone: '',
     streetAddress: '',
-    addressLine2: '',
     city: '',
     state: '',
     zipCode: '',
@@ -64,6 +70,9 @@ export default function ListYourPropertyPage() {
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [showImageTagModal, setShowImageTagModal] = useState(false);
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
 
   useEffect(() => {
     async function fetchTerms() {
@@ -144,6 +153,96 @@ export default function ListYourPropertyPage() {
     acc[tag.filter_name].push(tag);
     return acc;
   }, {} as Record<string, FilterTag[]>);
+
+  function initializeGoogleAutocomplete() {
+    const addressInput = addressInputRef.current;
+
+    if (!addressInput) {
+      console.log('⚠️ Address input not found');
+      return;
+    }
+
+    // Check if Google Maps is loaded
+    if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
+      console.log('⚠️ Google Maps not loaded yet, will retry...');
+      setTimeout(() => initializeGoogleAutocomplete(), 500);
+      return;
+    }
+
+    // Clean up existing autocomplete instance if it exists
+    if (autocompleteRef.current) {
+      try {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      } catch (e) {
+        console.log('Could not clear listeners:', e);
+      }
+      autocompleteRef.current = null;
+    }
+
+    console.log('🔧 Initializing Google Autocomplete');
+
+    try {
+      const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+        fields: ['address_components', 'formatted_address', 'geometry']
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+
+        if (!place.address_components) {
+          console.log('No address components found');
+          return;
+        }
+
+        console.log('✓ Address selected from autocomplete');
+
+        let streetNumber = '';
+        let route = '';
+        let city = '';
+        let state = '';
+        let zipcode = '';
+
+        place.address_components.forEach((component: any) => {
+          const types = component.types;
+
+          if (types.includes('street_number')) {
+            streetNumber = component.long_name;
+          }
+          if (types.includes('route')) {
+            route = component.long_name;
+          }
+          if (types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (types.includes('administrative_area_level_1')) {
+            state = component.long_name;
+          }
+          if (types.includes('postal_code')) {
+            zipcode = component.long_name;
+          }
+        });
+
+        const fullAddress = streetNumber && route
+          ? `${streetNumber} ${route}`
+          : route;
+
+        setFormData(prev => ({
+          ...prev,
+          streetAddress: fullAddress,
+          city: city || prev.city,
+          state: state || prev.state,
+          zipCode: zipcode || prev.zipCode
+        }));
+      });
+
+      autocompleteRef.current = autocomplete;
+      console.log('✅ Google Autocomplete initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing autocomplete:', error);
+    }
+  }
 
   function toggleFilterExpanded(filterName: string) {
     setExpandedFilters(prev => {
@@ -318,8 +417,22 @@ export default function ListYourPropertyPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-6 pt-3 pb-8">
+    <>
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log('✅ Google Maps script loaded');
+          setGoogleMapsLoaded(true);
+          setTimeout(() => initializeGoogleAutocomplete(), 500);
+        }}
+        onError={(e) => {
+          console.error('❌ Error loading Google Maps script:', e);
+        }}
+      />
+
+      <main className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-6 pt-3 pb-8">
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-red-600 mb-2 mt-0">List Your Property</h1>
           <p className="text-lg text-gray-600">
@@ -431,6 +544,7 @@ export default function ListYourPropertyPage() {
                     Street Address <span className="text-red-600">*</span>
                   </label>
                   <input
+                    ref={addressInputRef}
                     type="text"
                     id="streetAddress"
                     name="streetAddress"
@@ -439,22 +553,9 @@ export default function ListYourPropertyPage() {
                     className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
                       errors.streetAddress ? 'border-red-500' : 'border-gray-300'
                     }`}
+                    placeholder="Start typing to search..."
                   />
                   {errors.streetAddress && <p className="text-red-600 text-sm mt-1">{errors.streetAddress}</p>}
-                </div>
-
-                <div className="mb-4">
-                  <label htmlFor="addressLine2" className="block font-medium text-gray-700 text-sm mb-1">
-                    Address Line 2
-                  </label>
-                  <input
-                    type="text"
-                    id="addressLine2"
-                    name="addressLine2"
-                    value={formData.addressLine2}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
-                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
@@ -507,7 +608,7 @@ export default function ListYourPropertyPage() {
                       errors.state ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
-                    <option value="">Select County</option>
+                    <option value="">Select State</option>
                     {TEXAS_COUNTIES.map(county => (
                       <option key={county} value={county}>{county}</option>
                     ))}
@@ -1101,7 +1202,8 @@ export default function ListYourPropertyPage() {
             </div>
           </div>
         )}
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }

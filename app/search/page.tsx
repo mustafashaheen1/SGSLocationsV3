@@ -1112,14 +1112,18 @@ export default function SearchPage() {
       `}</style>
 
       <div className="search-page">
-        <div className="filter-bar" ref={dropdownRef}>
+        <div className="filter-bar">
           <div className="filter-row">
             {Object.entries(filterCategories).map(([key, category]) => {
               const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
               const filteredOptions = getFilteredOptions(key, category.options);
 
               return (
-                <div key={key} className="filter-dropdown">
+                <div
+                  key={key}
+                  className="filter-dropdown"
+                  ref={openDropdown === key ? dropdownRef : null}
+                >
                   <button
                     className={`dropdown-toggle ${hasActive > 0 ? 'has-active' : ''}`}
                     onClick={() => setOpenDropdown(openDropdown === key ? null : key)}
