@@ -365,7 +365,12 @@ export default function AddPropertyPage() {
           console.warn('⚠️ No tags available, skipping analysis');
         }
 
-        setImages(prev => [...prev, ...importedImages]);
+        setImages(prev => {
+          const updated = [...prev, ...importedImages];
+          // Auto-sync photo tags to property tags
+          setTimeout(() => syncPhotoTagsToProperty(updated), 0);
+          return updated;
+        });
         setImportProgress(`✓ Imported and analyzed ${imported} images`);
         setAnalyzingImages(false);
 
@@ -523,6 +528,26 @@ export default function AddPropertyPage() {
     }
   }
 
+  // Sync photo tags to property tags
+  function syncPhotoTagsToProperty(images: ImageWithTags[]) {
+    // Collect all unique tags from all images
+    const allPhotoTags = new Set<string>();
+
+    images.forEach(image => {
+      image.tags.forEach(tag => {
+        allPhotoTags.add(tag);
+      });
+    });
+
+    // Add these tags to property tags (avoiding duplicates)
+    setPropertyTags(prev => {
+      const combined = new Set([...prev, ...Array.from(allPhotoTags)]);
+      return Array.from(combined);
+    });
+
+    console.log(`🔄 Synced ${allPhotoTags.size} unique tags from photos to property`);
+  }
+
   // SIMPLIFIED analyze function - no waiting logic
   async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number, tagsToUse?: FilterTag[]): Promise<string[]> {
     try {
@@ -618,7 +643,12 @@ export default function AddPropertyPage() {
         newImages[i].tags = suggestedTags;
       }
 
-      setImages(prev => [...prev, ...newImages]);
+      setImages(prev => {
+        const updated = [...prev, ...newImages];
+        // Auto-sync photo tags to property tags
+        setTimeout(() => syncPhotoTagsToProperty(updated), 0);
+        return updated;
+      });
 
       setAnalysisProgress({ current: files.length, total: files.length, status: 'Complete!' });
 
@@ -645,15 +675,23 @@ export default function AddPropertyPage() {
   }
 
   function toggleImageTag(imageIndex: number, tagName: string) {
-    setImages(prev => prev.map((img, i) => {
-      if (i === imageIndex) {
-        const tags = img.tags.includes(tagName)
-          ? img.tags.filter(t => t !== tagName)
-          : [...img.tags, tagName];
-        return { ...img, tags };
-      }
-      return img;
-    }));
+    setImages(prev => {
+      const updated = prev.map((img, i) => {
+        if (i === imageIndex) {
+          const isRemoving = img.tags.includes(tagName);
+          const tags = isRemoving
+            ? img.tags.filter(t => t !== tagName)
+            : [...img.tags, tagName];
+          return { ...img, tags };
+        }
+        return img;
+      });
+
+      // Auto-sync photo tags to property tags after update
+      setTimeout(() => syncPhotoTagsToProperty(updated), 0);
+
+      return updated;
+    });
   }
 
   function togglePropertyTag(tagName: string) {
@@ -1131,7 +1169,10 @@ export default function AddPropertyPage() {
                     Property Search Filter Tags
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Assign tags that describe this property overall (separate from individual image tags)
+                    Tags from individual photos are automatically added here. You can also manually add/remove property-level tags.
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1 font-medium">
+                    ✨ Auto-synced from photo tags
                   </p>
                 </div>
                 {propertyTags.length > 0 && (
