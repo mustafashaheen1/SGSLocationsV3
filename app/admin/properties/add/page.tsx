@@ -99,6 +99,13 @@ export default function AddPropertyPage() {
 
       checkSmugMugAuth();
 
+      // Initialize Google Autocomplete for non-bulk mode
+      if (!isBulkImport) {
+        setTimeout(() => {
+          initializeGoogleAutocomplete();
+        }, 500);
+      }
+
       // Handle bulk import - wait for tags to load
       if (isBulkImport) {
         setTimeout(() => {
@@ -282,6 +289,11 @@ export default function AddPropertyPage() {
           if (album.albumKey) {
             console.log('📸 Auto-importing album with key:', album.albumKey);
             setSmugmugUrl(album.albumKey);
+
+            // Re-initialize Google Autocomplete after setting address
+            setTimeout(() => {
+              initializeGoogleAutocomplete();
+            }, 300);
 
             // Call the import with tags ready
             setTimeout(async () => {
@@ -546,6 +558,80 @@ export default function AddPropertyPage() {
     });
 
     console.log(`🔄 Synced ${allPhotoTags.size} unique tags from photos to property`);
+  }
+
+  // Initialize Google Autocomplete
+  function initializeGoogleAutocomplete() {
+    const addressInput = document.getElementById('address-input') as HTMLInputElement;
+
+    if (!addressInput) {
+      console.log('⚠️ Address input not found, retrying...');
+      setTimeout(initializeGoogleAutocomplete, 200);
+      return;
+    }
+
+    // Check if Google Maps is loaded
+    if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
+      console.log('⚠️ Google Maps not loaded yet, retrying...');
+      setTimeout(initializeGoogleAutocomplete, 500);
+      return;
+    }
+
+    console.log('✓ Initializing Google Autocomplete');
+
+    const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
+      types: ['address'],
+      componentRestrictions: { country: 'us' }
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+
+      if (!place.address_components) {
+        console.log('No address components found');
+        return;
+      }
+
+      console.log('✓ Address selected from autocomplete');
+
+      let streetNumber = '';
+      let streetName = '';
+      let city = '';
+      let state = '';
+      let zipcode = '';
+
+      place.address_components.forEach((component: any) => {
+        const types = component.types;
+
+        if (types.includes('street_number')) {
+          streetNumber = component.long_name;
+        }
+        if (types.includes('route')) {
+          streetName = component.long_name;
+        }
+        if (types.includes('locality')) {
+          city = component.long_name;
+        }
+        if (types.includes('administrative_area_level_1')) {
+          state = component.short_name;
+        }
+        if (types.includes('postal_code')) {
+          zipcode = component.long_name;
+        }
+      });
+
+      const fullAddress = streetNumber && streetName
+        ? `${streetNumber} ${streetName}`
+        : streetName;
+
+      setFormData(prev => ({
+        ...prev,
+        address: fullAddress,
+        city,
+        state,
+        zipcode
+      }));
+    });
   }
 
   // SIMPLIFIED analyze function - no waiting logic
@@ -886,6 +972,11 @@ export default function AddPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (!formData.name || !formData.address || !formData.city) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
     if (images.length < 10) {
       alert('Please upload at least 10 images');
       return;
@@ -894,38 +985,82 @@ export default function AddPropertyPage() {
     setLoading(true);
 
     try {
+      // Get the selected category name
+      const selectedCategory = categories.find(c => c.id === formData.category_id);
+
+      // Prepare property data with CORRECT schema
+      const propertyData: any = {
+        name: formData.name,
+        description: formData.description || '',
+        address: formData.address,
+        city: formData.city,
+        county: formData.state, // Map state to county field
+        zipcode: formData.zipcode || '',
+        is_featured: formData.is_featured,
+        is_exclusive: formData.is_exclusive,
+        status: 'active',
+        property_type: 'Residential',
+        // Use categories ARRAY, not category_id
+        categories: selectedCategory ? [selectedCategory.name] : [],
+        // Add property-level tags
+        property_tags: propertyTags,
+        features: [],
+        permits_available: false,
+        daily_rate: '0'
+      };
+
+      console.log('Submitting property data:', propertyData);
+
+      // Insert property
       const { data: property, error: propertyError } = await supabase
         .from('properties')
-        .insert([{
-          ...formData,
-          status: 'pending',
-          user_id: null,
-          search_tags: propertyTags
-        }])
+        .insert([propertyData])
         .select()
         .single();
 
-      if (propertyError) throw propertyError;
+      if (propertyError) {
+        console.error('Property insert error:', propertyError);
+        throw new Error(propertyError.message);
+      }
 
-      const propertyImages = images.map((img, index) => ({
+      console.log('✓ Property created:', property.id);
+
+      // Insert images with tags
+      const imageRecords = images.map((img, index) => ({
         property_id: property.id,
-        url: img.url,
-        is_primary: index === 0,
+        image_url: img.url,
         display_order: index,
-        search_tags: img.tags
+        is_primary: index === 0,
+        tags: img.tags || []
       }));
 
       const { error: imagesError } = await supabase
         .from('property_images')
-        .insert(propertyImages);
+        .insert(imageRecords);
 
-      if (imagesError) throw imagesError;
+      if (imagesError) {
+        console.error('Images insert error:', imagesError);
+        throw new Error(imagesError.message);
+      }
 
-      if (isBulkImport && importQueue.length > 0) {
+      console.log(`✓ Inserted ${imageRecords.length} images with tags`);
+
+      alert('✓ Property created successfully!');
+
+      // Check if there are more properties in the bulk import queue
+      if (isBulkImport && currentImportIndex < importQueue.length - 1) {
         moveToNextProperty();
+      } else if (isBulkImport) {
+        // Queue is complete
+        localStorage.removeItem('sgs_import_queue');
+        localStorage.removeItem('sgs_import_current_index');
+        alert('✓ All properties imported successfully!');
+        router.push('/admin/properties');
       } else {
+        // Single property add
         router.push('/admin/properties');
       }
+
     } catch (error: any) {
       console.error('Error creating property:', error);
       alert('Error creating property: ' + error.message);
@@ -1058,6 +1193,7 @@ export default function AddPropertyPage() {
             <input
               ref={addressInputRef}
               type="text"
+              id="address-input"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
