@@ -655,11 +655,17 @@ export default function SearchPage() {
 
   useEffect(() => {
     // Don't load if we're currently restoring a saved search
+    const shouldRestore = searchParams.get('restore');
+    if (shouldRestore === 'true') {
+      console.log('Skipping initial load - restoration in progress');
+      return;
+    }
+
     if (page === 1 && properties.length === 0 && !loading && !isRestoring) {
       console.log('Initial load triggered, activeFilters:', activeFilters);
       loadMoreProperties();
     }
-  }, [page, properties.length, isRestoring]);
+  }, [page, properties.length, isRestoring, searchParams]);
 
   useEffect(() => {
     const handleScroll = () => {
