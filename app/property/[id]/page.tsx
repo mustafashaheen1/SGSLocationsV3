@@ -1104,6 +1104,13 @@ export default function PropertyDetailPage() {
         >
           <Plus style={{ width: '28px', height: '28px', color: '#fff' }} />
         </button>
+
+        {/* Contact Form Modal */}
+        <ContactFormModal
+          isOpen={showContactModal}
+          onClose={() => setShowContactModal(false)}
+          propertyName={property?.name}
+        />
       </main>
     </>
   );
@@ -1250,13 +1257,6 @@ function Footer() {
           © {new Date().getFullYear()} Image Locations. All rights reserved.
         </div>
       </div>
-
-      {/* Contact Form Modal */}
-      <ContactFormModal
-        isOpen={showContactModal}
-        onClose={() => setShowContactModal(false)}
-        propertyName={property?.name}
-      />
     </footer>
   );
 }
