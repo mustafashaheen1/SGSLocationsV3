@@ -95,9 +95,55 @@ export default function ListYourPropertyPage() {
       }
     }
 
+    async function fetchUserProfile() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // Fetch user profile from users table
+          const { data: profile } = await supabase
+            .from('users')
+            .select('full_name, email, phone')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profile) {
+            // Split full name into first and last name
+            const nameParts = profile.full_name?.split(' ') || [];
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            // Auto-fill form fields
+            setFormData(prev => ({
+              ...prev,
+              firstName,
+              lastName,
+              email: profile.email || user.email || '',
+              phoneNumber: profile.phone || '',
+            }));
+          } else {
+            // If no profile in users table, use auth metadata
+            const nameParts = user.user_metadata?.full_name?.split(' ') || [];
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            setFormData(prev => ({
+              ...prev,
+              firstName,
+              lastName,
+              email: user.email || '',
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    }
+
     fetchTerms();
     fetchCategories();
     fetchTags();
+    fetchUserProfile();
   }, []);
 
   async function fetchCategories() {
