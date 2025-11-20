@@ -494,7 +494,7 @@ export default function SearchPage() {
 
           if (searchData) {
             // Filter to only include properties that also match the tag filters
-            unsortedData = searchData.filter(prop => propertyIds.includes(prop.id));
+            unsortedData = searchData.filter((prop: Property) => propertyIds.includes(prop.id));
           }
         } else {
           // No text search, just fetch properties by IDs
