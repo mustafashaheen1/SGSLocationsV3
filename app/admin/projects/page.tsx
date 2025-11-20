@@ -1,12 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, Project, Property } from '@/lib/supabase';
+import { supabase, Project } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
+
+// Simplified type for property dropdown
+type PropertyOption = {
+  id: string;
+  name: string;
+  city: string;
+};
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<PropertyOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [uploading, setUploading] = useState(false);
