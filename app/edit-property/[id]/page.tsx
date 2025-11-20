@@ -109,6 +109,9 @@ export default function EditPropertyPage() {
         return;
       }
 
+      // Check if property was previously approved (active)
+      const wasActive = property?.status === 'active';
+
       const { error } = await supabase
         .from('properties')
         .update({
@@ -128,6 +131,7 @@ export default function EditPropertyPage() {
           daily_rate: formData.daily_rate ? parseFloat(formData.daily_rate) : null,
           permit_details: formData.permit_details,
           permits_available: formData.permits_available,
+          status: wasActive ? 'pending' : property?.status, // Set to pending if was active
           updated_at: new Date().toISOString(),
         })
         .eq('id', propertyId)
@@ -135,7 +139,11 @@ export default function EditPropertyPage() {
 
       if (error) throw error;
 
-      setMessage({ type: 'success', text: 'Property updated successfully!' });
+      const successMessage = wasActive
+        ? 'Property updated successfully! Your changes will be reviewed by an admin before going live again.'
+        : 'Property updated successfully!';
+
+      setMessage({ type: 'success', text: successMessage });
       setTimeout(() => {
         router.push('/dashboard');
       }, 2000);
@@ -169,12 +177,12 @@ export default function EditPropertyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ paddingTop: '110px' }}>
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-6">
+    <div className="min-h-screen bg-gray-50" style={{ paddingTop: '80px' }}>
+      <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="mb-4">
           <button
             onClick={() => router.push('/dashboard')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard

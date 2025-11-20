@@ -496,6 +496,7 @@ export default function ListYourPropertyPage() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          <fieldset disabled={isSubmitting} className="disabled:opacity-60">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* LEFT COLUMN */}
             <div>
@@ -1147,6 +1148,7 @@ export default function ListYourPropertyPage() {
               )}
             </button>
           </div>
+          </fieldset>
         </form>
 
         {/* Image Tag Modal */}
