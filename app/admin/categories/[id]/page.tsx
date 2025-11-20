@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 
@@ -60,38 +60,6 @@ export default function CategoryDetailPage() {
     }
   }
 
-  async function removePropertyFromCategory(propertyId: string) {
-    if (!category) return;
-
-    if (!confirm(`Remove this property from ${category.name}?`)) {
-      return;
-    }
-
-    try {
-      const { data: property, error: fetchError } = await supabase
-        .from('properties')
-        .select('categories')
-        .eq('id', propertyId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const updatedCategories = (property.categories || []).filter(
-        (cat: string) => cat !== category.name
-      );
-
-      const { error: updateError } = await supabase
-        .from('properties')
-        .update({ categories: updatedCategories })
-        .eq('id', propertyId);
-
-      if (updateError) throw updateError;
-
-      fetchCategoryAndProperties();
-    } catch (error: any) {
-      alert('Error removing property: ' + error.message);
-    }
-  }
 
   if (loading) {
     return (
@@ -147,28 +115,31 @@ export default function CategoryDetailPage() {
                     alt={property.name}
                     className="w-full h-full object-cover"
                   />
-                  <button
-                    onClick={() => removePropertyFromCategory(property.id)}
-                    className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-colors"
-                    title="Remove from category"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-lg mb-1">{property.name}</h3>
                   <p className="text-sm text-gray-600 mb-2">
                     {property.city}, {property.county}
                   </p>
-                  <span className={`inline-block px-2 py-1 rounded text-xs ${
-                    property.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : property.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {property.status}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-block px-2 py-1 rounded text-xs ${
+                      property.status === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : property.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {property.status}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/admin/properties/edit/${property.id}`)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
