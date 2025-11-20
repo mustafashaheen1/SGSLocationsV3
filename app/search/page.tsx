@@ -258,7 +258,7 @@ export default function SearchPage() {
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const ITEMS_PER_PAGE = 24;
+  const ITEMS_PER_PAGE = 8;
 
   const FILTER_CACHE_KEY = 'sgs_search_filters_cache';
   const CACHE_DURATION = 5 * 60 * 1000;
