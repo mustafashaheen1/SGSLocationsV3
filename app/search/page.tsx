@@ -512,19 +512,49 @@ export default function SearchPage() {
 
       // If we have tag filters, search property_images table
       if (selectedTags.length > 0) {
-        // Find all property_ids that have images with ANY of the selected tags
-        // Also get the image URLs that match the tags
-        const { data: propertyImages, error: imagesError } = await supabase
+        // Find properties that have images matching ALL selected tags (AND logic)
+        // For each tag, get the set of properties that have it
+        const propertyIdSets: Set<string>[] = [];
+
+        for (const tag of selectedTags) {
+          const { data: tagImages, error: tagError } = await supabase
+            .from('property_images')
+            .select('property_id')
+            .contains('tags', [tag]);
+
+          if (tagError) throw tagError;
+
+          const propertyIdsForTag = new Set(tagImages?.map(img => img.property_id) || []);
+          propertyIdSets.push(propertyIdsForTag);
+        }
+
+        // Find intersection of all sets - properties that have ALL tags
+        let propertyIds: string[] = [];
+        if (propertyIdSets.length > 0) {
+          // Start with the first set
+          const intersection = new Set(propertyIdSets[0]);
+
+          // Intersect with all other sets
+          for (let i = 1; i < propertyIdSets.length; i++) {
+            const currentSet = propertyIdSets[i];
+            for (const id of intersection) {
+              if (!currentSet.has(id)) {
+                intersection.delete(id);
+              }
+            }
+          }
+
+          propertyIds = Array.from(intersection);
+        }
+
+        // Now get the matching images for display
+        const { data: propertyImages } = await supabase
           .from('property_images')
-          .select('property_id, image_url')
+          .select('property_id, image_url, tags')
+          .in('property_id', propertyIds)
           .overlaps('tags', selectedTags);
 
-        if (imagesError) throw imagesError;
-
-        // Get unique property IDs and group matching images by property
-        const propertyIds = Array.from(new Set(propertyImages?.map(img => img.property_id) || []));
         const matchingImagesByProperty = new Map<string, string[]>();
-
         propertyImages?.forEach(img => {
           if (!matchingImagesByProperty.has(img.property_id)) {
             matchingImagesByProperty.set(img.property_id, []);
@@ -532,7 +562,7 @@ export default function SearchPage() {
           matchingImagesByProperty.get(img.property_id)!.push(img.image_url);
         });
 
-        console.log('Found properties with matching tags:', propertyIds.length);
+        console.log('Found properties with ALL matching tags:', propertyIds.length);
 
         if (propertyIds.length === 0) {
           setHasMore(false);
@@ -770,13 +800,33 @@ export default function SearchPage() {
       });
 
       if (selectedTags.length > 0) {
-        // Search with filters
-        const { data: propertyImages } = await supabase
-          .from('property_images')
-          .select('property_id')
-          .overlaps('tags', selectedTags);
+        // Search with filters using AND logic (properties must have ALL tags)
+        const propertyIdSets: Set<string>[] = [];
 
-        const propertyIds = Array.from(new Set(propertyImages?.map(img => img.property_id) || []));
+        for (const tag of selectedTags) {
+          const { data: tagImages } = await supabase
+            .from('property_images')
+            .select('property_id')
+            .contains('tags', [tag]);
+
+          const propertyIdsForTag = new Set(tagImages?.map(img => img.property_id) || []);
+          propertyIdSets.push(propertyIdsForTag);
+        }
+
+        // Find intersection - properties that have ALL tags
+        let propertyIds: string[] = [];
+        if (propertyIdSets.length > 0) {
+          const intersection = new Set(propertyIdSets[0]);
+          for (let i = 1; i < propertyIdSets.length; i++) {
+            const currentSet = propertyIdSets[i];
+            for (const id of intersection) {
+              if (!currentSet.has(id)) {
+                intersection.delete(id);
+              }
+            }
+          }
+          propertyIds = Array.from(intersection);
+        }
 
         if (propertyIds.length > 0) {
           if (searchInput && searchInput.trim()) {
