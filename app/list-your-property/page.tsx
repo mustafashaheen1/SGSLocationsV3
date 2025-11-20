@@ -435,6 +435,7 @@ export default function ListYourPropertyPage() {
           zipcode: formData.zipCode,
           owner_id: session?.user?.id || null,
           property_type: 'Residential', // Default property type
+          daily_rate: '0', // Default daily rate
           categories: selectedCategory ? [selectedCategory.name] : [],
           property_tags: propertyTags,
           images: uploadedImageUrls,
