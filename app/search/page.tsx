@@ -532,19 +532,15 @@ export default function SearchPage() {
         let propertyIds: string[] = [];
         if (propertyIdSets.length > 0) {
           // Start with the first set
-          const intersection = new Set(propertyIdSets[0]);
+          let intersection = Array.from(propertyIdSets[0]);
 
           // Intersect with all other sets
           for (let i = 1; i < propertyIdSets.length; i++) {
             const currentSet = propertyIdSets[i];
-            for (const id of intersection) {
-              if (!currentSet.has(id)) {
-                intersection.delete(id);
-              }
-            }
+            intersection = intersection.filter(id => currentSet.has(id));
           }
 
-          propertyIds = Array.from(intersection);
+          propertyIds = intersection;
         }
 
         // Now get the matching images for display
@@ -816,16 +812,12 @@ export default function SearchPage() {
         // Find intersection - properties that have ALL tags
         let propertyIds: string[] = [];
         if (propertyIdSets.length > 0) {
-          const intersection = new Set(propertyIdSets[0]);
+          let intersection = Array.from(propertyIdSets[0]);
           for (let i = 1; i < propertyIdSets.length; i++) {
             const currentSet = propertyIdSets[i];
-            for (const id of intersection) {
-              if (!currentSet.has(id)) {
-                intersection.delete(id);
-              }
-            }
+            intersection = intersection.filter(id => currentSet.has(id));
           }
-          propertyIds = Array.from(intersection);
+          propertyIds = intersection;
         }
 
         if (propertyIds.length > 0) {
