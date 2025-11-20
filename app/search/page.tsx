@@ -482,18 +482,31 @@ export default function SearchPage() {
         }
 
         // Fetch the actual properties
-        let propertiesQuery = supabase
-          .from('properties')
-          .select('*')
-          .eq('status', 'active')
-          .in('id', propertyIds);
+        let unsortedData;
+        let error;
 
-        // Apply text search if present (search in name, city, description, and property_tags)
         if (query && query.trim()) {
-          propertiesQuery = propertiesQuery.or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags::text.ilike.%${query}%`);
-        }
+          // Apply text search using RPC function, then filter by property IDs
+          const { data: searchData, error: searchError } = await supabase
+            .rpc('search_properties', { search_query: query.trim() });
 
-        const { data: unsortedData, error } = await propertiesQuery;
+          error = searchError;
+
+          if (searchData) {
+            // Filter to only include properties that also match the tag filters
+            unsortedData = searchData.filter(prop => propertyIds.includes(prop.id));
+          }
+        } else {
+          // No text search, just fetch properties by IDs
+          const { data, error: fetchError } = await supabase
+            .from('properties')
+            .select('*')
+            .eq('status', 'active')
+            .in('id', propertyIds);
+
+          unsortedData = data;
+          error = fetchError;
+        }
 
         if (error) throw error;
 
@@ -518,17 +531,15 @@ export default function SearchPage() {
           setHasMore(false);
         }
       } else if (query && query.trim()) {
-        // Just text search, no tag filters - search in name, city, description, and property_tags
+        // Just text search, no tag filters - use RPC function to search including property_tags
         const { data, error } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('status', 'active')
-          .or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags::text.ilike.%${query}%`)
-          .order('is_exclusive', { ascending: false, nullsFirst: false })
-          .order('name', { ascending: true })
+          .rpc('search_properties', { search_query: query.trim() })
           .range(from, to);
 
-        if (error) throw error;
+        if (error) {
+          console.error('RPC search error:', error);
+          throw error;
+        }
 
         if (data && data.length > 0) {
           setProperties(prev => [...prev, ...data]);
