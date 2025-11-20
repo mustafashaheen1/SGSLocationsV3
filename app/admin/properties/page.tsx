@@ -229,7 +229,7 @@ export default function AdminPropertiesPage() {
             variant="outline"
             onClick={handleBulkImportProperties}
             disabled={bulkImportLoading}
-            className="border-[#e11921] text-[#e11921] hover:bg-red-50"
+            className="hidden border-[#e11921] text-[#e11921] hover:bg-red-50"
           >
             {bulkImportLoading ? (
               <>
