@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, ChevronDown, X } from 'lucide-react';
+import { Search, ChevronDown, X, Bookmark } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 import { sortLocationsByExclusivity } from '@/lib/utils';
 import Link from 'next/link';
@@ -257,6 +257,10 @@ export default function SearchPage() {
   const [filterCategories, setFilterCategories] = useState<Record<string, any>>({});
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [searchName, setSearchName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 8;
 
@@ -293,6 +297,39 @@ export default function SearchPage() {
     const query = searchParams.get('q');
     if (query) {
       setSearchInput(query);
+    }
+
+    // Check if we need to restore a saved search
+    const shouldRestore = searchParams.get('restore');
+    if (shouldRestore === 'true' && typeof window !== 'undefined') {
+      const savedSearchData = sessionStorage.getItem('restoreSearch');
+      if (savedSearchData) {
+        try {
+          const searchCriteria = JSON.parse(savedSearchData);
+
+          // Restore query
+          if (searchCriteria.query) {
+            setSearchInput(searchCriteria.query);
+          }
+
+          // Restore filters
+          if (searchCriteria.filters && Array.isArray(searchCriteria.filters)) {
+            setActiveFilters(searchCriteria.filters);
+          }
+
+          // Clear sessionStorage after restoring
+          sessionStorage.removeItem('restoreSearch');
+
+          // Remove the restore flag from URL
+          const newParams = new URLSearchParams(searchParams.toString());
+          newParams.delete('restore');
+          const newUrl = newParams.toString() ? `/search?${newParams.toString()}` : '/search';
+          router.replace(newUrl);
+        } catch (error) {
+          console.error('Error restoring saved search:', error);
+          sessionStorage.removeItem('restoreSearch');
+        }
+      }
     }
   }, []);
 
@@ -667,6 +704,101 @@ export default function SearchPage() {
     return options.filter(option => option.toLowerCase().includes(searchTerm));
   };
 
+  const handleSaveSearch = async () => {
+    if (!searchName.trim()) {
+      setSaveMessage('Please enter a name for your search');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage('');
+
+    try {
+      // Check if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setSaveMessage('Please log in to save searches');
+        setIsSaving(false);
+        return;
+      }
+
+      // Calculate result count by running the search
+      let resultCount = 0;
+      const selectedTags: string[] = [];
+      activeFilters.forEach(filter => {
+        selectedTags.push(...filter.values);
+      });
+
+      if (selectedTags.length > 0) {
+        // Search with filters
+        const { data: propertyImages } = await supabase
+          .from('property_images')
+          .select('property_id')
+          .overlaps('tags', selectedTags);
+
+        const propertyIds = Array.from(new Set(propertyImages?.map(img => img.property_id) || []));
+
+        if (propertyIds.length > 0) {
+          if (searchInput && searchInput.trim()) {
+            const { data: searchData } = await supabase
+              .rpc('search_properties', { search_query: searchInput.trim() });
+            resultCount = searchData?.filter((prop: any) => propertyIds.includes(prop.id)).length || 0;
+          } else {
+            const { data } = await supabase
+              .from('properties')
+              .select('id')
+              .eq('status', 'active')
+              .in('id', propertyIds);
+            resultCount = data?.length || 0;
+          }
+        }
+      } else if (searchInput && searchInput.trim()) {
+        // Just text search
+        const { data } = await supabase
+          .rpc('search_properties', { search_query: searchInput.trim() });
+        resultCount = data?.length || 0;
+      } else {
+        // No filters, no query - all active properties
+        const { count } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active');
+        resultCount = count || 0;
+      }
+
+      // Prepare filter tags array (just the tag names)
+      const filterTagNames = selectedTags;
+
+      // Save to database
+      const { error } = await supabase
+        .from('saved_searches')
+        .insert({
+          user_id: user.id,
+          name: searchName.trim(),
+          search_text: searchInput || null,
+          filters: activeFilters,
+          tags: filterTagNames,
+          result_count: resultCount,
+          last_checked_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      setSaveMessage('Search saved successfully!');
+      setTimeout(() => {
+        setShowSaveModal(false);
+        setSearchName('');
+        setSaveMessage('');
+      }, 1500);
+    } catch (error: any) {
+      console.error('Error saving search:', error);
+      setSaveMessage('Error saving search. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
       <style jsx global>{`
@@ -899,10 +1031,13 @@ export default function SearchPage() {
           max-width: 1200px;
           margin: 0 auto;
           position: relative;
+          display: flex;
+          gap: 10px;
+          align-items: center;
         }
 
         .main-search-input {
-          width: 100%;
+          flex: 1;
           padding: 12px 40px 12px 45px;
           border: 1px solid #ced4da;
           border-radius: 3px;
@@ -915,6 +1050,172 @@ export default function SearchPage() {
           top: 50%;
           transform: translateY(-50%);
           color: #6c757d;
+        }
+
+        .save-search-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 20px;
+          background: #e11921;
+          color: white;
+          border: none;
+          border-radius: 3px;
+          font-size: 14px;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.2s;
+          white-space: nowrap;
+        }
+
+        .save-search-btn:hover {
+          background: #c41519;
+        }
+
+        .save-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+          padding: 20px;
+        }
+
+        .save-modal {
+          background: white;
+          border-radius: 8px;
+          max-width: 500px;
+          width: 100%;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .save-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px;
+          border-bottom: 1px solid #e5e5e5;
+        }
+
+        .save-modal-header h3 {
+          margin: 0;
+          font-size: 20px;
+          font-weight: 600;
+          font-family: acumin-pro-wide, sans-serif;
+          color: #212529;
+        }
+
+        .close-modal-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #6c757d;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          transition: color 0.2s;
+        }
+
+        .close-modal-btn:hover {
+          color: #212529;
+        }
+
+        .save-modal-body {
+          padding: 20px;
+        }
+
+        .save-modal-body label {
+          display: block;
+          font-size: 14px;
+          font-weight: 500;
+          color: #495057;
+          margin-bottom: 8px;
+          font-family: acumin-pro-wide, sans-serif;
+        }
+
+        .save-modal-body input {
+          width: 100%;
+          padding: 10px 12px;
+          border: 1px solid #ced4da;
+          border-radius: 4px;
+          font-size: 14px;
+          font-family: acumin-pro-wide, sans-serif;
+          transition: border-color 0.2s;
+        }
+
+        .save-modal-body input:focus {
+          outline: none;
+          border-color: #e11921;
+          box-shadow: 0 0 0 3px rgba(225, 25, 33, 0.1);
+        }
+
+        .save-message {
+          margin-top: 12px;
+          padding: 10px;
+          border-radius: 4px;
+          font-size: 14px;
+          font-family: acumin-pro-wide, sans-serif;
+        }
+
+        .save-message.success {
+          background: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
+        }
+
+        .save-message.error {
+          background: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+        }
+
+        .save-modal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          padding: 20px;
+          border-top: 1px solid #e5e5e5;
+        }
+
+        .save-modal-footer button {
+          padding: 10px 20px;
+          border-radius: 4px;
+          font-size: 14px;
+          font-family: acumin-pro-wide, sans-serif;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .cancel-btn {
+          background: white;
+          border: 1px solid #ced4da;
+          color: #495057;
+        }
+
+        .cancel-btn:hover {
+          background: #f8f9fa;
+        }
+
+        .save-btn {
+          background: #e11921;
+          border: 1px solid #e11921;
+          color: white;
+        }
+
+        .save-btn:hover:not(:disabled) {
+          background: #c41519;
+        }
+
+        .save-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .filter-pills {
@@ -1249,6 +1550,14 @@ export default function SearchPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
+            <button
+              className="save-search-btn"
+              onClick={() => setShowSaveModal(true)}
+              title="Save this search"
+            >
+              <Bookmark size={20} />
+              <span>Save Search</span>
+            </button>
           </div>
         </div>
 
@@ -1304,6 +1613,45 @@ export default function SearchPage() {
             </div>
           )}
         </div>
+
+        {/* Save Search Modal */}
+        {showSaveModal && (
+          <div className="save-modal-overlay" onClick={() => setShowSaveModal(false)}>
+            <div className="save-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="save-modal-header">
+                <h3>Save This Search</h3>
+                <button onClick={() => setShowSaveModal(false)} className="close-modal-btn">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="save-modal-body">
+                <label htmlFor="searchName">Search Name</label>
+                <input
+                  id="searchName"
+                  type="text"
+                  placeholder="e.g., Commercial Properties with Airport"
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSaveSearch()}
+                  autoFocus
+                />
+                {saveMessage && (
+                  <p className={`save-message ${saveMessage.includes('success') ? 'success' : 'error'}`}>
+                    {saveMessage}
+                  </p>
+                )}
+              </div>
+              <div className="save-modal-footer">
+                <button onClick={() => setShowSaveModal(false)} className="cancel-btn">
+                  Cancel
+                </button>
+                <button onClick={handleSaveSearch} disabled={isSaving} className="save-btn">
+                  {isSaving ? 'Saving...' : 'Save Search'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

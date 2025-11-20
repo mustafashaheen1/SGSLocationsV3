@@ -61,13 +61,6 @@ export default function EditPropertyPage() {
     city: '',
     state: '',
     zipCode: '',
-    listedElsewhere: '',
-    propertyRole: '',
-    propertyRoleOther: '',
-    listedForSale: '',
-    requestedUse: [] as string[],
-    listedWith: [] as string[],
-    howDidYouHear: [] as string[],
     additionalNotes: '',
   });
 
@@ -159,13 +152,6 @@ export default function EditPropertyPage() {
         city: propertyData.city || '',
         state: propertyData.county || '',
         zipCode: propertyData.zipcode || '',
-        listedElsewhere: '',
-        propertyRole: '',
-        propertyRoleOther: '',
-        listedForSale: '',
-        requestedUse: [],
-        listedWith: [],
-        howDidYouHear: [],
         additionalNotes: propertyData.description || '',
       });
 
@@ -390,19 +376,6 @@ export default function EditPropertyPage() {
     }
   };
 
-  const handleCheckboxChange = (category: 'requestedUse' | 'listedWith' | 'howDidYouHear', value: string) => {
-    setFormData(prev => {
-      const current = prev[category];
-      const updated = current.includes(value)
-        ? current.filter(item => item !== value)
-        : [...current, value];
-      return { ...prev, [category]: updated };
-    });
-    if (errors[category]) {
-      setErrors(prev => ({ ...prev, [category]: '' }));
-    }
-  };
-
   const handleFileUpload = (files: FileList | null) => {
     if (!files) return;
     const validFiles = Array.from(files).filter(file => {
@@ -449,12 +422,6 @@ export default function EditPropertyPage() {
     if (!formData.city.trim()) newErrors.city = 'City is required';
     if (!formData.state) newErrors.state = 'State is required';
     if (!formData.zipCode.trim()) newErrors.zipCode = 'Zip code is required';
-    if (!formData.listedElsewhere) newErrors.listedElsewhere = 'This field is required';
-    if (!formData.propertyRole) newErrors.propertyRole = 'This field is required';
-    if (!formData.listedForSale) newErrors.listedForSale = 'This field is required';
-    if (formData.requestedUse.length === 0) newErrors.requestedUse = 'Select at least one option';
-    if (formData.listedWith.length === 0) newErrors.listedWith = 'Select at least one option';
-    if (formData.howDidYouHear.length === 0) newErrors.howDidYouHear = 'Select at least one option';
     if (!selectedCategoryId) newErrors.category = 'Please select a category';
     if (uploadedFiles.length < 10) newErrors.files = 'Minimum 10 images required';
 
@@ -801,186 +768,6 @@ export default function EditPropertyPage() {
                       ))}
                     </select>
                     {errors.state && <p className="text-red-600 text-sm mt-1">{errors.state}</p>}
-                  </div>
-                </section>
-
-                {/* Radio Questions */}
-                <section className="mb-6">
-                  <div className="mb-6">
-                    <label className="block font-medium text-gray-700 text-sm mb-3">
-                      Is this location listed on any other location platforms such as Airbnb or Peerspace? <span className="text-red-600">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="listedElsewhere"
-                          value="yes"
-                          checked={formData.listedElsewhere === 'yes'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                        />
-                        <span className="ml-2">Yes</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="listedElsewhere"
-                          value="no"
-                          checked={formData.listedElsewhere === 'no'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                        />
-                        <span className="ml-2">No</span>
-                      </label>
-                    </div>
-                    {errors.listedElsewhere && <p className="text-red-600 text-sm mt-1">{errors.listedElsewhere}</p>}
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block font-medium text-gray-700 text-sm mb-3">
-                      Are you currently: <span className="text-red-600">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-4 mb-2">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="propertyRole"
-                          value="owner"
-                          checked={formData.propertyRole === 'owner'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                        />
-                        <span className="ml-2">Property Owner</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="propertyRole"
-                          value="manager"
-                          checked={formData.propertyRole === 'manager'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                        />
-                        <span className="ml-2">Property Manager</span>
-                      </label>
-                    </div>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="propertyRole"
-                        value="other"
-                        checked={formData.propertyRole === 'other'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                      />
-                      <span className="ml-2">Other</span>
-                    </label>
-                    {formData.propertyRole === 'other' && (
-                      <input
-                        type="text"
-                        name="propertyRoleOther"
-                        value={formData.propertyRoleOther}
-                        onChange={handleInputChange}
-                        placeholder="Specify Other"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 mt-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
-                      />
-                    )}
-                    {errors.propertyRole && <p className="text-red-600 text-sm mt-1">{errors.propertyRole}</p>}
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block font-medium text-gray-700 text-sm mb-3">
-                      Is this location currently listed for sale? <span className="text-red-600">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="listedForSale"
-                          value="yes"
-                          checked={formData.listedForSale === 'yes'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                        />
-                        <span className="ml-2">Yes</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="listedForSale"
-                          value="no"
-                          checked={formData.listedForSale === 'no'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                        />
-                        <span className="ml-2">No</span>
-                      </label>
-                    </div>
-                    {errors.listedForSale && <p className="text-red-600 text-sm mt-1">{errors.listedForSale}</p>}
-                  </div>
-                </section>
-
-                {/* Checkbox Sections */}
-                <section className="mb-6">
-                  <div className="mb-6">
-                    <label className="block font-medium text-gray-700 text-sm mb-3">
-                      I request that my property be considered for location and event use as follows: (check all that apply) <span className="text-red-600">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['Still & Print Photography', 'TV & Motion Pictures', 'Corporate Events', 'Long or Short Term Lease'].map(option => (
-                        <label key={option} className="flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.requestedUse.includes(option)}
-                            onChange={() => handleCheckboxChange('requestedUse', option)}
-                            className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
-                          />
-                          <span className="ml-2 text-sm">{option}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {errors.requestedUse && <p className="text-red-600 text-sm mt-1">{errors.requestedUse}</p>}
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block font-medium text-gray-700 text-sm mb-3">
-                      I request that my property be listed with: (check all that apply) <span className="text-red-600">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['SGS Locations', 'Wedding Estates (Wedding Photography)', 'FilmHere.com (Student Films)'].map(option => (
-                        <label key={option} className="flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.listedWith.includes(option)}
-                            onChange={() => handleCheckboxChange('listedWith', option)}
-                            className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
-                          />
-                          <span className="ml-2 text-sm">{option}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {errors.listedWith && <p className="text-red-600 text-sm mt-1">{errors.listedWith}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block font-medium text-gray-700 text-sm mb-3">
-                      How did you hear about us? <span className="text-red-600">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['Online Search', 'Currently Listed Property Owner', 'Production Referral', 'Other'].map(option => (
-                        <label key={option} className="flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.howDidYouHear.includes(option)}
-                            onChange={() => handleCheckboxChange('howDidYouHear', option)}
-                            className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
-                          />
-                          <span className="ml-2 text-sm">{option}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {errors.howDidYouHear && <p className="text-red-600 text-sm mt-1">{errors.howDidYouHear}</p>}
                   </div>
                 </section>
 

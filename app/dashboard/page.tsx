@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2, Search, Bookmark } from 'lucide-react';
 
 export default function ProductionDashboard() {
   const router = useRouter();
@@ -26,10 +26,13 @@ export default function ProductionDashboard() {
   const [activeTab, setActiveTab] = useState('my-locations');
   const [userProperties, setUserProperties] = useState<any[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<any[]>([]);
+  const [loadingSearches, setLoadingSearches] = useState(false);
 
   useEffect(() => {
     fetchUserData();
     fetchUserProperties();
+    fetchSavedSearches();
   }, []);
 
   async function fetchUserData() {
@@ -101,6 +104,69 @@ export default function ProductionDashboard() {
     } finally {
       setLoadingProperties(false);
     }
+  }
+
+  async function fetchSavedSearches() {
+    setLoadingSearches(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('saved_searches')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching saved searches:', error);
+        return;
+      }
+
+      setSavedSearches(data || []);
+    } catch (error) {
+      console.error('Error loading saved searches:', error);
+    } finally {
+      setLoadingSearches(false);
+    }
+  }
+
+  async function handleDeleteSearch(searchId: string, searchName: string) {
+    if (!confirm(`Are you sure you want to delete "${searchName}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('saved_searches')
+        .delete()
+        .eq('id', searchId);
+
+      if (error) throw error;
+
+      setMessage({ type: 'success', text: 'Search deleted successfully!' });
+      fetchSavedSearches();
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: 'Failed to delete search: ' + error.message });
+    }
+  }
+
+  function handleGoToSearch(search: any) {
+    // Prepare search criteria for restoration
+    const searchCriteria = {
+      query: search.search_text || null,
+      filters: search.filters || [],
+      category: null,
+    };
+
+    // Store the complete search criteria in sessionStorage
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('restoreSearch', JSON.stringify(searchCriteria));
+    }
+
+    // Navigate to search page with a restore flag
+    router.push('/search?restore=true');
   }
 
   async function handleDeleteProperty(propertyId: string, propertyName: string) {
@@ -521,8 +587,105 @@ export default function ProductionDashboard() {
             )}
 
             {activeTab === 'searches' && (
-              <div className="text-center py-12 text-gray-500">
-                Saved searches will appear here
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">My Saved Searches</h2>
+                  <p className="text-gray-600 mt-1">Quick access to your saved search criteria</p>
+                </div>
+
+                {loadingSearches ? (
+                  <div className="text-center py-12 text-gray-500">
+                    Loading your saved searches...
+                  </div>
+                ) : savedSearches.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Bookmark className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">You haven't saved any searches yet.</p>
+                    <p className="text-sm text-gray-400 mb-6">
+                      Use the "Save Search" button on the search page to save your searches for quick access.
+                    </p>
+                    <Button
+                      onClick={() => router.push('/search')}
+                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                    >
+                      Go to Search
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {savedSearches.map((search) => {
+                      const hasSearchText = search.search_text && search.search_text.trim();
+                      const hasTags = search.tags && Array.isArray(search.tags) && search.tags.length > 0;
+
+                      return (
+                        <div key={search.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 mb-1">{search.name}</h3>
+                              <p className="text-xs text-gray-500">
+                                Saved on {new Date(search.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteSearch(search.id, search.name)}
+                              className="text-gray-400 hover:text-red-600 p-1"
+                              title="Delete search"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div className="space-y-3 mb-4">
+                            {/* Search Text */}
+                            {hasSearchText && (
+                              <div className="flex items-start text-sm">
+                                <Search className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0 mt-0.5" />
+                                <span className="text-gray-700 line-clamp-2">{search.search_text}</span>
+                              </div>
+                            )}
+
+                            {/* Filter Tags */}
+                            {hasTags && (
+                              <div>
+                                <p className="text-xs text-gray-500 mb-2">Filter Tags:</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {search.tags.slice(0, 5).map((tag: string, idx: number) => (
+                                    <span
+                                      key={idx}
+                                      className="inline-block px-2 py-1 bg-red-50 text-red-700 text-xs rounded-full border border-red-200"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {search.tags.length > 5 && (
+                                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                      +{search.tags.length - 5} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Result Count */}
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                              <span className="text-sm text-gray-500">Results:</span>
+                              <span className="text-lg font-semibold text-[#e11921]">
+                                {search.result_count || 0}
+                              </span>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={() => handleGoToSearch(search)}
+                            className="w-full bg-[#e11921] text-white hover:bg-[#bf151c] text-sm py-2"
+                          >
+                            View Results
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
