@@ -130,3 +130,16 @@ export type Booking = {
   notes: string | null;
   created_at: string;
 };
+
+export interface Project {
+  id: string;
+  name: string;
+  banner_image: string;
+  property_id: string;
+  display_order: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  // Joined property data
+  property?: Property;
+}

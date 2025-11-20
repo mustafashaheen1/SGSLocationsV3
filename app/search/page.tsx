@@ -256,6 +256,7 @@ export default function SearchPage() {
   const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
   const [filterCategories, setFilterCategories] = useState<Record<string, any>>({});
   const [filtersLoading, setFiltersLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 24;
 
@@ -288,7 +289,31 @@ export default function SearchPage() {
 
   useEffect(() => {
     fetchFilters();
+    // Initialize search input from URL
+    const query = searchParams.get('q');
+    if (query) {
+      setSearchInput(query);
+    }
   }, []);
+
+  // Debounced search - update URL after user stops typing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentQuery = searchParams.get('q') || '';
+      if (searchInput !== currentQuery) {
+        const newParams = new URLSearchParams(searchParams.toString());
+        if (searchInput.trim()) {
+          newParams.set('q', searchInput.trim());
+        } else {
+          newParams.delete('q');
+        }
+        const newUrl = newParams.toString() ? `/search?${newParams.toString()}` : '/search';
+        router.push(newUrl);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
 
   async function fetchFilters() {
     const cached = getCachedFilters();
@@ -463,9 +488,9 @@ export default function SearchPage() {
           .eq('status', 'active')
           .in('id', propertyIds);
 
-        // Apply text search if present
+        // Apply text search if present (search in name, city, description, and property_tags)
         if (query) {
-          propertiesQuery = propertiesQuery.or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%`);
+          propertiesQuery = propertiesQuery.or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags.cs.{${query}}`);
         }
 
         const { data: unsortedData, error } = await propertiesQuery;
@@ -493,12 +518,12 @@ export default function SearchPage() {
           setHasMore(false);
         }
       } else if (query) {
-        // Just text search, no tag filters
+        // Just text search, no tag filters - search in name, city, description, and property_tags
         const { data, error } = await supabase
           .from('properties')
           .select('*')
           .eq('status', 'active')
-          .or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%`)
+          .or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags.cs.{${query}}`)
           .order('is_exclusive', { ascending: false, nullsFirst: false })
           .order('name', { ascending: true })
           .range(from, to);
@@ -1188,14 +1213,9 @@ export default function SearchPage() {
             <input
               type="text"
               className="main-search-input"
-              placeholder="Search locations..."
-              defaultValue={searchParams.get('q') || ''}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  const value = e.currentTarget.value;
-                  router.push(value ? `/search?q=${encodeURIComponent(value)}` : '/search');
-                }
-              }}
+              placeholder="Search locations by name, city, or tags..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
         </div>

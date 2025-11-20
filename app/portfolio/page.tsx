@@ -3,29 +3,36 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { supabase, Property } from '@/lib/supabase';
+import { supabase, Project } from '@/lib/supabase';
 
 export default function PortfolioPage() {
   const router = useRouter();
-  const [portfolioItems, setPortfolioItems] = useState<Property[]>([]);
+  const [portfolioItems, setPortfolioItems] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchProperties() {
-      const { data } = await supabase
-        .from('properties')
-        .select('*')
+    async function fetchProjects() {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          property:properties(*)
+        `)
         .eq('status', 'active')
-        .limit(30);
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching projects:', error);
+        setLoading(false);
+        return;
+      }
 
       if (data && data.length > 0) {
         setPortfolioItems(data);
-      } else {
-        setPortfolioItems(getMockProperties());
       }
       setLoading(false);
     }
-    fetchProperties();
+    fetchProjects();
   }, []);
 
   const handleVisitLocation = (propertyId: string) => {
@@ -123,7 +130,7 @@ export default function PortfolioPage() {
         <div className="portfolio-grid">
           {portfolioItems.map((item, index) => {
             const aspectRatio = getAspectRatio(index);
-            const image = item.primary_image || item.images?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800';
+            const image = item.banner_image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800';
 
             return (
               <div
@@ -132,7 +139,7 @@ export default function PortfolioPage() {
                 style={{
                   flexBasis: `${aspectRatio * 250}px`
                 }}
-                onClick={() => handleVisitLocation(item.id)}
+                onClick={() => handleVisitLocation(item.property_id)}
               >
                 <Image
                   src={image}
@@ -150,7 +157,7 @@ export default function PortfolioPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleVisitLocation(item.id);
+                      handleVisitLocation(item.property_id);
                     }}
                     className="visit-btn bg-[#e11921] text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors"
                   >
@@ -169,38 +176,4 @@ export default function PortfolioPage() {
 function getAspectRatio(index: number): number {
   const ratios = [1.5, 1.2, 1.8, 0.7, 1.6, 0.8, 1.3, 0.9, 1.4, 1.7, 1.5, 0.6, 1.3, 0.8, 2.0, 1.0, 1.6, 0.9, 1.7, 1.4];
   return ratios[index % ratios.length];
-}
-
-function getMockProperties(): Property[] {
-  return Array.from({ length: 30 }, (_, i) => ({
-    id: `mock-${i + 1}`,
-    name: `Property ${i + 1}`,
-    description: null,
-    address: '123 Main St',
-    city: 'Dallas',
-    county: null,
-    zipcode: null,
-    latitude: null,
-    longitude: null,
-    property_type: 'Residential',
-    square_footage: null,
-    lot_size: null,
-    bedrooms: null,
-    bathrooms: null,
-    parking_spaces: null,
-    year_built: null,
-    features: [],
-    categories: [],
-    property_tags: [],
-    permits_available: false,
-    permit_details: null,
-    daily_rate: 0,
-    images: [],
-    primary_image: `https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800`,
-    status: 'active',
-    owner_id: null,
-    albumkey: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }));
 }
