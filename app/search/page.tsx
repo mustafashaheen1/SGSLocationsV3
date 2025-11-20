@@ -489,8 +489,8 @@ export default function SearchPage() {
           .in('id', propertyIds);
 
         // Apply text search if present (search in name, city, description, and property_tags)
-        if (query) {
-          propertiesQuery = propertiesQuery.or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags.cs.{${query}}`);
+        if (query && query.trim()) {
+          propertiesQuery = propertiesQuery.or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags::text.ilike.%${query}%`);
         }
 
         const { data: unsortedData, error } = await propertiesQuery;
@@ -517,13 +517,34 @@ export default function SearchPage() {
         } else {
           setHasMore(false);
         }
-      } else if (query) {
+      } else if (query && query.trim()) {
         // Just text search, no tag filters - search in name, city, description, and property_tags
         const { data, error } = await supabase
           .from('properties')
           .select('*')
           .eq('status', 'active')
-          .or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags.cs.{${query}}`)
+          .or(`name.ilike.%${query}%,city.ilike.%${query}%,description.ilike.%${query}%,property_tags::text.ilike.%${query}%`)
+          .order('is_exclusive', { ascending: false, nullsFirst: false })
+          .order('name', { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          setProperties(prev => [...prev, ...data]);
+          setPage(prev => prev + 1);
+          if (data.length < ITEMS_PER_PAGE) {
+            setHasMore(false);
+          }
+        } else {
+          setHasMore(false);
+        }
+      } else {
+        // No filters, no query - show all active properties
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active')
           .order('is_exclusive', { ascending: false, nullsFirst: false })
           .order('name', { ascending: true })
           .range(from, to);
