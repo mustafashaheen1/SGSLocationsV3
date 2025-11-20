@@ -240,7 +240,7 @@ export default function HomePage() {
             {categories.map((category) => (
               <Link
                 key={category.id}
-                href={`/search?category=${encodeURIComponent(category.name)}`}
+                href={`/category/${category.slug}`}
                 className="group relative h-48 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all"
               >
                 <Image

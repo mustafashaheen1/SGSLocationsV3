@@ -64,14 +64,22 @@ export default function LocationLibraryPage() {
     let query = supabase.from('properties').select('*').eq('status', 'active');
 
     if (category === 'exclusives') {
+      // Show all exclusive properties in alphabetical order
       query = query.eq('is_exclusive', true).order('name', { ascending: true });
     } else if (category === 'new') {
-      query = query.order('created_at', { ascending: false }).limit(20);
+      // Show latest 8 properties from newest to oldest
+      query = query.order('created_at', { ascending: false }).limit(8);
     } else if (category === 'most-viewed') {
-      query = query.order('created_at', { ascending: false }).limit(20);
+      // Show properties with more than 5 views, sorted from most to least viewed
+      query = query.gt('view_count', 5).order('view_count', { ascending: false });
+    } else if (category === 'top-categories') {
+      // Leave empty for now
+      setProperties([]);
+      setLoading(false);
+      return;
     } else {
-      // For 'all' and other categories, sort by exclusivity then name
-      query = query.order('is_exclusive', { ascending: false, nullsFirst: false }).order('name', { ascending: true });
+      // For 'all' categories, show all properties alphabetically
+      query = query.order('name', { ascending: true });
     }
 
     const { data } = await query;
@@ -360,6 +368,16 @@ export default function LocationLibraryPage() {
                     ))}
                   </div>
                 ) : activeCategory === 'top-categories' ? (
+                  <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6b7280' }}>
+                    <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem', fontWeight: 400 }}>Coming Soon</p>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 300 }}>Top Categories will be available soon</p>
+                  </div>
+                ) : properties.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6b7280' }}>
+                    <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem', fontWeight: 400 }}>No properties found</p>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 300 }}>Try selecting a different category</p>
+                  </div>
+                ) : activeCategory === 'top-categories-old' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     {['Modern', 'Luxury', 'Historical', 'Natural'].map((cat) => {
                       const catProperties = properties.filter(p =>
