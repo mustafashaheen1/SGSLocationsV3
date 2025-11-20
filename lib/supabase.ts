@@ -143,3 +143,15 @@ export interface Project {
   // Joined property data
   property?: Property;
 }
+
+export interface SavedSearch {
+  id: string;
+  user_id: string;
+  search_text: string;
+  filters: Record<string, any>;
+  tags: string[];
+  result_count: number;
+  last_checked_at: string;
+  created_at: string;
+  updated_at: string;
+}

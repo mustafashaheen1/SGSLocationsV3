@@ -366,12 +366,8 @@ export default function ListYourPropertyPage() {
     }
 
     try {
+      // Check if user is logged in (optional)
       const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        alert('You must be logged in to submit a property');
-        return;
-      }
 
       const { uploadMultipleImages } = await import('@/lib/s3-upload');
       const imageFiles = uploadedFiles.map(img => img.file);
@@ -383,12 +379,12 @@ export default function ListYourPropertyPage() {
         .from('properties')
         .insert([{
           name: `${formData.streetAddress}, ${formData.city}`,
-          description: `Submitted by ${formData.firstName} ${formData.lastName}`,
+          description: `Submitted by ${formData.firstName} ${formData.lastName} (${formData.email})`,
           address: formData.streetAddress,
           city: formData.city,
           county: formData.state,
           zipcode: formData.zipCode,
-          owner_id: session.user.id,
+          owner_id: session?.user?.id || null,
           categories: selectedCategory ? [selectedCategory.name] : [],
           property_tags: propertyTags,
           images: uploadedImageUrls,

@@ -20,6 +20,7 @@ import {
 import { supabase, Property } from '@/lib/supabase';
 import { generateLocationPDF } from '@/lib/pdf-generator';
 import { calculateDistance, formatDistance } from '@/lib/distance';
+import ContactFormModal from '@/components/ContactFormModal';
 
 interface ImageWithCategory {
   url: string;
@@ -1249,6 +1250,13 @@ function Footer() {
           © {new Date().getFullYear()} Image Locations. All rights reserved.
         </div>
       </div>
+
+      {/* Contact Form Modal */}
+      <ContactFormModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        propertyName={property?.name}
+      />
     </footer>
   );
 }

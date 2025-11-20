@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 
 export default function ProductionDashboard() {
   const router = useRouter();
@@ -21,18 +22,14 @@ export default function ProductionDashboard() {
     newPassword: '',
     confirmPassword: ''
   });
-  const [stats, setStats] = useState({
-    savedLocations: 0,
-    activeSearches: 0,
-    sentInquiries: 0,
-    responseRate: 0
-  });
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [activeTab, setActiveTab] = useState('saved-locations');
+  const [activeTab, setActiveTab] = useState('my-locations');
+  const [userProperties, setUserProperties] = useState<any[]>([]);
+  const [loadingProperties, setLoadingProperties] = useState(false);
 
   useEffect(() => {
     fetchUserData();
-    fetchStats();
+    fetchUserProperties();
   }, []);
 
   async function fetchUserData() {
@@ -81,29 +78,49 @@ export default function ProductionDashboard() {
     }
   }
 
-  async function fetchStats() {
+  async function fetchUserProperties() {
+    setLoadingProperties(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { count: savedCount } = await supabase
-        .from('saved_properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false });
 
-      const { count: inquiriesCount } = await supabase
-        .from('inquiries')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      if (error) {
+        console.error('Error fetching properties:', error);
+        return;
+      }
 
-      setStats({
-        savedLocations: savedCount || 0,
-        activeSearches: 0,
-        sentInquiries: inquiriesCount || 0,
-        responseRate: 85
-      });
+      setUserProperties(data || []);
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('Error loading properties:', error);
+    } finally {
+      setLoadingProperties(false);
+    }
+  }
+
+  async function handleDeleteProperty(propertyId: string, propertyName: string) {
+    if (!confirm(`Are you sure you want to delete "${propertyName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      setMessage({ type: 'success', text: 'Property deleted successfully!' });
+      fetchUserProperties();
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: 'Failed to delete property: ' + error.message });
     }
   }
 
@@ -217,41 +234,18 @@ export default function ProductionDashboard() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-600 text-sm mb-1">Saved Locations</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.savedLocations}</p>
-            <p className="text-gray-500 text-xs mt-1">Across 5 collections</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-600 text-sm mb-1">Active Searches</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.activeSearches}</p>
-            <p className="text-gray-500 text-xs mt-1">10 new matches</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-600 text-sm mb-1">Sent Inquiries</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.sentInquiries}</p>
-            <p className="text-gray-500 text-xs mt-1">3 pending responses</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-600 text-sm mb-1">Response Rate</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.responseRate}%</p>
-            <p className="text-green-600 text-xs mt-1">↑ 5% this month</p>
-          </div>
-        </div>
-
         <div className="bg-white rounded-lg shadow">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
               <button
-                onClick={() => setActiveTab('saved-locations')}
+                onClick={() => setActiveTab('my-locations')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'saved-locations'
+                  activeTab === 'my-locations'
                     ? 'border-[#e11921] text-[#e11921]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Saved Locations
+                My Locations
               </button>
               <button
                 onClick={() => setActiveTab('searches')}
@@ -410,9 +404,119 @@ export default function ProductionDashboard() {
               </div>
             )}
 
-            {activeTab === 'saved-locations' && (
-              <div className="text-center py-12 text-gray-500">
-                Saved locations will appear here
+            {activeTab === 'my-locations' && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">My Locations</h2>
+                  <p className="text-gray-600 mt-1">Properties you've submitted for listing</p>
+                </div>
+
+                {loadingProperties ? (
+                  <div className="text-center py-12 text-gray-500">
+                    Loading your properties...
+                  </div>
+                ) : userProperties.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">You haven't listed any properties yet.</p>
+                    <Button
+                      onClick={() => router.push('/list-your-property')}
+                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                    >
+                      List Your First Property
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Property
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Address
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Submitted
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {userProperties.map((property) => (
+                          <tr key={property.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                {property.primary_image && (
+                                  <img
+                                    src={property.primary_image}
+                                    alt={property.name}
+                                    className="h-10 w-10 rounded object-cover mr-3"
+                                  />
+                                )}
+                                <div className="text-sm font-medium text-gray-900">
+                                  {property.name}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{property.address}</div>
+                              <div className="text-sm text-gray-500">
+                                {property.city}, {property.county}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                property.status === 'active'
+                                  ? 'bg-green-100 text-green-800'
+                                  : property.status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(property.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end gap-2">
+                                {property.status === 'active' && (
+                                  <button
+                                    onClick={() => router.push(`/property/${property.id}`)}
+                                    className="text-blue-600 hover:text-blue-900 p-1"
+                                    title="View Property"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => router.push(`/edit-property/${property.id}`)}
+                                  className="text-gray-600 hover:text-gray-900 p-1"
+                                  title="Edit Property"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProperty(property.id, property.name)}
+                                  className="text-red-600 hover:text-red-900 p-1"
+                                  title="Delete Property"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
