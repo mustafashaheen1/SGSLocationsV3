@@ -32,9 +32,15 @@ interface ImageWithTags {
   tags: string[];
 }
 
-const TEXAS_COUNTIES = [
-  'Dallas', 'Tarrant', 'Collin', 'Denton', 'Rockwall', 'Kaufman', 'Ellis', 'Johnson',
-  'Parker', 'Wise', 'Hood', 'Somervell', 'Hunt'
+const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+  'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+  'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+  'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+  'Wisconsin', 'Wyoming'
 ];
 
 export default function ListYourPropertyPage() {
@@ -609,8 +615,8 @@ export default function ListYourPropertyPage() {
                     }`}
                   >
                     <option value="">Select State</option>
-                    {TEXAS_COUNTIES.map(county => (
-                      <option key={county} value={county}>{county}</option>
+                    {US_STATES.map(state => (
+                      <option key={state} value={state}>{state}</option>
                     ))}
                   </select>
                   {errors.state && <p className="text-red-600 text-sm mt-1">{errors.state}</p>}
