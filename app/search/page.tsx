@@ -261,6 +261,7 @@ export default function SearchPage() {
   const [searchName, setSearchName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [isRestoring, setIsRestoring] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 8;
 
@@ -299,10 +300,13 @@ export default function SearchPage() {
   useEffect(() => {
     const shouldRestore = searchParams.get('restore');
     if (shouldRestore === 'true' && typeof window !== 'undefined') {
+      setIsRestoring(true);
       const savedSearchData = sessionStorage.getItem('restoreSearch');
       if (savedSearchData) {
         try {
           const searchCriteria = JSON.parse(savedSearchData);
+
+          console.log('Restoring search with criteria:', searchCriteria);
 
           // Restore query
           if (searchCriteria.query) {
@@ -312,9 +316,13 @@ export default function SearchPage() {
           // Restore filters - this will trigger the search to reload
           if (searchCriteria.filters && Array.isArray(searchCriteria.filters)) {
             setActiveFilters(searchCriteria.filters);
+            console.log('Filters restored:', searchCriteria.filters);
           }
 
-          // Clear sessionStorage and URL after a short delay to ensure filters are applied
+          // Mark restoration as complete
+          setIsRestoring(false);
+
+          // Clear sessionStorage and URL after a short delay
           setTimeout(() => {
             sessionStorage.removeItem('restoreSearch');
             const newParams = new URLSearchParams(window.location.search);
@@ -325,7 +333,10 @@ export default function SearchPage() {
         } catch (error) {
           console.error('Error restoring saved search:', error);
           sessionStorage.removeItem('restoreSearch');
+          setIsRestoring(false);
         }
+      } else {
+        setIsRestoring(false);
       }
     } else if (!searchParams.get('restore')) {
       // Initialize search input from URL only if not restoring
@@ -422,6 +433,9 @@ export default function SearchPage() {
   const loadMoreProperties = async () => {
     if (loading || !hasMore) return;
 
+    console.log('loadMoreProperties called with activeFilters:', activeFilters);
+    console.log('Number of active filters:', activeFilters.length);
+
     setLoading(true);
 
     try {
@@ -432,6 +446,8 @@ export default function SearchPage() {
 
       // If no filters are active and no category/query, show all active properties
       if (activeFilters.length === 0 && !query && !categoryParam) {
+        console.log('Loading all properties (no filters)');
+
         const { data, error } = await supabase
           .from('properties')
           .select('*')
@@ -634,10 +650,12 @@ export default function SearchPage() {
   }, [activeFilters]);
 
   useEffect(() => {
-    if (page === 1 && properties.length === 0 && !loading) {
+    // Don't load if we're currently restoring a saved search
+    if (page === 1 && properties.length === 0 && !loading && !isRestoring) {
+      console.log('Initial load triggered, activeFilters:', activeFilters);
       loadMoreProperties();
     }
-  }, [page, properties.length]);
+  }, [page, properties.length, isRestoring]);
 
   useEffect(() => {
     const handleScroll = () => {
