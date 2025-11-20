@@ -319,8 +319,11 @@ export default function SearchPage() {
             console.log('Filters restored:', searchCriteria.filters);
           }
 
-          // Mark restoration as complete
-          setIsRestoring(false);
+          // Mark restoration as complete AFTER state has updated (next tick)
+          setTimeout(() => {
+            setIsRestoring(false);
+            console.log('Restoration complete, isRestoring set to false');
+          }, 0);
 
           // Clear sessionStorage and URL after a short delay
           setTimeout(() => {
@@ -644,10 +647,11 @@ export default function SearchPage() {
 
   // Trigger search when filters change and we have no properties
   useEffect(() => {
-    if (activeFilters.length > 0 && properties.length === 0 && !loading && page === 1 && hasMore) {
+    if (activeFilters.length > 0 && properties.length === 0 && !loading && page === 1 && hasMore && !isRestoring) {
+      console.log('Filter change triggered load with activeFilters:', activeFilters);
       loadMoreProperties();
     }
-  }, [activeFilters]);
+  }, [activeFilters, isRestoring]);
 
   useEffect(() => {
     // Don't load if we're currently restoring a saved search
