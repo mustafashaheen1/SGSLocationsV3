@@ -293,13 +293,10 @@ export default function SearchPage() {
 
   useEffect(() => {
     fetchFilters();
-    // Initialize search input from URL
-    const query = searchParams.get('q');
-    if (query) {
-      setSearchInput(query);
-    }
+  }, []);
 
-    // Check if we need to restore a saved search
+  // Separate effect for restoring saved searches
+  useEffect(() => {
     const shouldRestore = searchParams.get('restore');
     if (shouldRestore === 'true' && typeof window !== 'undefined') {
       const savedSearchData = sessionStorage.getItem('restoreSearch');
@@ -312,26 +309,32 @@ export default function SearchPage() {
             setSearchInput(searchCriteria.query);
           }
 
-          // Restore filters
+          // Restore filters - this will trigger the search to reload
           if (searchCriteria.filters && Array.isArray(searchCriteria.filters)) {
             setActiveFilters(searchCriteria.filters);
           }
 
-          // Clear sessionStorage after restoring
-          sessionStorage.removeItem('restoreSearch');
-
-          // Remove the restore flag from URL
-          const newParams = new URLSearchParams(searchParams.toString());
-          newParams.delete('restore');
-          const newUrl = newParams.toString() ? `/search?${newParams.toString()}` : '/search';
-          router.replace(newUrl);
+          // Clear sessionStorage and URL after a short delay to ensure filters are applied
+          setTimeout(() => {
+            sessionStorage.removeItem('restoreSearch');
+            const newParams = new URLSearchParams(window.location.search);
+            newParams.delete('restore');
+            const newUrl = newParams.toString() ? `/search?${newParams.toString()}` : '/search';
+            router.replace(newUrl);
+          }, 100);
         } catch (error) {
           console.error('Error restoring saved search:', error);
           sessionStorage.removeItem('restoreSearch');
         }
       }
+    } else if (!searchParams.get('restore')) {
+      // Initialize search input from URL only if not restoring
+      const query = searchParams.get('q');
+      if (query) {
+        setSearchInput(query);
+      }
     }
-  }, []);
+  }, [searchParams]);
 
   // Debounced search - update URL after user stops typing
   useEffect(() => {
@@ -617,10 +620,18 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
+    // Reset and reload when search params or filters change
     setProperties([]);
     setPage(1);
     setHasMore(true);
   }, [searchParams, activeFilters]);
+
+  // Trigger search when filters change and we have no properties
+  useEffect(() => {
+    if (activeFilters.length > 0 && properties.length === 0 && !loading && page === 1 && hasMore) {
+      loadMoreProperties();
+    }
+  }, [activeFilters]);
 
   useEffect(() => {
     if (page === 1 && properties.length === 0 && !loading) {
