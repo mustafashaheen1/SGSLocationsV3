@@ -1311,9 +1311,27 @@ export default function AddPropertyPage() {
                     Tags from individual photos are automatically added here. You can also manually add/remove property-level tags.
                   </p>
                   {propertyTags.length > 0 && (
-                    <p className="text-xs text-blue-600 mt-2 font-medium">
-                      ✨ Auto-synced tags: {propertyTags.slice(0, 5).join(', ')}{propertyTags.length > 5 ? ` +${propertyTags.length - 5} more` : ''}
-                    </p>
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs text-blue-700 font-semibold mb-2">
+                        ✨ Auto-synced from photo tags:
+                      </p>
+                      <div className="space-y-1">
+                        {Object.entries(
+                          propertyTags.reduce((acc: Record<string, string[]>, tagName) => {
+                            const tag = availableTags.find(t => t.name === tagName);
+                            const filterName = tag?.filter_name || 'Other';
+                            if (!acc[filterName]) acc[filterName] = [];
+                            acc[filterName].push(tagName);
+                            return acc;
+                          }, {})
+                        ).map(([filterName, tags]) => (
+                          <div key={filterName} className="text-xs">
+                            <span className="font-semibold text-blue-800">{filterName}:</span>{' '}
+                            <span className="text-blue-700">{tags.join(', ')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
                 {propertyTags.length > 0 && (
