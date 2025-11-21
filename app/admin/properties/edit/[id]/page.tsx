@@ -722,29 +722,6 @@ export default function EditPropertyPage() {
                   <p className="text-sm text-gray-600 mt-1">
                     Tags from individual photos are automatically added here. You can also manually add/remove property-level tags.
                   </p>
-                  {propertyTags.length > 0 && (
-                    <div className="mt-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm font-medium text-blue-800 mb-3">
-                        ✨ Auto-synced from photo tags
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {propertyTags.map(tagName => {
-                          const tag = availableTags.find(t => t.name === tagName);
-                          return (
-                            <span
-                              key={tagName}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-full"
-                            >
-                              {tag?.filter_name && (
-                                <span className="opacity-75 text-xs">{tag.filter_name}:</span>
-                              )}
-                              <span className="font-medium">{tagName}</span>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
                 {propertyTags.length > 0 && (
                   <span className="px-3 py-1 bg-[#e11921] text-white text-sm font-medium rounded-full">
