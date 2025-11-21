@@ -147,7 +147,7 @@ export default function PortfolioPage() {
                   fill
                   style={{ objectFit: 'cover' }}
                   sizes="(max-width: 768px) 50vw, 25vw"
-                  unoptimized
+                  unoptimized={image.includes('unsplash.com') || image.includes('placeholder.com')}
                 />
 
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100">

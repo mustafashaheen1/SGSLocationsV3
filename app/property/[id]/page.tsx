@@ -456,7 +456,7 @@ export default function PropertyDetailPage() {
                       alt={`${property.name} - Image ${index + 1}`}
                       fill
                       style={{ objectFit: 'cover' }}
-                      unoptimized
+                      unoptimized={img.includes('unsplash.com') || img.includes('placeholder.com')}
                       onError={(e: any) => {
                         e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
                       }}
@@ -500,7 +500,7 @@ export default function PropertyDetailPage() {
                       width: 'auto',
                       objectFit: 'cover'
                     }}
-                    unoptimized
+                    unoptimized={imgData.url.includes('unsplash.com') || imgData.url.includes('placeholder.com')}
                     onError={(e: any) => {
                       e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
                     }}
@@ -627,7 +627,7 @@ export default function PropertyDetailPage() {
                 fill
                 style={{ objectFit: 'contain' }}
                 priority
-                unoptimized
+                unoptimized={(displayedImages[currentImageIndex]?.url || '').includes('unsplash.com') || (displayedImages[currentImageIndex]?.url || '').includes('placeholder.com')}
                 onError={(e: any) => {
                   e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
                 }}
@@ -1038,7 +1038,7 @@ export default function PropertyDetailPage() {
                       alt={`Image ${index + 1}`}
                       fill
                       style={{ objectFit: 'cover' }}
-                      unoptimized
+                      unoptimized={imgData.url.includes('unsplash.com') || imgData.url.includes('placeholder.com')}
                       onError={(e: any) => {
                         e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80';
                       }}
@@ -1191,7 +1191,7 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
           alt={property.name}
           fill
           style={{ objectFit: 'cover', transition: 'transform 0.3s' }}
-          unoptimized
+          unoptimized={image.includes('unsplash.com') || image.includes('placeholder.com')}
         />
 
         {distance && (

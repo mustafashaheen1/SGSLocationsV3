@@ -214,7 +214,7 @@ export default function HomePage() {
                     src={property.primary_image || property.images?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80'}
                     alt={property.name}
                     fill
-                    unoptimized
+                    unoptimized={(property.primary_image || property.images?.[0] || '').includes('unsplash.com') || (property.primary_image || property.images?.[0] || '').includes('placeholder.com')}
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
