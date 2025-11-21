@@ -440,10 +440,11 @@ export default function EditPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (images.length < 10) {
-      alert('Please ensure you have at least 10 images');
-      return;
-    }
+    // Temporarily disabled: 10 photo minimum for admin
+    // if (images.length < 10) {
+    //   alert('Please ensure you have at least 10 images');
+    //   return;
+    // }
 
     if (!formData.category_id) {
       alert('Please select a category');
@@ -848,7 +849,7 @@ export default function EditPropertyPage() {
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               />
               <p className="text-xs text-gray-500 mt-1">
-                {images.length} / 10 minimum images uploaded
+                {images.length} images uploaded
               </p>
             </div>
 
@@ -857,14 +858,6 @@ export default function EditPropertyPage() {
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-medium text-gray-700">
                     Uploaded Images: {images.length}
-                    {images.length < 10 && (
-                      <span className="text-red-600 ml-2">
-                        (Need {10 - images.length} more)
-                      </span>
-                    )}
-                    {images.length >= 10 && (
-                      <span className="text-green-600 ml-2">✓ Minimum met</span>
-                    )}
                   </p>
                   <button
                     type="button"
@@ -1058,7 +1051,7 @@ export default function EditPropertyPage() {
         <div className="flex gap-4 pt-4 border-t">
           <Button
             type="submit"
-            disabled={saving || images.length < 10}
+            disabled={saving}
             className="bg-[#e11921] hover:bg-red-700"
           >
             {saving ? 'Saving...' : 'Update Property'}
@@ -1067,12 +1060,6 @@ export default function EditPropertyPage() {
             Cancel
           </Button>
         </div>
-
-        {images.length < 10 && (
-          <p className="text-sm text-red-600">
-            * Please upload at least 10 images before submitting
-          </p>
-        )}
       </form>
 
       {/* AI Analysis Progress Modal */}
