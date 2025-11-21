@@ -5,7 +5,6 @@ import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
 import { normalizeUrl } from '@/lib/url-utils';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
-import sharp from 'sharp';
 
 function createS3Client() {
   // Use server-side environment variables (NO NEXT_PUBLIC_ prefix)
@@ -283,14 +282,7 @@ export async function POST(request: NextRequest) {
           timeout: 30000
         });
 
-        console.log(`  🔄 Converting JPG to WebP...`);
-
-        // Convert JPG to WebP using sharp
-        const webpBuffer = await sharp(Buffer.from(imageBuffer.data))
-          .webp({ quality: 85 })
-          .toBuffer();
-
-        const fileName = `properties/${randomUUID()}.webp`;
+        const fileName = `properties/${randomUUID()}.jpg`;
 
         console.log(`  ↑ Uploading to S3...`);
 
@@ -298,8 +290,8 @@ export async function POST(request: NextRequest) {
         await s3Client.send(new PutObjectCommand({
           Bucket: process.env.NEXT_PUBLIC_AWS_S3_BUCKET!,
           Key: fileName,
-          Body: webpBuffer,
-          ContentType: 'image/webp',
+          Body: Buffer.from(imageBuffer.data),
+          ContentType: 'image/jpeg',
           ACL: 'public-read',
         }));
 
