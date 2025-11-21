@@ -182,21 +182,35 @@ export default function PropertyDetailPage() {
   }, [params.id]);
 
   useEffect(() => {
-    if (property) {
-      let propertyImages: string[] = [];
+    async function loadImages() {
+      if (!property) return;
 
-      if (property.images && property.images.length > 0) {
-        propertyImages = [...property.images];
+      // Fetch images from property_images table with display_order and tags
+      const { data: propertyImages, error } = await supabase
+        .from('property_images')
+        .select('image_url, display_order, tags')
+        .eq('property_id', property.id)
+        .order('display_order', { ascending: true });
+
+      let imagesWithCats: Array<{ url: string; categories: string[] }> = [];
+
+      if (propertyImages && propertyImages.length > 0) {
+        // Use property_images with their tags as categories
+        imagesWithCats = propertyImages.map(img => ({
+          url: img.image_url,
+          categories: img.tags || []
+        }));
+      } else if (property.images && property.images.length > 0) {
+        // Fallback to property.images array
+        imagesWithCats = property.images.map((url, index) => ({
+          url,
+          categories: index < categoryTags.length ? [categoryTags[index]] : ['General']
+        }));
       } else if (property.primary_image) {
-        propertyImages = [property.primary_image];
+        imagesWithCats = [{ url: property.primary_image, categories: ['General'] }];
       } else {
-        propertyImages = ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80'];
+        imagesWithCats = [{ url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80', categories: ['General'] }];
       }
-
-      const imagesWithCats = propertyImages.map((url, index) => ({
-        url,
-        categories: index < categoryTags.length ? [categoryTags[index]] : ['General']
-      }));
 
       setAllImages(imagesWithCats);
       setDisplayedImages(imagesWithCats);
@@ -213,6 +227,8 @@ export default function PropertyDetailPage() {
         }
       }, 100);
     }
+
+    loadImages();
   }, [property]);
 
   useEffect(() => {
@@ -411,30 +427,16 @@ export default function PropertyDetailPage() {
           {viewMode === 'grid' ? (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(6, 1fr)',
-              gridAutoRows: 'minmax(100px, auto)',
-              gap: '0',
-              maxHeight: '450px',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateRows: 'repeat(2, 300px)',
+              gap: '4px',
+              maxHeight: '604px',
               overflow: 'hidden',
               padding: '0',
               margin: '0'
             }}>
-              {displayedImages.slice(0, 12).map((imgData, index) => {
+              {displayedImages.slice(0, 6).map((imgData, index) => {
                 const img = imgData.url;
-                const spans = [
-                  { col: '1 / 3', row: '1 / 3' },
-                  { col: '3 / 5', row: '1 / 4' },
-                  { col: '5 / 7', row: '1 / 2' },
-                  { col: '1 / 4', row: '3 / 5' },
-                  { col: '4 / 5', row: '2 / 4' },
-                  { col: '5 / 7', row: '2 / 4' },
-                  { col: '1 / 3', row: '5 / 6' },
-                  { col: '3 / 5', row: '4 / 6' },
-                  { col: '5 / 6', row: '4 / 6' },
-                  { col: '6 / 7', row: '4 / 6' },
-                  { col: '1 / 3', row: '6 / 7' },
-                  { col: '3 / 7', row: '6 / 7' },
-                ];
 
                 return (
                   <div
@@ -444,11 +446,10 @@ export default function PropertyDetailPage() {
                       setShowLightbox(true);
                     }}
                     style={{
-                      gridColumn: spans[index].col,
-                      gridRow: spans[index].row,
                       position: 'relative',
                       cursor: 'pointer',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      backgroundColor: '#f3f4f6'
                     }}
                   >
                     <Image

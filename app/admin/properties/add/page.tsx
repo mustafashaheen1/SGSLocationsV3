@@ -17,6 +17,7 @@ import { supabase, albumKeyExists } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 import { getAddressFromGoogleMapsLink } from '@/lib/google-maps-utils';
 import { normalizeUrl } from '@/lib/url-utils';
+import { GridPreview } from '@/components/admin/GridPreview';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -953,11 +954,10 @@ export default function AddPropertyPage() {
       return;
     }
 
-    // Temporarily disabled: 10 photo minimum for admin
-    // if (images.length < 10) {
-    //   alert('Please upload at least 10 images');
-    //   return;
-    // }
+    if (images.length < 6) {
+      alert('Please upload at least 6 images for the property grid display');
+      return;
+    }
 
     setLoading(true);
 
@@ -1528,7 +1528,7 @@ export default function AddPropertyPage() {
             </div>
 
             <label className="block text-sm font-medium mb-2">
-              Property Images * (Minimum 10 images required)
+              Property Images * (Minimum 6 images required for grid display)
             </label>
 
             <div className="mb-4">
@@ -1543,6 +1543,12 @@ export default function AddPropertyPage() {
                 {images.length} images uploaded
               </p>
             </div>
+
+            {images.length > 0 && (
+              <div className="mb-6">
+                <GridPreview images={images} />
+              </div>
+            )}
 
             {images.length > 0 && (
               <div className="mt-6">

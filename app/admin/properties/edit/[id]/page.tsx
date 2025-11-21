@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { uploadMultipleImages } from '@/lib/s3-upload';
+import { GridPreview } from '@/components/admin/GridPreview';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -440,11 +441,10 @@ export default function EditPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Temporarily disabled: 10 photo minimum for admin
-    // if (images.length < 10) {
-    //   alert('Please ensure you have at least 10 images');
-    //   return;
-    // }
+    if (images.length < 6) {
+      alert('Please ensure you have at least 6 images for the property grid display');
+      return;
+    }
 
     if (!formData.category_id) {
       alert('Please select a category');
@@ -834,7 +834,7 @@ export default function EditPropertyPage() {
 
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">
-              Property Images * (Minimum 10 images required)
+              Property Images * (Minimum 6 images required for grid display)
             </label>
 
             <div className="mb-4">
@@ -849,6 +849,12 @@ export default function EditPropertyPage() {
                 {images.length} images uploaded
               </p>
             </div>
+
+            {images.length > 0 && (
+              <div className="mb-6">
+                <GridPreview images={images} />
+              </div>
+            )}
 
             {images.length > 0 && (
               <div className="mt-6">
