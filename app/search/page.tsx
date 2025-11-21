@@ -6,6 +6,7 @@ import { Search, ChevronDown, X, Bookmark } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 import { sortLocationsByExclusivity } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Scrollbar, FreeMode } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -76,29 +77,17 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
             >
               {images.map((img, idx) => (
                 <SwiperSlide key={idx}>
-                  <Link href={`/property/${property.id}`}>
-                    <img
+                  <Link href={`/property/${property.id}`} style={{ position: 'relative', display: 'block', width: '100%', height: '100%' }}>
+                    <Image
                       src={img}
                       alt={`${property.name} - ${idx + 1}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block'
+                        objectFit: 'cover'
                       }}
                       loading="lazy"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        if (img.includes('cloudfront.net') && !target.dataset.retried) {
-                          target.dataset.retried = 'true';
-                          target.src = img.replace(
-                            /https:\/\/.*\.cloudfront\.net/,
-                            'https://sgs-locations-images.s3.us-west-1.amazonaws.com'
-                          );
-                        } else {
-                          target.src = 'https://via.placeholder.com/800x600/e5e7eb/6b7280?text=No+Image';
-                        }
-                      }}
+                      unoptimized={img.includes('placeholder.com')}
                     />
                   </Link>
                 </SwiperSlide>
@@ -214,19 +203,21 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
             }}>
               {images.map((img, idx) => (
                 <div key={idx} style={{ textAlign: 'center' }}>
-                  <img
-                    src={img}
-                    alt={`${property.name} ${idx + 1}`}
-                    style={{
-                      width: '100%',
-                      height: '140px',
-                      objectFit: 'cover',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      marginBottom: '8px'
-                    }}
-                    onClick={() => router.push(`/property/${property.id}`)}
-                  />
+                  <div style={{ position: 'relative', width: '100%', height: '140px', marginBottom: '8px' }}>
+                    <Image
+                      src={img}
+                      alt={`${property.name} ${idx + 1}`}
+                      fill
+                      sizes="140px"
+                      style={{
+                        objectFit: 'cover',
+                        cursor: 'pointer',
+                        borderRadius: '4px'
+                      }}
+                      onClick={() => router.push(`/property/${property.id}`)}
+                      unoptimized={img.includes('placeholder.com')}
+                    />
+                  </div>
                   <div style={{
                     fontSize: '14px',
                     color: '#6c757d',
