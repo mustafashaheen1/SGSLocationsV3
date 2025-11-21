@@ -480,7 +480,9 @@ export default function AddPropertyPage() {
     // Collect all unique tags from all images
     const allPhotoTags = new Set<string>();
 
-    images.forEach(image => {
+    console.log(`🔄 Syncing tags from ${images.length} images`);
+    images.forEach((image, idx) => {
+      console.log(`  Image ${idx + 1}: ${image.tags.length} tags - ${image.tags.join(', ')}`);
       image.tags.forEach(tag => {
         allPhotoTags.add(tag);
       });
@@ -489,10 +491,12 @@ export default function AddPropertyPage() {
     // Add these tags to property tags (avoiding duplicates)
     setPropertyTags(prev => {
       const combined = new Set([...prev, ...Array.from(allPhotoTags)]);
-      return Array.from(combined);
+      const result = Array.from(combined);
+      console.log(`✓ Synced ${allPhotoTags.size} unique tags from photos to property`);
+      console.log(`✓ Total property tags now: ${result.length}`);
+      console.log(`✓ Property tags: ${result.join(', ')}`);
+      return result;
     });
-
-    console.log(`🔄 Synced ${allPhotoTags.size} unique tags from photos to property`);
   }
 
   // Initialize Google Autocomplete
