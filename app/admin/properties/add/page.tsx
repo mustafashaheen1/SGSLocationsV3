@@ -851,7 +851,12 @@ export default function AddPropertyPage() {
           importedImages[i].tags = suggestedTags;
         }
 
-        setImages(prev => [...prev, ...importedImages]);
+        setImages(prev => {
+          const updated = [...prev, ...importedImages];
+          // Auto-sync photo tags to property tags
+          setTimeout(() => syncPhotoTagsToProperty(updated), 0);
+          return updated;
+        });
         setImportProgress(`✓ Imported and analyzed ${imported} images`);
         setAnalyzingImages(false);
 
