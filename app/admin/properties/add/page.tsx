@@ -1311,25 +1311,25 @@ export default function AddPropertyPage() {
                     Tags from individual photos are automatically added here. You can also manually add/remove property-level tags.
                   </p>
                   {propertyTags.length > 0 && (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-xs text-blue-700 font-semibold mb-2">
-                        ✨ Auto-synced from photo tags:
+                    <div className="mt-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm font-medium text-blue-800 mb-3">
+                        ✨ Auto-synced from photo tags
                       </p>
-                      <div className="space-y-1">
-                        {Object.entries(
-                          propertyTags.reduce((acc: Record<string, string[]>, tagName) => {
-                            const tag = availableTags.find(t => t.name === tagName);
-                            const filterName = tag?.filter_name || 'Other';
-                            if (!acc[filterName]) acc[filterName] = [];
-                            acc[filterName].push(tagName);
-                            return acc;
-                          }, {})
-                        ).map(([filterName, tags]) => (
-                          <div key={filterName} className="text-xs">
-                            <span className="font-semibold text-blue-800">{filterName}:</span>{' '}
-                            <span className="text-blue-700">{tags.join(', ')}</span>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-2">
+                        {propertyTags.map(tagName => {
+                          const tag = availableTags.find(t => t.name === tagName);
+                          return (
+                            <span
+                              key={tagName}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-full"
+                            >
+                              {tag?.filter_name && (
+                                <span className="opacity-75 text-xs">{tag.filter_name}:</span>
+                              )}
+                              <span className="font-medium">{tagName}</span>
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
