@@ -1310,9 +1310,11 @@ export default function AddPropertyPage() {
                   <p className="text-sm text-gray-600 mt-1">
                     Tags from individual photos are automatically added here. You can also manually add/remove property-level tags.
                   </p>
-                  <p className="text-xs text-blue-600 mt-1 font-medium">
-                    ✨ Auto-synced from photo tags
-                  </p>
+                  {propertyTags.length > 0 && (
+                    <p className="text-xs text-blue-600 mt-2 font-medium">
+                      ✨ Auto-synced tags: {propertyTags.slice(0, 5).join(', ')}{propertyTags.length > 5 ? ` +${propertyTags.length - 5} more` : ''}
+                    </p>
+                  )}
                 </div>
                 {propertyTags.length > 0 && (
                   <span className="px-3 py-1 bg-[#e11921] text-white text-sm font-medium rounded-full">
