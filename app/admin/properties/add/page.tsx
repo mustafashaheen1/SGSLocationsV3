@@ -59,6 +59,7 @@ export default function AddPropertyPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<ImageWithTags[]>([]);
+  const [gridIndices, setGridIndices] = useState<number[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
@@ -155,6 +156,18 @@ export default function AddPropertyPage() {
       clearInterval(refreshInterval);
     };
   }, []);
+
+  // Auto-update gridIndices when images change
+  useEffect(() => {
+    if (gridIndices.length === 0 && images.length > 0) {
+      // Initialize with first 6 images
+      const initialIndices = images.slice(0, 6).map((_, i) => i);
+      setGridIndices(initialIndices);
+    } else if (images.length < gridIndices.length) {
+      // Remove indices that are out of bounds
+      setGridIndices(prev => prev.filter(i => i < images.length));
+    }
+  }, [images.length]);
 
   async function loadBulkImportQueue() {
     console.log('📋 Loading bulk import queue...');
@@ -990,6 +1003,11 @@ export default function AddPropertyPage() {
         console.log('✓ No duplicate found, proceeding with import');
       }
 
+      // Reorder images: grid images first, then the rest
+      const gridImages = gridIndices.slice(0, 6).map(i => images[i]);
+      const nonGridImages = images.filter((_, i) => !gridIndices.slice(0, 6).includes(i));
+      const reorderedImages = [...gridImages, ...nonGridImages];
+
       // Get the selected category name
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 
@@ -1012,10 +1030,10 @@ export default function AddPropertyPage() {
         categories: selectedCategory ? [selectedCategory.name] : [],
         // Add property-level tags
         property_tags: propertyTags,
-        // Set primary_image to first image
-        primary_image: images[0]?.url || null,
-        // Set images array
-        images: images.map(img => img.url),
+        // Set primary_image to first grid image
+        primary_image: reorderedImages[0]?.url || null,
+        // Set images array with reordered images
+        images: reorderedImages.map(img => img.url),
         features: [],
         permits_available: false,
         daily_rate: '0'
@@ -1037,8 +1055,8 @@ export default function AddPropertyPage() {
 
       console.log('✓ Property created:', property.id);
 
-      // Insert images with tags - NO is_primary field
-      const imageRecords = images.map((img, index) => ({
+      // Insert images with tags - grid images get display_order 0-5
+      const imageRecords = reorderedImages.map((img, index) => ({
         property_id: property.id,
         image_url: img.url,
         display_order: index,
@@ -1546,7 +1564,11 @@ export default function AddPropertyPage() {
 
             {images.length > 0 && (
               <div className="mb-6">
-                <GridPreview images={images} />
+                <GridPreview
+                  images={images}
+                  gridIndices={gridIndices}
+                  onGridIndicesChange={setGridIndices}
+                />
               </div>
             )}
 

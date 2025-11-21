@@ -71,6 +71,7 @@ export default function EditPropertyPage() {
   });
 
   const [images, setImages] = useState<ImageWithTags[]>([]);
+  const [gridIndices, setGridIndices] = useState<number[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
@@ -167,6 +168,14 @@ export default function EditPropertyPage() {
     initAutocomplete();
   }, [googleMapsLoaded]);
 
+  // Auto-update gridIndices when images change (e.g., when removing images)
+  useEffect(() => {
+    if (images.length < gridIndices.length) {
+      // Remove indices that are out of bounds
+      setGridIndices(prev => prev.filter(i => i < images.length));
+    }
+  }, [images.length]);
+
   async function fetchProperty() {
     try {
       const { data: property, error } = await supabase
@@ -219,12 +228,15 @@ export default function EditPropertyPage() {
           existingId: img.id,
         }));
         setImages(loadedImages);
+        // Grid images are the first 6 (display_order 0-5)
+        setGridIndices(loadedImages.slice(0, 6).map((_, i) => i));
       } else if (property.images && property.images.length > 0) {
         const fallbackImages: ImageWithTags[] = property.images.map((url: string) => ({
           url,
           tags: [],
         }));
         setImages(fallbackImages);
+        setGridIndices(fallbackImages.slice(0, 6).map((_, i) => i));
       }
 
       setLoading(false);
@@ -463,8 +475,13 @@ export default function EditPropertyPage() {
         console.log('New images uploaded successfully');
       }
 
+      // Reorder images: grid images first, then the rest
+      const gridImages = gridIndices.slice(0, 6).map(i => images[i]);
+      const nonGridImages = images.filter((_, i) => !gridIndices.slice(0, 6).includes(i));
+      const reorderedImages = [...gridImages, ...nonGridImages];
+
       let uploadIndex = 0;
-      const allImageUrls = images.map(img => {
+      const allImageUrls = reorderedImages.map(img => {
         if (img.file) {
           return uploadedUrls[uploadIndex++];
         } else {
@@ -504,7 +521,7 @@ export default function EditPropertyPage() {
       if (deleteError) console.error('Error deleting old image records:', deleteError);
 
       uploadIndex = 0;
-      const imageRecords = images.map((img, index) => {
+      const imageRecords = reorderedImages.map((img, index) => {
         let finalUrl: string;
         if (img.file) {
           finalUrl = uploadedUrls[uploadIndex++];
@@ -852,7 +869,11 @@ export default function EditPropertyPage() {
 
             {images.length > 0 && (
               <div className="mb-6">
-                <GridPreview images={images} />
+                <GridPreview
+                  images={images}
+                  gridIndices={gridIndices}
+                  onGridIndicesChange={setGridIndices}
+                />
               </div>
             )}
 

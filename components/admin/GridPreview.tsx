@@ -1,48 +1,95 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
+import { X, Check } from 'lucide-react';
 
 interface GridPreviewProps {
   images: { url: string }[];
+  gridIndices: number[];
+  onGridIndicesChange: (indices: number[]) => void;
 }
 
-export function GridPreview({ images }: GridPreviewProps) {
-  const gridImages = images.slice(0, 6);
-  const missingCount = Math.max(0, 6 - gridImages.length);
+export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPreviewProps) {
+  const [showSelector, setShowSelector] = useState(false);
+  const missingCount = Math.max(0, 6 - gridIndices.length);
+
+  const handleImageSelect = (index: number) => {
+    if (gridIndices.includes(index)) {
+      // Deselect - only if we have more than 6 selected
+      if (gridIndices.length > 6) {
+        onGridIndicesChange(gridIndices.filter(i => i !== index));
+      }
+    } else {
+      // Select - replace oldest selection if we already have 6
+      if (gridIndices.length >= 6) {
+        const newIndices = [...gridIndices];
+        newIndices.shift(); // Remove first one
+        newIndices.push(index);
+        onGridIndicesChange(newIndices);
+      } else {
+        onGridIndicesChange([...gridIndices, index]);
+      }
+    }
+  };
+
+  const handleRemoveFromGrid = (gridIndex: number) => {
+    if (gridIndices.length <= 6) {
+      alert('You must have at least 6 grid images. Add a replacement image first.');
+      return;
+    }
+    const imageIndex = gridIndices[gridIndex];
+    onGridIndicesChange(gridIndices.filter(i => i !== imageIndex));
+  };
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">Property Grid Preview</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold">Property Grid Preview</h3>
+          <button
+            type="button"
+            onClick={() => setShowSelector(!showSelector)}
+            className="text-sm bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+          >
+            {showSelector ? 'Close Selector' : 'Change Grid Images'}
+          </button>
+        </div>
         <p className="text-sm text-gray-600">
-          The first 6 images will be displayed on the property page.
-          {images.length >= 6 ? (
-            <span className="text-green-600 font-medium"> ✓ Grid complete ({gridImages.length}/6)</span>
+          These 6 images will be displayed on the property page.
+          {gridIndices.length >= 6 ? (
+            <span className="text-green-600 font-medium"> ✓ Grid complete ({gridIndices.length}/6)</span>
           ) : (
-            <span className="text-red-600 font-medium"> ⚠ Need {missingCount} more image{missingCount !== 1 ? 's' : ''} ({gridImages.length}/6)</span>
+            <span className="text-red-600 font-medium"> ⚠ Need {missingCount} more image{missingCount !== 1 ? 's' : ''} ({gridIndices.length}/6)</span>
           )}
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          Drag and drop images above to reorder which photos appear in the grid
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {gridImages.map((image, index) => (
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        {gridIndices.slice(0, 6).map((imageIndex, gridIndex) => (
           <div
-            key={index}
-            className="relative aspect-[4/3] bg-gray-100 rounded overflow-hidden border-2 border-gray-300"
+            key={gridIndex}
+            className="relative aspect-[4/3] bg-gray-100 rounded overflow-hidden border-2 border-gray-300 group"
           >
             <Image
-              src={image.url}
-              alt={`Grid image ${index + 1}`}
+              src={images[imageIndex]?.url || ''}
+              alt={`Grid image ${gridIndex + 1}`}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 33vw, 200px"
             />
             <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-              #{index + 1}
+              #{gridIndex + 1}
             </div>
+            {showSelector && (
+              <button
+                type="button"
+                onClick={() => handleRemoveFromGrid(gridIndex)}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
         ))}
 
@@ -54,11 +101,54 @@ export function GridPreview({ images }: GridPreviewProps) {
           >
             <div className="text-center text-gray-400">
               <div className="text-2xl mb-1">+</div>
-              <div className="text-xs">Image {gridImages.length + index + 1}</div>
+              <div className="text-xs">Image {gridIndices.length + index + 1}</div>
             </div>
           </div>
         ))}
       </div>
+
+      {showSelector && (
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-semibold mb-3">Select Grid Images (Choose 6)</h4>
+          <div className="grid grid-cols-4 gap-2 max-h-[400px] overflow-y-auto p-2 bg-gray-50 rounded">
+            {images.map((image, index) => {
+              const isSelected = gridIndices.includes(index);
+              const selectionOrder = isSelected ? gridIndices.indexOf(index) + 1 : null;
+
+              return (
+                <div
+                  key={index}
+                  onClick={() => handleImageSelect(index)}
+                  className={`relative aspect-square bg-gray-100 rounded overflow-hidden cursor-pointer border-2 transition-all ${
+                    isSelected
+                      ? 'border-green-500 ring-2 ring-green-200'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  <Image
+                    src={image.url}
+                    alt={`Image ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="150px"
+                  />
+                  {isSelected && selectionOrder && selectionOrder <= 6 && (
+                    <div className="absolute top-1 right-1 bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                    #{index + 1}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Click on any image to add it to the grid. If 6 are already selected, the oldest selection will be replaced.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
