@@ -46,24 +46,8 @@ export default function ProductionCompanyProfilePage() {
 
   // Upload form state
   const [uploadForm, setUploadForm] = useState({
-    title: '',
-    description: '',
-    document_type: 'Contract',
     file: null as File | null,
   });
-
-  const documentTypes = [
-    'Contract',
-    'Agreement',
-    'Invoice',
-    'Receipt',
-    'Script',
-    'Storyboard',
-    'Release Form',
-    'Permit',
-    'Insurance',
-    'Other'
-  ];
 
   useEffect(() => {
     if (params.id) {
@@ -144,18 +128,22 @@ export default function ProductionCompanyProfilePage() {
       // Upload file to S3
       const fileUrl = await uploadDocumentToS3(uploadForm.file);
 
+      // Use filename as title (without extension)
+      const fileName = uploadForm.file.name;
+      const title = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+
       // Save document to database
       const { error } = await supabase
         .from('documents')
         .insert([{
           production_company_id: params.id,
-          title: uploadForm.title,
-          description: uploadForm.description || null,
+          title: title,
+          description: null,
           file_url: fileUrl,
           file_name: uploadForm.file.name,
           file_size: uploadForm.file.size,
           file_type: uploadForm.file.type,
-          document_type: uploadForm.document_type,
+          document_type: 'Document',
           uploaded_by: user?.email || null,
         }]);
 
@@ -164,9 +152,6 @@ export default function ProductionCompanyProfilePage() {
       showSuccess('Document uploaded successfully');
       setShowUploadModal(false);
       setUploadForm({
-        title: '',
-        description: '',
-        document_type: 'Contract',
         file: null,
       });
       fetchCompanyAndDocuments();
@@ -392,43 +377,11 @@ export default function ProductionCompanyProfilePage() {
               <form onSubmit={handleUploadSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Document Title <span className="text-red-500">*</span>
+                    Upload Document <span className="text-red-500">*</span>
                   </label>
-                  <Input
-                    required
-                    value={uploadForm.title}
-                    onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                    placeholder="e.g., Production Contract 2024"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Document Type</label>
-                  <select
-                    value={uploadForm.document_type}
-                    onChange={(e) => setUploadForm({ ...uploadForm, document_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                  >
-                    {documentTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Description</label>
-                  <Textarea
-                    value={uploadForm.description}
-                    onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
-                    rows={3}
-                    placeholder="Optional description..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    File <span className="text-red-500">*</span>
-                  </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    The document title will be automatically extracted from the filename
+                  </p>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
                     <input
                       type="file"

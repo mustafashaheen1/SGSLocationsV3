@@ -36,7 +36,6 @@ export default function ProductionCompaniesPage() {
     contact_person: '',
     email: '',
     phone: '',
-    address: '',
     website: '',
     notes: '',
   });
@@ -73,7 +72,6 @@ export default function ProductionCompaniesPage() {
       contact_person: '',
       email: '',
       phone: '',
-      address: '',
       website: '',
       notes: '',
     });
@@ -91,7 +89,6 @@ export default function ProductionCompaniesPage() {
       contact_person: company.contact_person || '',
       email: company.email || '',
       phone: company.phone || '',
-      address: company.address || '',
       website: company.website || '',
       notes: company.notes || '',
     });
@@ -368,15 +365,6 @@ export default function ProductionCompaniesPage() {
                       placeholder="https://company.com"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Address</label>
-                  <Input
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="123 Main St, Los Angeles, CA 90001"
-                  />
                 </div>
 
                 <div>
