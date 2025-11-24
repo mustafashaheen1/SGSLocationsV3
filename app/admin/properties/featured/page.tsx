@@ -209,7 +209,7 @@ export default function FeaturedPropertiesPage() {
                             href={`/property/${property.id}`}
                             target="_blank"
                             className="p-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
-                            title="View"
+                            title="View Property"
                           >
                             <Eye size={16} />
                           </Link>
@@ -219,20 +219,6 @@ export default function FeaturedPropertiesPage() {
                             title="Remove from Featured"
                           >
                             <StarOff size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeactivate(property.id)}
-                            className="p-2 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors"
-                            title="Deactivate"
-                          >
-                            <X size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(property.id)}
-                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
