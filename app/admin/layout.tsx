@@ -126,6 +126,8 @@ export default function AdminLayout({
         { href: '/admin/properties', label: 'All Properties' },
         { href: '/admin/properties/pending', label: 'Pending Approval' },
         { href: '/admin/properties/approved', label: 'Approved' },
+        { href: '/admin/properties/featured', label: 'Featured Properties' },
+        { href: '/admin/properties/exclusive', label: 'Exclusive Properties' },
         { href: '/admin/properties/admin', label: 'Admin Properties' },
       ]
     },

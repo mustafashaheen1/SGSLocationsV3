@@ -89,3 +89,66 @@ export async function deleteImageFromS3(imageUrl: string): Promise<void> {
     throw new Error(error.message || 'Failed to delete image');
   }
 }
+
+/**
+ * Upload a document file to S3 documents folder
+ * @param file - The document file to upload
+ * @param subfolder - Optional subfolder within documents (e.g., 'contracts', 'invoices')
+ * @returns The full URL of the uploaded document
+ */
+export async function uploadDocumentToS3(file: File, subfolder: string = ''): Promise<string> {
+  try {
+    validateS3Config();
+
+    const folder = subfolder ? `documents/${subfolder}` : 'documents';
+    const fileName = `${folder}/${generateUniqueFileName(file.name)}`;
+
+    const buffer = await file.arrayBuffer();
+
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileName,
+      Body: Buffer.from(buffer),
+      ContentType: file.type,
+      ACL: 'public-read',
+    });
+
+    await s3Client.send(command);
+
+    if (CLOUDFRONT_URL) {
+      const baseUrl = CLOUDFRONT_URL.startsWith('http')
+        ? CLOUDFRONT_URL
+        : `https://${CLOUDFRONT_URL}`;
+      return `${baseUrl}/${fileName}`;
+    }
+
+    return `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileName}`;
+  } catch (error: any) {
+    console.error('Error uploading document to S3:', error);
+    throw new Error(error.message || 'Failed to upload document');
+  }
+}
+
+/**
+ * Delete a document from S3
+ * @param documentUrl - The full URL of the document to delete
+ */
+export async function deleteDocumentFromS3(documentUrl: string): Promise<void> {
+  try {
+    validateS3Config();
+
+    const url = new URL(documentUrl);
+    const key = url.pathname.substring(1);
+
+    const command = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
+    await s3Client.send(command);
+    console.log(`✓ Deleted document: ${documentUrl}`);
+  } catch (error: any) {
+    console.error('Error deleting document from S3:', error);
+    throw new Error(error.message || 'Failed to delete document');
+  }
+}
