@@ -91,6 +91,7 @@ export default function ContentManagementPage() {
   const [contactPhone, setContactPhone] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactAddress, setContactAddress] = useState('');
+  const [officeHours, setOfficeHours] = useState('');
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
 
@@ -170,7 +171,20 @@ export default function ContentManagementPage() {
 
       if (settings) {
         settings.forEach(setting => {
-          const value = typeof setting.value === 'string' ? setting.value.replace(/^"|"$/g, '') : setting.value;
+          // Parse the JSON value properly - handle multiple layers of escaping
+          let value = setting.value;
+          if (typeof value === 'string') {
+            try {
+              // Keep parsing until we get a plain string
+              while (typeof value === 'string' && (value.startsWith('"') || value.startsWith('\\"'))) {
+                value = JSON.parse(value);
+              }
+            } catch (e) {
+              // If parsing fails, just remove outer quotes
+              value = value.replace(/^"|"$/g, '');
+            }
+          }
+
           switch(setting.key) {
             case 'hero_video': setHeroVideo(value); break;
             case 'hero_title': setHeroTitle(value); break;
@@ -179,6 +193,7 @@ export default function ContentManagementPage() {
             case 'contact_phone': setContactPhone(value); break;
             case 'contact_email': setContactEmail(value); break;
             case 'contact_address': setContactAddress(value); break;
+            case 'office_hours': setOfficeHours(value); break;
           }
         });
       }
@@ -294,6 +309,7 @@ export default function ContentManagementPage() {
         saveSiteSetting('contact_phone', contactPhone, 'global', 'footer'),
         saveSiteSetting('contact_email', contactEmail, 'global', 'footer'),
         saveSiteSetting('contact_address', contactAddress, 'global', 'footer'),
+        saveSiteSetting('office_hours', officeHours, 'global', 'footer'),
       ]);
       alert('Footer content saved successfully!');
     } catch (error) {
@@ -1227,6 +1243,17 @@ export default function ContentManagementPage() {
                   onChange={(e) => setContactAddress(e.target.value)}
                   placeholder="123 Main Street, Dallas, TX 75201"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Office Hours</label>
+                <Textarea
+                  value={officeHours}
+                  onChange={(e) => setOfficeHours(e.target.value)}
+                  rows={4}
+                  placeholder="Monday - Friday: 9:00 AM - 6:00 PM&#10;Saturday: 10:00 AM - 4:00 PM&#10;Sunday: Closed"
+                />
+                <p className="text-xs text-gray-500 mt-1">Use line breaks for each day/time period</p>
               </div>
             </CardContent>
           </Card>

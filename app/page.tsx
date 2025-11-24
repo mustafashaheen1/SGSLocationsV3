@@ -17,14 +17,71 @@ interface Category {
   count: number;
 }
 
+interface Service {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  display_order: number;
+}
+
+interface ProductionLogo {
+  id: string;
+  name: string;
+  logo_url: string;
+  logo_type: string;
+  display_order: number;
+}
+
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [heroVideo, setHeroVideo] = useState('https://imagelocations.com/video/versace-evo-short.mp4');
+  const [heroTitle, setHeroTitle] = useState("Dallas Fort Worth's Largest\nLocation Database");
+  const [heroSubtitle, setHeroSubtitle] = useState('65+ filming locations across North and Central Texas');
+  const [services, setServices] = useState<Service[]>([]);
+  const [productionLogos, setProductionLogos] = useState<ProductionLogo[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
+      // Fetch hero section content
+      const { data: settings } = await supabase
+        .from('site_settings')
+        .select('*')
+        .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
+
+      if (settings) {
+        settings.forEach(setting => {
+          // Parse the JSON value properly - handle multiple layers of escaping
+          let value = setting.value;
+          if (typeof value === 'string') {
+            try {
+              // Keep parsing until we get a plain string
+              while (typeof value === 'string' && (value.startsWith('"') || value.startsWith('\\"'))) {
+                value = JSON.parse(value);
+              }
+            } catch (e) {
+              // If parsing fails, just remove outer quotes
+              value = value.replace(/^"|"$/g, '');
+            }
+          }
+
+          switch(setting.key) {
+            case 'hero_video':
+              if (value) setHeroVideo(value);
+              break;
+            case 'hero_title':
+              if (value) setHeroTitle(value);
+              break;
+            case 'hero_subtitle':
+              if (value) setHeroSubtitle(value);
+              break;
+          }
+        });
+      }
+
       // Fetch featured properties
       const { data: featured } = await supabase
         .from('properties')
@@ -62,6 +119,24 @@ export default function HomePage() {
 
         setCategories(categoriesWithCounts);
       }
+
+      // Fetch services
+      const { data: servicesData } = await supabase
+        .from('services')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (servicesData) setServices(servicesData);
+
+      // Fetch production logos
+      const { data: logosData } = await supabase
+        .from('production_logos')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (logosData) setProductionLogos(logosData);
     }
 
     fetchData();
@@ -76,66 +151,12 @@ export default function HomePage() {
     }
   };
 
-
-  const services = [
-    {
-      icon: MapPin,
-      title: 'Location Scouting',
-      description: 'Expert location scouting services to find the perfect setting for your production. Access to our extensive database of pre-scouted locations.',
-    },
-    {
-      icon: FileCheck,
-      title: 'Permitting Services',
-      description: 'Navigate the permitting process with ease. We handle all necessary permits and approvals for filming at your chosen location.',
-    },
-    {
-      icon: ImageIcon,
-      title: 'Location Photography',
-      description: 'Professional photography services to showcase locations. High-quality images and virtual tours for remote location scouting.',
-    },
-  ];
-
-  const productionLogos = [
-    // TV Shows - Top Row
-    {
-      name: 'Landman',
-      logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/85/Landman_%28TV_series%29_Title_Card.jpg/250px-Landman_%28TV_series%29_Title_Card.jpg',
-      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Landman'
-    },
-    {
-      name: 'Yellowstone',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Yellowstone_%28American_TV_series%29_Title_Card.png/250px-Yellowstone_%28American_TV_series%29_Title_Card.png',
-      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Yellowstone'
-    },
-    {
-      name: 'Madison',
-      logo: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Madison',
-      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Madison'
-    },
-    {
-      name: 'Lioness',
-      logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/65/Special_Ops-_Lioness_Title_Card.jpg/250px-Special_Ops-_Lioness_Title_Card.jpg',
-      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Lioness'
-    },
-    // Production Companies - Bottom Row
-    {
-      name: 'Paramount',
-      logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCAyMDAgODAiPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM2YjcyODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPnBhcmFtb3VudDwvdGV4dD48L3N2Zz4=',
-      fallback: 'https://via.placeholder.com/200x80/f3f4f6/6b7280?text=Paramount'
-    },
-    {
-      name: 'Netflix',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/320px-Netflix_2015_logo.svg.png'
-    },
-    {
-      name: 'HBO',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/HBO_logo.svg/320px-HBO_logo.svg.png'
-    },
-    {
-      name: 'Amazon Studios',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Prime_Video.png/320px-Prime_Video.png'
-    }
-  ];
+  // Icon mapping for services
+  const iconMap: { [key: string]: any } = {
+    'MapPin': MapPin,
+    'FileCheck': FileCheck,
+    'ImageIcon': ImageIcon,
+  };
 
   return (
     <main className="min-h-screen">
@@ -147,16 +168,21 @@ export default function HomePage() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="https://imagelocations.com/video/versace-evo-short.mp4" type="video/mp4" />
+          <source src={heroVideo} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
           <h1 className="text-6xl md:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
-            Dallas Fort Worth's Largest<br />Location Database
+            {heroTitle.split('\n').map((line, i) => (
+              <span key={i}>
+                {line}
+                {i < heroTitle.split('\n').length - 1 && <br />}
+              </span>
+            ))}
           </h1>
           <p className="text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
-            65+ filming locations across North and Central Texas
+            {heroSubtitle}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -270,15 +296,13 @@ export default function HomePage() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
             {productionLogos.map((item) => (
-              <div key={item.name} className="flex items-center justify-center h-20 w-full">
+              <div key={item.id} className="flex items-center justify-center h-20 w-full">
                 <img
-                  src={item.logo}
+                  src={item.logo_url}
                   alt={item.name}
                   className="max-h-16 max-w-[180px] w-auto object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
                   onError={(e) => {
-                    if (item.fallback) {
-                      e.currentTarget.src = item.fallback;
-                    }
+                    e.currentTarget.src = `https://via.placeholder.com/200x80/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`;
                   }}
                 />
               </div>
@@ -292,9 +316,9 @@ export default function HomePage() {
           <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100}}>Our Services</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {services.map((service) => {
-              const Icon = service.icon;
+              const Icon = iconMap[service.icon] || MapPin;
               return (
-                <div key={service.title} className="text-center">
+                <div key={service.id} className="text-center">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-[#e11921] rounded-full mb-6">
                     <Icon className="w-8 h-8" />
                   </div>

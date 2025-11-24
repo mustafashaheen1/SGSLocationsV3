@@ -10,7 +10,8 @@ export function Footer() {
     description: '',
     phone: '',
     email: '',
-    address: ''
+    address: '',
+    officeHours: 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed'
   });
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -20,25 +21,46 @@ export function Footer() {
     fetchFooterContent();
   }, []);
 
+  // Helper function to parse JSON values with multiple layers of escaping
+  const parseValue = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'string') {
+      try {
+        // Keep parsing until we get a plain string
+        let parsed = value;
+        while (typeof parsed === 'string' && (parsed.startsWith('"') || parsed.startsWith('\\"'))) {
+          parsed = JSON.parse(parsed);
+        }
+        return parsed;
+      } catch (e) {
+        // If parsing fails, just remove outer quotes
+        return value.replace(/^"|"$/g, '');
+      }
+    }
+    return String(value);
+  };
+
   async function fetchFooterContent() {
     try {
       // Fetch footer settings from site_settings table
       const { data: settings } = await supabase
         .from('site_settings')
         .select('*')
-        .in('key', ['footer_description', 'contact_phone', 'contact_email', 'contact_address']);
+        .in('key', ['footer_description', 'contact_phone', 'contact_email', 'contact_address', 'office_hours']);
 
       if (settings) {
         const description = settings.find(s => s.key === 'footer_description')?.value;
         const phone = settings.find(s => s.key === 'contact_phone')?.value;
         const email = settings.find(s => s.key === 'contact_email')?.value;
         const address = settings.find(s => s.key === 'contact_address')?.value;
+        const officeHours = settings.find(s => s.key === 'office_hours')?.value;
 
         setFooterContent({
-          description: description ? description.replace(/^"|"$/g, '') : "Dallas Fort Worth's largest location database connecting property owners with production companies. Over 20 years of experience serving the film and television industry.",
-          phone: phone ? phone.replace(/^"|"$/g, '') : '(214) 555-0100',
-          email: email ? email.replace(/^"|"$/g, '') : 'info@sgslocations.com',
-          address: address ? address.replace(/^"|"$/g, '') : '123 Main Street, Dallas, TX 75201'
+          description: parseValue(description) || "Dallas Fort Worth's largest location database connecting property owners with production companies. Over 20 years of experience serving the film and television industry.",
+          phone: parseValue(phone) || '(214) 555-0100',
+          email: parseValue(email) || 'info@sgslocations.com',
+          address: parseValue(address) || '123 Main Street, Dallas, TX 75201',
+          officeHours: parseValue(officeHours) || 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed'
         });
       }
 
@@ -197,9 +219,9 @@ export function Footer() {
               <div className="flex items-start space-x-3">
                 <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                 <div className="text-gray-400">
-                  <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                  <p>Saturday: 10:00 AM - 4:00 PM</p>
-                  <p>Sunday: Closed</p>
+                  {footerContent.officeHours.split('\n').map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
                 </div>
               </div>
             </div>
