@@ -172,45 +172,53 @@ export default function HomePage() {
     'ImageIcon': ImageIcon,
   };
 
+  // Show full-page loader while content is loading
+  if (!contentLoaded) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center space-x-2 mb-4">
+            <div className="w-10 h-10 bg-red-600 rounded flex items-center justify-center">
+              <span className="text-white font-bold text-xl">S</span>
+            </div>
+            <span className="text-2xl font-bold text-white">SGS LOCATIONS®</span>
+          </div>
+          <div className="flex space-x-2 justify-center">
+            <div className="w-3 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-3 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-3 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen animate-fadeIn">
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {contentLoaded && heroVideo ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src={heroVideo} type="video/mp4" />
-          </video>
-        ) : (
-          <div className="absolute inset-0 bg-gray-900" />
-        )}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
-          {contentLoaded ? (
-            <>
-              <h1 className="text-6xl md:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
-                {heroTitle.split('\n').map((line, i) => (
-                  <span key={i}>
-                    {line}
-                    {i < heroTitle.split('\n').length - 1 && <br />}
-                  </span>
-                ))}
-              </h1>
-              <p className="text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
-                {heroSubtitle}
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="h-20 bg-white/10 rounded mb-6 animate-pulse" />
-              <div className="h-10 bg-white/10 rounded mb-12 max-w-2xl mx-auto animate-pulse" />
-            </>
-          )}
+          <h1 className="text-6xl md:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
+            {heroTitle.split('\n').map((line, i) => (
+              <span key={i}>
+                {line}
+                {i < heroTitle.split('\n').length - 1 && <br />}
+              </span>
+            ))}
+          </h1>
+          <p className="text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
+            {heroSubtitle}
+          </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button
