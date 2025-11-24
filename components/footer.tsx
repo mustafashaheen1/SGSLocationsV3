@@ -11,7 +11,7 @@ export function Footer() {
     phone: '',
     email: '',
     address: '',
-    officeHours: 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed'
+    officeHours: ''
   });
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -89,6 +89,14 @@ export function Footer() {
 
     } catch (error) {
       console.error('Error fetching footer content:', error);
+      // Set defaults on error
+      setFooterContent(prev => ({
+        description: prev.description || "Dallas Fort Worth's largest location database connecting property owners with production companies. Over 20 years of experience serving the film and television industry.",
+        phone: prev.phone || '(214) 555-0100',
+        email: prev.email || 'info@sgslocations.com',
+        address: prev.address || '123 Main Street, Dallas, TX 75201',
+        officeHours: prev.officeHours || 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed'
+      }));
     } finally {
       setLoading(false);
     }
@@ -107,9 +115,20 @@ export function Footer() {
 
   if (loading) {
     return (
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <p className="text-center">Loading...</p>
+      <footer className="bg-gray-900 text-white">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-4">
+                <div className="h-6 bg-gray-800 rounded animate-pulse w-3/4" />
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-800 rounded animate-pulse" />
+                  <div className="h-4 bg-gray-800 rounded animate-pulse w-5/6" />
+                  <div className="h-4 bg-gray-800 rounded animate-pulse w-4/6" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </footer>
     );

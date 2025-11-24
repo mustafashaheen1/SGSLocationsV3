@@ -37,11 +37,12 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [heroVideo, setHeroVideo] = useState('https://imagelocations.com/video/versace-evo-short.mp4');
-  const [heroTitle, setHeroTitle] = useState("Dallas Fort Worth's Largest\nLocation Database");
-  const [heroSubtitle, setHeroSubtitle] = useState('65+ filming locations across North and Central Texas');
+  const [heroVideo, setHeroVideo] = useState('');
+  const [heroTitle, setHeroTitle] = useState('');
+  const [heroSubtitle, setHeroSubtitle] = useState('');
   const [services, setServices] = useState<Service[]>([]);
   const [productionLogos, setProductionLogos] = useState<ProductionLogo[]>([]);
+  const [contentLoaded, setContentLoaded] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -137,6 +138,14 @@ export default function HomePage() {
         .order('display_order');
 
       if (logosData) setProductionLogos(logosData);
+
+      // Set defaults if data is missing
+      if (!heroVideo) setHeroVideo('https://imagelocations.com/video/versace-evo-short.mp4');
+      if (!heroTitle) setHeroTitle("Dallas Fort Worth's Largest\nLocation Database");
+      if (!heroSubtitle) setHeroSubtitle('65+ filming locations across North and Central Texas');
+
+      // Mark content as loaded
+      setContentLoaded(true);
     }
 
     fetchData();
@@ -161,29 +170,42 @@ export default function HomePage() {
   return (
     <main className="min-h-screen">
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src={heroVideo} type="video/mp4" />
-        </video>
+        {contentLoaded && heroVideo ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
+        ) : (
+          <div className="absolute inset-0 bg-gray-900" />
+        )}
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
-          <h1 className="text-6xl md:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
-            {heroTitle.split('\n').map((line, i) => (
-              <span key={i}>
-                {line}
-                {i < heroTitle.split('\n').length - 1 && <br />}
-              </span>
-            ))}
-          </h1>
-          <p className="text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
-            {heroSubtitle}
-          </p>
+          {contentLoaded ? (
+            <>
+              <h1 className="text-6xl md:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
+                {heroTitle.split('\n').map((line, i) => (
+                  <span key={i}>
+                    {line}
+                    {i < heroTitle.split('\n').length - 1 && <br />}
+                  </span>
+                ))}
+              </h1>
+              <p className="text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
+                {heroSubtitle}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="h-20 bg-white/10 rounded mb-6 animate-pulse" />
+              <div className="h-10 bg-white/10 rounded mb-12 max-w-2xl mx-auto animate-pulse" />
+            </>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button
