@@ -27,23 +27,8 @@ interface Document {
 export default function DocumentDirectoryPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
-
-  const documentTypes = [
-    'all',
-    'Contract',
-    'Agreement',
-    'Invoice',
-    'Receipt',
-    'Script',
-    'Storyboard',
-    'Release Form',
-    'Permit',
-    'Insurance',
-    'Other'
-  ];
 
   useEffect(() => {
     fetchDocuments();
@@ -85,22 +70,6 @@ export default function DocumentDirectoryPage() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const getTypeColor = (type: string) => {
-    const colors: { [key: string]: string } = {
-      Contract: 'bg-blue-100 text-blue-800',
-      Agreement: 'bg-purple-100 text-purple-800',
-      Invoice: 'bg-green-100 text-green-800',
-      Receipt: 'bg-emerald-100 text-emerald-800',
-      Script: 'bg-yellow-100 text-yellow-800',
-      Storyboard: 'bg-orange-100 text-orange-800',
-      'Release Form': 'bg-pink-100 text-pink-800',
-      Permit: 'bg-indigo-100 text-indigo-800',
-      Insurance: 'bg-red-100 text-red-800',
-      Other: 'bg-gray-100 text-gray-800',
-    };
-    return colors[type] || colors.Other;
-  };
-
   const handleDelete = async (doc: Document) => {
     if (!confirm(`Are you sure you want to delete "${doc.title}"? This cannot be undone.`)) {
       return;
@@ -131,15 +100,11 @@ export default function DocumentDirectoryPage() {
 
   const filteredDocuments = documents.filter(doc => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch =
+    return (
       doc.title.toLowerCase().includes(searchLower) ||
       doc.production_companies.name.toLowerCase().includes(searchLower) ||
-      doc.file_name.toLowerCase().includes(searchLower) ||
-      doc.document_type.toLowerCase().includes(searchLower);
-
-    const matchesType = filterType === 'all' || doc.document_type === filterType;
-
-    return matchesSearch && matchesType;
+      doc.file_name.toLowerCase().includes(searchLower)
+    );
   });
 
   return (
@@ -158,9 +123,8 @@ export default function DocumentDirectoryPage() {
       )}
 
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="mb-6 flex gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
+        <div className="mb-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
@@ -170,19 +134,6 @@ export default function DocumentDirectoryPage() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
             />
           </div>
-
-          {/* Filter by Type */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-          >
-            {documentTypes.map(type => (
-              <option key={type} value={type}>
-                {type === 'all' ? 'All Types' : type}
-              </option>
-            ))}
-          </select>
         </div>
 
         {loading ? (
@@ -197,8 +148,8 @@ export default function DocumentDirectoryPage() {
                 <FileText className="mx-auto mb-4 text-gray-400" size={48} />
                 <p className="text-lg font-medium">No documents found</p>
                 <p className="text-sm mt-2">
-                  {searchTerm || filterType !== 'all'
-                    ? 'Try adjusting your search or filters'
+                  {searchTerm
+                    ? 'Try adjusting your search'
                     : 'Upload documents from production company pages'}
                 </p>
               </div>
@@ -209,7 +160,6 @@ export default function DocumentDirectoryPage() {
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Title</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Production Company</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Size</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Uploaded</th>
@@ -233,11 +183,6 @@ export default function DocumentDirectoryPage() {
                             <Building size={16} />
                             {doc.production_companies.name}
                           </Link>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className={`px-2 py-1 text-xs rounded ${getTypeColor(doc.document_type)}`}>
-                            {doc.document_type}
-                          </span>
                         </td>
                         <td className="py-4 px-4 text-sm text-gray-600">{doc.file_name}</td>
                         <td className="py-4 px-4 text-sm text-gray-600">

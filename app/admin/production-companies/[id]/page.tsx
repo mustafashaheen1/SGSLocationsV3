@@ -272,12 +272,6 @@ export default function ProductionCompanyProfilePage() {
               </p>
             </div>
           )}
-          {company.address && (
-            <div className="col-span-2">
-              <span className="text-sm text-gray-600">Address</span>
-              <p className="font-medium">{company.address}</p>
-            </div>
-          )}
           {company.notes && (
             <div className="col-span-2">
               <span className="text-sm text-gray-600">Notes</span>
@@ -305,7 +299,6 @@ export default function ProductionCompanyProfilePage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Title</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Size</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Uploaded</th>
@@ -320,11 +313,6 @@ export default function ProductionCompanyProfilePage() {
                       {doc.description && (
                         <div className="text-sm text-gray-500">{doc.description}</div>
                       )}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                        {doc.document_type}
-                      </span>
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-600">{doc.file_name}</td>
                     <td className="py-4 px-4 text-sm text-gray-600">
