@@ -53,6 +53,11 @@ export default function HomePage() {
         .select('*')
         .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
 
+      // Track fetched values
+      let fetchedVideo = '';
+      let fetchedTitle = '';
+      let fetchedSubtitle = '';
+
       if (settings) {
         settings.forEach(setting => {
           // Parse the JSON value properly - handle multiple layers of escaping
@@ -71,17 +76,22 @@ export default function HomePage() {
 
           switch(setting.key) {
             case 'hero_video':
-              if (value) setHeroVideo(value);
+              fetchedVideo = value;
               break;
             case 'hero_title':
-              if (value) setHeroTitle(value);
+              fetchedTitle = value;
               break;
             case 'hero_subtitle':
-              if (value) setHeroSubtitle(value);
+              fetchedSubtitle = value;
               break;
           }
         });
       }
+
+      // Set values with fallbacks
+      setHeroVideo(fetchedVideo || 'https://imagelocations.com/video/versace-evo-short.mp4');
+      setHeroTitle(fetchedTitle || "Dallas Fort Worth's Largest\nLocation Database");
+      setHeroSubtitle(fetchedSubtitle || '65+ filming locations across North and Central Texas');
 
       // Fetch featured properties
       const { data: featured } = await supabase
@@ -138,11 +148,6 @@ export default function HomePage() {
         .order('display_order');
 
       if (logosData) setProductionLogos(logosData);
-
-      // Set defaults if data is missing
-      if (!heroVideo) setHeroVideo('https://imagelocations.com/video/versace-evo-short.mp4');
-      if (!heroTitle) setHeroTitle("Dallas Fort Worth's Largest\nLocation Database");
-      if (!heroSubtitle) setHeroSubtitle('65+ filming locations across North and Central Texas');
 
       // Mark content as loaded
       setContentLoaded(true);
