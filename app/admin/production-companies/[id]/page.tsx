@@ -43,10 +43,11 @@ export default function ProductionCompanyProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
-  // Upload form state
+  // Upload form state - changed to support multiple files
   const [uploadForm, setUploadForm] = useState({
-    file: null as File | null,
+    files: [] as File[],
   });
 
   useEffect(() => {
@@ -99,24 +100,68 @@ export default function ProductionCompanyProfilePage() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFiles = Array.from(e.target.files);
 
-      // Validate file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
-        return;
-      }
+      // Validate each file size (10MB max)
+      const validFiles = selectedFiles.filter(file => {
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+          return false;
+        }
+        return true;
+      });
 
-      setUploadForm({ ...uploadForm, file });
+      setUploadForm({ files: validFiles });
     }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+
+    // Validate each file size (10MB max)
+    const validFiles = droppedFiles.filter(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    setUploadForm({ files: validFiles });
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = uploadForm.files.filter((_, i) => i !== index);
+    setUploadForm({ files: newFiles });
   };
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!uploadForm.file) {
-      alert('Please select a file');
+    if (uploadForm.files.length === 0) {
+      alert('Please select at least one file');
       return;
     }
 
@@ -125,38 +170,57 @@ export default function ProductionCompanyProfilePage() {
       // Get current user email
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Upload file to S3
-      const fileUrl = await uploadDocumentToS3(uploadForm.file);
+      let successCount = 0;
+      let failCount = 0;
 
-      // Use filename as title (without extension)
-      const fileName = uploadForm.file.name;
-      const title = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+      // Upload each file
+      for (const file of uploadForm.files) {
+        try {
+          // Upload file to S3
+          const fileUrl = await uploadDocumentToS3(file);
 
-      // Save document to database
-      const { error } = await supabase
-        .from('documents')
-        .insert([{
-          production_company_id: params.id,
-          title: title,
-          description: null,
-          file_url: fileUrl,
-          file_name: uploadForm.file.name,
-          file_size: uploadForm.file.size,
-          file_type: uploadForm.file.type,
-          document_type: 'Document',
-          uploaded_by: user?.email || null,
-        }]);
+          // Use filename as title (without extension)
+          const fileName = file.name;
+          const title = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
 
-      if (error) throw error;
+          // Save document to database
+          const { error } = await supabase
+            .from('documents')
+            .insert([{
+              production_company_id: params.id,
+              title: title,
+              description: null,
+              file_url: fileUrl,
+              file_name: file.name,
+              file_size: file.size,
+              file_type: file.type,
+              document_type: 'Document',
+              uploaded_by: user?.email || null,
+            }]);
 
-      showSuccess('Document uploaded successfully');
+          if (error) throw error;
+          successCount++;
+        } catch (fileError) {
+          console.error(`Error uploading ${file.name}:`, fileError);
+          failCount++;
+        }
+      }
+
+      // Show appropriate success message
+      if (successCount > 0) {
+        const message = failCount > 0
+          ? `${successCount} document(s) uploaded successfully, ${failCount} failed`
+          : `${successCount} document(s) uploaded successfully`;
+        showSuccess(message);
+      } else {
+        alert('All uploads failed. Please try again.');
+      }
+
       setShowUploadModal(false);
-      setUploadForm({
-        file: null,
-      });
+      setUploadForm({ files: [] });
       fetchCompanyAndDocuments();
     } catch (error: any) {
-      alert('Error uploading document: ' + error.message);
+      alert('Error uploading documents: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -365,32 +429,43 @@ export default function ProductionCompanyProfilePage() {
               <form onSubmit={handleUploadSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Upload Document <span className="text-red-500">*</span>
+                    Upload Documents <span className="text-red-500">*</span>
                   </label>
                   <p className="text-sm text-gray-500 mb-3">
-                    The document title will be automatically extracted from the filename
+                    Select multiple files at once. Document titles will be automatically extracted from filenames.
                   </p>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
+                      isDragging
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300 bg-white'
+                    }`}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
                       onChange={handleFileChange}
                       className="hidden"
                       id="file-upload"
-                      required
+                      multiple
+                      required={uploadForm.files.length === 0}
                     />
                     <label
                       htmlFor="file-upload"
                       className="cursor-pointer flex flex-col items-center"
                     >
-                      <Upload className="w-12 h-12 text-gray-400 mb-2" />
-                      {uploadForm.file ? (
-                        <div className="text-center">
+                      <Upload className={`w-12 h-12 mb-2 ${isDragging ? 'text-red-500' : 'text-gray-400'}`} />
+                      {uploadForm.files.length > 0 ? (
+                        <div className="text-center w-full">
                           <span className="text-sm text-green-600 font-medium">
-                            {uploadForm.file.name}
+                            {uploadForm.files.length} file(s) selected
                           </span>
                           <p className="text-xs text-gray-500 mt-1">
-                            {formatFileSize(uploadForm.file.size)}
+                            Click or drag to add more files
                           </p>
                         </div>
                       ) : (
@@ -399,12 +474,48 @@ export default function ProductionCompanyProfilePage() {
                             Click to upload or drag and drop
                           </span>
                           <span className="text-xs text-gray-500 mt-1">
-                            PDF, DOC, DOCX, XLS, XLSX, TXT (Max 10MB)
+                            PDF, DOC, DOCX, XLS, XLSX, TXT (Max 10MB per file)
+                          </span>
+                          <span className="text-xs text-gray-500 mt-1 font-medium">
+                            Multiple files supported
                           </span>
                         </>
                       )}
                     </label>
                   </div>
+
+                  {/* Display selected files */}
+                  {uploadForm.files.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm font-medium text-gray-700">Selected Files:</p>
+                      {uploadForm.files.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <FileText className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.size)}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index)}
+                            className="p-1 hover:bg-gray-200 rounded transition-colors flex-shrink-0"
+                            title="Remove file"
+                          >
+                            <X size={16} className="text-gray-600" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 justify-end">
@@ -421,7 +532,11 @@ export default function ProductionCompanyProfilePage() {
                     className="bg-[#e11921] hover:bg-[#bf151c]"
                     disabled={uploading}
                   >
-                    {uploading ? 'Uploading...' : 'Upload Document'}
+                    {uploading
+                      ? 'Uploading...'
+                      : uploadForm.files.length > 1
+                        ? `Upload ${uploadForm.files.length} Documents`
+                        : 'Upload Document'}
                   </Button>
                 </div>
               </form>
