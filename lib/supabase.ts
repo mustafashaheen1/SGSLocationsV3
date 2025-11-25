@@ -74,6 +74,14 @@ export async function getPropertyByAlbumKey(albumkey: string): Promise<Property 
   return data;
 }
 
+export interface PropertyContact {
+  name: string;
+  cell_number: string;
+  home_number: string;
+  office_number: string;
+  email: string;
+}
+
 export interface Property {
   id: string;
   name: string;
@@ -105,6 +113,8 @@ export interface Property {
   is_featured?: boolean;
   is_exclusive?: boolean;
   view_count?: number;
+  contacts?: PropertyContact[];
+  notes?: string;
   created_at: string;
   updated_at: string;
 }

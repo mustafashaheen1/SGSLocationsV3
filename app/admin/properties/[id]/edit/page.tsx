@@ -50,6 +50,14 @@ interface FilterTag {
   filter_slug?: string;
 }
 
+interface Contact {
+  name: string;
+  cell_number: string;
+  home_number: string;
+  office_number: string;
+  email: string;
+}
+
 export default function EditPropertyPage() {
   const params = useParams();
   const router = useRouter();
@@ -70,6 +78,7 @@ export default function EditPropertyPage() {
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0, status: '' });
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [propertyTags, setPropertyTags] = useState<string[]>([]);
+  const [propertyCategoryName, setPropertyCategoryName] = useState<string>(''); // Store category name to match later
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -83,6 +92,15 @@ export default function EditPropertyPage() {
     is_featured: false,
     is_exclusive: false,
   });
+
+  const [contacts, setContacts] = useState<Contact[]>([
+    { name: '', cell_number: '', home_number: '', office_number: '', email: '' },
+    { name: '', cell_number: '', home_number: '', office_number: '', email: '' }
+  ]);
+
+  const [notes, setNotes] = useState('');
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesSaved, setNotesSaved] = useState(false);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -126,6 +144,53 @@ export default function EditPropertyPage() {
     }
   }, [images.length]);
 
+  // Match category name to ID once categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && propertyCategoryName && !formData.category_id) {
+      const matchedCategory = categories.find(cat => cat.name === propertyCategoryName);
+      if (matchedCategory) {
+        setFormData(prev => ({
+          ...prev,
+          category_id: matchedCategory.id
+        }));
+      }
+    }
+  }, [categories, propertyCategoryName]);
+
+  // Auto-save notes with debounce
+  useEffect(() => {
+    // Don't auto-save if loading or if notes haven't been loaded yet
+    if (loading) return;
+
+    const timeoutId = setTimeout(async () => {
+      // Only save if property exists and notes have changed
+      if (propertyId && notes !== undefined) {
+        setNotesSaving(true);
+        setNotesSaved(false);
+
+        try {
+          const { error } = await supabase
+            .from('properties')
+            .update({ notes: notes })
+            .eq('id', propertyId);
+
+          if (error) {
+            console.error('Error auto-saving notes:', error);
+          } else {
+            setNotesSaved(true);
+            setTimeout(() => setNotesSaved(false), 2000);
+          }
+        } catch (error) {
+          console.error('Error auto-saving notes:', error);
+        } finally {
+          setNotesSaving(false);
+        }
+      }
+    }, 2000); // Wait 2 seconds after user stops typing
+
+    return () => clearTimeout(timeoutId);
+  }, [notes, propertyId, loading]);
+
   async function fetchProperty() {
     setLoading(true);
     try {
@@ -148,12 +213,31 @@ export default function EditPropertyPage() {
         zipcode: property.zipcode || '',
         latitude: property.latitude,
         longitude: property.longitude,
-        category_id: property.categories?.[0] ? '' : '', // We'll match by name
+        category_id: '', // Will be set by useEffect after categories load
         is_featured: property.is_featured || false,
         is_exclusive: property.is_exclusive || false,
       });
 
       setPropertyTags(property.property_tags || []);
+
+      // Store category name to match with category ID after categories load
+      if (property.categories?.[0]) {
+        setPropertyCategoryName(property.categories[0]);
+      }
+
+      // Load contacts or set default
+      if (property.contacts && property.contacts.length >= 2) {
+        setContacts(property.contacts);
+      } else {
+        // Ensure at least 2 contacts
+        setContacts([
+          { name: '', cell_number: '', home_number: '', office_number: '', email: '' },
+          { name: '', cell_number: '', home_number: '', office_number: '', email: '' }
+        ]);
+      }
+
+      // Load notes
+      setNotes(property.notes || '');
 
       // Fetch property images with tags
       const { data: propertyImages, error: imagesError } = await supabase
@@ -544,6 +628,24 @@ export default function EditPropertyPage() {
     });
   }
 
+  function updateContact(index: number, field: keyof Contact, value: string) {
+    setContacts(prev => prev.map((contact, i) =>
+      i === index ? { ...contact, [field]: value } : contact
+    ));
+  }
+
+  function addContact() {
+    setContacts(prev => [...prev, { name: '', cell_number: '', home_number: '', office_number: '', email: '' }]);
+  }
+
+  function removeContact(index: number) {
+    if (contacts.length <= 2) {
+      alert('At least 2 contacts are required');
+      return;
+    }
+    setContacts(prev => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -555,6 +657,21 @@ export default function EditPropertyPage() {
     if (images.length < 6) {
       alert('Please upload at least 6 images for the property grid display');
       return;
+    }
+
+    // Validate contacts
+    if (contacts.length < 2) {
+      alert('At least 2 contacts are required');
+      return;
+    }
+
+    // Check if all contact fields are filled
+    for (let i = 0; i < contacts.length; i++) {
+      const contact = contacts[i];
+      if (!contact.name || !contact.email) {
+        alert(`Contact ${i + 1}: Name and Email are required fields`);
+        return;
+      }
     }
 
     setSaving(true);
@@ -592,6 +709,7 @@ export default function EditPropertyPage() {
         property_tags: propertyTags,
         primary_image: reorderedImages[0]?.url || null,
         images: reorderedImages.map(img => img.url),
+        contacts: contacts,
         updated_at: new Date().toISOString()
       };
 
@@ -823,6 +941,123 @@ export default function EditPropertyPage() {
                   <span className="text-xs text-gray-600">Mark as exclusive listing</span>
                 </div>
               </label>
+            </div>
+          </div>
+
+          {/* CONTACTS SECTION */}
+          <div className="col-span-2 border-t pt-6">
+            <div className="bg-white rounded-lg border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Property Contacts *</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    At least 2 contacts are required. Name and Email are mandatory fields.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={addContact}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Add Contact
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {contacts.map((contact, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-gray-900">Contact {index + 1}</h4>
+                      {contacts.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeContact(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Name *</label>
+                        <Input
+                          value={contact.name}
+                          onChange={(e) => updateContact(index, 'name', e.target.value)}
+                          placeholder="Contact name"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Email *</label>
+                        <Input
+                          type="email"
+                          value={contact.email}
+                          onChange={(e) => updateContact(index, 'email', e.target.value)}
+                          placeholder="email@example.com"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Cell Number</label>
+                        <Input
+                          type="tel"
+                          value={contact.cell_number}
+                          onChange={(e) => updateContact(index, 'cell_number', e.target.value)}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Home Number</label>
+                        <Input
+                          type="tel"
+                          value={contact.home_number}
+                          onChange={(e) => updateContact(index, 'home_number', e.target.value)}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Office Number</label>
+                        <Input
+                          type="tel"
+                          value={contact.office_number}
+                          onChange={(e) => updateContact(index, 'office_number', e.target.value)}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* NOTES SECTION - AUTO-SAVES */}
+          <div className="col-span-2 border-t pt-6">
+            <div className="bg-white rounded-lg border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Admin Notes</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Internal notes for admin use only (not visible on website) • Auto-saves as you type
+                  </p>
+                </div>
+                {notesSaving && (
+                  <span className="text-sm text-gray-500 italic">Saving...</span>
+                )}
+                {notesSaved && !notesSaving && (
+                  <span className="text-sm text-green-600 italic">Saved ✓</span>
+                )}
+              </div>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add internal notes about this property..."
+                rows={6}
+                className="w-full"
+              />
             </div>
           </div>
 

@@ -52,6 +52,14 @@ interface FilterTag {
   filter_slug?: string;
 }
 
+interface Contact {
+  name: string;
+  cell_number: string;
+  home_number: string;
+  office_number: string;
+  email: string;
+}
+
 export default function AddPropertyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -94,6 +102,13 @@ export default function AddPropertyPage() {
     is_featured: false,
     is_exclusive: false,
   });
+
+  const [contacts, setContacts] = useState<Contact[]>([
+    { name: '', cell_number: '', home_number: '', office_number: '', email: '' },
+    { name: '', cell_number: '', home_number: '', office_number: '', email: '' }
+  ]);
+
+  const [notes, setNotes] = useState('');
 
   // Initialize everything on mount
   useEffect(() => {
@@ -785,6 +800,24 @@ export default function AddPropertyPage() {
     });
   }
 
+  function updateContact(index: number, field: keyof Contact, value: string) {
+    setContacts(prev => prev.map((contact, i) =>
+      i === index ? { ...contact, [field]: value } : contact
+    ));
+  }
+
+  function addContact() {
+    setContacts(prev => [...prev, { name: '', cell_number: '', home_number: '', office_number: '', email: '' }]);
+  }
+
+  function removeContact(index: number) {
+    if (contacts.length <= 2) {
+      alert('At least 2 contacts are required');
+      return;
+    }
+    setContacts(prev => prev.filter((_, i) => i !== index));
+  }
+
   function extractAlbumKey(url: string): string | null {
     const albumKeyMatch = url.match(/\/([A-Za-z0-9]+)$/);
     return albumKeyMatch ? albumKeyMatch[1] : url.trim() || null;
@@ -972,6 +1005,21 @@ export default function AddPropertyPage() {
       return;
     }
 
+    // Validate contacts
+    if (contacts.length < 2) {
+      alert('At least 2 contacts are required');
+      return;
+    }
+
+    // Check if all contact fields are filled
+    for (let i = 0; i < contacts.length; i++) {
+      const contact = contacts[i];
+      if (!contact.name || !contact.email) {
+        alert(`Contact ${i + 1}: Name and Email are required fields`);
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -1036,7 +1084,11 @@ export default function AddPropertyPage() {
         images: reorderedImages.map(img => img.url),
         features: [],
         permits_available: false,
-        daily_rate: '0'
+        daily_rate: '0',
+        // Add contacts
+        contacts: contacts,
+        // Add notes
+        notes: notes
       };
 
       console.log('Submitting property data:', propertyData);
@@ -1322,6 +1374,115 @@ export default function AddPropertyPage() {
                   <span className="text-xs text-gray-600">Mark as exclusive listing</span>
                 </div>
               </label>
+            </div>
+          </div>
+
+          {/* CONTACTS SECTION */}
+          <div className="col-span-2 border-t pt-6">
+            <div className="bg-white rounded-lg border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Property Contacts *</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    At least 2 contacts are required. Name and Email are mandatory fields.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={addContact}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Add Contact
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {contacts.map((contact, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-gray-900">Contact {index + 1}</h4>
+                      {contacts.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeContact(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Name *</label>
+                        <Input
+                          value={contact.name}
+                          onChange={(e) => updateContact(index, 'name', e.target.value)}
+                          placeholder="Contact name"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Email *</label>
+                        <Input
+                          type="email"
+                          value={contact.email}
+                          onChange={(e) => updateContact(index, 'email', e.target.value)}
+                          placeholder="email@example.com"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Cell Number</label>
+                        <Input
+                          type="tel"
+                          value={contact.cell_number}
+                          onChange={(e) => updateContact(index, 'cell_number', e.target.value)}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Home Number</label>
+                        <Input
+                          type="tel"
+                          value={contact.home_number}
+                          onChange={(e) => updateContact(index, 'home_number', e.target.value)}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Office Number</label>
+                        <Input
+                          type="tel"
+                          value={contact.office_number}
+                          onChange={(e) => updateContact(index, 'office_number', e.target.value)}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* NOTES SECTION */}
+          <div className="col-span-2 border-t pt-6">
+            <div className="bg-white rounded-lg border p-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Admin Notes</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Internal notes for admin use only (not visible on website)
+                </p>
+              </div>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add internal notes about this property..."
+                rows={6}
+                className="w-full"
+              />
             </div>
           </div>
 
