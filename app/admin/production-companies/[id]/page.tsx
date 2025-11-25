@@ -175,12 +175,29 @@ export default function ProductionCompanyProfilePage() {
       // Get current user email
       const { data: { user } } = await supabase.auth.getUser();
 
+      // Get existing documents for this production company to check for duplicates
+      const { data: existingDocs } = await supabase
+        .from('documents')
+        .select('file_name')
+        .eq('production_company_id', params.id);
+
+      const existingFileNames = new Set(existingDocs?.map(doc => doc.file_name) || []);
+
       let successCount = 0;
       let failCount = 0;
+      let duplicateCount = 0;
+      const duplicateFiles: string[] = [];
 
       // Upload each file
       for (const file of uploadForm.files) {
         try {
+          // Check for duplicate file name
+          if (existingFileNames.has(file.name)) {
+            duplicateFiles.push(file.name);
+            duplicateCount++;
+            continue;
+          }
+
           // Upload file to S3
           const fileUrl = await uploadDocumentToS3(file);
 
@@ -211,13 +228,25 @@ export default function ProductionCompanyProfilePage() {
         }
       }
 
-      // Show appropriate success message
+      // Show appropriate message
+      let message = '';
       if (successCount > 0) {
-        const message = failCount > 0
-          ? `${successCount} document(s) uploaded successfully, ${failCount} failed`
-          : `${successCount} document(s) uploaded successfully`;
+        message = `${successCount} document(s) uploaded successfully`;
+      }
+      if (failCount > 0) {
+        message += message ? `, ${failCount} failed` : `${failCount} upload(s) failed`;
+      }
+      if (duplicateCount > 0) {
+        const duplicateList = duplicateFiles.join(', ');
+        alert(`Cannot upload duplicate files:\n${duplicateList}\n\nThese files already exist for this production company.`);
+        if (message) {
+          message += ` (${duplicateCount} duplicate(s) skipped)`;
+        }
+      }
+
+      if (successCount > 0) {
         showSuccess(message);
-      } else {
+      } else if (failCount > 0 && duplicateCount === 0) {
         alert('All uploads failed. Please try again.');
       }
 
@@ -237,8 +266,10 @@ export default function ProductionCompanyProfilePage() {
     }
 
     try {
-      // Delete from S3
+      // Delete from S3 first
+      console.log('Deleting from S3:', doc.file_url);
       await deleteDocumentFromS3(doc.file_url);
+      console.log('✓ File deleted from S3 successfully');
 
       // Delete from database
       const { error } = await supabase
@@ -246,11 +277,16 @@ export default function ProductionCompanyProfilePage() {
         .delete()
         .eq('id', doc.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database deletion error:', error);
+        throw error;
+      }
 
-      showSuccess('Document deleted successfully');
+      console.log('✓ Document deleted from database successfully');
+      showSuccess('Document deleted successfully from storage and database');
       fetchCompanyAndDocuments();
     } catch (error: any) {
+      console.error('Delete error:', error);
       alert('Error deleting document: ' + error.message);
     }
   };

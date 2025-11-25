@@ -76,8 +76,10 @@ export default function DocumentDirectoryPage() {
     }
 
     try {
-      // Delete from S3
+      // Delete from S3 first
+      console.log('Deleting from S3:', doc.file_url);
       await deleteDocumentFromS3(doc.file_url);
+      console.log('✓ File deleted from S3 successfully');
 
       // Delete from database
       const { error } = await supabase
@@ -85,11 +87,16 @@ export default function DocumentDirectoryPage() {
         .delete()
         .eq('id', doc.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database deletion error:', error);
+        throw error;
+      }
 
-      showSuccess('Document deleted successfully');
+      console.log('✓ Document deleted from database successfully');
+      showSuccess('Document deleted successfully from storage and database');
       fetchDocuments();
     } catch (error: any) {
+      console.error('Delete error:', error);
       alert('Error deleting document: ' + error.message);
     }
   };
