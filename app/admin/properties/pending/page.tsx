@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Check, X, Eye, Trash2 } from 'lucide-react';
+import { Search, Check, X, Eye, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { deleteImageFromS3 } from '@/lib/s3-upload';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function PendingPropertiesPage() {
+  const router = useRouter();
   const [properties, setProperties] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -207,6 +209,13 @@ export default function PendingPropertiesPage() {
                           >
                             <Eye size={16} />
                           </Link>
+                          <button
+                            onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
+                            className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Edit size={16} />
+                          </button>
                           <button
                             onClick={() => handleApprove(property.id)}
                             className="p-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"

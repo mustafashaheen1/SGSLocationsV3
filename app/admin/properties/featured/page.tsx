@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, X, Eye, Trash2, Star, StarOff } from 'lucide-react';
+import { Search, X, Eye, Trash2, Star, StarOff, Edit } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { deleteImageFromS3 } from '@/lib/s3-upload';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function FeaturedPropertiesPage() {
+  const router = useRouter();
   const [properties, setProperties] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -213,6 +215,13 @@ export default function FeaturedPropertiesPage() {
                           >
                             <Eye size={16} />
                           </Link>
+                          <button
+                            onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
+                            className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Edit size={16} />
+                          </button>
                           <button
                             onClick={() => removeFeatured(property.id)}
                             className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"

@@ -364,7 +364,7 @@ export default function AdminPropertiesPage() {
                         <Eye size={18} />
                       </button>
                       <button
-                        onClick={() => router.push(`/admin/properties/edit/${property.id}`)}
+                        onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
                         className="p-2 text-gray-600 hover:bg-gray-50 rounded"
                         title="Edit"
                       >
