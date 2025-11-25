@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Users, Mail, Clock } from 'lucide-react';
+import { Building2, Users, Mail, Clock, Eye, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function AdminDashboard() {
@@ -10,6 +10,8 @@ export default function AdminDashboard() {
     pendingProperties: 0,
     totalUsers: 0,
     totalInquiries: 0,
+    totalViews: 0,
+    totalDownloads: 0,
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +41,25 @@ export default function AdminDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
 
+      // Calculate total views across all properties
+      const { data: viewsData } = await supabase
+        .from('properties')
+        .select('view_count');
+
+      const totalViews = viewsData?.reduce((sum, prop) => sum + (prop.view_count || 0), 0) || 0;
+
+      // Count total image downloads
+      const { count: downloadsCount } = await supabase
+        .from('image_downloads')
+        .select('*', { count: 'exact', head: true });
+
       setStats({
         totalProperties: propertiesCount || 0,
         pendingProperties: pendingCount || 0,
         totalUsers: usersCount || 0,
         totalInquiries: inquiriesCount || 0,
+        totalViews: totalViews,
+        totalDownloads: downloadsCount || 0,
       });
 
       // Fetch recent properties - NO USER JOIN
@@ -70,11 +86,13 @@ export default function AdminDashboard() {
     { label: 'Pending', value: stats.pendingProperties.toString(), icon: Clock, color: 'bg-yellow-500' },
     { label: 'Users', value: stats.totalUsers.toString(), icon: Users, color: 'bg-green-500' },
     { label: 'Inquiries', value: stats.totalInquiries.toString(), icon: Mail, color: 'bg-red-500' },
+    { label: 'Total Views', value: stats.totalViews.toLocaleString(), icon: Eye, color: 'bg-purple-500' },
+    { label: 'Image Downloads', value: stats.totalDownloads.toLocaleString(), icon: Download, color: 'bg-indigo-500' },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statsData.map((stat) => {
           const Icon = stat.icon;
           return (

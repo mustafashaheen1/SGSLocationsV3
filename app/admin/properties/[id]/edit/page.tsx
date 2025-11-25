@@ -9,7 +9,7 @@ declare global {
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, Eye, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -101,6 +101,11 @@ export default function EditPropertyPage() {
   const [notes, setNotes] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
+
+  const [propertyStats, setPropertyStats] = useState({
+    views: 0,
+    downloads: 0
+  });
 
   useEffect(() => {
     const initializePage = async () => {
@@ -238,6 +243,20 @@ export default function EditPropertyPage() {
 
       // Load notes
       setNotes(property.notes || '');
+
+      // Fetch property stats
+      const viewCount = property.view_count || 0;
+
+      // Count image downloads for this property
+      const { count: downloadsCount } = await supabase
+        .from('image_downloads')
+        .select('*', { count: 'exact', head: true })
+        .eq('property_id', propertyId);
+
+      setPropertyStats({
+        views: viewCount,
+        downloads: downloadsCount || 0
+      });
 
       // Fetch property images with tags
       const { data: propertyImages, error: imagesError } = await supabase
@@ -812,6 +831,33 @@ export default function EditPropertyPage() {
           Back to Properties
         </Button>
         <h1 className="text-3xl font-bold">Edit Property</h1>
+      </div>
+
+      {/* Property Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium">Property Views</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{propertyStats.views.toLocaleString()}</p>
+            </div>
+            <div className="bg-purple-500 p-3 rounded-lg">
+              <Eye className="text-white" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium">Image Downloads</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{propertyStats.downloads.toLocaleString()}</p>
+            </div>
+            <div className="bg-indigo-500 p-3 rounded-lg">
+              <Download className="text-white" size={24} />
+            </div>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
