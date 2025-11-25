@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase, albumKeyExists } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 import { getAddressFromGoogleMapsLink } from '@/lib/google-maps-utils';
+import { generateObfuscatedName } from '@/lib/name-obfuscator';
 import { normalizeUrl } from '@/lib/url-utils';
 import { GridPreview } from '@/components/admin/GridPreview';
 
@@ -89,7 +90,7 @@ export default function AddPropertyPage() {
   const [loadingQueueImages, setLoadingQueueImages] = useState(false);
   const [extractingAddress, setExtractingAddress] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    real_name: '', // The actual property name (admin only)
     description: '',
     address: '',
     city: '',
@@ -995,8 +996,8 @@ export default function AddPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!formData.name || !formData.address || !formData.city) {
-      alert('Please fill in all required fields');
+    if (!formData.real_name || !formData.address || !formData.city) {
+      alert('Please fill in all required fields (Real Property Name, Address, City)');
       return;
     }
 
@@ -1059,9 +1060,14 @@ export default function AddPropertyPage() {
       // Get the selected category name
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 
+      // Generate obfuscated name from real name
+      const obfuscatedName = generateObfuscatedName(formData.real_name);
+      console.log(`🔒 Generated obfuscated name: "${formData.real_name}" → "${obfuscatedName}"`);
+
       // Prepare property data with CORRECT schema
       const propertyData: any = {
-        name: formData.name,
+        name: obfuscatedName, // Public-facing obfuscated name
+        real_name: formData.real_name, // Actual property name (admin only)
         description: formData.description || '',
         address: formData.address,
         city: formData.city,
@@ -1250,12 +1256,15 @@ export default function AddPropertyPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
         <div className="grid grid-cols-2 gap-6">
           <div className="col-span-2">
-            <label className="block text-sm font-medium mb-2">Property Name *</label>
+            <label className="block text-sm font-medium mb-2">
+              Real Property Name *
+              <span className="text-gray-500 text-xs ml-2">(Admin only - A random name will be generated for public display)</span>
+            </label>
             <Input
-              name="name"
-              value={formData.name}
+              name="real_name"
+              value={formData.real_name}
               onChange={handleInputChange}
-              placeholder="e.g., Modern Downtown Loft"
+              placeholder="e.g., 4608 Alta Dr. or Dallas Medical Center"
               required
             />
           </div>

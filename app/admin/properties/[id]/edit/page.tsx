@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { uploadMultipleImages, deleteImageFromS3 } from '@/lib/s3-upload';
 import { GridPreview } from '@/components/admin/GridPreview';
+import { generateObfuscatedName } from '@/lib/name-obfuscator';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -80,7 +81,8 @@ export default function EditPropertyPage() {
   const [propertyTags, setPropertyTags] = useState<string[]>([]);
   const [propertyCategoryName, setPropertyCategoryName] = useState<string>(''); // Store category name to match later
   const [formData, setFormData] = useState({
-    name: '',
+    name: '', // Obfuscated public name (readonly in edit mode)
+    real_name: '', // Actual property name (editable)
     description: '',
     address: '',
     city: '',
@@ -211,6 +213,7 @@ export default function EditPropertyPage() {
       // Set form data
       setFormData({
         name: property.name || '',
+        real_name: property.real_name || property.name || '', // Fallback to name if real_name doesn't exist yet
         description: property.description || '',
         address: property.address || '',
         city: property.city || '',
@@ -668,8 +671,8 @@ export default function EditPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!formData.name || !formData.address || !formData.city) {
-      alert('Please fill in all required fields');
+    if (!formData.real_name || !formData.address || !formData.city) {
+      alert('Please fill in all required fields (Real Property Name, Address, City)');
       return;
     }
 
@@ -712,9 +715,14 @@ export default function EditPropertyPage() {
       // Get the selected category name
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 
+      // Regenerate obfuscated name from real_name
+      const obfuscatedName = generateObfuscatedName(formData.real_name);
+      console.log(`🔒 Regenerated obfuscated name: "${formData.real_name}" → "${obfuscatedName}"`);
+
       // Prepare property data
       const propertyData: any = {
-        name: formData.name,
+        name: obfuscatedName, // Public-facing obfuscated name
+        real_name: formData.real_name, // Actual property name (admin only)
         description: formData.description || '',
         address: formData.address,
         city: formData.city,
@@ -863,13 +871,29 @@ export default function EditPropertyPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
         <div className="grid grid-cols-2 gap-6">
           <div className="col-span-2">
-            <label className="block text-sm font-medium mb-2">Property Name *</label>
+            <label className="block text-sm font-medium mb-2">
+              Real Property Name *
+              <span className="text-gray-500 text-xs ml-2">(Admin only - Actual property name)</span>
+            </label>
             <Input
-              name="name"
-              value={formData.name}
+              name="real_name"
+              value={formData.real_name}
               onChange={handleInputChange}
-              placeholder="e.g., Modern Downtown Loft"
+              placeholder="e.g., 4608 Alta Dr. or Dallas Medical Center"
               required
+            />
+          </div>
+
+          <div className="col-span-2">
+            <label className="block text-sm font-medium mb-2">
+              Public Display Name
+              <span className="text-gray-500 text-xs ml-2">(Auto-generated - Not editable)</span>
+            </label>
+            <Input
+              value={formData.name}
+              disabled
+              className="bg-gray-100 cursor-not-allowed"
+              placeholder="Generated automatically from real name"
             />
           </div>
 

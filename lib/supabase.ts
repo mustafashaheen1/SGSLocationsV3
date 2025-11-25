@@ -85,6 +85,7 @@ export interface PropertyContact {
 export interface Property {
   id: string;
   name: string;
+  real_name?: string; // The actual property name (admin only, not shown publicly)
   description: string | null;
   address: string;
   city: string;
