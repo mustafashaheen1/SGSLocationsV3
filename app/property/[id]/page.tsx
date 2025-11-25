@@ -94,6 +94,19 @@ export default function PropertyDetailPage() {
       if (propertyData) {
         setProperty(propertyData);
 
+        // Increment view count
+        try {
+          const newViewCount = (propertyData.view_count || 0) + 1;
+          await supabase
+            .from('properties')
+            .update({ view_count: newViewCount })
+            .eq('id', propertyData.id);
+          console.log('✓ View tracked for property:', propertyData.id);
+        } catch (error) {
+          console.error('Failed to track view:', error);
+          // Don't break the page if tracking fails
+        }
+
         // Fetch all properties to filter on the client side
         const { data: allProperties } = await supabase
           .from('properties')
@@ -301,6 +314,27 @@ export default function PropertyDetailPage() {
       }, 100);
 
       console.log('✓ Images downloaded successfully');
+
+      // Track the download
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // Track each image download
+        if (property.images && property.images.length > 0) {
+          const downloadRecords = property.images.map(imageUrl => ({
+            property_id: property.id,
+            image_url: imageUrl,
+            user_id: user?.id || null
+          }));
+
+          await supabase.from('image_downloads').insert(downloadRecords);
+          console.log('✓ Download tracked:', downloadRecords.length, 'images');
+        }
+      } catch (trackError) {
+        console.error('Failed to track download:', trackError);
+        // Don't show error to user, tracking failure shouldn't break download
+      }
+
       alert('Images downloaded successfully!');
 
     } catch (error: any) {
