@@ -112,8 +112,12 @@ export default function ProductionCompanyProfilePage() {
         return true;
       });
 
-      setUploadForm({ files: validFiles });
+      // Append new files to existing files instead of replacing
+      setUploadForm({ files: [...uploadForm.files, ...validFiles] });
     }
+
+    // Reset the input so the same file can be selected again if needed
+    e.target.value = '';
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -149,7 +153,8 @@ export default function ProductionCompanyProfilePage() {
       return true;
     });
 
-    setUploadForm({ files: validFiles });
+    // Append new files to existing files instead of replacing
+    setUploadForm({ files: [...uploadForm.files, ...validFiles] });
   };
 
   const removeFile = (index: number) => {
