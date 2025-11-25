@@ -321,7 +321,7 @@ export default function PropertyDetailPage() {
         console.log('Number of images to track:', property.images?.length || 0);
 
         // Get current user (if logged in)
-        let userId = null;
+        let userId: string | null = null;
         try {
           const { data: { user } } = await supabase.auth.getUser();
           userId = user?.id || null;
