@@ -317,21 +317,42 @@ export default function PropertyDetailPage() {
 
       // Track the download
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Starting download tracking for property:', property.id);
+        console.log('Number of images to track:', property.images?.length || 0);
+
+        // Get current user (if logged in)
+        let userId = null;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          userId = user?.id || null;
+          console.log('User ID:', userId || 'anonymous');
+        } catch (userError) {
+          console.log('Not logged in, tracking as anonymous');
+        }
 
         // Track each image download
         if (property.images && property.images.length > 0) {
           const downloadRecords = property.images.map(imageUrl => ({
             property_id: property.id,
             image_url: imageUrl,
-            user_id: user?.id || null
+            user_id: userId
           }));
 
-          await supabase.from('image_downloads').insert(downloadRecords);
-          console.log('✓ Download tracked:', downloadRecords.length, 'images');
+          console.log('Inserting download records:', downloadRecords.length);
+          const { data, error } = await supabase.from('image_downloads').insert(downloadRecords);
+
+          if (error) {
+            console.error('❌ Download tracking error:', error);
+            throw error;
+          }
+
+          console.log('✓ Download tracked successfully:', downloadRecords.length, 'images');
+        } else {
+          console.log('⚠️ No images to track');
         }
-      } catch (trackError) {
-        console.error('Failed to track download:', trackError);
+      } catch (trackError: any) {
+        console.error('❌ Failed to track download:', trackError);
+        console.error('Error details:', trackError.message, trackError.details);
         // Don't show error to user, tracking failure shouldn't break download
       }
 
