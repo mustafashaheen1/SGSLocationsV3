@@ -7,9 +7,12 @@ declare global {
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { Upload, ChevronDown, X, Tag as TagIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import LoginModal from '@/components/LoginModal';
+import { saveGuestListing, getGuestListing, clearGuestListing, filesToBase64, base64ToFiles } from '@/lib/guest-listing';
 
 interface Category {
   id: string;
@@ -44,6 +47,9 @@ const US_STATES = [
 ];
 
 export default function ListYourPropertyPage() {
+  const router = useRouter();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isProcessingPendingSubmission, setIsProcessingPendingSubmission] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -135,9 +141,47 @@ export default function ListYourPropertyPage() {
               email: user.email || '',
             }));
           }
+
+          // Check for pending property submission
+          await handlePendingSubmission(user.id);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
+      }
+    }
+
+    async function handlePendingSubmission(userId: string) {
+      const pendingListing = getGuestListing();
+
+      if (pendingListing && !isProcessingPendingSubmission) {
+        setIsProcessingPendingSubmission(true);
+        console.log('Found pending listing, processing...');
+
+        try {
+          // Restore form data
+          setFormData(pendingListing.formData);
+          setSelectedCategoryId(pendingListing.selectedCategoryId);
+          setPropertyTags(pendingListing.propertyTags);
+
+          // Convert base64 images back to Files
+          const files = await base64ToFiles(pendingListing.imageFiles);
+          const imagesWithTags: ImageWithTags[] = files.map((file, index) => ({
+            file,
+            preview: URL.createObjectURL(file),
+            tags: [],
+          }));
+          setUploadedFiles(imagesWithTags);
+
+          // Submit the property
+          setIsSubmitting(true);
+          await submitPropertyToDatabase(userId);
+        } catch (error) {
+          console.error('Error processing pending submission:', error);
+          alert('There was an error submitting your property. Please try again.');
+          clearGuestListing();
+          setIsProcessingPendingSubmission(false);
+          setIsSubmitting(false);
+        }
       }
     }
 
@@ -415,9 +459,42 @@ export default function ListYourPropertyPage() {
     setIsSubmitting(true);
 
     try {
-      // Check if user is logged in (optional)
+      // Check if user is logged in
       const { data: { session } } = await supabase.auth.getSession();
 
+      if (!session) {
+        // User not logged in - save to session storage and show login modal
+        console.log('User not logged in, saving listing data...');
+
+        // Convert images to base64 for storage
+        const imageFiles = uploadedFiles.map(img => img.file);
+        const base64Images = await filesToBase64(imageFiles);
+
+        // Save to session storage
+        saveGuestListing({
+          formData,
+          selectedCategoryId,
+          propertyTags,
+          imageFiles: base64Images,
+        });
+
+        setIsSubmitting(false);
+        setShowLoginModal(true);
+        return;
+      }
+
+      // User is logged in - proceed with submission
+      await submitPropertyToDatabase(session.user.id);
+
+    } catch (error: any) {
+      console.error('Error submitting property:', error);
+      alert('Error submitting property: ' + error.message);
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitPropertyToDatabase = async (userId: string) => {
+    try {
       const { uploadMultipleImages } = await import('@/lib/s3-upload');
       const imageFiles = uploadedFiles.map(img => img.file);
       const uploadedImageUrls = await uploadMultipleImages(imageFiles, 'properties');
@@ -433,9 +510,9 @@ export default function ListYourPropertyPage() {
           city: formData.city,
           county: formData.state,
           zipcode: formData.zipCode,
-          owner_id: session?.user?.id || null,
-          property_type: 'Residential', // Default property type
-          daily_rate: '0', // Default daily rate
+          owner_id: userId,
+          property_type: 'Residential',
+          daily_rate: '0',
           categories: selectedCategory ? [selectedCategory.name] : [],
           property_tags: propertyTags,
           images: uploadedImageUrls,
@@ -454,18 +531,22 @@ export default function ListYourPropertyPage() {
         display_order: index,
       }));
 
-      const { error: imagesError } = await supabase
+      const { error: imagesError} = await supabase
         .from('property_images')
         .insert(propertyImagesData);
 
       if (imagesError) throw imagesError;
 
+      // Clear guest listing data
+      clearGuestListing();
+
       alert('Property submitted successfully! We will review it and get back to you soon.');
-      window.location.reload();
+      router.push('/dashboard');
 
     } catch (error: any) {
       console.error('Error submitting property:', error);
       alert('Error submitting property: ' + error.message);
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -1292,6 +1373,15 @@ export default function ListYourPropertyPage() {
         )}
         </div>
       </main>
+
+      {/* Login Modal for Guest Listing */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        preFilledEmail={formData.email}
+        isEmailLocked={true}
+        redirectAfterLogin="/list-your-property"
+      />
     </>
   );
 }
