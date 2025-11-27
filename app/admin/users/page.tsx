@@ -11,6 +11,7 @@ interface User {
   phone: string | null;
   company_name: string | null;
   created_at: string;
+  is_banned: boolean;
 }
 
 export default function UsersPage() {
@@ -48,6 +49,31 @@ export default function UsersPage() {
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const handleToggleBan = async (id: string, email: string, currentBanStatus: boolean) => {
+    const action = currentBanStatus ? 'unban' : 'ban';
+    if (!confirm(`Are you sure you want to ${action} ${email}?`)) {
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_banned: !currentBanStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      showSuccess(`User ${action}ned successfully`);
+      await fetchUsers();
+    } catch (error: any) {
+      console.error(`Error ${action}ning user:`, error);
+      alert(`Failed to ${action} user: ${error.message}`);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleDelete = async (id: string, email: string) => {
@@ -136,6 +162,7 @@ export default function UsersPage() {
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Company</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Phone</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Joined</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
               </tr>
@@ -143,7 +170,7 @@ export default function UsersPage() {
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-gray-500">
+                  <td colSpan={7} className="text-center py-12 text-gray-500">
                     {searchTerm ? 'No users found matching your search' : 'No users registered yet'}
                   </td>
                 </tr>
@@ -158,15 +185,31 @@ export default function UsersPage() {
                     <td className="py-4 px-4 text-gray-600">{user.email}</td>
                     <td className="py-4 px-4 text-gray-600">{user.company_name || 'N/A'}</td>
                     <td className="py-4 px-4 text-gray-600">{user.phone || 'N/A'}</td>
+                    <td className="py-4 px-4">
+                      {user.is_banned ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          Banned
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td className="py-4 px-4 text-gray-600">{formatDate(user.created_at)}</td>
                     <td className="py-4 px-4">
                       <div className="flex gap-2">
                         <button
+                          onClick={() => handleToggleBan(user.id, user.email, user.is_banned)}
                           disabled={actionLoading}
-                          className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors disabled:opacity-50"
-                          title="Edit User"
+                          className={`p-2 ${
+                            user.is_banned
+                              ? 'bg-green-600 hover:bg-green-700'
+                              : 'bg-orange-600 hover:bg-orange-700'
+                          } text-white rounded transition-colors disabled:opacity-50`}
+                          title={user.is_banned ? 'Unban User' : 'Ban User'}
                         >
-                          <Edit size={16} />
+                          <Ban size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(user.id, user.email)}

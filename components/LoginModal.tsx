@@ -53,7 +53,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       // Step 2: Check if user exists in users table (NOT admins table)
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, email, user_type')
+        .select('id, email, user_type, is_banned')
         .eq('id', authData.user.id)
         .single();
 
@@ -63,7 +63,13 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         throw new Error('This account is not registered as a user. Please use the registration page or contact support.');
       }
 
-      // Step 3: Success - user exists in users table
+      // Step 3: Check if user is banned
+      if (userData.is_banned) {
+        await supabase.auth.signOut();
+        throw new Error('Your account has been banned. Please contact support@sgslocations.com for further assistance.');
+      }
+
+      // Step 4: Success - user exists and is not banned
       onClose();
       router.push('/dashboard');
       router.refresh();
