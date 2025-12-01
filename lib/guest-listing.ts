@@ -1,41 +1,83 @@
 /**
  * Helper functions for guest property listing flow
- * Stores listing data in session storage when user is not logged in
+ * Stores listing data in IndexedDB when user is not logged in
  */
 
 export interface GuestListingData {
   formData: any;
   selectedCategoryId: string;
   propertyTags: string[];
-  imageFiles: string[]; // Base64 encoded images
+  imageFiles: File[]; // Actual File objects
   timestamp: number;
 }
 
-const STORAGE_KEY = 'guest_property_listing';
+const DB_NAME = 'GuestListingDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'listings';
+const LISTING_KEY = 'current_listing';
 
-export function saveGuestListing(data: Omit<GuestListingData, 'timestamp'>): void {
+// Initialize IndexedDB
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+  });
+}
+
+export async function saveGuestListing(data: Omit<GuestListingData, 'timestamp'>): Promise<void> {
   try {
+    const db = await openDB();
     const listingData: GuestListingData = {
       ...data,
       timestamp: Date.now(),
     };
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(listingData));
+
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.put(listingData, LISTING_KEY);
+
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+
+    db.close();
+    console.log('Guest listing saved to IndexedDB');
   } catch (error) {
     console.error('Error saving guest listing:', error);
+    throw error;
   }
 }
 
-export function getGuestListing(): GuestListingData | null {
+export async function getGuestListing(): Promise<GuestListingData | null> {
   try {
-    const data = sessionStorage.getItem(STORAGE_KEY);
-    if (!data) return null;
+    const db = await openDB();
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(LISTING_KEY);
 
-    const listing = JSON.parse(data) as GuestListingData;
+    const listing = await new Promise<GuestListingData | undefined>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+
+    if (!listing) return null;
 
     // Check if data is less than 1 hour old
     const ONE_HOUR = 60 * 60 * 1000;
     if (Date.now() - listing.timestamp > ONE_HOUR) {
-      clearGuestListing();
+      await clearGuestListing();
       return null;
     }
 
@@ -46,35 +88,22 @@ export function getGuestListing(): GuestListingData | null {
   }
 }
 
-export function clearGuestListing(): void {
+export async function clearGuestListing(): Promise<void> {
   try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    const db = await openDB();
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    store.delete(LISTING_KEY);
+
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+
+    db.close();
+    console.log('Guest listing cleared from IndexedDB');
   } catch (error) {
     console.error('Error clearing guest listing:', error);
   }
 }
 
-export async function filesToBase64(files: File[]): Promise<string[]> {
-  const promises = files.map(file => {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  });
-
-  return Promise.all(promises);
-}
-
-export async function base64ToFiles(base64Array: string[], originalFiles?: { name: string; type: string }[]): Promise<File[]> {
-  const promises = base64Array.map(async (base64, index) => {
-    const response = await fetch(base64);
-    const blob = await response.blob();
-    const name = originalFiles?.[index]?.name || `image-${index}.jpg`;
-    const type = originalFiles?.[index]?.type || 'image/jpeg';
-    return new File([blob], name, { type });
-  });
-
-  return Promise.all(promises);
-}

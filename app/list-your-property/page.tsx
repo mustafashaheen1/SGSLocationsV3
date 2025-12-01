@@ -12,7 +12,7 @@ import Script from 'next/script';
 import { Upload, ChevronDown, X, Tag as TagIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import LoginModal from '@/components/LoginModal';
-import { saveGuestListing, getGuestListing, clearGuestListing, filesToBase64, base64ToFiles } from '@/lib/guest-listing';
+import { saveGuestListing, getGuestListing, clearGuestListing } from '@/lib/guest-listing';
 
 interface Category {
   id: string;
@@ -84,6 +84,7 @@ export default function ListYourPropertyPage() {
   const [showImageTagModal, setShowImageTagModal] = useState(false);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
@@ -101,9 +102,8 @@ export default function ListYourPropertyPage() {
         setSelectedCategoryId(pendingListing.selectedCategoryId);
         setPropertyTags(pendingListing.propertyTags);
 
-        // Convert base64 images back to Files
-        const files = await base64ToFiles(pendingListing.imageFiles);
-        const imagesWithTags: ImageWithTags[] = files.map((file, index) => ({
+        // Restore image files
+        const imagesWithTags: ImageWithTags[] = pendingListing.imageFiles.map((file) => ({
           file,
           preview: URL.createObjectURL(file),
           tags: [],
@@ -143,6 +143,7 @@ export default function ListYourPropertyPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
+          setIsUserLoggedIn(true);
           // Fetch user profile from users table
           const { data: profile } = await supabase
             .from('users')
@@ -369,6 +370,12 @@ export default function ListYourPropertyPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    // Prevent changes to locked fields when user is logged in
+    if (isUserLoggedIn && (name === 'firstName' || name === 'lastName' || name === 'email')) {
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -477,19 +484,18 @@ export default function ListYourPropertyPage() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        // User not logged in - save to session storage and show login modal
+        // User not logged in - save to IndexedDB and show login modal
         console.log('User not logged in, saving listing data...');
 
-        // Convert images to base64 for storage
+        // Save File objects directly to IndexedDB
         const imageFiles = uploadedFiles.map(img => img.file);
-        const base64Images = await filesToBase64(imageFiles);
 
-        // Save to session storage
-        saveGuestListing({
+        // Save to IndexedDB
+        await saveGuestListing({
           formData,
           selectedCategoryId,
           propertyTags,
-          imageFiles: base64Images,
+          imageFiles,
         });
 
         setIsSubmitting(false);
@@ -603,6 +609,7 @@ export default function ListYourPropertyPage() {
                   <div>
                     <label htmlFor="firstName" className="block font-medium text-gray-700 text-sm mb-1">
                       First Name <span className="text-red-600">*</span>
+                      {isUserLoggedIn && <span className="text-xs text-gray-500 ml-2">(from your account)</span>}
                     </label>
                     <input
                       type="text"
@@ -610,9 +617,11 @@ export default function ListYourPropertyPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
+                      readOnly={isUserLoggedIn}
+                      disabled={isUserLoggedIn}
                       className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
                         errors.firstName ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      } ${isUserLoggedIn ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     />
                     {errors.firstName && <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>}
                   </div>
@@ -620,6 +629,7 @@ export default function ListYourPropertyPage() {
                   <div>
                     <label htmlFor="lastName" className="block font-medium text-gray-700 text-sm mb-1">
                       Last Name <span className="text-red-600">*</span>
+                      {isUserLoggedIn && <span className="text-xs text-gray-500 ml-2">(from your account)</span>}
                     </label>
                     <input
                       type="text"
@@ -627,9 +637,11 @@ export default function ListYourPropertyPage() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
+                      readOnly={isUserLoggedIn}
+                      disabled={isUserLoggedIn}
                       className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
                         errors.lastName ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      } ${isUserLoggedIn ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     />
                     {errors.lastName && <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>}
                   </div>
@@ -638,6 +650,7 @@ export default function ListYourPropertyPage() {
                 <div className="mb-4">
                   <label htmlFor="email" className="block font-medium text-gray-700 text-sm mb-1">
                     Email <span className="text-red-600">*</span>
+                    {isUserLoggedIn && <span className="text-xs text-gray-500 ml-2">(from your account)</span>}
                   </label>
                   <input
                     type="email"
@@ -645,10 +658,17 @@ export default function ListYourPropertyPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    readOnly={isUserLoggedIn}
+                    disabled={isUserLoggedIn}
                     className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    } ${isUserLoggedIn ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   />
+                  {isUserLoggedIn && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      These fields are auto-filled from your account and cannot be changed here.
+                    </p>
+                  )}
                   {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
                 </div>
 

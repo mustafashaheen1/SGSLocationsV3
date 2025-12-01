@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, Edit, Trash2, Search, Bookmark } from 'lucide-react';
-import { getGuestListing, clearGuestListing, base64ToFiles } from '@/lib/guest-listing';
+import { getGuestListing, clearGuestListing } from '@/lib/guest-listing';
 
 export default function ProductionDashboard() {
   const router = useRouter();
@@ -103,11 +103,8 @@ export default function ProductionDashboard() {
       // Import the upload function
       const { uploadMultipleImages } = await import('@/lib/s3-upload');
 
-      // Convert base64 images back to Files
-      const files = await base64ToFiles(pendingListing.imageFiles);
-
-      // Upload images to S3
-      const uploadedImageUrls = await uploadMultipleImages(files, 'properties');
+      // Upload images to S3 (files are already File objects from IndexedDB)
+      const uploadedImageUrls = await uploadMultipleImages(pendingListing.imageFiles, 'properties');
 
       // Insert property
       const { data: property, error: propertyError } = await supabase
