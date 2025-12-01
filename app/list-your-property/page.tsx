@@ -87,6 +87,42 @@ export default function ListYourPropertyPage() {
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
+  // Handle pending submission from guest listing flow
+  const handlePendingSubmission = async (userId: string) => {
+    const pendingListing = getGuestListing();
+
+    if (pendingListing && !isProcessingPendingSubmission) {
+      setIsProcessingPendingSubmission(true);
+      console.log('Found pending listing, processing...');
+
+      try {
+        // Restore form data
+        setFormData(pendingListing.formData);
+        setSelectedCategoryId(pendingListing.selectedCategoryId);
+        setPropertyTags(pendingListing.propertyTags);
+
+        // Convert base64 images back to Files
+        const files = await base64ToFiles(pendingListing.imageFiles);
+        const imagesWithTags: ImageWithTags[] = files.map((file, index) => ({
+          file,
+          preview: URL.createObjectURL(file),
+          tags: [],
+        }));
+        setUploadedFiles(imagesWithTags);
+
+        // Submit the property
+        setIsSubmitting(true);
+        await submitPropertyToDatabase(userId);
+      } catch (error) {
+        console.error('Error processing pending submission:', error);
+        alert('There was an error submitting your property. Please try again.');
+        clearGuestListing();
+        setIsProcessingPendingSubmission(false);
+        setIsSubmitting(false);
+      }
+    }
+  };
+
   useEffect(() => {
     async function fetchTerms() {
       const { data } = await supabase
@@ -150,45 +186,23 @@ export default function ListYourPropertyPage() {
       }
     }
 
-    async function handlePendingSubmission(userId: string) {
-      const pendingListing = getGuestListing();
-
-      if (pendingListing && !isProcessingPendingSubmission) {
-        setIsProcessingPendingSubmission(true);
-        console.log('Found pending listing, processing...');
-
-        try {
-          // Restore form data
-          setFormData(pendingListing.formData);
-          setSelectedCategoryId(pendingListing.selectedCategoryId);
-          setPropertyTags(pendingListing.propertyTags);
-
-          // Convert base64 images back to Files
-          const files = await base64ToFiles(pendingListing.imageFiles);
-          const imagesWithTags: ImageWithTags[] = files.map((file, index) => ({
-            file,
-            preview: URL.createObjectURL(file),
-            tags: [],
-          }));
-          setUploadedFiles(imagesWithTags);
-
-          // Submit the property
-          setIsSubmitting(true);
-          await submitPropertyToDatabase(userId);
-        } catch (error) {
-          console.error('Error processing pending submission:', error);
-          alert('There was an error submitting your property. Please try again.');
-          clearGuestListing();
-          setIsProcessingPendingSubmission(false);
-          setIsSubmitting(false);
-        }
-      }
-    }
-
     fetchTerms();
     fetchCategories();
     fetchTags();
     fetchUserProfile();
+
+    // Listen for auth state changes to handle post-registration flow
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      if (event === 'SIGNED_IN' && session?.user) {
+        // User just signed in/registered, check for pending submission
+        await handlePendingSubmission(session.user.id);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchCategories() {

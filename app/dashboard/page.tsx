@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, Edit, Trash2, Search, Bookmark } from 'lucide-react';
+import { getGuestListing, clearGuestListing, base64ToFiles } from '@/lib/guest-listing';
 
 export default function ProductionDashboard() {
   const router = useRouter();
@@ -28,11 +29,13 @@ export default function ProductionDashboard() {
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
+  const [processingPendingSubmission, setProcessingPendingSubmission] = useState(false);
 
   useEffect(() => {
     fetchUserData();
     fetchUserProperties();
     fetchSavedSearches();
+    handlePendingPropertySubmission();
   }, []);
 
   async function fetchUserData() {
@@ -78,6 +81,97 @@ export default function ProductionDashboard() {
       console.error('Error loading user data:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePendingPropertySubmission() {
+    if (processingPendingSubmission) return;
+
+    const pendingListing = getGuestListing();
+    if (!pendingListing) return;
+
+    setProcessingPendingSubmission(true);
+    console.log('Found pending property listing, submitting...');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No user found, cannot submit pending property');
+        return;
+      }
+
+      // Import the upload function
+      const { uploadMultipleImages } = await import('@/lib/s3-upload');
+
+      // Convert base64 images back to Files
+      const files = await base64ToFiles(pendingListing.imageFiles);
+
+      // Upload images to S3
+      const uploadedImageUrls = await uploadMultipleImages(files, 'properties');
+
+      // Insert property
+      const { data: property, error: propertyError } = await supabase
+        .from('properties')
+        .insert([{
+          name: `${pendingListing.formData.streetAddress}, ${pendingListing.formData.city}`,
+          description: `Submitted by ${pendingListing.formData.firstName} ${pendingListing.formData.lastName} (${pendingListing.formData.email})`,
+          address: pendingListing.formData.streetAddress,
+          city: pendingListing.formData.city,
+          county: pendingListing.formData.state,
+          zipcode: pendingListing.formData.zipCode,
+          owner_id: user.id,
+          property_type: 'Residential',
+          daily_rate: '0',
+          categories: pendingListing.selectedCategoryId ? [(await supabase.from('categories').select('name').eq('id', pendingListing.selectedCategoryId).single()).data?.name] : [],
+          property_tags: pendingListing.propertyTags,
+          images: uploadedImageUrls,
+          primary_image: uploadedImageUrls[0],
+          status: 'pending',
+        }])
+        .select()
+        .single();
+
+      if (propertyError) throw propertyError;
+
+      // Insert property images
+      const propertyImagesData = uploadedImageUrls.map((url, index) => ({
+        property_id: property.id,
+        image_url: url,
+        tags: [],
+        display_order: index,
+      }));
+
+      const { error: imagesError } = await supabase
+        .from('property_images')
+        .insert(propertyImagesData);
+
+      if (imagesError) throw imagesError;
+
+      // Clear guest listing data
+      clearGuestListing();
+
+      // Show success message
+      setMessage({
+        type: 'success',
+        text: 'Property submitted successfully! We will review it and get back to you soon.'
+      });
+
+      // Refresh properties list
+      fetchUserProperties();
+
+      // Clear message after 5 seconds
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+
+      console.log('Property submitted successfully:', property.id);
+    } catch (error: any) {
+      console.error('Error submitting pending property:', error);
+      setMessage({
+        type: 'error',
+        text: 'Failed to submit property: ' + error.message
+      });
+      clearGuestListing();
+    } finally {
+      setProcessingPendingSubmission(false);
     }
   }
 
@@ -347,17 +441,17 @@ export default function ProductionDashboard() {
           </div>
 
           <div className="p-6">
+            {message.text && (
+              <div className={`mb-6 p-4 rounded ${
+                message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+              }`}>
+                {message.text}
+              </div>
+            )}
+
             {activeTab === 'settings' && (
               <div className="max-w-4xl">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
-
-                {message.text && (
-                  <div className={`mb-6 p-4 rounded ${
-                    message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-                  }`}>
-                    {message.text}
-                  </div>
-                )}
 
                 <div className="bg-gray-50 rounded-lg p-6 mb-8">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>

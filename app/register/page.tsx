@@ -128,12 +128,9 @@ export default function RegisterPage() {
 
       if (profileError) throw profileError;
 
-      // If coming from guest listing, redirect back to list-your-property
-      if (isEmailLocked) {
-        router.push('/list-your-property');
-      } else {
-        router.push('/dashboard');
-      }
+      // Redirect to dashboard (pending property submission will be handled there)
+      console.log('Registration successful. isEmailLocked:', isEmailLocked, 'preFilledEmail:', preFilledEmail);
+      router.push('/dashboard');
     } catch (err: any) {
       setErrors({ ...errors, form: err.message || 'Registration failed. Please try again.' });
       console.error('Registration error:', err);
