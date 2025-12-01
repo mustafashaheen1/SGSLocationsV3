@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
 import LoginModal from '@/components/LoginModal';
@@ -10,14 +10,24 @@ import { supabase } from '@/lib/supabase';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preFilledEmail = searchParams.get('email') || '';
+  const isEmailLocked = !!preFilledEmail;
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
+    email: preFilledEmail,
     password: '',
     confirmPassword: '',
   });
+
+  // Update email if it comes from URL params
+  useEffect(() => {
+    if (preFilledEmail) {
+      setFormData(prev => ({ ...prev, email: preFilledEmail }));
+    }
+  }, [preFilledEmail]);
   const [errors, setErrors] = useState({
     firstName: '',
     lastName: '',
@@ -29,6 +39,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Don't allow email change if it's locked
+    if (e.target.name === 'email' && isEmailLocked) {
+      return;
+    }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -114,7 +128,12 @@ export default function RegisterPage() {
 
       if (profileError) throw profileError;
 
-      router.push('/dashboard');
+      // If coming from guest listing, redirect back to list-your-property
+      if (isEmailLocked) {
+        router.push('/list-your-property');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setErrors({ ...errors, form: err.message || 'Registration failed. Please try again.' });
       console.error('Registration error:', err);
@@ -225,7 +244,7 @@ export default function RegisterPage() {
 
               <div className="mt-4">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  Email {isEmailLocked && <span className="text-xs text-gray-500">(from your listing)</span>}
                 </label>
                 <input
                   id="email"
@@ -234,9 +253,16 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full"
+                  className={`w-full ${isEmailLocked ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder="your@email.com"
+                  disabled={isEmailLocked}
+                  readOnly={isEmailLocked}
                 />
+                {isEmailLocked && (
+                  <p className="text-xs text-gray-600 mt-1">
+                    This is the email you entered when listing your property. You must register with this email.
+                  </p>
+                )}
                 {errors.email && (
                   <p className="text-red-600 text-sm mt-1">{errors.email}</p>
                 )}
