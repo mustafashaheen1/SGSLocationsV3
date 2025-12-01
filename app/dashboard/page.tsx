@@ -87,7 +87,7 @@ export default function ProductionDashboard() {
   async function handlePendingPropertySubmission() {
     if (processingPendingSubmission) return;
 
-    const pendingListing = getGuestListing();
+    const pendingListing = await getGuestListing();
     if (!pendingListing) return;
 
     setProcessingPendingSubmission(true);

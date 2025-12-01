@@ -90,7 +90,7 @@ export default function ListYourPropertyPage() {
 
   // Handle pending submission from guest listing flow
   const handlePendingSubmission = async (userId: string) => {
-    const pendingListing = getGuestListing();
+    const pendingListing = await getGuestListing();
 
     if (pendingListing && !isProcessingPendingSubmission) {
       setIsProcessingPendingSubmission(true);
