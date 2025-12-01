@@ -129,7 +129,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
           <br />
           or{' '}
           <a
-            href="/register"
+            href={isEmailLocked ? `/register?email=${encodeURIComponent(email)}` : '/register'}
             className="text-red-600 hover:text-red-700 font-medium"
             onClick={onClose}
           >
@@ -221,7 +221,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
             <a
-              href="/register"
+              href={isEmailLocked ? `/register?email=${encodeURIComponent(email)}` : '/register'}
               className="text-red-600 hover:text-red-700 font-medium"
               onClick={onClose}
             >
