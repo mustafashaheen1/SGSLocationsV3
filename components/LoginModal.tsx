@@ -61,8 +61,8 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
       if (authError) throw authError;
 
       // Step 2: Check if user exists in users table (NOT admins table)
-      const { data: userData, error: userError } = await supabase
-        .from('users')
+      const { data: userData, error: userError } = await (supabase
+        .from('users') as any)
         .select('id, email, user_type, is_banned')
         .eq('id', authData.user.id)
         .single();

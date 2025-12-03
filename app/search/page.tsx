@@ -376,8 +376,8 @@ export default function SearchPage() {
     if (showLoading) setFiltersLoading(true);
 
     try {
-      const { data: filtersData, error: filtersError } = await supabase
-        .from('search_filters')
+      const { data: filtersData, error: filtersError } = await (supabase
+        .from('search_filters') as any)
         .select('id, name, slug, has_search')
         .eq('is_active', true)
         .order('display_order');
@@ -386,9 +386,9 @@ export default function SearchPage() {
 
       const categoriesObject: Record<string, any> = {};
 
-      const filterPromises = (filtersData || []).map(async (filter) => {
-        const { data: tagsData, error: tagsError } = await supabase
-          .from('search_filter_tags')
+      const filterPromises = ((filtersData || []) as any[]).map(async (filter: any) => {
+        const { data: tagsData, error: tagsError } = await (supabase
+          .from('search_filter_tags') as any)
           .select('name, slug')
           .eq('filter_id', filter.id)
           .eq('is_active', true)
@@ -400,7 +400,7 @@ export default function SearchPage() {
             data: {
               name: filter.name,
               hasSearch: filter.has_search,
-              options: (tagsData || []).map(tag => tag.name)
+              options: ((tagsData || []) as any[]).map((tag: any) => tag.name)
             }
           };
         }
@@ -508,14 +508,14 @@ export default function SearchPage() {
         const propertyIdSets: Set<string>[] = [];
 
         for (const tag of selectedTags) {
-          const { data: tagImages, error: tagError } = await supabase
-            .from('property_images')
+          const { data: tagImages, error: tagError } = await (supabase
+            .from('property_images') as any)
             .select('property_id')
             .contains('tags', [tag]);
 
           if (tagError) throw tagError;
 
-          const propertyIdsForTag = new Set(tagImages?.map(img => img.property_id) || []);
+          const propertyIdsForTag = new Set((tagImages as any[] || []).map((img: any) => img.property_id));
           propertyIdSets.push(propertyIdsForTag);
         }
 
@@ -535,14 +535,14 @@ export default function SearchPage() {
         }
 
         // Now get the matching images for display
-        const { data: propertyImages } = await supabase
-          .from('property_images')
+        const { data: propertyImages } = await (supabase
+          .from('property_images') as any)
           .select('property_id, image_url, tags')
           .in('property_id', propertyIds)
           .overlaps('tags', selectedTags);
 
         const matchingImagesByProperty = new Map<string, string[]>();
-        propertyImages?.forEach(img => {
+        (propertyImages as any[] || []).forEach((img: any) => {
           if (!matchingImagesByProperty.has(img.property_id)) {
             matchingImagesByProperty.set(img.property_id, []);
           }
@@ -563,7 +563,7 @@ export default function SearchPage() {
 
         if (query && query.trim()) {
           // Apply text search using RPC function, then filter by property IDs
-          const { data: searchData, error: searchError } = await supabase
+          const { data: searchData, error: searchError } = await (supabase as any)
             .rpc('search_properties', { search_query: query.trim() });
 
           error = searchError;
@@ -608,7 +608,7 @@ export default function SearchPage() {
         }
       } else if (query && query.trim()) {
         // Just text search, no tag filters - use RPC function to search including property_tags
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .rpc('search_properties', { search_query: query.trim() })
           .range(from, to);
 
@@ -791,12 +791,12 @@ export default function SearchPage() {
         const propertyIdSets: Set<string>[] = [];
 
         for (const tag of selectedTags) {
-          const { data: tagImages } = await supabase
-            .from('property_images')
+          const { data: tagImages } = await (supabase
+            .from('property_images') as any)
             .select('property_id')
             .contains('tags', [tag]);
 
-          const propertyIdsForTag = new Set(tagImages?.map(img => img.property_id) || []);
+          const propertyIdsForTag = new Set((tagImages as any[] || []).map((img: any) => img.property_id));
           propertyIdSets.push(propertyIdsForTag);
         }
 
@@ -813,12 +813,12 @@ export default function SearchPage() {
 
         if (propertyIds.length > 0) {
           if (searchInput && searchInput.trim()) {
-            const { data: searchData } = await supabase
+            const { data: searchData } = await (supabase as any)
               .rpc('search_properties', { search_query: searchInput.trim() });
             resultCount = searchData?.filter((prop: any) => propertyIds.includes(prop.id)).length || 0;
           } else {
-            const { data } = await supabase
-              .from('properties')
+            const { data } = await (supabase
+              .from('properties') as any)
               .select('id')
               .eq('status', 'active')
               .in('id', propertyIds);
@@ -827,7 +827,7 @@ export default function SearchPage() {
         }
       } else if (searchInput && searchInput.trim()) {
         // Just text search
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .rpc('search_properties', { search_query: searchInput.trim() });
         resultCount = data?.length || 0;
       } else {
@@ -843,8 +843,8 @@ export default function SearchPage() {
       const filterTagNames = selectedTags;
 
       // Save to database
-      const { error } = await supabase
-        .from('saved_searches')
+      const { error } = await (supabase
+        .from('saved_searches') as any)
         .insert({
           user_id: user.id,
           name: searchName.trim(),

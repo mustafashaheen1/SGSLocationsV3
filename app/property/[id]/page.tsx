@@ -85,8 +85,8 @@ export default function PropertyDetailPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: propertyData } = await supabase
-        .from('properties')
+      const { data: propertyData } = await (supabase
+        .from('properties') as any)
         .select('*')
         .eq('id', params.id)
         .maybeSingle();
@@ -97,8 +97,8 @@ export default function PropertyDetailPage() {
         // Increment view count
         try {
           const newViewCount = (propertyData.view_count || 0) + 1;
-          await supabase
-            .from('properties')
+          await (supabase
+            .from('properties') as any)
             .update({ view_count: newViewCount })
             .eq('id', propertyData.id);
           console.log('✓ View tracked for property:', propertyData.id);
@@ -108,8 +108,8 @@ export default function PropertyDetailPage() {
         }
 
         // Fetch all properties to filter on the client side
-        const { data: allProperties } = await supabase
-          .from('properties')
+        const { data: allProperties } = await (supabase
+          .from('properties') as any)
           .select('*')
           .neq('id', propertyData.id)
           .eq('status', 'active');
@@ -119,7 +119,7 @@ export default function PropertyDetailPage() {
           const currentCategories = propertyData.categories || [];
           const currentTags = propertyData.property_tags || [];
 
-          const similarLocations = allProperties.filter(location => {
+          const similarLocations = (allProperties as any[]).filter((location: any) => {
             // Check if at least one category matches
             const hasMatchingCategory = location.categories?.some((cat: string) =>
               currentCategories.includes(cat)
@@ -135,7 +135,7 @@ export default function PropertyDetailPage() {
           });
 
           // Sort by number of matching attributes (most relevant first)
-          similarLocations.sort((a, b) => {
+          similarLocations.sort((a: any, b: any) => {
             const aMatches = countMatches(a, propertyData);
             const bMatches = countMatches(b, propertyData);
             return bMatches - aMatches;
@@ -146,9 +146,9 @@ export default function PropertyDetailPage() {
 
           // For nearby locations, calculate actual distances if coordinates are available
           if (propertyData.latitude && propertyData.longitude) {
-            const nearbyLocations = allProperties
-              .filter(p => p.latitude && p.longitude)
-              .map(prop => ({
+            const nearbyLocations = (allProperties as any[])
+              .filter((p: any) => p.latitude && p.longitude)
+              .map((prop: any) => ({
                 ...prop,
                 distance: calculateDistance(
                   propertyData.latitude!,
@@ -157,14 +157,14 @@ export default function PropertyDetailPage() {
                   prop.longitude!
                 )
               }))
-              .sort((a, b) => a.distance - b.distance)
+              .sort((a: any, b: any) => a.distance - b.distance)
               .slice(0, 12);
 
             setNearbyProperties(nearbyLocations as any);
           } else {
             // Fallback: use same city if no coordinates
-            const nearbyLocations = allProperties
-              .filter(p => p.city === propertyData.city)
+            const nearbyLocations = (allProperties as any[])
+              .filter((p: any) => p.city === propertyData.city)
               .slice(0, 12);
             setNearbyProperties(nearbyLocations);
           }
@@ -199,8 +199,8 @@ export default function PropertyDetailPage() {
       if (!property) return;
 
       // Fetch images from property_images table with display_order and tags
-      const { data: propertyImages, error } = await supabase
-        .from('property_images')
+      const { data: propertyImages, error } = await (supabase
+        .from('property_images') as any)
         .select('image_url, display_order, tags')
         .eq('property_id', property.id)
         .order('display_order', { ascending: true });
@@ -209,7 +209,7 @@ export default function PropertyDetailPage() {
 
       if (propertyImages && propertyImages.length > 0) {
         // Use property_images with their tags as categories
-        imagesWithCats = propertyImages.map(img => ({
+        imagesWithCats = (propertyImages as any[]).map((img: any) => ({
           url: img.image_url,
           categories: img.tags || []
         }));
@@ -330,7 +330,7 @@ export default function PropertyDetailPage() {
         }
 
         // Track as a single ZIP download event
-        const { error } = await supabase.from('image_downloads').insert({
+        const { error } = await (supabase.from('image_downloads') as any).insert({
           property_id: property.id,
           image_url: 'ZIP_DOWNLOAD',
           user_id: userId

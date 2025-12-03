@@ -122,7 +122,7 @@ export default function EditPropertyPage() {
 
       // Pre-fill form with existing data
       // Parse description to extract contact info if available
-      const description = propertyData.description || '';
+      const description = (propertyData as any).description || '';
       const emailMatch = description.match(/\(([^)]+@[^)]+)\)/);
       const nameMatch = description.match(/Submitted by ([^(]+)/);
 
@@ -146,19 +146,19 @@ export default function EditPropertyPage() {
         firstName,
         lastName,
         email: emailMatch ? emailMatch[1] : user.email || '',
-        phoneNumber: profile?.phone || '',
+        phoneNumber: (profile as any)?.phone || '',
         internationalPhone: '',
-        streetAddress: propertyData.address || '',
-        city: propertyData.city || '',
-        state: propertyData.county || '',
-        zipCode: propertyData.zipcode || '',
-        additionalNotes: propertyData.description || '',
+        streetAddress: (propertyData as any).address || '',
+        city: (propertyData as any).city || '',
+        state: (propertyData as any).county || '',
+        zipCode: (propertyData as any).zipcode || '',
+        additionalNotes: (propertyData as any).description || '',
       });
 
       // Set category
-      if (propertyData.categories && propertyData.categories.length > 0) {
+      if ((propertyData as any).categories && (propertyData as any).categories.length > 0) {
         // Find category by name
-        const categoryName = propertyData.categories[0];
+        const categoryName = (propertyData as any).categories[0];
         const { data: categoryData } = await supabase
           .from('categories')
           .select('id')
@@ -166,18 +166,18 @@ export default function EditPropertyPage() {
           .maybeSingle();
 
         if (categoryData) {
-          setSelectedCategoryId(categoryData.id);
+          setSelectedCategoryId((categoryData as any).id);
         }
       }
 
       // Set property tags
-      if (propertyData.property_tags) {
-        setPropertyTags(propertyData.property_tags);
+      if ((propertyData as any).property_tags) {
+        setPropertyTags((propertyData as any).property_tags);
       }
 
       // Set images
       if (imagesData && imagesData.length > 0) {
-        const existingImages: ImageWithTags[] = imagesData.map(img => ({
+        const existingImages: ImageWithTags[] = (imagesData as any[]).map((img: any) => ({
           preview: img.image_url,
           url: img.image_url,
           tags: img.tags || [],
@@ -227,9 +227,9 @@ export default function EditPropertyPage() {
 
       if (filters) {
         const allTags: FilterTag[] = [];
-        filters.forEach(filter => {
+        (filters as any[]).forEach((filter: any) => {
           const tags = filter.search_filter_tags as any[];
-          tags?.forEach(tag => {
+          tags?.forEach((tag: any) => {
             allTags.push({
               id: tag.id,
               filter_id: filter.id,
@@ -469,8 +469,8 @@ export default function EditPropertyPage() {
       const wasActive = property?.status === 'active';
 
       // Update property
-      const { error: propertyError } = await supabase
-        .from('properties')
+      const { error: propertyError } = await (supabase
+        .from('properties') as any)
         .update({
           name: `${formData.streetAddress}, ${formData.city}`,
           description: `Submitted by ${formData.firstName} ${formData.lastName} (${formData.email})`,
@@ -507,8 +507,8 @@ export default function EditPropertyPage() {
         };
       });
 
-      const { error: imagesError } = await supabase
-        .from('property_images')
+      const { error: imagesError } = await (supabase
+        .from('property_images') as any)
         .insert(propertyImagesData);
 
       if (imagesError) throw imagesError;

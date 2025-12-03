@@ -25,8 +25,8 @@ export async function saveSearch(
     }, {} as Record<string, string[]>);
 
     // Check if this exact search already exists
-    const { data: existingSearches, error: fetchError } = await supabase
-      .from('saved_searches')
+    const { data: existingSearches, error: fetchError } = await (supabase
+      .from('saved_searches') as any)
       .select('*')
       .eq('user_id', user.id)
       .eq('search_text', searchText);
@@ -34,7 +34,7 @@ export async function saveSearch(
     if (fetchError) throw fetchError;
 
     // Find a matching search (same text, filters, and tags)
-    const matchingSearch = existingSearches?.find(search => {
+    const matchingSearch = (existingSearches as any[] || []).find((search: any) => {
       const searchTags = [...(search.tags || [])].sort();
       const searchFilters = Object.keys(search.filters || {}).sort().reduce((acc, key) => {
         acc[key] = [...(search.filters[key] || [])].sort();
@@ -49,8 +49,8 @@ export async function saveSearch(
 
     if (matchingSearch) {
       // Update existing search
-      const { data, error } = await supabase
-        .from('saved_searches')
+      const { data, error } = await (supabase
+        .from('saved_searches') as any)
         .update({
           result_count: resultCount,
           last_checked_at: new Date().toISOString(),
@@ -63,8 +63,8 @@ export async function saveSearch(
       return { data, error };
     } else {
       // Create new search
-      const { data, error } = await supabase
-        .from('saved_searches')
+      const { data, error } = await (supabase
+        .from('saved_searches') as any)
         .insert([{
           user_id: user.id,
           search_text: searchText,

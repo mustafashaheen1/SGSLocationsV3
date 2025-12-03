@@ -41,10 +41,10 @@ export function Navbar() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
-        const { data: adminData } = await supabase
-          .from('admins')
+        const { data: adminData } = await (supabase
+          .from('admins') as any)
           .select('email')
-          .eq('email', session.user.email)
+          .eq('email', session.user.email || '')
           .maybeSingle();
 
         if (adminData) {

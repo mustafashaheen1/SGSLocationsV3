@@ -59,7 +59,7 @@ export default function HomePage() {
       let fetchedSubtitle = '';
 
       if (settings) {
-        settings.forEach(setting => {
+        (settings as any[]).forEach((setting: any) => {
           // Parse the JSON value properly - handle multiple layers of escaping
           let value = setting.value;
           if (typeof value === 'string') {
@@ -113,7 +113,7 @@ export default function HomePage() {
       if (categoriesData) {
         // Get count for each category by checking the categories array in properties
         const categoriesWithCounts = await Promise.all(
-          categoriesData.map(async (cat) => {
+          (categoriesData as any[]).map(async (cat: any) => {
             // Query properties where the categories array contains this category name
             const { count } = await supabase
               .from('properties')

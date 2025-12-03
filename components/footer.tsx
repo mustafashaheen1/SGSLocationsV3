@@ -43,17 +43,17 @@ export function Footer() {
   async function fetchFooterContent() {
     try {
       // Fetch footer settings from site_settings table
-      const { data: settings } = await supabase
-        .from('site_settings')
+      const { data: settings } = await (supabase
+        .from('site_settings') as any)
         .select('*')
         .in('key', ['footer_description', 'contact_phone', 'contact_email', 'contact_address', 'office_hours']);
 
       if (settings) {
-        const description = settings.find(s => s.key === 'footer_description')?.value;
-        const phone = settings.find(s => s.key === 'contact_phone')?.value;
-        const email = settings.find(s => s.key === 'contact_email')?.value;
-        const address = settings.find(s => s.key === 'contact_address')?.value;
-        const officeHours = settings.find(s => s.key === 'office_hours')?.value;
+        const description = (settings as any[]).find((s: any) => s.key === 'footer_description')?.value;
+        const phone = (settings as any[]).find((s: any) => s.key === 'contact_phone')?.value;
+        const email = (settings as any[]).find((s: any) => s.key === 'contact_email')?.value;
+        const address = (settings as any[]).find((s: any) => s.key === 'contact_address')?.value;
+        const officeHours = (settings as any[]).find((s: any) => s.key === 'office_hours')?.value;
 
         setFooterContent({
           description: parseValue(description) || "Dallas Fort Worth's largest location database connecting property owners with production companies. Over 20 years of experience serving the film and television industry.",
@@ -65,21 +65,21 @@ export function Footer() {
       }
 
       // Fetch social links - ONLY show those with URLs
-      const { data: social } = await supabase
-        .from('social_links')
+      const { data: social } = await (supabase
+        .from('social_links') as any)
         .select('*')
         .eq('is_active', true)
         .order('display_order');
 
       if (social) {
         // Filter out links with empty or null URLs
-        const activeSocial = social.filter(link => link.url && link.url.trim() !== '');
+        const activeSocial = (social as any[]).filter((link: any) => link.url && link.url.trim() !== '');
         setSocialLinks(activeSocial);
       }
 
       // Fetch categories from database
-      const { data: cats } = await supabase
-        .from('categories')
+      const { data: cats } = await (supabase
+        .from('categories') as any)
         .select('id, name, slug')
         .eq('is_active', true)
         .order('display_order')

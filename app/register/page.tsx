@@ -117,8 +117,8 @@ export default function RegisterPage() {
         throw new Error('User creation failed');
       }
 
-      const { error: profileError } = await supabase
-        .from('users')
+      const { error: profileError } = await (supabase
+        .from('users') as any)
         .insert({
           id: authData.user.id,
           email: formData.email,

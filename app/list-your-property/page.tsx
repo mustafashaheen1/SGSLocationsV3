@@ -134,7 +134,7 @@ export default function ListYourPropertyPage() {
         .maybeSingle();
 
       if (data) {
-        setTermsContent(data.content);
+        setTermsContent((data as any).content);
       }
     }
 
@@ -153,7 +153,7 @@ export default function ListYourPropertyPage() {
 
           if (profile) {
             // Split full name into first and last name
-            const nameParts = profile.full_name?.split(' ') || [];
+            const nameParts = (profile as any).full_name?.split(' ') || [];
             const firstName = nameParts[0] || '';
             const lastName = nameParts.slice(1).join(' ') || '';
 
@@ -162,8 +162,8 @@ export default function ListYourPropertyPage() {
               ...prev,
               firstName,
               lastName,
-              email: profile.email || user.email || '',
-              phoneNumber: profile.phone || '',
+              email: (profile as any).email || user.email || '',
+              phoneNumber: (profile as any).phone || '',
             }));
           } else {
             // If no profile in users table, use auth metadata
@@ -239,9 +239,9 @@ export default function ListYourPropertyPage() {
 
       if (filters) {
         const allTags: FilterTag[] = [];
-        filters.forEach(filter => {
+        (filters as any[]).forEach((filter: any) => {
           const tags = filter.search_filter_tags as any[];
-          tags?.forEach(tag => {
+          tags?.forEach((tag: any) => {
             allTags.push({
               id: tag.id,
               filter_id: filter.id,
@@ -521,8 +521,8 @@ export default function ListYourPropertyPage() {
 
       const selectedCategory = categories.find(c => c.id === selectedCategoryId);
 
-      const { data: property, error: propertyError } = await supabase
-        .from('properties')
+      const { data: property, error: propertyError } = await (supabase
+        .from('properties') as any)
         .insert([{
           name: `${formData.streetAddress}, ${formData.city}`,
           description: `Submitted by ${formData.firstName} ${formData.lastName} (${formData.email})`,
@@ -551,8 +551,8 @@ export default function ListYourPropertyPage() {
         display_order: index,
       }));
 
-      const { error: imagesError} = await supabase
-        .from('property_images')
+      const { error: imagesError} = await (supabase
+        .from('property_images') as any)
         .insert(propertyImagesData);
 
       if (imagesError) throw imagesError;

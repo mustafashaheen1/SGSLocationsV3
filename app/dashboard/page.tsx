@@ -63,10 +63,10 @@ export default function ProductionDashboard() {
       if (userDetails) {
         console.log('User details loaded:', userDetails);
         setUserData({
-          fullName: userDetails.full_name || '',
-          email: userDetails.email || user.email || '',
-          company: userDetails.company_name || '',
-          phone: userDetails.phone || ''
+          fullName: (userDetails as any).full_name || '',
+          email: (userDetails as any).email || user.email || '',
+          company: (userDetails as any).company_name || '',
+          phone: (userDetails as any).phone || ''
         });
       } else {
         console.log('No user details found in database, using auth metadata');
@@ -107,8 +107,8 @@ export default function ProductionDashboard() {
       const uploadedImageUrls = await uploadMultipleImages(pendingListing.imageFiles, 'properties');
 
       // Insert property
-      const { data: property, error: propertyError } = await supabase
-        .from('properties')
+      const { data: property, error: propertyError } = await (supabase
+        .from('properties') as any)
         .insert([{
           name: `${pendingListing.formData.streetAddress}, ${pendingListing.formData.city}`,
           description: `Submitted by ${pendingListing.formData.firstName} ${pendingListing.formData.lastName} (${pendingListing.formData.email})`,
@@ -119,7 +119,7 @@ export default function ProductionDashboard() {
           owner_id: user.id,
           property_type: 'Residential',
           daily_rate: '0',
-          categories: pendingListing.selectedCategoryId ? [(await supabase.from('categories').select('name').eq('id', pendingListing.selectedCategoryId).single()).data?.name] : [],
+          categories: pendingListing.selectedCategoryId ? [(await (supabase.from('categories') as any).select('name').eq('id', pendingListing.selectedCategoryId).single()).data?.name] : [],
           property_tags: pendingListing.propertyTags,
           images: uploadedImageUrls,
           primary_image: uploadedImageUrls[0],
@@ -138,8 +138,8 @@ export default function ProductionDashboard() {
         display_order: index,
       }));
 
-      const { error: imagesError } = await supabase
-        .from('property_images')
+      const { error: imagesError } = await (supabase
+        .from('property_images') as any)
         .insert(propertyImagesData);
 
       if (imagesError) throw imagesError;
@@ -289,8 +289,8 @@ export default function ProductionDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error: updateError } = await supabase
-        .from('users')
+      const { error: updateError } = await (supabase
+        .from('users') as any)
         .update({
           full_name: userData.fullName,
           company_name: userData.company,
