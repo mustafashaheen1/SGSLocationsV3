@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createClient } from '@/lib/supabase';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { data: property, error: propertyError } = await supabase
-      .from('properties')
+    const supabase = createClient();
+
+    const { data: property, error: propertyError } = await (supabase
+      .from('properties') as any)
       .select('*')
       .eq('id', params.id)
       .single();
@@ -21,8 +18,8 @@ export async function GET(
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
 
-    const { data: images, error: imagesError } = await supabase
-      .from('property_images')
+    const { data: images, error: imagesError } = await (supabase
+      .from('property_images') as any)
       .select('*')
       .eq('property_id', params.id)
       .order('display_order');
@@ -36,7 +33,7 @@ export async function GET(
         description: property.description,
         address: property.address
       },
-      images: imageData.map(img => ({
+      images: imageData.map((img: any) => ({
         url: img.image_url,
         tags: img.tags || [],
         order: img.display_order

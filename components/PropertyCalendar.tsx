@@ -323,9 +323,9 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   Start Date *
                 </label>
                 <input
-                  type="datetime-local"
-                  value={formData.start_date ? new Date(formData.start_date).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setFormData({ ...formData, start_date: new Date(e.target.value).toISOString() })}
+                  type="date"
+                  value={formData.start_date ? new Date(formData.start_date).toISOString().slice(0, 10) : ''}
+                  onChange={(e) => setFormData({ ...formData, start_date: new Date(e.target.value + 'T00:00:00').toISOString() })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
                 />
               </div>
@@ -336,9 +336,9 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   End Date *
                 </label>
                 <input
-                  type="datetime-local"
-                  value={formData.end_date ? new Date(formData.end_date).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setFormData({ ...formData, end_date: new Date(e.target.value).toISOString() })}
+                  type="date"
+                  value={formData.end_date ? new Date(formData.end_date).toISOString().slice(0, 10) : ''}
+                  onChange={(e) => setFormData({ ...formData, end_date: new Date(e.target.value + 'T23:59:59').toISOString() })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
                 />
               </div>

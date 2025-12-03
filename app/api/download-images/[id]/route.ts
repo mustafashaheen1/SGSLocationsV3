@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 import JSZip from 'jszip';
 
-const supabase = createClient();
-
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,13 +13,14 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = createClient();
     const params = await context.params;
     const propertyId = params.id;
 
     console.log('📦 Starting ZIP generation for property:', propertyId);
 
-    const { data: property, error: propertyError } = await supabase
-      .from('properties')
+    const { data: property, error: propertyError} = await (supabase
+      .from('properties') as any)
       .select('*')
       .eq('id', propertyId)
       .single();
@@ -32,8 +31,8 @@ export async function GET(
 
     console.log('✓ Property:', property.name);
 
-    const { data: images, error: imagesError } = await supabase
-      .from('property_images')
+    const { data: images, error: imagesError } = await (supabase
+      .from('property_images') as any)
       .select('*')
       .eq('property_id', propertyId)
       .order('display_order');
@@ -62,7 +61,7 @@ export async function GET(
       console.log(`Processing batch ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(images.length / BATCH_SIZE)}`);
 
       const batchResults = await Promise.allSettled(
-        batch.map(async (image, batchIndex) => {
+        batch.map(async (image: any, batchIndex: number) => {
           const globalIndex = batchStart + batchIndex;
           const imageNum = String(globalIndex + 1).padStart(3, '0');
 

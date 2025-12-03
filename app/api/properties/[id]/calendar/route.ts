@@ -15,8 +15,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: isAdmin } = await supabase
-      .from('admins')
+    const { data: isAdmin } = await (supabase
+      .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
@@ -26,8 +26,8 @@ export async function GET(
     }
 
     // Fetch all calendar events for this property
-    const { data: events, error } = await supabase
-      .from('property_calendar_events')
+    const { data: events, error } = await (supabase
+      .from('property_calendar_events') as any)
       .select('*')
       .eq('property_id', propertyId)
       .order('start_date', { ascending: true });
@@ -61,8 +61,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: isAdmin } = await supabase
-      .from('admins')
+    const { data: isAdmin } = await (supabase
+      .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
@@ -92,8 +92,8 @@ export async function POST(
     }
 
     // Create the event
-    const { data: event, error } = await supabase
-      .from('property_calendar_events')
+    const { data: event, error } = await (supabase
+      .from('property_calendar_events') as any)
       .insert({
         property_id: propertyId,
         event_type,
@@ -136,8 +136,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: isAdmin } = await supabase
-      .from('admins')
+    const { data: isAdmin } = await (supabase
+      .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
@@ -166,8 +166,8 @@ export async function PUT(
     if (all_day !== undefined) updateData.all_day = all_day;
     if (color !== undefined) updateData.color = color;
 
-    const { data: event, error } = await supabase
-      .from('property_calendar_events')
+    const { data: event, error } = await (supabase
+      .from('property_calendar_events') as any)
       .update(updateData)
       .eq('id', event_id)
       .select()
@@ -201,8 +201,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: isAdmin } = await supabase
-      .from('admins')
+    const { data: isAdmin } = await (supabase
+      .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
@@ -221,8 +221,8 @@ export async function DELETE(
       );
     }
 
-    const { error } = await supabase
-      .from('property_calendar_events')
+    const { error } = await (supabase
+      .from('property_calendar_events') as any)
       .delete()
       .eq('id', eventId);
 
