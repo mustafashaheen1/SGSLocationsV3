@@ -31,13 +31,13 @@ export async function GET(request: NextRequest) {
     }
 
     const albumUrl = `https://api.smugmug.com/api/v2/album/${albumKey}`;
-    const albumParams = createOAuthParams(apiKey!, tokenData.access_token);
+    const albumParams = createOAuthParams(apiKey!, (tokenData as any).access_token);
     const albumSig = generateOAuthSignature(
       'GET',
       albumUrl,
       albumParams,
       apiSecret!,
-      tokenData.access_token_secret
+      (tokenData as any).access_token_secret
     );
 
     const response = await axios.get(albumUrl, {

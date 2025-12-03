@@ -44,8 +44,8 @@ export default function ExclusivePropertiesPage() {
 
   async function handleDeactivate(id: string) {
     try {
-      const { error } = await supabase
-        .from('properties')
+      const { error } = await (supabase
+        .from('properties') as any)
         .update({ status: 'inactive', updated_at: new Date().toISOString() })
         .eq('id', id);
 
@@ -64,8 +64,8 @@ export default function ExclusivePropertiesPage() {
 
     try {
       // First, fetch the property to get all image URLs
-      const { data: property, error: fetchError } = await supabase
-        .from('properties')
+      const { data: property, error: fetchError } = await (supabase
+        .from('properties') as any)
         .select('images, primary_image')
         .eq('id', id)
         .single();
@@ -73,9 +73,9 @@ export default function ExclusivePropertiesPage() {
       if (fetchError) throw fetchError;
 
       // Delete all images from S3
-      const allImages = [...(property.images || [])];
-      if (property.primary_image && !allImages.includes(property.primary_image)) {
-        allImages.push(property.primary_image);
+      const allImages = [...((property as any).images || [])];
+      if ((property as any).primary_image && !allImages.includes((property as any).primary_image)) {
+        allImages.push((property as any).primary_image);
       }
 
       console.log(`Deleting ${allImages.length} images from S3...`);
@@ -105,8 +105,8 @@ export default function ExclusivePropertiesPage() {
 
   async function removeExclusive(id: string) {
     try {
-      const { error } = await supabase
-        .from('properties')
+      const { error } = await (supabase
+        .from('properties') as any)
         .update({ is_exclusive: false })
         .eq('id', id);
 

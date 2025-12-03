@@ -51,10 +51,10 @@ export default function AdminPropertiesPage() {
       return;
     }
 
-    const { data: admin } = await supabase
-      .from('admins')
+    const { data: admin } = await (supabase
+      .from('admins') as any)
       .select('*')
-      .eq('email', session.user.email)
+      .eq('email', session.user.email || '')
       .maybeSingle();
 
     if (!admin) {
@@ -97,8 +97,8 @@ export default function AdminPropertiesPage() {
 
   async function toggleFeatured(id: string, currentValue: boolean) {
     try {
-      const { error } = await supabase
-        .from('properties')
+      const { error } = await (supabase
+        .from('properties') as any)
         .update({ is_featured: !currentValue })
         .eq('id', id);
 
@@ -112,8 +112,8 @@ export default function AdminPropertiesPage() {
 
   async function updateStatus(id: string, newStatus: string) {
     try {
-      const { error } = await supabase
-        .from('properties')
+      const { error } = await (supabase
+        .from('properties') as any)
         .update({ status: newStatus })
         .eq('id', id);
 
@@ -135,8 +135,8 @@ export default function AdminPropertiesPage() {
     try {
       // Fetch property to get image URLs
       setDeleteProgress('📥 Fetching property data...');
-      const { data: property, error: fetchError } = await supabase
-        .from('properties')
+      const { data: property, error: fetchError } = await (supabase
+        .from('properties') as any)
         .select('images, primary_image')
         .eq('id', id)
         .single();
@@ -144,9 +144,9 @@ export default function AdminPropertiesPage() {
       if (fetchError) throw fetchError;
 
       // Collect all image URLs
-      const allImages = [...(property.images || [])];
-      if (property.primary_image && !allImages.includes(property.primary_image)) {
-        allImages.push(property.primary_image);
+      const allImages = [...((property as any).images || [])];
+      if ((property as any).primary_image && !allImages.includes((property as any).primary_image)) {
+        allImages.push((property as any).primary_image);
       }
 
       // Delete images from S3 with progress

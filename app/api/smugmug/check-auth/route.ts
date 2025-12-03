@@ -18,13 +18,13 @@ export async function GET() {
     console.log('  - Data exists:', !!data);
 
     if (data) {
-      console.log('  - access_token exists:', !!data.access_token);
-      console.log('  - access_token length:', data.access_token?.length || 0);
-      console.log('  - access_token (first 15):', data.access_token?.substring(0, 15) || 'EMPTY');
-      console.log('  - access_token_secret exists:', !!data.access_token_secret);
-      console.log('  - secret length:', data.access_token_secret?.length || 0);
-      console.log('  - secret (first 15):', data.access_token_secret?.substring(0, 15) || 'EMPTY');
-      console.log('  - created_at:', data.created_at);
+      console.log('  - access_token exists:', !!(data as any).access_token);
+      console.log('  - access_token length:', (data as any).access_token?.length || 0);
+      console.log('  - access_token (first 15):', (data as any).access_token?.substring(0, 15) || 'EMPTY');
+      console.log('  - access_token_secret exists:', !!(data as any).access_token_secret);
+      console.log('  - secret length:', (data as any).access_token_secret?.length || 0);
+      console.log('  - secret (first 15):', (data as any).access_token_secret?.substring(0, 15) || 'EMPTY');
+      console.log('  - created_at:', (data as any).created_at);
     }
 
     if (error) {
@@ -37,10 +37,10 @@ export async function GET() {
     }
 
     if (!data ||
-        !data.access_token ||
-        !data.access_token_secret ||
-        data.access_token.trim() === '' ||
-        data.access_token_secret.trim() === '') {
+        !(data as any).access_token ||
+        !(data as any).access_token_secret ||
+        (data as any).access_token.trim() === '' ||
+        (data as any).access_token_secret.trim() === '') {
 
       console.log('❌ Missing or empty tokens');
       return NextResponse.json({
@@ -48,10 +48,10 @@ export async function GET() {
         reason: 'missing_tokens',
         debug: {
           hasData: !!data,
-          hasAccessToken: !!data?.access_token,
-          accessTokenLength: data?.access_token?.length || 0,
-          hasSecret: !!data?.access_token_secret,
-          secretLength: data?.access_token_secret?.length || 0
+          hasAccessToken: !!(data as any)?.access_token,
+          accessTokenLength: (data as any)?.access_token?.length || 0,
+          hasSecret: !!(data as any)?.access_token_secret,
+          secretLength: (data as any)?.access_token_secret?.length || 0
         }
       });
     }
@@ -59,7 +59,7 @@ export async function GET() {
     console.log('✅ Valid tokens found');
     return NextResponse.json({
       authorized: true,
-      authorizedAt: data.created_at
+      authorizedAt: (data as any).created_at
     });
 
   } catch (error: any) {

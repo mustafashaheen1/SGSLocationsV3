@@ -1100,8 +1100,8 @@ export default function AddPropertyPage() {
       console.log('Submitting property data:', propertyData);
 
       // Insert property
-      const { data: property, error: propertyError } = await supabase
-        .from('properties')
+      const { data: property, error: propertyError } = await (supabase
+        .from('properties') as any)
         .insert([propertyData])
         .select()
         .single();
@@ -1121,8 +1121,8 @@ export default function AddPropertyPage() {
         tags: img.tags || []
       }));
 
-      const { error: imagesError } = await supabase
-        .from('property_images')
+      const { error: imagesError } = await (supabase
+        .from('property_images') as any)
         .insert(imageRecords);
 
       if (imagesError) {

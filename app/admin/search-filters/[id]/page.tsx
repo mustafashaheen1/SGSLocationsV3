@@ -78,8 +78,8 @@ export default function FilterDetailPage() {
       const slug = generateSlug(newTagName);
       const nextOrder = tags.length > 0 ? Math.max(...tags.map(t => t.display_order)) + 1 : 1;
 
-      const { error } = await supabase
-        .from('search_filter_tags')
+      const { error } = await (supabase
+        .from('search_filter_tags') as any)
         .insert([{
           filter_id: params.id,
           name: newTagName,

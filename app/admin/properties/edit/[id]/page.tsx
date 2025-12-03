@@ -178,8 +178,8 @@ export default function EditPropertyPage() {
 
   async function fetchProperty() {
     try {
-      const { data: property, error } = await supabase
-        .from('properties')
+      const { data: property, error } = await (supabase
+        .from('properties') as any)
         .select('*')
         .eq('id', params.id)
         .single();
@@ -187,42 +187,42 @@ export default function EditPropertyPage() {
       if (error) throw error;
 
       setFormData({
-        name: property.name || '',
-        description: property.description || '',
-        address: property.address || '',
-        city: property.city || '',
-        state: property.county || 'Texas',
-        zipcode: property.zipcode || '',
+        name: (property as any).name || '',
+        description: (property as any).description || '',
+        address: (property as any).address || '',
+        city: (property as any).city || '',
+        state: (property as any).county || 'Texas',
+        zipcode: (property as any).zipcode || '',
         category_id: '',
-        is_featured: property.is_featured || false,
-        is_exclusive: property.is_exclusive || false,
+        is_featured: (property as any).is_featured || false,
+        is_exclusive: (property as any).is_exclusive || false,
       });
 
       // Get category ID from category name
-      if (property.categories && property.categories.length > 0) {
-        const { data: categoryData } = await supabase
-          .from('categories')
+      if ((property as any).categories && (property as any).categories.length > 0) {
+        const { data: categoryData } = await (supabase
+          .from('categories') as any)
           .select('*')
-          .eq('name', property.categories[0])
+          .eq('name', (property as any).categories[0])
           .single();
 
         if (categoryData) {
-          setFormData(prev => ({ ...prev, category_id: categoryData.id }));
+          setFormData(prev => ({ ...prev, category_id: (categoryData as any).id }));
         }
       }
 
       // Load property-level tags
-      setPropertyTags(property.property_tags || []);
+      setPropertyTags((property as any).property_tags || []);
 
       // Load existing images with tags
-      const { data: propertyImages, error: imagesError } = await supabase
-        .from('property_images')
+      const { data: propertyImages, error: imagesError } = await (supabase
+        .from('property_images') as any)
         .select('*')
         .eq('property_id', params.id)
         .order('display_order');
 
       if (!imagesError && propertyImages && propertyImages.length > 0) {
-        const loadedImages: ImageWithTags[] = propertyImages.map(img => ({
+        const loadedImages: ImageWithTags[] = (propertyImages as any[]).map((img: any) => ({
           url: img.image_url,
           tags: img.tags || [],
           existingId: img.id,
@@ -230,8 +230,8 @@ export default function EditPropertyPage() {
         setImages(loadedImages);
         // Grid images are the first 6 (display_order 0-5)
         setGridIndices(loadedImages.slice(0, 6).map((_, i) => i));
-      } else if (property.images && property.images.length > 0) {
-        const fallbackImages: ImageWithTags[] = property.images.map((url: string) => ({
+      } else if ((property as any).images && (property as any).images.length > 0) {
+        const fallbackImages: ImageWithTags[] = (property as any).images.map((url: string) => ({
           url,
           tags: [],
         }));
@@ -259,8 +259,8 @@ export default function EditPropertyPage() {
 
   async function fetchSearchFilterTags() {
     try {
-      const { data: filters } = await supabase
-        .from('search_filters')
+      const { data: filters } = await (supabase
+        .from('search_filters') as any)
         .select(`
           id,
           name,
@@ -275,9 +275,9 @@ export default function EditPropertyPage() {
 
       if (filters) {
         const allTags: FilterTag[] = [];
-        filters.forEach(filter => {
+        (filters as any[]).forEach((filter: any) => {
           const tags = filter.search_filter_tags as any[];
-          tags?.forEach(tag => {
+          tags?.forEach((tag: any) => {
             allTags.push({
               id: tag.id,
               filter_id: filter.id,
@@ -492,8 +492,8 @@ export default function EditPropertyPage() {
       // Get category name from ID
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 
-      const { error: propertyError } = await supabase
-        .from('properties')
+      const { error: propertyError } = await (supabase
+        .from('properties') as any)
         .update({
           name: formData.name,
           description: formData.description || null,
@@ -537,8 +537,8 @@ export default function EditPropertyPage() {
         };
       });
 
-      const { error: imagesError } = await supabase
-        .from('property_images')
+      const { error: imagesError } = await (supabase
+        .from('property_images') as any)
         .insert(imageRecords);
 
       if (imagesError) {

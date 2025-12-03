@@ -59,8 +59,8 @@ export default function UsersPage() {
 
     setActionLoading(true);
     try {
-      const { error } = await supabase
-        .from('users')
+      const { error } = await (supabase
+        .from('users') as any)
         .update({ is_banned: !currentBanStatus })
         .eq('id', id);
 

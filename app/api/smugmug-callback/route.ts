@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const requestTokenSecret = tempToken.request_token_secret;
+    const requestTokenSecret = (tempToken as any).request_token_secret;
     console.log('✓ Request token secret retrieved');
 
     const accessTokenUrl = 'https://api.smugmug.com/services/oauth/1.0a/getAccessToken';
@@ -126,8 +126,8 @@ export async function GET(request: NextRequest) {
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000');
 
-    const { error: insertError } = await supabase
-      .from('smugmug_tokens')
+    const { error: insertError } = await (supabase
+      .from('smugmug_tokens') as any)
       .insert({
         access_token: accessToken,
         access_token_secret: accessTokenSecret,

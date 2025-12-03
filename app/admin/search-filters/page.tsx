@@ -64,9 +64,9 @@ export default function SearchFiltersPage() {
       console.log('Filters fetched:', data);
 
       const filtersWithCounts = await Promise.all(
-        (data || []).map(async (filter) => {
-          const { count } = await supabase
-            .from('search_filter_tags')
+        (data || []).map(async (filter: any) => {
+          const { count } = await (supabase
+            .from('search_filter_tags') as any)
             .select('*', { count: 'exact', head: true })
             .eq('filter_id', filter.id);
 
@@ -115,11 +115,11 @@ export default function SearchFiltersPage() {
       if (checkError) throw checkError;
 
       if (existingFilters && existingFilters.length > 0) {
-        for (const filter of existingFilters) {
-          const { error: updateError } = await supabase
-            .from('search_filters')
-            .update({ display_order: filter.display_order + 1 })
-            .eq('id', filter.id);
+        for (const filter of existingFilters as any[]) {
+          const { error: updateError } = await (supabase
+            .from('search_filters') as any)
+            .update({ display_order: (filter as any).display_order + 1 })
+            .eq('id', (filter as any).id);
 
           if (updateError) {
             console.error('Error updating filter order:', updateError);
@@ -128,8 +128,8 @@ export default function SearchFiltersPage() {
         }
       }
 
-      const { error: insertError } = await supabase
-        .from('search_filters')
+      const { error: insertError } = await (supabase
+        .from('search_filters') as any)
         .insert([{
           name: formData.name,
           slug: slug,
@@ -173,10 +173,10 @@ export default function SearchFiltersPage() {
       );
 
       for (const filter of filtersToReorder) {
-        const { error: updateError } = await supabase
-          .from('search_filters')
-          .update({ display_order: filter.display_order - 1 })
-          .eq('id', filter.id);
+        const { error: updateError } = await (supabase
+          .from('search_filters') as any)
+          .update({ display_order: (filter as any).display_order - 1 })
+          .eq('id', (filter as any).id);
 
         if (updateError) {
           console.error('Error reordering filter:', updateError);

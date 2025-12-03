@@ -39,13 +39,13 @@ export async function GET(request: NextRequest) {
 
     // Get authenticated user
     const authUserUrl = 'https://api.smugmug.com/api/v2!authuser';
-    const authUserParams = createOAuthParams(apiKey, tokenData.access_token);
+    const authUserParams = createOAuthParams(apiKey, (tokenData as any).access_token);
     const authUserSig = generateOAuthSignature(
       'GET',
       authUserUrl,
       authUserParams,
       apiSecret,
-      tokenData.access_token_secret
+      (tokenData as any).access_token_secret
     );
 
     const authUserResponse = await axios.get(authUserUrl, {
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     // Get all albums - FIXED: Include count in signature
     const albumsUrl = `https://api.smugmug.com${userUri}`;
-    const albumsParams = createOAuthParams(apiKey, tokenData.access_token);
+    const albumsParams = createOAuthParams(apiKey, (tokenData as any).access_token);
 
     // Add count parameter BEFORE signature generation
     const albumsParamsWithCount = {
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       albumsUrl,
       albumsParamsWithCount,
       apiSecret,
-      tokenData.access_token_secret
+      (tokenData as any).access_token_secret
     );
 
     const albumsResponse = await axios.get(albumsUrl, {
@@ -105,13 +105,13 @@ export async function GET(request: NextRequest) {
         try {
           // Get full album details
           const albumUrl = `https://api.smugmug.com/api/v2/album/${album.AlbumKey}`;
-          const albumParams = createOAuthParams(apiKey, tokenData.access_token);
+          const albumParams = createOAuthParams(apiKey, (tokenData as any).access_token);
           const albumSig = generateOAuthSignature(
             'GET',
             albumUrl,
             albumParams,
             apiSecret,
-            tokenData.access_token_secret
+            (tokenData as any).access_token_secret
           );
 
           const albumResponse = await axios.get(albumUrl, {
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
 
           if (albumImagesUri) {
             const imagesUrl = `https://api.smugmug.com${albumImagesUri}`;
-            const imagesParams = createOAuthParams(apiKey, tokenData.access_token);
+            const imagesParams = createOAuthParams(apiKey, (tokenData as any).access_token);
 
             // Add count for images request
             const imagesParamsWithCount = {
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
               imagesUrl,
               imagesParamsWithCount,
               apiSecret,
-              tokenData.access_token_secret
+              (tokenData as any).access_token_secret
             );
 
             const imagesResponse = await axios.get(imagesUrl, {
@@ -169,13 +169,13 @@ export async function GET(request: NextRequest) {
             // Get thumbnail
             if (firstImage?.Uris?.ImageSizes?.Uri) {
               const sizesUrl = `https://api.smugmug.com${firstImage.Uris.ImageSizes.Uri}`;
-              const sizesParams = createOAuthParams(apiKey, tokenData.access_token);
+              const sizesParams = createOAuthParams(apiKey, (tokenData as any).access_token);
               const sizesSig = generateOAuthSignature(
                 'GET',
                 sizesUrl,
                 sizesParams,
                 apiSecret,
-                tokenData.access_token_secret
+                (tokenData as any).access_token_secret
               );
 
               const sizesResponse = await axios.get(sizesUrl, {

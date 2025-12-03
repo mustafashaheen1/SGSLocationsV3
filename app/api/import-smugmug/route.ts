@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
 
     console.log('📡 Fetching stored access tokens...');
 
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('smugmug_tokens')
+    const { data: tokenData, error: tokenError } = await (supabase
+      .from('smugmug_tokens') as any)
       .select('access_token, access_token_secret')
       .eq('is_temporary', false)
       .order('created_at', { ascending: false })
@@ -112,12 +112,12 @@ export async function POST(request: NextRequest) {
 
     console.log('Token Validation:');
     console.log('  - tokenData:', !!tokenData);
-    console.log('  - access_token:', tokenData?.access_token ? `${tokenData.access_token.substring(0, 20)}...` : 'MISSING');
-    console.log('  - access_token length:', tokenData?.access_token?.length || 0);
-    console.log('  - access_token_secret:', tokenData?.access_token_secret ? `${tokenData.access_token_secret.substring(0, 20)}...` : 'MISSING');
-    console.log('  - secret length:', tokenData?.access_token_secret?.length || 0);
+    console.log('  - access_token:', (tokenData as any)?.access_token ? `${(tokenData as any).access_token.substring(0, 20)}...` : 'MISSING');
+    console.log('  - access_token length:', (tokenData as any)?.access_token?.length || 0);
+    console.log('  - access_token_secret:', (tokenData as any)?.access_token_secret ? `${(tokenData as any).access_token_secret.substring(0, 20)}...` : 'MISSING');
+    console.log('  - secret length:', (tokenData as any)?.access_token_secret?.length || 0);
 
-    if (tokenError || !tokenData || !tokenData.access_token || !tokenData.access_token_secret) {
+    if (tokenError || !tokenData || !(tokenData as any).access_token || !(tokenData as any).access_token_secret) {
       console.error('❌ No valid tokens found');
       return NextResponse.json({
         error: 'SmugMug not authorized',
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = `https://api.smugmug.com/api/v2/album/${albumKey}!images`;
 
-    const oauthParams = createOAuthParams(apiKey, tokenData.access_token.trim());
+    const oauthParams = createOAuthParams(apiKey, (tokenData as any).access_token.trim());
 
     console.log('OAuth Parameters:');
     Object.keys(oauthParams).forEach(key => {
@@ -141,14 +141,14 @@ export async function POST(request: NextRequest) {
     console.log('  - Method: GET');
     console.log('  - URL:', baseUrl);
     console.log('  - Consumer Secret (first 15):', apiSecret.substring(0, 15));
-    console.log('  - Token Secret (first 15):', tokenData.access_token_secret.substring(0, 15));
+    console.log('  - Token Secret (first 15):', (tokenData as any).access_token_secret.substring(0, 15));
 
     const signature = generateOAuthSignature(
       'GET',
       baseUrl,
       oauthParams,
       apiSecret.trim(),
-      tokenData.access_token_secret.trim()
+      (tokenData as any).access_token_secret.trim()
     );
 
     console.log('  - Generated Signature:', signature.substring(0, 30) + '...');
@@ -231,8 +231,8 @@ export async function POST(request: NextRequest) {
 
         const imageUrl = `https://api.smugmug.com${imageUri}`;
 
-        const imageOAuthParams = createOAuthParams(apiKey, tokenData.access_token);
-        const imageSig = generateOAuthSignature('GET', imageUrl, imageOAuthParams, apiSecret, tokenData.access_token_secret);
+        const imageOAuthParams = createOAuthParams(apiKey, (tokenData as any).access_token);
+        const imageSig = generateOAuthSignature('GET', imageUrl, imageOAuthParams, apiSecret, (tokenData as any).access_token_secret);
         const imageAllParams = {
           ...imageOAuthParams,
           oauth_signature: imageSig
@@ -254,8 +254,8 @@ export async function POST(request: NextRequest) {
 
         const largestUrl = `https://api.smugmug.com${imageData.Uris.LargestImage.Uri}`;
 
-        const largestOAuthParams = createOAuthParams(apiKey, tokenData.access_token);
-        const largestSig = generateOAuthSignature('GET', largestUrl, largestOAuthParams, apiSecret, tokenData.access_token_secret);
+        const largestOAuthParams = createOAuthParams(apiKey, (tokenData as any).access_token);
+        const largestSig = generateOAuthSignature('GET', largestUrl, largestOAuthParams, apiSecret, (tokenData as any).access_token_secret);
         const largestAllParams = {
           ...largestOAuthParams,
           oauth_signature: largestSig
@@ -313,8 +313,8 @@ export async function POST(request: NextRequest) {
     // Save albumkey to the property if propertyId is provided
     if (propertyId && uploadedUrls.length > 0) {
       console.log('💾 Saving albumkey to property...');
-      const { error: updateError } = await supabase
-        .from('properties')
+      const { error: updateError } = await (supabase
+        .from('properties') as any)
         .update({ albumkey: albumKey })
         .eq('id', propertyId);
 

@@ -38,7 +38,7 @@ export default function ContactPage() {
 
       if (data) {
         // Filter out empty slots for display
-        const activeEntries = data.filter(entry => entry.entry_type !== 'empty');
+        const activeEntries = (data as any[]).filter((entry: any) => entry.entry_type !== 'empty');
         setGridData(activeEntries);
       }
     }

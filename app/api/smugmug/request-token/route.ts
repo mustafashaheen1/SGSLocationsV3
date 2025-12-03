@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('💾 Storing temporary token...');
-    const { data: insertData, error: insertError } = await supabase
-      .from('smugmug_tokens')
+    const { data: insertData, error: insertError } = await (supabase
+      .from('smugmug_tokens') as any)
       .insert({
         request_token: requestToken,
         request_token_secret: requestTokenSecret,

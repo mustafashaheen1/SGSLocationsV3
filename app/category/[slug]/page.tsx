@@ -68,11 +68,11 @@ export default function CategoryPage() {
         setCategory(categoryData);
 
         // Fetch all properties that have this category
-        const { data: propertiesData } = await supabase
-          .from('properties')
+        const { data: propertiesData } = await (supabase
+          .from('properties') as any)
           .select('*')
           .eq('status', 'active')
-          .contains('categories', [categoryData.name])
+          .contains('categories', [(categoryData as any).name])
           .order('name', { ascending: true });
 
         if (propertiesData) {

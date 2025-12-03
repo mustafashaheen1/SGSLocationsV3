@@ -747,8 +747,8 @@ export default function EditPropertyPage() {
       console.log('Updating property data:', propertyData);
 
       // Update property
-      const { error: propertyError } = await supabase
-        .from('properties')
+      const { error: propertyError } = await (supabase
+        .from('properties') as any)
         .update(propertyData)
         .eq('id', propertyId);
 
@@ -777,8 +777,8 @@ export default function EditPropertyPage() {
         tags: img.tags || []
       }));
 
-      const { error: imagesError } = await supabase
-        .from('property_images')
+      const { error: imagesError } = await (supabase
+        .from('property_images') as any)
         .insert(imageRecords);
 
       if (imagesError) {
