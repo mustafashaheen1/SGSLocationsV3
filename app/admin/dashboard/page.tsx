@@ -46,7 +46,7 @@ export default function AdminDashboard() {
         .from('properties')
         .select('view_count');
 
-      const totalViews = viewsData?.reduce((sum, prop) => sum + (prop.view_count || 0), 0) || 0;
+      const totalViews = (viewsData as any[])?.reduce((sum: number, prop: any) => sum + (prop.view_count || 0), 0) || 0;
 
       // Count total image downloads
       const { count: downloadsCount } = await supabase

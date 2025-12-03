@@ -249,8 +249,8 @@ export default function ContentManagementPage() {
 
   async function saveSiteSetting(key: string, value: string, page: string, section: string) {
     try {
-      const { error } = await supabase
-        .from('site_settings')
+      const { error } = await (supabase
+        .from('site_settings') as any)
         .upsert({
           key,
           value: JSON.stringify(value),
@@ -321,8 +321,8 @@ export default function ContentManagementPage() {
 
   async function addProductionLogo(logo: Partial<ProductionLogo>) {
     try {
-      const { error } = await supabase
-        .from('production_logos')
+      const { error } = await (supabase
+        .from('production_logos') as any)
         .insert([{
           ...logo,
           display_order: productionLogos.length + 1
@@ -338,8 +338,8 @@ export default function ContentManagementPage() {
 
   async function updateProductionLogo(id: string, updates: Partial<ProductionLogo>) {
     try {
-      const { error } = await supabase
-        .from('production_logos')
+      const { error } = await (supabase
+        .from('production_logos') as any)
         .update(updates)
         .eq('id', id);
 
@@ -355,8 +355,8 @@ export default function ContentManagementPage() {
     if (!confirm('Are you sure you want to delete this logo?')) return;
 
     try {
-      const { error } = await supabase
-        .from('production_logos')
+      const { error } = await (supabase
+        .from('production_logos') as any)
         .delete()
         .eq('id', id);
 
@@ -370,8 +370,8 @@ export default function ContentManagementPage() {
 
   async function updateSocialLink(id: string, url: string) {
     try {
-      const { error } = await supabase
-        .from('social_links')
+      const { error } = await (supabase
+        .from('social_links') as any)
         .update({ url, is_active: url ? true : false })
         .eq('id', id);
 
@@ -396,8 +396,8 @@ export default function ContentManagementPage() {
           const sectionData: any = {};
           const sectionKey = `section_${i}`;
 
-          const sectionContent = data.filter(item => item.section === sectionKey);
-          sectionContent.forEach(item => {
+          const sectionContent = (data as any[]).filter((item: any) => item.section === sectionKey);
+          sectionContent.forEach((item: any) => {
             // Parse the value - it's stored as JSON string
             let value = item.value;
             if (typeof value === 'string' && value.startsWith('"')) {
@@ -500,7 +500,7 @@ export default function ContentManagementPage() {
           if (section[key]) {
             promises.push(
               (async () => {
-                const { error } = await supabase.from('about_page_content').upsert({
+                const { error } = await (supabase.from('about_page_content') as any).upsert({
                   section: `section_${index + 1}`,
                   key: key,
                   value: JSON.stringify(section[key]),
@@ -537,7 +537,7 @@ export default function ContentManagementPage() {
         // Ensure we have all 24 positions
         const grid = [];
         for (let i = 1; i <= 24; i++) {
-          const entry = data.find(d => d.position === i) || {
+          const entry = (data as any[]).find((d: any) => d.position === i) || {
             position: i,
             entry_type: 'empty',
             image_url: null,
@@ -560,8 +560,8 @@ export default function ContentManagementPage() {
     setSaving(true);
     try {
       const promises = contactGrid.map(entry => {
-        return supabase
-          .from('contact_grid')
+        return (supabase
+          .from('contact_grid') as any)
           .upsert({
             position: entry.position,
             entry_type: entry.entry_type || 'empty',
@@ -598,7 +598,7 @@ export default function ContentManagementPage() {
         .maybeSingle();
 
       if (data) {
-        setTermsContent(data.content);
+        setTermsContent((data as any).content);
       }
     } catch (error) {
       console.error('Error fetching terms:', error);
@@ -609,14 +609,14 @@ export default function ContentManagementPage() {
     setSaving(true);
     try {
       // Deactivate old versions
-      await supabase
-        .from('terms_and_conditions')
+      await (supabase
+        .from('terms_and_conditions') as any)
         .update({ is_active: false })
         .eq('is_active', true);
 
       // Insert new version
-      const { error } = await supabase
-        .from('terms_and_conditions')
+      const { error } = await (supabase
+        .from('terms_and_conditions') as any)
         .insert({
           content: termsContent,
           version: new Date().getTime(),
@@ -851,8 +851,8 @@ export default function ContentManagementPage() {
                             const logoUrl = await uploadImageToS3(logoImageFile, 'production-logos');
 
                             // Save to database
-                            const { error } = await supabase
-                              .from('production_logos')
+                            const { error } = await (supabase
+                              .from('production_logos') as any)
                               .insert([{
                                 name,
                                 logo_url: logoUrl,
@@ -970,8 +970,8 @@ export default function ContentManagementPage() {
                                     logoUrl = await uploadImageToS3(editLogoFile, 'production-logos');
                                   }
 
-                                  const { error } = await supabase
-                                    .from('production_logos')
+                                  const { error } = await (supabase
+                                    .from('production_logos') as any)
                                     .update({
                                       name: editingLogo.name,
                                       logo_url: logoUrl,
@@ -1038,8 +1038,8 @@ export default function ContentManagementPage() {
                                 if (!confirm(`Delete ${logo.name}?`)) return;
 
                                 try {
-                                  const { error } = await supabase
-                                    .from('production_logos')
+                                  const { error } = await (supabase
+                                    .from('production_logos') as any)
                                     .delete()
                                     .eq('id', logo.id);
 
@@ -1121,8 +1121,8 @@ export default function ContentManagementPage() {
                                   size="sm"
                                   onClick={async () => {
                                     try {
-                                      const { error } = await supabase
-                                        .from('services')
+                                      const { error } = await (supabase
+                                        .from('services') as any)
                                         .update({
                                           title: editingService.title,
                                           description: editingService.description,
@@ -1267,8 +1267,8 @@ export default function ContentManagementPage() {
                     setSaving(true);
                     try {
                       const promises = socialLinks.map(link =>
-                        supabase
-                          .from('social_links')
+                        (supabase
+                          .from('social_links') as any)
                           .update({ url: link.url })
                           .eq('id', link.id)
                       );
