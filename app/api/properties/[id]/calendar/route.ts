@@ -107,6 +107,74 @@ export async function POST(
       );
     }
 
+    // Date validations
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid date format' },
+        { status: 400 }
+      );
+    }
+
+    // Check if start date is in the past
+    if (startDate < today) {
+      return NextResponse.json(
+        { error: 'Start date cannot be in the past' },
+        { status: 400 }
+      );
+    }
+
+    // Check if end date is in the past
+    if (endDate < today) {
+      return NextResponse.json(
+        { error: 'End date cannot be in the past' },
+        { status: 400 }
+      );
+    }
+
+    // Check if start date is after end date
+    if (startDate > endDate) {
+      return NextResponse.json(
+        { error: 'Start date cannot be after end date' },
+        { status: 400 }
+      );
+    }
+
+    // Check for overlapping events
+    const { data: existingEvents, error: checkError } = await (supabase
+      .from('property_calendar_events') as any)
+      .select('id, start_date, end_date')
+      .eq('property_id', propertyId);
+
+    if (checkError) {
+      console.error('Error checking for overlaps:', checkError);
+      return NextResponse.json({ error: checkError.message }, { status: 500 });
+    }
+
+    // Check if any existing event overlaps with the new date range
+    const hasOverlap = existingEvents?.some((event: any) => {
+      const eventStart = new Date(event.start_date);
+      const eventEnd = new Date(event.end_date);
+
+      return (
+        (startDate >= eventStart && startDate <= eventEnd) ||
+        (endDate >= eventStart && endDate <= eventEnd) ||
+        (startDate <= eventStart && endDate >= eventEnd)
+      );
+    });
+
+    if (hasOverlap) {
+      return NextResponse.json(
+        { error: 'This property already has an event during the selected dates' },
+        { status: 409 }
+      );
+    }
+
     // Create the event
     const { data: event, error } = await (supabase
       .from('property_calendar_events') as any)
@@ -178,6 +246,84 @@ export async function PUT(
         { error: 'Event ID is required' },
         { status: 400 }
       );
+    }
+
+    // If dates are being updated, validate them
+    if (start_date || end_date) {
+      // Get the current event to use existing dates if only one is being updated
+      const { data: currentEvent } = await (supabase
+        .from('property_calendar_events') as any)
+        .select('start_date, end_date, property_id')
+        .eq('id', event_id)
+        .single();
+
+      const startDate = new Date(start_date || currentEvent?.start_date);
+      const endDate = new Date(end_date || currentEvent?.end_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Check if dates are valid
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid date format' },
+          { status: 400 }
+        );
+      }
+
+      // Check if start date is in the past
+      if (startDate < today) {
+        return NextResponse.json(
+          { error: 'Start date cannot be in the past' },
+          { status: 400 }
+        );
+      }
+
+      // Check if end date is in the past
+      if (endDate < today) {
+        return NextResponse.json(
+          { error: 'End date cannot be in the past' },
+          { status: 400 }
+        );
+      }
+
+      // Check if start date is after end date
+      if (startDate > endDate) {
+        return NextResponse.json(
+          { error: 'Start date cannot be after end date' },
+          { status: 400 }
+        );
+      }
+
+      // Check for overlapping events (excluding the current event)
+      const { data: existingEvents, error: checkError } = await (supabase
+        .from('property_calendar_events') as any)
+        .select('id, start_date, end_date')
+        .eq('property_id', currentEvent?.property_id)
+        .neq('id', event_id);
+
+      if (checkError) {
+        console.error('Error checking for overlaps:', checkError);
+        return NextResponse.json({ error: checkError.message }, { status: 500 });
+      }
+
+      // Check if any existing event overlaps with the updated date range
+      const hasOverlap = existingEvents?.some((event: any) => {
+        const eventStart = new Date(event.start_date);
+        const eventEnd = new Date(event.end_date);
+
+        return (
+          (startDate >= eventStart && startDate <= eventEnd) ||
+          (endDate >= eventStart && endDate <= eventEnd) ||
+          (startDate <= eventStart && endDate >= eventEnd)
+        );
+      });
+
+      if (hasOverlap) {
+        return NextResponse.json(
+          { error: 'This property already has an event during the selected dates' },
+          { status: 409 }
+        );
+      }
     }
 
     // Update the event

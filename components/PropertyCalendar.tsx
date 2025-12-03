@@ -140,6 +140,53 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
       return;
     }
 
+    // Date validations
+    const startDate = new Date(formData.start_date);
+    const endDate = new Date(formData.end_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if start date is in the past
+    if (startDate < today) {
+      alert('Error: Start date cannot be in the past. Please select a date from today onwards.');
+      return;
+    }
+
+    // Check if end date is in the past
+    if (endDate < today) {
+      alert('Error: End date cannot be in the past. Please select a date from today onwards.');
+      return;
+    }
+
+    // Check if start date is after end date
+    if (startDate > endDate) {
+      alert('Error: Start date cannot be after end date. Please adjust your dates.');
+      return;
+    }
+
+    // Check for overlapping events (exclude current event if editing)
+    const hasOverlap = events.some(event => {
+      // Skip the current event if we're editing
+      if (isEditing && selectedEvent && event.id === selectedEvent.id) {
+        return false;
+      }
+
+      const eventStart = new Date(event.start as Date);
+      const eventEnd = new Date(event.end as Date);
+
+      // Check if date ranges overlap
+      return (
+        (startDate >= eventStart && startDate <= eventEnd) ||
+        (endDate >= eventStart && endDate <= eventEnd) ||
+        (startDate <= eventStart && endDate >= eventEnd)
+      );
+    });
+
+    if (hasOverlap) {
+      alert('Error: This property already has an event during the selected dates. Please choose different dates or edit the existing event.');
+      return;
+    }
+
     try {
       const headers = await getAuthHeaders();
 
@@ -161,7 +208,9 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update event');
+          const errorData = await response.json();
+          alert(`Failed to update event: ${errorData.error || 'Unknown error'}`);
+          return;
         }
       } else {
         // Create new event
@@ -172,7 +221,9 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
         });
 
         if (!response.ok) {
-          throw new Error('Failed to create event');
+          const errorData = await response.json();
+          alert(`Failed to create event: ${errorData.error || 'Unknown error'}`);
+          return;
         }
       }
 
@@ -181,7 +232,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
       resetForm();
     } catch (error) {
       console.error('Error saving event:', error);
-      alert('Failed to save event');
+      alert('Failed to save event. Please try again.');
     }
   };
 
