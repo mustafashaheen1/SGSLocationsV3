@@ -56,9 +56,16 @@ export async function POST(
     const propertyId = params.id;
 
     // Verify user is admin
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    console.log('Calendar API - Auth check:', {
+      hasUser: !!user,
+      email: user?.email,
+      authError: authError?.message
+    });
+
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized - No user session found' }, { status: 401 });
     }
 
     const { data: isAdmin } = await (supabase

@@ -60,7 +60,9 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
 
   const fetchEvents = useCallback(async () => {
     try {
-      const response = await fetch(`/api/properties/${propertyId}/calendar`);
+      const response = await fetch(`/api/properties/${propertyId}/calendar`, {
+        credentials: 'include',
+      });
       const data = await response.json();
 
       if (data.events) {
@@ -128,6 +130,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
         const response = await fetch(`/api/properties/${propertyId}/calendar`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             event_id: selectedEvent.id,
             ...formData,
@@ -142,6 +145,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
         const response = await fetch(`/api/properties/${propertyId}/calendar`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(formData),
         });
 
@@ -169,7 +173,10 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
     try {
       const response = await fetch(
         `/api/properties/${propertyId}/calendar?event_id=${selectedEvent.id}`,
-        { method: 'DELETE' }
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
       );
 
       if (!response.ok) {
