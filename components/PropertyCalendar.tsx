@@ -55,7 +55,6 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
     description: '',
     start_date: '',
     end_date: '',
-    all_day: false,
   });
 
   // Helper to get auth headers
@@ -101,13 +100,18 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
   }, [fetchEvents]);
 
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    // Set start to beginning of day and end to end of day
+    const startDate = new Date(start);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(end);
+    endDate.setHours(23, 59, 59, 999);
+
     setFormData({
       event_type: 'production',
       title: '',
       description: '',
-      start_date: start.toISOString(),
-      end_date: end.toISOString(),
-      all_day: false,
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
     });
     setSelectedEvent(null);
     setIsEditing(false);
@@ -122,13 +126,15 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
       description: event.description || '',
       start_date: (event.start as Date).toISOString(),
       end_date: (event.end as Date).toISOString(),
-      all_day: event.all_day || false,
     });
     setIsEditing(true);
     setShowEventModal(true);
   };
 
-  const handleSaveEvent = async () => {
+  const handleSaveEvent = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (!formData.title || !formData.start_date || !formData.end_date) {
       alert('Please fill in all required fields');
       return;
@@ -137,6 +143,12 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
     try {
       const headers = await getAuthHeaders();
 
+      // Always send all_day as true since we're working with date-only events
+      const eventData = {
+        ...formData,
+        all_day: true,
+      };
+
       if (isEditing && selectedEvent) {
         // Update existing event
         const response = await fetch(`/api/properties/${propertyId}/calendar`, {
@@ -144,7 +156,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
           headers,
           body: JSON.stringify({
             event_id: selectedEvent.id,
-            ...formData,
+            ...eventData,
           }),
         });
 
@@ -156,7 +168,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
         const response = await fetch(`/api/properties/${propertyId}/calendar`, {
           method: 'POST',
           headers,
-          body: JSON.stringify(formData),
+          body: JSON.stringify(eventData),
         });
 
         if (!response.ok) {
@@ -210,7 +222,6 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
       description: '',
       start_date: '',
       end_date: '',
-      all_day: false,
     });
     setSelectedEvent(null);
     setIsEditing(false);
@@ -266,21 +277,34 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
           onSelectSlot={handleSelectSlot}
           onSelectEvent={handleSelectEvent}
           eventPropGetter={eventStyleGetter}
-          views={['month', 'week', 'day']}
+          views={['month']}
           defaultView="month"
+          toolbar={true}
         />
       </div>
 
       {/* Event Modal */}
       {showEventModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">
                 {isEditing ? 'Edit Event' : 'New Event'}
               </h2>
               <button
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setShowEventModal(false);
                   resetForm();
                 }}
@@ -361,25 +385,16 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                 />
               </div>
 
-              {/* All Day */}
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="all_day"
-                  checked={formData.all_day}
-                  onChange={(e) => setFormData({ ...formData, all_day: e.target.checked })}
-                  className="w-4 h-4 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
-                />
-                <label htmlFor="all_day" className="ml-2 text-sm text-gray-700">
-                  All day event
-                </label>
-              </div>
-
               {/* Buttons */}
               <div className="flex gap-2 pt-4">
                 {isEditing && (
                   <button
-                    onClick={handleDeleteEvent}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDeleteEvent();
+                    }}
                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -387,6 +402,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={handleSaveEvent}
                   className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
                 >
