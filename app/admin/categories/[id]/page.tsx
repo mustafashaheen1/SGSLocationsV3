@@ -49,7 +49,7 @@ export default function CategoryDetailPage() {
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
         .select('*')
-        .contains('categories', [categoryData.name]);
+        .contains('categories', [(categoryData as any)?.name]);
 
       if (propertiesError) throw propertiesError;
       setProperties(propertiesData || []);

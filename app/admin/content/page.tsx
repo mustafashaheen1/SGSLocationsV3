@@ -146,10 +146,10 @@ export default function ContentManagementPage() {
       }
 
       // Check admin status
-      const { data: adminData, error: adminError } = await supabase
+      const { data: adminData, error: adminError} = await supabase
         .from('admins')
         .select('*')
-        .eq('email', user?.email)
+        .eq('email', user?.email || '')
         .maybeSingle();
 
       console.log('Admin status:', adminData, 'Admin error:', adminError);
@@ -170,7 +170,7 @@ export default function ContentManagementPage() {
       if (settingsError) console.error('Settings error details:', settingsError);
 
       if (settings) {
-        settings.forEach(setting => {
+        settings.forEach((setting: any) => {
           // Parse the JSON value properly - handle multiple layers of escaping
           let value = setting.value;
           if (typeof value === 'string') {

@@ -21,7 +21,7 @@ export default function AboutPage() {
         const sectionData = [];
         for (let i = 1; i <= 11; i++) {
           const section: any = {};
-          const sectionContent = data.filter(item => item.section === `section_${i}`);
+          const sectionContent = (data as any[]).filter((item: any) => item.section === `section_${i}`);
 
           sectionContent.forEach(item => {
             let value = item.value;

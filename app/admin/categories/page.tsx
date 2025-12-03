@@ -101,7 +101,7 @@ export default function CategoriesPage() {
 
       // For each category, count properties separately
       const categoriesWithCount = await Promise.all(
-        (data || []).map(async (cat) => {
+        (data || []).map(async (cat: any) => {
           const { count } = await supabase
             .from('properties')
             .select('*', { count: 'exact', head: true })
@@ -145,8 +145,8 @@ export default function CategoriesPage() {
         throw new Error('Invalid image URL returned from S3 upload: ' + imageUrl);
       }
 
-      const { error } = await supabase
-        .from('categories')
+      const { error } = await (supabase
+        .from('categories') as any)
         .insert([{
           name: formData.name,
           slug: formData.slug,
@@ -200,8 +200,8 @@ export default function CategoriesPage() {
         imageUrl = await uploadImageToS3(uploadedImage, 'categories');
       }
 
-      const { error } = await supabase
-        .from('categories')
+      const { error } = await (supabase
+        .from('categories') as any)
         .update({
           name: formData.name,
           slug: formData.slug,
@@ -251,8 +251,8 @@ export default function CategoriesPage() {
     try {
       // Step 1: Delete the category
       setDeleteProgress('🗑️ Deleting category from database...');
-      const { error: deleteError } = await supabase
-        .from('categories')
+      const { error: deleteError } = await (supabase
+        .from('categories') as any)
         .delete()
         .eq('id', id);
 
@@ -268,8 +268,8 @@ export default function CategoriesPage() {
         const cat = categoriesToReorder[i];
         setDeleteProgress(`🔄 Reordering... (${i + 1}/${categoriesToReorder.length})`);
 
-        const { error: updateError } = await supabase
-          .from('categories')
+        const { error: updateError } = await (supabase
+          .from('categories') as any)
           .update({ display_order: cat.display_order - 1 })
           .eq('id', cat.id);
 
@@ -294,8 +294,8 @@ export default function CategoriesPage() {
 
   async function handleToggleActive(id: string, currentStatus: boolean) {
     try {
-      const { error } = await supabase
-        .from('categories')
+      const { error } = await (supabase
+        .from('categories') as any)
         .update({ is_active: !currentStatus })
         .eq('id', id);
 
