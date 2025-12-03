@@ -29,26 +29,11 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   }
 });
 
-export function createClient(cookieStore?: any) {
+export function createClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
   }
 
-  // Server-side with cookies
-  if (cookieStore) {
-    return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-      },
-      global: {
-        headers: {
-          cookie: cookieStore
-        }
-      }
-    });
-  }
-
-  // Client-side or server-side without cookies
   return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,

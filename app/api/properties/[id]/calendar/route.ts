@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase';
+import { createServerSideClient } from '@/lib/supabase-server';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieHeader = request.headers.get('cookie');
-    const supabase = createClient(cookieHeader);
+    const supabase = await createServerSideClient();
     const propertyId = params.id;
 
     // Verify user is admin
@@ -53,8 +52,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieHeader = request.headers.get('cookie');
-    const supabase = createClient(cookieHeader);
+    const supabase = await createServerSideClient();
     const propertyId = params.id;
 
     // Verify user is admin
@@ -130,8 +128,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieHeader = request.headers.get('cookie');
-    const supabase = createClient(cookieHeader);
+    const supabase = await createServerSideClient();
 
     // Verify user is admin
     const { data: { user } } = await supabase.auth.getUser();
@@ -196,8 +193,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieHeader = request.headers.get('cookie');
-    const supabase = createClient(cookieHeader);
+    const supabase = await createServerSideClient();
 
     // Verify user is admin
     const { data: { user } } = await supabase.auth.getUser();
