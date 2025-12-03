@@ -82,6 +82,7 @@
   },
   "devDependencies": {
     "@types/archiver": "^7.0.0",
-    "@types/jszip": "^3.4.0"
+    "@types/jszip": "^3.4.0",
+    "@types/react-big-calendar": "^1.16.3"
   }
 }

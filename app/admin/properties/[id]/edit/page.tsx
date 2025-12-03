@@ -1576,6 +1576,7 @@ export default function EditPropertyPage() {
             </div>
           )}
         </form>
+      </div>
 
       {/* AI Analysis Progress Modal */}
       {analyzingImages && (

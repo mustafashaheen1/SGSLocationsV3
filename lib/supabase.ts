@@ -3,20 +3,29 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-console.log('🔧 Supabase Client Initialization:');
-console.log('URL:', supabaseUrl);
-console.log('Key exists:', !!supabaseAnonKey);
-console.log('Key length:', supabaseAnonKey?.length);
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ MISSING SUPABASE CREDENTIALS!');
-  throw new Error('Missing Supabase environment variables');
+if (typeof window !== 'undefined' || process.env.NODE_ENV !== 'production' || (supabaseUrl && supabaseAnonKey)) {
+  console.log('🔧 Supabase Client Initialization:');
+  console.log('URL:', supabaseUrl);
+  console.log('Key exists:', !!supabaseAnonKey);
+  console.log('Key length:', supabaseAnonKey?.length);
 }
 
-export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
+
+export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(target, prop) {
+    if (!_supabase) {
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Missing Supabase environment variables');
+      }
+      _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+        }
+      });
+    }
+    return (_supabase as any)[prop];
   }
 });
 
