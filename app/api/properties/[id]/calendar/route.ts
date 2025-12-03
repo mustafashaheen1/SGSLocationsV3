@@ -6,7 +6,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient();
+    const cookieHeader = request.headers.get('cookie');
+    const supabase = createClient(cookieHeader);
     const propertyId = params.id;
 
     // Verify user is admin
@@ -52,7 +53,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient();
+    const cookieHeader = request.headers.get('cookie');
+    const supabase = createClient(cookieHeader);
     const propertyId = params.id;
 
     // Verify user is admin
@@ -128,7 +130,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient();
+    const cookieHeader = request.headers.get('cookie');
+    const supabase = createClient(cookieHeader);
 
     // Verify user is admin
     const { data: { user } } = await supabase.auth.getUser();
@@ -193,7 +196,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient();
+    const cookieHeader = request.headers.get('cookie');
+    const supabase = createClient(cookieHeader);
 
     // Verify user is admin
     const { data: { user } } = await supabase.auth.getUser();
