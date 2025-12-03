@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSideClient } from '@/lib/supabase-server';
+import { createServerSideClientWithToken } from '@/lib/supabase-server';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerSideClient();
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+    }
+
+    const supabase = createServerSideClientWithToken(token);
     const propertyId = params.id;
 
     // Verify user is admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     const { data: isAdmin } = await (supabase
@@ -52,20 +60,21 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerSideClient();
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+    }
+
+    const supabase = createServerSideClientWithToken(token);
     const propertyId = params.id;
 
     // Verify user is admin
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    console.log('Calendar API - Auth check:', {
-      hasUser: !!user,
-      email: user?.email,
-      authError: authError?.message
-    });
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized - No user session found' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     const { data: isAdmin } = await (supabase
@@ -135,12 +144,20 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerSideClient();
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+    }
+
+    const supabase = createServerSideClientWithToken(token);
 
     // Verify user is admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     const { data: isAdmin } = await (supabase
@@ -200,12 +217,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerSideClient();
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+    }
+
+    const supabase = createServerSideClientWithToken(token);
 
     // Verify user is admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     const { data: isAdmin } = await (supabase

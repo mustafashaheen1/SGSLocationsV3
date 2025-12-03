@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, dateFnsLocalizer, Event as BigCalendarEvent } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { PropertyCalendarEvent, CalendarEventType } from '@/lib/supabase';
+import { PropertyCalendarEvent, CalendarEventType, supabase } from '@/lib/supabase';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
 
 const locales = {
@@ -58,10 +58,20 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
     all_day: false,
   });
 
+  // Helper to get auth headers
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token || ''}`,
+    };
+  };
+
   const fetchEvents = useCallback(async () => {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/properties/${propertyId}/calendar`, {
-        credentials: 'include',
+        headers,
       });
       const data = await response.json();
 
@@ -125,12 +135,13 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
     }
 
     try {
+      const headers = await getAuthHeaders();
+
       if (isEditing && selectedEvent) {
         // Update existing event
         const response = await fetch(`/api/properties/${propertyId}/calendar`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers,
           body: JSON.stringify({
             event_id: selectedEvent.id,
             ...formData,
@@ -144,8 +155,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
         // Create new event
         const response = await fetch(`/api/properties/${propertyId}/calendar`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers,
           body: JSON.stringify(formData),
         });
 
@@ -171,11 +181,12 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
     }
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(
         `/api/properties/${propertyId}/calendar?event_id=${selectedEvent.id}`,
         {
           method: 'DELETE',
-          credentials: 'include',
+          headers,
         }
       );
 
