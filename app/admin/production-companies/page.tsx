@@ -102,8 +102,8 @@ export default function ProductionCompaniesPage() {
     try {
       if (editingCompany) {
         // Update existing company
-        const { error } = await supabase
-          .from('production_companies')
+        const { error } = await (supabase
+          .from('production_companies') as any)
           .update(formData)
           .eq('id', editingCompany.id);
 
@@ -111,8 +111,8 @@ export default function ProductionCompaniesPage() {
         showSuccess('Production company updated successfully');
       } else {
         // Create new company
-        const { error } = await supabase
-          .from('production_companies')
+        const { error } = await (supabase
+          .from('production_companies') as any)
           .insert([formData]);
 
         if (error) throw error;
@@ -148,8 +148,8 @@ export default function ProductionCompaniesPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('production_companies')
+      const { error } = await (supabase
+        .from('production_companies') as any)
         .update({ is_active: !currentStatus })
         .eq('id', id);
 

@@ -179,8 +179,8 @@ export default function EditPropertyPage() {
         setNotesSaved(false);
 
         try {
-          const { error } = await supabase
-            .from('properties')
+          const { error } = await (supabase
+            .from('properties') as any)
             .update({ notes: notes })
             .eq('id', propertyId);
 
@@ -214,31 +214,32 @@ export default function EditPropertyPage() {
       if (propertyError) throw propertyError;
 
       // Set form data
+      const prop = property as any;
       setFormData({
-        name: property.name || '',
-        real_name: property.real_name || property.name || '', // Fallback to name if real_name doesn't exist yet
-        description: property.description || '',
-        address: property.address || '',
-        city: property.city || '',
-        state: property.county || 'Texas', // county field is used for state
-        zipcode: property.zipcode || '',
-        latitude: property.latitude,
-        longitude: property.longitude,
+        name: prop.name || '',
+        real_name: prop.real_name || prop.name || '', // Fallback to name if real_name doesn't exist yet
+        description: prop.description || '',
+        address: prop.address || '',
+        city: prop.city || '',
+        state: prop.county || 'Texas', // county field is used for state
+        zipcode: prop.zipcode || '',
+        latitude: prop.latitude,
+        longitude: prop.longitude,
         category_id: '', // Will be set by useEffect after categories load
-        is_featured: property.is_featured || false,
-        is_exclusive: property.is_exclusive || false,
+        is_featured: prop.is_featured || false,
+        is_exclusive: prop.is_exclusive || false,
       });
 
-      setPropertyTags(property.property_tags || []);
+      setPropertyTags(prop.property_tags || []);
 
       // Store category name to match with category ID after categories load
-      if (property.categories?.[0]) {
-        setPropertyCategoryName(property.categories[0]);
+      if (prop.categories?.[0]) {
+        setPropertyCategoryName(prop.categories[0]);
       }
 
       // Load contacts or set default
-      if (property.contacts && property.contacts.length >= 2) {
-        setContacts(property.contacts);
+      if (prop.contacts && prop.contacts.length >= 2) {
+        setContacts(prop.contacts);
       } else {
         // Ensure at least 2 contacts
         setContacts([
@@ -248,10 +249,10 @@ export default function EditPropertyPage() {
       }
 
       // Load notes
-      setNotes(property.notes || '');
+      setNotes(prop.notes || '');
 
       // Fetch property stats
-      const viewCount = property.view_count || 0;
+      const viewCount = prop.view_count || 0;
 
       // Count image downloads for this property
       const { count: downloadsCount } = await supabase
@@ -274,7 +275,7 @@ export default function EditPropertyPage() {
       if (imagesError) throw imagesError;
 
       // Convert to ImageWithTags format
-      const loadedImages: ImageWithTags[] = (propertyImages || []).map(img => ({
+      const loadedImages: ImageWithTags[] = (propertyImages || []).map((img: any) => ({
         url: img.image_url,
         tags: img.tags || [],
         isSmugmug: false

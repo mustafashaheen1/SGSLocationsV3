@@ -32,8 +32,8 @@ export default function AdminProjectsPage() {
   }, []);
 
   async function fetchProjects() {
-    const { data, error } = await supabase
-      .from('projects')
+    const { data, error } = await (supabase
+      .from('projects') as any)
       .select(`
         *,
         property:properties(*)
@@ -119,8 +119,8 @@ export default function AdminProjectsPage() {
 
     if (editingProject) {
       // Update existing project
-      const { error } = await supabase
-        .from('projects')
+      const { error } = await (supabase
+        .from('projects') as any)
         .update({
           name: formData.name,
           banner_image: formData.banner_image,
@@ -139,8 +139,8 @@ export default function AdminProjectsPage() {
       alert('Project updated successfully!');
     } else {
       // Create new project
-      const { error } = await supabase
-        .from('projects')
+      const { error } = await (supabase
+        .from('projects') as any)
         .insert([{
           name: formData.name,
           banner_image: formData.banner_image,
@@ -168,8 +168,8 @@ export default function AdminProjectsPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from('projects')
+    const { error } = await (supabase
+      .from('projects') as any)
       .delete()
       .eq('id', id);
 

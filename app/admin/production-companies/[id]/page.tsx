@@ -181,7 +181,7 @@ export default function ProductionCompanyProfilePage() {
         .select('file_name')
         .eq('production_company_id', params.id);
 
-      const existingFileNames = new Set(existingDocs?.map(doc => doc.file_name) || []);
+      const existingFileNames = new Set((existingDocs as any[])?.map((doc: any) => doc.file_name) || []);
 
       let successCount = 0;
       let failCount = 0;
@@ -206,8 +206,8 @@ export default function ProductionCompanyProfilePage() {
           const title = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
 
           // Save document to database
-          const { error } = await supabase
-            .from('documents')
+          const { error } = await (supabase
+            .from('documents') as any)
             .insert([{
               production_company_id: params.id,
               title: title,
