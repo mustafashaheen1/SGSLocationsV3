@@ -166,3 +166,20 @@ export interface SavedSearch {
   created_at: string;
   updated_at: string;
 }
+
+export type CalendarEventType = 'production' | 'director_scout' | 'blocked';
+
+export interface PropertyCalendarEvent {
+  id: string;
+  property_id: string;
+  event_type: CalendarEventType;
+  title: string;
+  description: string | null;
+  start_date: string;
+  end_date: string;
+  all_day: boolean;
+  color: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}

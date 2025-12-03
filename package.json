@@ -64,6 +64,7 @@
     "openai": "^6.9.1",
     "postcss": "8.4.30",
     "react": "18.2.0",
+    "react-big-calendar": "^1.19.4",
     "react-day-picker": "^8.10.1",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.53.0",
