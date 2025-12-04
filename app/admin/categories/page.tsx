@@ -34,6 +34,7 @@ export default function CategoriesPage() {
     description: '',
     image: '',
     display_order: 1,
+    is_top: false,
   });
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -155,12 +156,13 @@ export default function CategoriesPage() {
           image: imageUrl,
           display_order: formData.display_order,
           is_active: true,
+          is_top: formData.is_top,
         }]);
 
       if (error) throw error;
 
       setShowAddForm(false);
-      setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+      setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false });
       setUploadedImage(null);
       setImagePreview('');
       fetchCategories();
@@ -180,6 +182,7 @@ export default function CategoriesPage() {
       description: category.description || '',
       image: category.image,
       display_order: category.display_order,
+      is_top: category.is_top,
     });
     setImagePreview(category.image);
     setUploadedImage(null);
@@ -209,6 +212,7 @@ export default function CategoriesPage() {
           description: formData.description || null,
           image: imageUrl,
           display_order: formData.display_order,
+          is_top: formData.is_top,
         })
         .eq('id', editingCategory.id);
 
@@ -216,7 +220,7 @@ export default function CategoriesPage() {
 
       setShowEditForm(false);
       setEditingCategory(null);
-      setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+      setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false });
       setUploadedImage(null);
       setImagePreview('');
       fetchCategories();
@@ -307,20 +311,6 @@ export default function CategoriesPage() {
     }
   }
 
-  async function handleToggleTop(id: string, currentStatus: boolean) {
-    try {
-      const { error } = await (supabase
-        .from('categories') as any)
-        .update({ is_top: !currentStatus })
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchCategories();
-    } catch (error: any) {
-      alert('Error updating category: ' + error.message);
-    }
-  }
-
   if (loading) {
     return <div className="p-6">Loading categories...</div>;
   }
@@ -339,7 +329,8 @@ export default function CategoriesPage() {
             slug: '',
             description: '',
             image: '',
-            display_order: nextOrder
+            display_order: nextOrder,
+            is_top: false
           });
           setEditingCategory(null);
           setUploadedImage(null);
@@ -444,6 +435,19 @@ export default function CategoriesPage() {
                   onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
                 />
               </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="add-is-top"
+                  checked={formData.is_top}
+                  onChange={(e) => setFormData({ ...formData, is_top: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="add-is-top" className="text-sm font-medium cursor-pointer">
+                  Mark as Top Category
+                </label>
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button onClick={handleAdd} disabled={uploading}>
@@ -451,7 +455,7 @@ export default function CategoriesPage() {
               </Button>
               <Button variant="outline" onClick={() => {
                 setShowAddForm(false);
-                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false });
                 setUploadedImage(null);
                 setImagePreview('');
               }}>Cancel</Button>
@@ -564,6 +568,19 @@ export default function CategoriesPage() {
                   onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
                 />
               </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="edit-is-top"
+                  checked={formData.is_top}
+                  onChange={(e) => setFormData({ ...formData, is_top: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="edit-is-top" className="text-sm font-medium cursor-pointer">
+                  Mark as Top Category
+                </label>
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button onClick={handleUpdate} disabled={uploading}>
@@ -572,7 +589,7 @@ export default function CategoriesPage() {
               <Button variant="outline" onClick={() => {
                 setShowEditForm(false);
                 setEditingCategory(null);
-                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false });
                 setUploadedImage(null);
                 setImagePreview('');
               }}>Cancel</Button>
@@ -623,24 +640,14 @@ export default function CategoriesPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => handleToggleActive(category.id, category.is_active)}
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {category.is_active ? 'Active' : 'Inactive'}
-                    </button>
-                    <button
-                      onClick={() => handleToggleTop(category.id, category.is_top)}
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        category.is_top ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {category.is_top ? 'Top' : 'Not Top'}
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleToggleActive(category.id, category.is_active)}
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {category.is_active ? 'Active' : 'Inactive'}
+                  </button>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
