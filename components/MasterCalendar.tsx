@@ -207,7 +207,7 @@ export default function MasterCalendar() {
           views={['month', 'week', 'day', 'agenda']}
           defaultView="month"
           toolbar={true}
-          tooltipAccessor={(event: MasterCalendarEvent) => event.title}
+          tooltipAccessor={(event: MasterCalendarEvent) => String(event.title)}
         />
       </div>
 
