@@ -350,7 +350,7 @@ export default function CategoriesPage() {
               <h2 className="text-xl font-bold">Add New Category</h2>
               <button onClick={() => {
                 setShowAddForm(false);
-                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false });
               }} className="text-gray-500 hover:text-gray-700">
                 <X className="w-6 h-6" />
               </button>
@@ -473,7 +473,7 @@ export default function CategoriesPage() {
               <button onClick={() => {
                 setShowEditForm(false);
                 setEditingCategory(null);
-                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1 });
+                setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false });
                 setUploadedImage(null);
                 setImagePreview('');
               }} className="text-gray-500 hover:text-gray-700">
