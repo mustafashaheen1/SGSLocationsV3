@@ -441,14 +441,14 @@ export default function SearchPage() {
       // Convert category slug to category name if present
       let categoryName: string | null = null;
       if (categorySlug) {
-        const { data: categoryData } = await supabase
-          .from('categories')
+        const { data: categoryData } = await (supabase
+          .from('categories') as any)
           .select('name')
           .eq('slug', categorySlug)
           .eq('is_active', true)
           .maybeSingle();
 
-        categoryName = categoryData?.name || null;
+        categoryName = (categoryData as any)?.name || null;
         console.log('Category slug:', categorySlug, '-> name:', categoryName);
       }
 
