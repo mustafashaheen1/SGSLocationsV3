@@ -44,6 +44,7 @@ export default function LocationLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('exclusives');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [topCategories, setTopCategories] = useState<any[]>([]);
 
   const categories = [
     { id: 'exclusives', label: 'Exclusives' },
@@ -73,7 +74,15 @@ export default function LocationLibraryPage() {
       // Show properties with more than 5 views, sorted from most to least viewed
       query = query.gt('view_count', 5).order('view_count', { ascending: false });
     } else if (category === 'top-categories') {
-      // Leave empty for now
+      // Fetch top categories instead of properties
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_top', true)
+        .eq('is_active', true)
+        .order('display_order');
+
+      setTopCategories(categoriesData || []);
       setProperties([]);
       setLoading(false);
       return;
@@ -84,6 +93,7 @@ export default function LocationLibraryPage() {
 
     const { data } = await query;
     setProperties(data || []);
+    setTopCategories([]);
     setLoading(false);
   };
 
@@ -368,10 +378,43 @@ export default function LocationLibraryPage() {
                     ))}
                   </div>
                 ) : activeCategory === 'top-categories' ? (
-                  <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6b7280' }}>
-                    <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem', fontWeight: 400 }}>Coming Soon</p>
-                    <p style={{ fontSize: '0.875rem', fontWeight: 300 }}>Top Categories will be available soon</p>
-                  </div>
+                  topCategories.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6b7280' }}>
+                      <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem', fontWeight: 400 }}>No Top Categories</p>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 300 }}>Admin hasn't selected any top categories yet</p>
+                    </div>
+                  ) : (
+                    <div className="property-grid">
+                      {topCategories.map((category) => (
+                        <Link
+                          key={category.id}
+                          href={`/search?category=${category.slug}`}
+                          className="bg-white overflow-hidden hover:shadow-lg transition-shadow"
+                        >
+                          <div className="relative w-full property-image-container">
+                            <Image
+                              src={category.image || 'https://via.placeholder.com/400x300?text=' + category.name}
+                              alt={category.name}
+                              width={400}
+                              height={300}
+                              className="property-image w-full"
+                              style={{ objectFit: 'cover' }}
+                            />
+                          </div>
+                          <div className="p-3">
+                            <h5 className="text-lg font-light text-gray-900 mb-1 property-title">
+                              {category.name}
+                            </h5>
+                            {category.description && (
+                              <p className="text-sm text-gray-600">
+                                {category.description}
+                              </p>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )
                 ) : properties.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6b7280' }}>
                     <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem', fontWeight: 400 }}>No properties found</p>

@@ -17,6 +17,7 @@ interface Category {
   image: string;
   display_order: number;
   is_active: boolean;
+  is_top: boolean;
   property_count: number;
 }
 
@@ -297,6 +298,20 @@ export default function CategoriesPage() {
       const { error } = await (supabase
         .from('categories') as any)
         .update({ is_active: !currentStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchCategories();
+    } catch (error: any) {
+      alert('Error updating category: ' + error.message);
+    }
+  }
+
+  async function handleToggleTop(id: string, currentStatus: boolean) {
+    try {
+      const { error } = await (supabase
+        .from('categories') as any)
+        .update({ is_top: !currentStatus })
         .eq('id', id);
 
       if (error) throw error;
@@ -608,14 +623,24 @@ export default function CategoriesPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <button
-                    onClick={() => handleToggleActive(category.id, category.is_active)}
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {category.is_active ? 'Active' : 'Inactive'}
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => handleToggleActive(category.id, category.is_active)}
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {category.is_active ? 'Active' : 'Inactive'}
+                    </button>
+                    <button
+                      onClick={() => handleToggleTop(category.id, category.is_top)}
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        category.is_top ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {category.is_top ? 'Top' : 'Not Top'}
+                    </button>
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
