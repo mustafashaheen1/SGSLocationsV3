@@ -723,7 +723,7 @@ export default function SearchPage() {
       console.log('Initial load triggered, activeFilters:', activeFilters);
       loadMoreProperties();
     }
-  }, [page, properties.length, isRestoring, searchParams]);
+  }, [page, properties.length, isRestoring, searchParams, activeFilters.length]);
 
   useEffect(() => {
     const handleScroll = () => {
