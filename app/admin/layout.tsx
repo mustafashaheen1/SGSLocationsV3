@@ -211,7 +211,7 @@ export default function AdminLayout({
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 overflow-y-auto h-full">
           {menuItems.map((item) => {
             if ('subItems' in item && item.subItems) {
               const Icon = item.icon;
