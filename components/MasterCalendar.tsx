@@ -204,7 +204,7 @@ export default function MasterCalendar() {
           endAccessor="end"
           onSelectEvent={handleSelectEvent}
           eventPropGetter={eventStyleGetter}
-          views={['month', 'week', 'day', 'agenda']}
+          views={['month']}
           defaultView="month"
           toolbar={true}
           tooltipAccessor={(event: MasterCalendarEvent) => String(event.title)}
