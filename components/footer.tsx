@@ -182,7 +182,6 @@ export function Footer() {
               <li><Link href="/list-your-property" className="text-gray-400 hover:text-white">List Your Property</Link></li>
               <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
               <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
-              <li><Link href="/articles" className="text-gray-400 hover:text-white">Articles</Link></li>
               <li><Link href="/register" className="text-gray-400 hover:text-white">Register</Link></li>
             </ul>
           </div>

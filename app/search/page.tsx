@@ -466,8 +466,10 @@ export default function SearchPage() {
         return;
       }
 
-      // Handle category filter from URL
+      // Handle category filter from URL (without other filters)
       if (categoryParam && activeFilters.length === 0 && !query) {
+        console.log('Loading properties by category:', categoryParam);
+
         const { data, error } = await supabase
           .from('properties')
           .select('*')
@@ -574,11 +576,18 @@ export default function SearchPage() {
           }
         } else {
           // No text search, just fetch properties by IDs
-          const { data, error: fetchError } = await supabase
+          let query = supabase
             .from('properties')
             .select('*')
             .eq('status', 'active')
             .in('id', propertyIds);
+
+          // Apply category filter if present
+          if (categoryParam) {
+            query = query.contains('categories', [categoryParam]);
+          }
+
+          const { data, error: fetchError } = await query;
 
           unsortedData = data;
           error = fetchError;
@@ -608,30 +617,46 @@ export default function SearchPage() {
         }
       } else if (query && query.trim()) {
         // Just text search, no tag filters - use RPC function to search including property_tags
-        const { data, error } = await (supabase as any)
-          .rpc('search_properties', { search_query: query.trim() })
-          .range(from, to);
+        const { data: searchData, error } = await (supabase as any)
+          .rpc('search_properties', { search_query: query.trim() });
 
         if (error) {
           console.error('RPC search error:', error);
           throw error;
         }
 
-        if (data && data.length > 0) {
-          setProperties(prev => [...prev, ...data]);
+        let filteredData = searchData;
+
+        // Apply category filter if present
+        if (categoryParam && searchData) {
+          filteredData = searchData.filter((prop: Property) =>
+            prop.categories && prop.categories.includes(categoryParam)
+          );
+        }
+
+        if (filteredData && filteredData.length > 0) {
+          const paginatedData = filteredData.slice(from, to + 1);
+          setProperties(prev => [...prev, ...paginatedData]);
           setPage(prev => prev + 1);
-          if (data.length < ITEMS_PER_PAGE) {
+          if (paginatedData.length < ITEMS_PER_PAGE) {
             setHasMore(false);
           }
         } else {
           setHasMore(false);
         }
       } else {
-        // No filters, no query - show all active properties
-        const { data, error } = await supabase
+        // No filters, no query - show all active properties (this shouldn't be reached if category is present)
+        let query = supabase
           .from('properties')
           .select('*')
-          .eq('status', 'active')
+          .eq('status', 'active');
+
+        // Apply category filter if present (though this case should be handled above)
+        if (categoryParam) {
+          query = query.contains('categories', [categoryParam]);
+        }
+
+        const { data, error } = await query
           .order('is_exclusive', { ascending: false, nullsFirst: false })
           .order('name', { ascending: true })
           .range(from, to);
