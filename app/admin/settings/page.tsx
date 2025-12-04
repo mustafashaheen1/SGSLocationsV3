@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, Save } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function SettingsPage() {
   const [emailNotifications, setEmailNotifications] = useState({
@@ -16,6 +17,12 @@ export default function SettingsPage() {
     minDailyRate: '100',
     maxDailyRate: '5000',
     defaultRate: '500',
+  });
+
+  const [contactInfo, setContactInfo] = useState({
+    general_contact_email: '',
+    general_contact_phone: '',
+    general_contact_address: '',
   });
 
   const [categories, setCategories] = useState([
@@ -35,10 +42,88 @@ export default function SettingsPage() {
   const [editingCategory, setEditingCategory] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchContactInfo();
+  }, []);
+
+  const fetchContactInfo = async () => {
+    try {
+      const { data: settings } = await (supabase
+        .from('site_settings') as any)
+        .select('*')
+        .in('key', ['general_contact_email', 'general_contact_phone', 'general_contact_address']);
+
+      if (settings) {
+        const email = (settings as any[]).find((s: any) => s.key === 'general_contact_email')?.value;
+        const phone = (settings as any[]).find((s: any) => s.key === 'general_contact_phone')?.value;
+        const address = (settings as any[]).find((s: any) => s.key === 'general_contact_address')?.value;
+
+        setContactInfo({
+          general_contact_email: parseValue(email) || 'paul@imagelocations.com',
+          general_contact_phone: parseValue(phone) || '(310) 871-8004',
+          general_contact_address: parseValue(address) || '9663 Santa Monica Blvd. Suite 842,\nBeverly Hills, CA 90210',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching contact info:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const parseValue = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'string') {
+      try {
+        let parsed = value;
+        while (typeof parsed === 'string' && (parsed.startsWith('"') || parsed.startsWith('\\"'))) {
+          parsed = JSON.parse(parsed);
+        }
+        return parsed;
+      } catch (e) {
+        return value.replace(/^"|"$/g, '');
+      }
+    }
+    return String(value);
+  };
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const handleContactInfoChange = (key: keyof typeof contactInfo, value: string) => {
+    setContactInfo({ ...contactInfo, [key]: value });
+  };
+
+  const handleSaveContactInfo = async () => {
+    setSaving(true);
+    try {
+      // Update or insert each setting
+      for (const [key, value] of Object.entries(contactInfo)) {
+        const { error } = await (supabase
+          .from('site_settings') as any)
+          .upsert({
+            key: key,
+            value: JSON.stringify(value),
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'key'
+          });
+
+        if (error) throw error;
+      }
+
+      showSuccess('Contact information updated successfully');
+    } catch (error) {
+      console.error('Error saving contact info:', error);
+      alert('Failed to save contact information. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleToggle = (key: keyof typeof emailNotifications) => {
@@ -85,6 +170,17 @@ export default function SettingsPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#e11921] mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {successMessage && (
@@ -92,6 +188,58 @@ export default function SettingsPage() {
           {successMessage}
         </div>
       )}
+
+      {/* Contact Page Information Section */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Contact Page Information</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              General Contact Email
+            </label>
+            <input
+              type="email"
+              value={contactInfo.general_contact_email}
+              onChange={(e) => handleContactInfoChange('general_contact_email', e.target.value)}
+              placeholder="paul@imagelocations.com"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              General Contact Phone
+            </label>
+            <input
+              type="tel"
+              value={contactInfo.general_contact_phone}
+              onChange={(e) => handleContactInfoChange('general_contact_phone', e.target.value)}
+              placeholder="(310) 871-8004"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              General Contact Address
+            </label>
+            <textarea
+              value={contactInfo.general_contact_address}
+              onChange={(e) => handleContactInfoChange('general_contact_address', e.target.value)}
+              placeholder="9663 Santa Monica Blvd. Suite 842,&#10;Beverly Hills, CA 90210"
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            />
+            <p className="mt-1 text-sm text-gray-500">Use line breaks to separate address lines</p>
+          </div>
+          <button
+            onClick={handleSaveContactInfo}
+            disabled={saving}
+            className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <Save size={20} />
+            {saving ? 'Saving...' : 'Save Contact Information'}
+          </button>
+        </div>
+      </div>
 
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-6">Email Notifications</h3>

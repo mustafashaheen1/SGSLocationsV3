@@ -5,6 +5,11 @@ import { supabase } from '@/lib/supabase';
 
 export default function ContactPage() {
   const [gridData, setGridData] = useState<any[]>([]);
+  const [contactInfo, setContactInfo] = useState({
+    email: 'paul@imagelocations.com',
+    phone: '(310) 871-8004',
+    address: '9663 Santa Monica Blvd. Suite 842,\nBeverly Hills, CA 90210',
+  });
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -43,7 +48,47 @@ export default function ContactPage() {
       }
     }
 
+    async function fetchContactInfo() {
+      try {
+        const { data: settings } = await (supabase
+          .from('site_settings') as any)
+          .select('*')
+          .in('key', ['general_contact_email', 'general_contact_phone', 'general_contact_address']);
+
+        if (settings) {
+          const email = (settings as any[]).find((s: any) => s.key === 'general_contact_email')?.value;
+          const phone = (settings as any[]).find((s: any) => s.key === 'general_contact_phone')?.value;
+          const address = (settings as any[]).find((s: any) => s.key === 'general_contact_address')?.value;
+
+          const parseValue = (value: any): string => {
+            if (!value) return '';
+            if (typeof value === 'string') {
+              try {
+                let parsed = value;
+                while (typeof parsed === 'string' && (parsed.startsWith('"') || parsed.startsWith('\\"'))) {
+                  parsed = JSON.parse(parsed);
+                }
+                return parsed;
+              } catch (e) {
+                return value.replace(/^"|"$/g, '');
+              }
+            }
+            return String(value);
+          };
+
+          setContactInfo({
+            email: parseValue(email) || 'paul@imagelocations.com',
+            phone: parseValue(phone) || '(310) 871-8004',
+            address: parseValue(address) || '9663 Santa Monica Blvd. Suite 842,\nBeverly Hills, CA 90210',
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching contact info:', error);
+      }
+    }
+
     fetchContactGrid();
+    fetchContactInfo();
   }, []);
 
   useEffect(() => {
@@ -941,10 +986,14 @@ export default function ContactPage() {
                     General Contact:
                   </h6>
                   <p style={{ lineHeight: 1.5, fontSize: '14px' }}>
-                    paul@imagelocations.com<br />
-                    (310) 871-8004<br />
-                    9663 Santa Monica Blvd. Suite 842,<br />
-                    Beverly Hills, CA 90210
+                    {contactInfo.email}<br />
+                    {contactInfo.phone}<br />
+                    {contactInfo.address.split('\n').map((line, i) => (
+                      <span key={i}>
+                        {line}
+                        {i < contactInfo.address.split('\n').length - 1 && <br />}
+                      </span>
+                    ))}
                   </p>
                 </div>
               </div>
