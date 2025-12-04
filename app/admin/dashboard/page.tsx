@@ -93,6 +93,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Master Calendar Section */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <MasterCalendar />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statsData.map((stat) => {
           const Icon = stat.icon;
@@ -143,11 +148,6 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Master Calendar Section */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <MasterCalendar />
       </div>
     </div>
   );

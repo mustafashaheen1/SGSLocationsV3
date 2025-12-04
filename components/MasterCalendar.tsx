@@ -78,7 +78,7 @@ export default function MasterCalendar() {
             property_display_name: event.property_display_name,
             property_city: event.property_city,
             property_state: event.property_state,
-            title: `${event.title}`,
+            title: `${event.property_display_name || event.property_name} - ${event.title}`,
             start: new Date(event.start_date),
             end: new Date(event.end_date),
             event_type: eventType,
@@ -207,9 +207,7 @@ export default function MasterCalendar() {
           views={['month', 'week', 'day', 'agenda']}
           defaultView="month"
           toolbar={true}
-          tooltipAccessor={(event: MasterCalendarEvent) =>
-            `${event.property_name} - ${event.title}`
-          }
+          tooltipAccessor={(event: MasterCalendarEvent) => event.title}
         />
       </div>
 
