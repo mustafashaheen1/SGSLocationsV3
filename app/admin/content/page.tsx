@@ -104,6 +104,11 @@ export default function ContentManagementPage() {
   // Contact Page Grid States
   const [contactGrid, setContactGrid] = useState<any[]>([]);
 
+  // General Contact Information States
+  const [generalContactEmail, setGeneralContactEmail] = useState('');
+  const [generalContactPhone, setGeneralContactPhone] = useState('');
+  const [generalContactAddress, setGeneralContactAddress] = useState('');
+
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -116,6 +121,7 @@ export default function ContentManagementPage() {
   useEffect(() => {
     if (activeTab === 'contact') {
       fetchContactGrid();
+      fetchGeneralContactInfo();
     }
   }, [activeTab]);
 
@@ -553,6 +559,74 @@ export default function ContentManagementPage() {
       }
     } catch (error) {
       console.error('Error fetching contact grid:', error);
+    }
+  }
+
+  async function fetchGeneralContactInfo() {
+    try {
+      const { data: settings } = await (supabase
+        .from('site_settings') as any)
+        .select('*')
+        .in('key', ['general_contact_email', 'general_contact_phone', 'general_contact_address']);
+
+      if (settings) {
+        const parseValue = (value: any): string => {
+          if (!value) return '';
+          if (typeof value === 'string') {
+            try {
+              let parsed = value;
+              while (typeof parsed === 'string' && (parsed.startsWith('"') || parsed.startsWith('\\"'))) {
+                parsed = JSON.parse(parsed);
+              }
+              return parsed;
+            } catch (e) {
+              return value.replace(/^"|"$/g, '');
+            }
+          }
+          return String(value);
+        };
+
+        const email = (settings as any[]).find((s: any) => s.key === 'general_contact_email')?.value;
+        const phone = (settings as any[]).find((s: any) => s.key === 'general_contact_phone')?.value;
+        const address = (settings as any[]).find((s: any) => s.key === 'general_contact_address')?.value;
+
+        setGeneralContactEmail(parseValue(email) || 'paul@imagelocations.com');
+        setGeneralContactPhone(parseValue(phone) || '(310) 871-8004');
+        setGeneralContactAddress(parseValue(address) || '9663 Santa Monica Blvd. Suite 842,\nBeverly Hills, CA 90210');
+      }
+    } catch (error) {
+      console.error('Error fetching general contact info:', error);
+    }
+  }
+
+  async function saveGeneralContactInfo() {
+    setSaving(true);
+    try {
+      const settings = [
+        { key: 'general_contact_email', value: generalContactEmail },
+        { key: 'general_contact_phone', value: generalContactPhone },
+        { key: 'general_contact_address', value: generalContactAddress },
+      ];
+
+      for (const setting of settings) {
+        const { error } = await (supabase
+          .from('site_settings') as any)
+          .upsert({
+            key: setting.key,
+            value: JSON.stringify(setting.value),
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'key'
+          });
+
+        if (error) throw error;
+      }
+
+      alert('General contact information saved successfully!');
+    } catch (error: any) {
+      alert('Error saving: ' + error.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -1334,6 +1408,57 @@ export default function ContentManagementPage() {
 
         {/* CONTACT PAGE TAB */}
         <TabsContent value="contact" className="space-y-6">
+          {/* General Contact Information Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>General Contact Information</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Edit the contact information displayed on the contact page</p>
+                </div>
+                <Button
+                  onClick={saveGeneralContactInfo}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Contact Info'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Contact Email</label>
+                <Input
+                  type="email"
+                  value={generalContactEmail}
+                  onChange={(e) => setGeneralContactEmail(e.target.value)}
+                  placeholder="paul@imagelocations.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Contact Phone</label>
+                <Input
+                  type="tel"
+                  value={generalContactPhone}
+                  onChange={(e) => setGeneralContactPhone(e.target.value)}
+                  placeholder="(310) 871-8004"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Contact Address</label>
+                <Textarea
+                  value={generalContactAddress}
+                  onChange={(e) => setGeneralContactAddress(e.target.value)}
+                  placeholder="9663 Santa Monica Blvd. Suite 842,&#10;Beverly Hills, CA 90210"
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">Use line breaks to separate address lines</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Grid Management */}
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -1347,7 +1472,7 @@ export default function ContentManagementPage() {
                   size="lg"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? 'Saving...' : 'Save Grid'}
                 </Button>
               </div>
             </CardHeader>
