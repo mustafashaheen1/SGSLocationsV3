@@ -698,9 +698,11 @@ export default function SearchPage() {
 
   useEffect(() => {
     // Reset and reload when search params or filters change
+    console.log('Resetting search state due to filter/param change');
     setProperties([]);
     setPage(1);
     setHasMore(true);
+    setLoading(false); // Reset loading state to allow new search
   }, [searchParams, activeFilters]);
 
   // Trigger search when filters change and we have no properties
