@@ -705,27 +705,26 @@ export default function SearchPage() {
     setLoading(false); // Reset loading state to allow new search
   }, [searchParams, activeFilters]);
 
-  // Trigger search when filters change and we have no properties
-  useEffect(() => {
-    if (activeFilters.length > 0 && properties.length === 0 && !loading && page === 1 && hasMore && !isRestoring) {
-      console.log('Filter change triggered load with activeFilters:', activeFilters);
-      loadMoreProperties();
-    }
-  }, [activeFilters, isRestoring]);
-
+  // Trigger search when needed
   useEffect(() => {
     // Don't load if we're currently restoring a saved search
     const shouldRestore = searchParams.get('restore');
     if (shouldRestore === 'true') {
-      console.log('Skipping initial load - restoration in progress');
+      console.log('Skipping load - restoration in progress');
       return;
     }
 
-    if (page === 1 && properties.length === 0 && !loading && !isRestoring) {
-      console.log('Initial load triggered, activeFilters:', activeFilters);
+    // Trigger load when:
+    // 1. We have no properties
+    // 2. We're on page 1
+    // 3. We're not currently loading
+    // 4. We think there might be more results
+    // 5. We're not restoring
+    if (page === 1 && properties.length === 0 && !loading && hasMore && !isRestoring) {
+      console.log('Triggering load - activeFilters:', activeFilters.length, 'filters:', activeFilters);
       loadMoreProperties();
     }
-  }, [page, properties.length, isRestoring, searchParams, activeFilters.length]);
+  }, [page, properties.length, loading, hasMore, isRestoring, searchParams, activeFilters]);
 
   useEffect(() => {
     const handleScroll = () => {
