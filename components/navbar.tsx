@@ -88,7 +88,6 @@ export function Navbar() {
     { label: 'ABOUT US', href: '/about' },
     { label: 'CONTACT', href: '/contact' },
     { label: 'LIST YOUR PROPERTY', href: '/list-your-property' },
-    { label: 'ARTICLES', href: '/articles' },
   ];
 
   if (isAuthenticated) {

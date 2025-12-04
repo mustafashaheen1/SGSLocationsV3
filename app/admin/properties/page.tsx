@@ -26,6 +26,8 @@ interface Property {
   is_featured: boolean;
   owner_id: string | null;
   created_at: string;
+  owner_name?: string;
+  owner_email?: string;
 }
 
 export default function AdminPropertiesPage() {
@@ -67,10 +69,16 @@ export default function AdminPropertiesPage() {
     setLoading(true);
 
     try {
-      // Build query - don't join with users table since it may not exist
+      // Build query with left join to users table to get owner information
       let query = supabase
         .from('properties')
-        .select('*')
+        .select(`
+          *,
+          users:owner_id (
+            full_name,
+            email
+          )
+        `)
         .order('created_at', { ascending: false });
 
       // Apply status filter
@@ -85,7 +93,14 @@ export default function AdminPropertiesPage() {
         alert('Error loading properties: ' + error.message);
       } else {
         console.log('Fetched properties:', data);
-        setProperties(data || []);
+        // Transform the data to flatten the users object
+        const transformedData = data?.map((property: any) => ({
+          ...property,
+          owner_name: property.users?.full_name || null,
+          owner_email: property.users?.email || null,
+          users: undefined, // Remove the nested users object
+        })) || [];
+        setProperties(transformedData);
       }
     } catch (error: any) {
       console.error('Error:', error);
@@ -321,8 +336,8 @@ export default function AdminPropertiesPage() {
                     <div className="font-medium text-gray-900">{property.name}</div>
                     <div className="text-sm text-gray-500">{property.images?.length || 0} images</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {property.owner_id ? property.owner_id.substring(0, 8) + '...' : 'Admin'}
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {property.owner_name || 'Admin'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {property.city}

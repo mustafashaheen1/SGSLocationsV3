@@ -65,6 +65,10 @@ export default function EditPropertyPage() {
   const router = useRouter();
   const propertyId = params.id as string;
 
+  // Get tab from URL query parameter
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const tabParam = searchParams.get('tab') as 'details' | 'images' | 'calendar' | 'contacts' | null;
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -110,7 +114,9 @@ export default function EditPropertyPage() {
     downloads: 0
   });
 
-  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts'>(
+    tabParam && ['details', 'images', 'calendar', 'contacts'].includes(tabParam) ? tabParam : 'details'
+  );
 
   useEffect(() => {
     const initializePage = async () => {

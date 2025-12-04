@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Building2, Users, Mail, Clock, Eye, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import MasterCalendar from '@/components/MasterCalendar';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -142,6 +143,11 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Master Calendar Section */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <MasterCalendar />
       </div>
     </div>
   );
