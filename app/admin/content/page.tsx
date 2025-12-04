@@ -614,6 +614,8 @@ export default function ContentManagementPage() {
           .upsert({
             key: setting.key,
             value: JSON.stringify(setting.value),
+            page: 'contact',
+            section: 'general',
             updated_at: new Date().toISOString(),
           }, {
             onConflict: 'key'
