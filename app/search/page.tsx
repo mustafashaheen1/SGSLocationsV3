@@ -436,7 +436,23 @@ export default function SearchPage() {
       const from = (page - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
       const query = searchParams.get('q');
-      const categoryParam = searchParams.get('category');
+      const categorySlug = searchParams.get('category');
+
+      // Convert category slug to category name if present
+      let categoryName: string | null = null;
+      if (categorySlug) {
+        const { data: categoryData } = await supabase
+          .from('categories')
+          .select('name')
+          .eq('slug', categorySlug)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        categoryName = categoryData?.name || null;
+        console.log('Category slug:', categorySlug, '-> name:', categoryName);
+      }
+
+      const categoryParam = categoryName;
 
       // If no filters are active and no category/query, show all active properties
       if (activeFilters.length === 0 && !query && !categoryParam) {
