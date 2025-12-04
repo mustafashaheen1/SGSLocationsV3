@@ -14,7 +14,9 @@ import {
   FileText,
   Folder,
   Filter,
-  FolderOpen
+  FolderOpen,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
@@ -27,6 +29,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
   const hasCheckedAuth = useRef(false);
 
   useEffect(() => {
@@ -118,6 +121,18 @@ export default function AdminLayout({
     }
   };
 
+  const toggleDropdown = (label: string) => {
+    setOpenDropdowns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(label)) {
+        newSet.delete(label);
+      } else {
+        newSet.add(label);
+      }
+      return newSet;
+    });
+  };
+
   const menuItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
     {
@@ -200,29 +215,40 @@ export default function AdminLayout({
           {menuItems.map((item) => {
             if ('subItems' in item && item.subItems) {
               const Icon = item.icon;
+              const isOpen = openDropdowns.has(item.label);
+              const ChevronIcon = isOpen ? ChevronDown : ChevronRight;
 
               return (
                 <div key={item.label}>
-                  <div className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium" style={{ fontFamily: 'acumin-pro-wide' }}>
-                    <Icon className="w-5 h-5" />
-                    <span>{item.label}</span>
-                  </div>
-                  <div className="ml-6 space-y-1">
-                    {item.subItems.map((subItem) => (
-                      <Link
-                        key={subItem.href}
-                        href={subItem.href}
-                        className={`block px-4 py-2 rounded-lg text-sm transition-colors ${
-                          pathname === subItem.href
-                            ? 'bg-red-50 text-[#e11921] font-medium'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                        style={{ fontFamily: 'acumin-pro-wide' }}
-                      >
-                        {subItem.label}
-                      </Link>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => toggleDropdown(item.label)}
+                    className="flex items-center justify-between w-full px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 rounded-lg transition-colors"
+                    style={{ fontFamily: 'acumin-pro-wide' }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </div>
+                    <ChevronIcon className="w-4 h-4" />
+                  </button>
+                  {isOpen && (
+                    <div className="ml-6 space-y-1 mt-1">
+                      {item.subItems.map((subItem) => (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          className={`block px-4 py-2 rounded-lg text-sm transition-colors ${
+                            pathname === subItem.href
+                              ? 'bg-red-50 text-[#e11921] font-medium'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                          style={{ fontFamily: 'acumin-pro-wide' }}
+                        >
+                          {subItem.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             } else {
