@@ -738,15 +738,21 @@ export default function SearchPage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        console.log('Click outside detected, closing dropdown');
         setOpenDropdown(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // Use a small timeout to prevent immediate closing when opening
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
     };
-  }, []);
+  }, [openDropdown]);
 
   const toggleFilter = (category: string, value: string) => {
     setActiveFilters(prev => {
@@ -1618,20 +1624,29 @@ export default function SearchPage() {
       <div className="search-page">
         <div className="filter-bar">
           <div className="filter-row">
+            {console.log('Filter categories:', filterCategories, 'Open dropdown:', openDropdown)}
             {Object.entries(filterCategories).map(([key, category]) => {
               const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
               const filteredOptions = getFilteredOptions(key, category.options);
+
+              const containerRef = openDropdown === key ? dropdownRef : null;
 
               return (
                 <div
                   key={key}
                   className="filter-dropdown"
-                  ref={openDropdown === key ? dropdownRef : null}
+                  ref={containerRef}
                 >
                   <button
                     type="button"
                     className={`dropdown-toggle ${hasActive > 0 ? 'has-active' : ''}`}
-                    onClick={() => setOpenDropdown(openDropdown === key ? null : key)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('Dropdown clicked:', key, 'Current openDropdown:', openDropdown);
+                      const newValue = openDropdown === key ? null : key;
+                      setOpenDropdown(newValue);
+                      console.log('Setting openDropdown to:', newValue);
+                    }}
                   >
                     <span>{category.name}</span>
                     <ChevronDown size={16} />
