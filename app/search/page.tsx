@@ -735,45 +735,10 @@ export default function SearchPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore]);
 
-  useEffect(() => {
-    console.log('Filter categories:', filterCategories);
-    console.log('Open dropdown:', openDropdown);
-    if (openDropdown) {
-      console.log('Dropdown menu should be visible for:', openDropdown);
-      // Check if the dropdown menu element exists in the DOM
-      setTimeout(() => {
-        const dropdownMenu = document.querySelector('.dropdown-menu');
-        console.log('Dropdown menu element in DOM:', dropdownMenu);
-        if (dropdownMenu) {
-          const styles = window.getComputedStyle(dropdownMenu);
-          const rect = dropdownMenu.getBoundingClientRect();
-          console.log('Dropdown visibility:', styles.visibility);
-          console.log('Dropdown display:', styles.display);
-          console.log('Dropdown position:', styles.position);
-          console.log('Dropdown z-index:', styles.zIndex);
-          console.log('Dropdown top:', styles.top);
-          console.log('Dropdown left:', styles.left);
-          console.log('Dropdown rect:', {
-            top: rect.top,
-            left: rect.left,
-            bottom: rect.bottom,
-            right: rect.right,
-            width: rect.width,
-            height: rect.height
-          });
-          console.log('Viewport dimensions:', {
-            width: window.innerWidth,
-            height: window.innerHeight
-          });
-        }
-      }, 100);
-    }
-  }, [filterCategories, openDropdown]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        console.log('Click outside detected, closing dropdown');
         setOpenDropdown(null);
       }
     };
@@ -1675,10 +1640,7 @@ export default function SearchPage() {
                     className={`dropdown-toggle ${hasActive > 0 ? 'has-active' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('Dropdown clicked:', key, 'Current openDropdown:', openDropdown);
-                      const newValue = openDropdown === key ? null : key;
-                      setOpenDropdown(newValue);
-                      console.log('Setting openDropdown to:', newValue);
+                      setOpenDropdown(openDropdown === key ? null : key);
                     }}
                   >
                     <span>{category.name}</span>
@@ -1686,7 +1648,7 @@ export default function SearchPage() {
                   </button>
 
                   {openDropdown === key && (
-                    <div className="dropdown-menu" style={{ border: '3px solid red', background: 'yellow' }}>
+                    <div className="dropdown-menu">
                       <div className="dropdown-header">{category.name}</div>
 
                       {category.hasSearch && (
