@@ -736,6 +736,11 @@ export default function SearchPage() {
   }, [loading, hasMore]);
 
   useEffect(() => {
+    console.log('Filter categories:', filterCategories);
+    console.log('Open dropdown:', openDropdown);
+  }, [filterCategories, openDropdown]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         console.log('Click outside detected, closing dropdown');
@@ -1624,7 +1629,6 @@ export default function SearchPage() {
       <div className="search-page">
         <div className="filter-bar">
           <div className="filter-row">
-            {console.log('Filter categories:', filterCategories, 'Open dropdown:', openDropdown)}
             {Object.entries(filterCategories).map(([key, category]) => {
               const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
               const filteredOptions = getFilteredOptions(key, category.options);
