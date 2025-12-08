@@ -9,7 +9,7 @@ declare global {
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -121,10 +121,20 @@ export default function EditPropertyPage() {
 
   const [isAdminProperty, setIsAdminProperty] = useState<boolean>(true); // Track if property is admin-owned (no owner_id)
 
-  // Documents state
+  // Projects and Documents state
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
-  const [uploadingDocument, setUploadingDocument] = useState(false);
-  const [documentUploadProgress, setDocumentUploadProgress] = useState('');
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<Array<{
+    name: string;
+    progress: number;
+    status: 'uploading' | 'completed' | 'error';
+    error?: string;
+  }>>([]);
+  const [isDraggingDoc, setIsDraggingDoc] = useState(false);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
 
   useEffect(() => {
     const initializePage = async () => {
@@ -132,7 +142,7 @@ export default function EditPropertyPage() {
         fetchCategories(),
         fetchSearchFilterTags(),
         fetchProperty(),
-        fetchDocuments()
+        fetchProjects()
       ]);
     };
 
@@ -328,12 +338,27 @@ export default function EditPropertyPage() {
     }
   }
 
-  async function fetchDocuments() {
+  async function fetchProjects() {
+    try {
+      const { data, error } = await supabase
+        .from('property_projects')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  }
+
+  async function fetchDocuments(projectId: string) {
     try {
       const { data, error } = await supabase
         .from('documents')
         .select('*')
-        .eq('property_id', propertyId)
+        .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -343,51 +368,163 @@ export default function EditPropertyPage() {
     }
   }
 
-  async function handleDocumentUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    setUploadingDocument(true);
-    setDocumentUploadProgress('Uploading document...');
+  async function handleCreateProject() {
+    if (!newProjectName.trim()) {
+      alert('Please enter a project name');
+      return;
+    }
 
     try {
-      // Upload to S3
-      const fileUrl = await uploadDocumentToS3(file, propertyId);
-
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Save to database
-      setDocumentUploadProgress('Saving to database...');
       const { error } = await (supabase
-        .from('documents') as any)
+        .from('property_projects') as any)
         .insert([{
           property_id: propertyId,
-          title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
-          file_url: fileUrl,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          document_type: file.type.split('/')[1] || 'other',
-          uploaded_by: user?.id
+          name: newProjectName.trim(),
+          created_by: user?.id
         }]);
 
       if (error) throw error;
 
-      setDocumentUploadProgress('Document uploaded successfully!');
-      await fetchDocuments();
-
-      // Clear file input
-      e.target.value = '';
-
-      setTimeout(() => setDocumentUploadProgress(''), 2000);
+      setNewProjectName('');
+      setShowNewProjectModal(false);
+      await fetchProjects();
     } catch (error: any) {
-      console.error('Error uploading document:', error);
-      alert('Failed to upload document: ' + error.message);
-    } finally {
-      setUploadingDocument(false);
+      console.error('Error creating project:', error);
+      alert('Failed to create project: ' + error.message);
     }
+  }
+
+  async function handleDeleteProject(project: any) {
+    if (!confirm(`Are you sure you want to delete project "${project.name}"? This will also delete all documents in this project.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('property_projects')
+        .delete()
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      if (selectedProject?.id === project.id) {
+        setSelectedProject(null);
+        setDocuments([]);
+      }
+
+      await fetchProjects();
+    } catch (error: any) {
+      console.error('Error deleting project:', error);
+      alert('Failed to delete project: ' + error.message);
+    }
+  }
+
+  function handleSelectProject(project: any) {
+    setSelectedProject(project);
+    fetchDocuments(project.id);
+  }
+
+  async function handleDocumentUpload(files: FileList | File[] | null) {
+    if (!files || files.length === 0) return;
+
+    if (!selectedProject) {
+      alert('Please select a project folder first');
+      return;
+    }
+
+    const fileArray = Array.from(files);
+    setUploadingDocuments(true);
+
+    // Initialize progress tracking for all files
+    const initialProgress = fileArray.map(file => ({
+      name: file.name,
+      progress: 0,
+      status: 'uploading' as const
+    }));
+    setUploadingFiles(initialProgress);
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Upload files sequentially to track progress accurately
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+
+      try {
+        // Update progress: Starting upload
+        setUploadingFiles(prev => prev.map((f, idx) =>
+          idx === i ? { ...f, progress: 10, status: 'uploading' as const } : f
+        ));
+
+        // Upload to S3
+        const fileUrl = await uploadDocumentToS3(file, propertyId);
+
+        // Update progress: Upload complete, saving to database
+        setUploadingFiles(prev => prev.map((f, idx) =>
+          idx === i ? { ...f, progress: 70, status: 'uploading' as const } : f
+        ));
+
+        // Save to database
+        const { error } = await (supabase
+          .from('documents') as any)
+          .insert([{
+            project_id: selectedProject.id,
+            title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
+            file_url: fileUrl,
+            file_name: file.name,
+            file_size: file.size,
+            file_type: file.type,
+            document_type: file.type.split('/')[1] || 'other',
+            uploaded_by: user?.id
+          }]);
+
+        if (error) throw error;
+
+        // Update progress: Complete
+        setUploadingFiles(prev => prev.map((f, idx) =>
+          idx === i ? { ...f, progress: 100, status: 'completed' as const } : f
+        ));
+      } catch (error: any) {
+        console.error('Error uploading document:', error);
+        setUploadingFiles(prev => prev.map((f, idx) =>
+          idx === i ? { ...f, progress: 0, status: 'error' as const, error: error.message } : f
+        ));
+      }
+    }
+
+    // Refresh documents list
+    await fetchDocuments(selectedProject.id);
+
+    // Clear progress after a delay
+    setTimeout(() => {
+      setUploadingFiles([]);
+      setUploadingDocuments(false);
+    }, 2000);
+  }
+
+  function handleDocumentInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    handleDocumentUpload(e.target.files);
+    e.target.value = ''; // Clear input
+  }
+
+  function handleDocumentDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDraggingDoc(false);
+
+    const files = e.dataTransfer.files;
+    handleDocumentUpload(files);
+  }
+
+  function handleDocumentDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDraggingDoc(true);
+  }
+
+  function handleDocumentDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDraggingDoc(false);
   }
 
   async function handleDeleteDocument(doc: any) {
@@ -405,7 +542,9 @@ export default function EditPropertyPage() {
 
       if (error) throw error;
 
-      await fetchDocuments();
+      if (selectedProject) {
+        await fetchDocuments(selectedProject.id);
+      }
     } catch (error: any) {
       console.error('Error deleting document:', error);
       alert('Failed to delete document: ' + error.message);
@@ -1728,84 +1867,312 @@ export default function EditPropertyPage() {
           {/* Documents Tab */}
           {activeTab === 'documents' && (
             <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Documents</h3>
-
-                {/* Upload Section */}
-                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 mb-6">
-                  <div className="text-center">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <label htmlFor="document-upload" className="cursor-pointer">
-                      <span className="text-sm font-medium text-[#e11921] hover:text-red-700">
-                        Click to upload a document
-                      </span>
-                      <input
-                        id="document-upload"
-                        type="file"
-                        className="hidden"
-                        onChange={handleDocumentUpload}
-                        disabled={uploadingDocument}
-                        accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx"
-                      />
-                    </label>
-                    <p className="text-xs text-gray-500 mt-2">
-                      PDF, Word, Excel, PowerPoint, or Text files
-                    </p>
-                    {documentUploadProgress && (
-                      <p className="text-sm text-[#e11921] mt-2 font-medium">
-                        {documentUploadProgress}
+              {!selectedProject ? (
+                /* Project Folders List */
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Project Folders</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Organize documents into project folders
                       </p>
-                    )}
+                    </div>
+                    <button
+                      onClick={() => setShowNewProjectModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Project
+                    </button>
                   </div>
-                </div>
 
-                {/* Documents List */}
-                {documents.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <FileText className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                    <p>No documents uploaded yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                  {projects.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <FolderOpen className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+                      <p className="text-gray-600 font-medium mb-2">No project folders yet</p>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Create a project folder to organize your documents
+                      </p>
+                      <button
+                        onClick={() => setShowNewProjectModal(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 transition-colors"
                       >
-                        <div className="flex items-center gap-4 flex-1">
-                          <FileText className="h-8 w-8 text-gray-400" />
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{doc.title}</h4>
-                            <p className="text-sm text-gray-500">
-                              {doc.file_name} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
-                            </p>
+                        <Plus className="w-4 h-4" />
+                        Create First Project
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {projects.map((project) => (
+                        <div
+                          key={project.id}
+                          className="group relative bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-[#e11921] hover:shadow-lg transition-all cursor-pointer"
+                          onClick={() => handleSelectProject(project)}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <Folder className="h-12 w-12 text-amber-500 group-hover:text-amber-600 transition-colors" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProject(project);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-red-600 hover:bg-red-50 rounded transition-all"
+                              title="Delete Project"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <h4 className="font-semibold text-gray-900 mb-2 group-hover:text-[#e11921] transition-colors">
+                            {project.name}
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            Created {new Date(project.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Selected Project - Documents View */
+                <div>
+                  {/* Back Button and Project Title */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          setSelectedProject(null);
+                          setDocuments([]);
+                        }}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Back to Projects"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <FolderOpen className="h-5 w-5 text-amber-500" />
+                          <h3 className="text-lg font-semibold text-gray-900">{selectedProject.name}</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Upload and manage documents for this project
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload Section */}
+                  <div
+                    onDrop={handleDocumentDrop}
+                    onDragOver={handleDocumentDragOver}
+                    onDragLeave={handleDocumentDragLeave}
+                    className={`border-2 border-dashed rounded-lg p-8 mb-6 transition-colors ${
+                      isDraggingDoc
+                        ? 'border-[#e11921] bg-red-50'
+                        : 'border-gray-300 bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <label htmlFor="document-upload" className="cursor-pointer">
+                        <span className="text-sm font-medium text-[#e11921] hover:text-red-700">
+                          Click to upload documents
+                        </span>
+                        <span className="text-sm text-gray-600"> or drag and drop</span>
+                        <input
+                          id="document-upload"
+                          type="file"
+                          multiple
+                          className="hidden"
+                          onChange={handleDocumentInputChange}
+                          disabled={uploadingDocuments}
+                          accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2">
+                        PDF, Word, Excel, PowerPoint, or Text files (multiple files supported)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Documents List */}
+                  {documents.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <FileText className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                      <p>No documents in this project yet</p>
+                      <p className="text-sm mt-1">Upload documents using the area above</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900 mb-3">
+                        Documents ({documents.length})
+                      </h4>
+                      {documents.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center gap-4 flex-1">
+                            <FileText className="h-8 w-8 text-gray-400" />
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">{doc.title}</h4>
+                              <p className="text-sm text-gray-500">
+                                {doc.file_name} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => window.open(doc.file_url, '_blank')}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Download"
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDocument(doc)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => window.open(doc.file_url, '_blank')}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            title="Download"
-                          >
-                            <Download className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDocument(doc)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </form>
       </div>
+
+      {/* Document Upload Progress Modal */}
+      {uploadingFiles.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Uploading Documents</h3>
+              <p className="text-sm text-gray-600">
+                {uploadingFiles.filter(f => f.status === 'completed').length} of {uploadingFiles.length} completed
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {uploadingFiles.map((file, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm font-medium text-gray-900 truncate">
+                        {file.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      {file.status === 'uploading' && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#e11921]"></div>
+                      )}
+                      {file.status === 'completed' && (
+                        <div className="text-green-600">✓</div>
+                      )}
+                      {file.status === 'error' && (
+                        <div className="text-red-600">✗</div>
+                      )}
+                      <span className="text-sm font-medium text-gray-700">
+                        {file.progress}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        file.status === 'completed'
+                          ? 'bg-green-600'
+                          : file.status === 'error'
+                          ? 'bg-red-600'
+                          : 'bg-[#e11921]'
+                      }`}
+                      style={{ width: `${file.progress}%` }}
+                    ></div>
+                  </div>
+
+                  {/* Error Message */}
+                  {file.error && (
+                    <p className="text-xs text-red-600 mt-2">{file.error}</p>
+                  )}
+
+                  {/* Status Text */}
+                  {file.status === 'uploading' && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {file.progress < 50 ? 'Uploading to S3...' : 'Saving to database...'}
+                    </p>
+                  )}
+                  {file.status === 'completed' && (
+                    <p className="text-xs text-green-600 mt-2">Upload complete</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {!uploadingDocuments && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setUploadingFiles([])}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* New Project Modal */}
+      {showNewProjectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Create New Project</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Enter a name for this project folder
+            </p>
+            <input
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="e.g., Summer 2024 Production"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e11921] focus:border-transparent outline-none mb-6"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newProjectName.trim()) {
+                  handleCreateProject();
+                }
+              }}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={handleCreateProject}
+                disabled={!newProjectName.trim()}
+                className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                Create Project
+              </button>
+              <button
+                onClick={() => {
+                  setShowNewProjectModal(false);
+                  setNewProjectName('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Analysis Progress Modal */}
       {analyzingImages && (
