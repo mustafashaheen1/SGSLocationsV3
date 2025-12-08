@@ -9,12 +9,12 @@ declare global {
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
-import { uploadMultipleImages, deleteImageFromS3 } from '@/lib/s3-upload';
+import { uploadMultipleImages, deleteImageFromS3, uploadDocumentToS3, deleteDocumentFromS3 } from '@/lib/s3-upload';
 import { GridPreview } from '@/components/admin/GridPreview';
 import { generateObfuscatedName } from '@/lib/name-obfuscator';
 import PropertyCalendar from '@/components/PropertyCalendar';
@@ -67,7 +67,7 @@ export default function EditPropertyPage() {
 
   // Get tab from URL query parameter
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const tabParam = searchParams.get('tab') as 'details' | 'images' | 'calendar' | 'contacts' | null;
+  const tabParam = searchParams.get('tab') as 'details' | 'images' | 'calendar' | 'contacts' | 'documents' | null;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -115,18 +115,24 @@ export default function EditPropertyPage() {
     downloads: 0
   });
 
-  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts'>(
-    tabParam && ['details', 'images', 'calendar', 'contacts'].includes(tabParam) ? tabParam : 'details'
+  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts' | 'documents'>(
+    tabParam && ['details', 'images', 'calendar', 'contacts', 'documents'].includes(tabParam) ? tabParam : 'details'
   );
 
   const [isAdminProperty, setIsAdminProperty] = useState<boolean>(true); // Track if property is admin-owned (no owner_id)
+
+  // Documents state
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [documentUploadProgress, setDocumentUploadProgress] = useState('');
 
   useEffect(() => {
     const initializePage = async () => {
       await Promise.all([
         fetchCategories(),
         fetchSearchFilterTags(),
-        fetchProperty()
+        fetchProperty(),
+        fetchDocuments()
       ]);
     };
 
@@ -312,7 +318,7 @@ export default function EditPropertyPage() {
   }
 
   async function fetchCategories() {
-    const { data, error } = await supabase
+    const { data, error} = await supabase
       .from('categories')
       .select('*')
       .order('name');
@@ -320,6 +326,98 @@ export default function EditPropertyPage() {
     if (!error && data) {
       setCategories(data);
     }
+  }
+
+  async function fetchDocuments() {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    }
+  }
+
+  async function handleDocumentUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    setUploadingDocument(true);
+    setDocumentUploadProgress('Uploading document...');
+
+    try {
+      // Upload to S3
+      const fileUrl = await uploadDocumentToS3(file, propertyId);
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Save to database
+      setDocumentUploadProgress('Saving to database...');
+      const { error } = await (supabase
+        .from('documents') as any)
+        .insert([{
+          property_id: propertyId,
+          title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
+          file_url: fileUrl,
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type,
+          document_type: file.type.split('/')[1] || 'other',
+          uploaded_by: user?.id
+        }]);
+
+      if (error) throw error;
+
+      setDocumentUploadProgress('Document uploaded successfully!');
+      await fetchDocuments();
+
+      // Clear file input
+      e.target.value = '';
+
+      setTimeout(() => setDocumentUploadProgress(''), 2000);
+    } catch (error: any) {
+      console.error('Error uploading document:', error);
+      alert('Failed to upload document: ' + error.message);
+    } finally {
+      setUploadingDocument(false);
+    }
+  }
+
+  async function handleDeleteDocument(doc: any) {
+    if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) return;
+
+    try {
+      // Delete from S3
+      await deleteDocumentFromS3(doc.file_url);
+
+      // Delete from database
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', doc.id);
+
+      if (error) throw error;
+
+      await fetchDocuments();
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      alert('Failed to delete document: ' + error.message);
+    }
+  }
+
+  function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
 
   async function fetchSearchFilterTags() {
@@ -943,6 +1041,18 @@ export default function EditPropertyPage() {
             >
               <User className="w-4 h-4" />
               Contacts & Notes
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('documents')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
+                activeTab === 'documents'
+                  ? 'border-[#e11921] text-[#e11921]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Documents
             </button>
           </nav>
         </div>
@@ -1611,6 +1721,86 @@ export default function EditPropertyPage() {
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Documents Tab */}
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Documents</h3>
+
+                {/* Upload Section */}
+                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 mb-6">
+                  <div className="text-center">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <label htmlFor="document-upload" className="cursor-pointer">
+                      <span className="text-sm font-medium text-[#e11921] hover:text-red-700">
+                        Click to upload a document
+                      </span>
+                      <input
+                        id="document-upload"
+                        type="file"
+                        className="hidden"
+                        onChange={handleDocumentUpload}
+                        disabled={uploadingDocument}
+                        accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">
+                      PDF, Word, Excel, PowerPoint, or Text files
+                    </p>
+                    {documentUploadProgress && (
+                      <p className="text-sm text-[#e11921] mt-2 font-medium">
+                        {documentUploadProgress}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Documents List */}
+                {documents.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <FileText className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                    <p>No documents uploaded yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-center gap-4 flex-1">
+                          <FileText className="h-8 w-8 text-gray-400" />
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{doc.title}</h4>
+                            <p className="text-sm text-gray-500">
+                              {doc.file_name} • {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => window.open(doc.file_url, '_blank')}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Download"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDocument(doc)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
