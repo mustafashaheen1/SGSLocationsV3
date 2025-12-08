@@ -325,7 +325,7 @@ export default function AdminPropertiesPage() {
                   <td className="px-6 py-4">
                     <div
                       className="w-16 h-16 relative rounded overflow-hidden bg-gray-200 cursor-pointer hover:opacity-75 transition-opacity"
-                      onClick={() => window.open(`/property/${property.id}`, '_blank')}
+                      onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
                       title="View property details"
                     >
                       <img
@@ -342,7 +342,7 @@ export default function AdminPropertiesPage() {
                   <td className="px-6 py-4">
                     <div
                       className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
-                      onClick={() => window.open(`/property/${property.id}`, '_blank')}
+                      onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
                       title="View property details"
                     >
                       {property.name}
@@ -385,7 +385,7 @@ export default function AdminPropertiesPage() {
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => window.open(`/property/${property.id}`, '_blank')}
+                        onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                         title="View"
                       >

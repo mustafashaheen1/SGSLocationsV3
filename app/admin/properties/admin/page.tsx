@@ -217,14 +217,13 @@ export default function AdminPropertiesPage() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex justify-end gap-2">
-                          <Link
-                            href={`/property/${property.id}`}
-                            target="_blank"
+                          <button
+                            onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
                             className="p-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
                             title="View"
                           >
                             <Eye size={16} />
-                          </Link>
+                          </button>
                           <button
                             onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
                             className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"

@@ -1629,6 +1629,7 @@ export default function SearchPage() {
                   ref={openDropdown === key ? dropdownRef : null}
                 >
                   <button
+                    type="button"
                     className={`dropdown-toggle ${hasActive > 0 ? 'has-active' : ''}`}
                     onClick={() => setOpenDropdown(openDropdown === key ? null : key)}
                   >
@@ -1671,10 +1672,10 @@ export default function SearchPage() {
                       </div>
 
                       <div className="dropdown-footer">
-                        <button className="clear-btn" onClick={(e) => { e.stopPropagation(); clearCategoryFilters(category.name); }}>
+                        <button type="button" className="clear-btn" onClick={(e) => { e.stopPropagation(); clearCategoryFilters(category.name); }}>
                           Clear
                         </button>
-                        <button className="done-btn" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }}>
+                        <button type="button" className="done-btn" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }}>
                           Done
                         </button>
                       </div>
@@ -1697,6 +1698,7 @@ export default function SearchPage() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
             <button
+              type="button"
               className="save-search-btn"
               onClick={() => setShowSaveModal(true)}
               title="Save this search"
