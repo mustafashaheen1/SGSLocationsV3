@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 interface Document {
   id: string;
-  property_id: string;
+  project_id: string;
   title: string;
   description: string | null;
   file_url: string;
@@ -18,11 +18,16 @@ interface Document {
   document_type: string;
   uploaded_by: string | null;
   created_at: string;
-  properties: {
+  property_projects: {
     id: string;
     name: string;
-    city: string;
-    county: string;
+    property_id: string;
+    properties: {
+      id: string;
+      name: string;
+      city: string;
+      county: string;
+    };
   };
 }
 
@@ -45,11 +50,16 @@ export default function DocumentDirectoryPage() {
         .from('documents')
         .select(`
           *,
-          properties!inner(
+          property_projects!inner(
             id,
             name,
-            city,
-            county
+            property_id,
+            properties!inner(
+              id,
+              name,
+              city,
+              county
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -131,8 +141,9 @@ export default function DocumentDirectoryPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       doc.title.toLowerCase().includes(searchLower) ||
-      doc.properties.name.toLowerCase().includes(searchLower) ||
-      doc.properties.city.toLowerCase().includes(searchLower) ||
+      doc.property_projects.name.toLowerCase().includes(searchLower) ||
+      doc.property_projects.properties.name.toLowerCase().includes(searchLower) ||
+      doc.property_projects.properties.city.toLowerCase().includes(searchLower) ||
       doc.file_name.toLowerCase().includes(searchLower)
     );
   });
@@ -158,7 +169,7 @@ export default function DocumentDirectoryPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search by document title, property name, or file name..."
+              placeholder="Search by document title, project name, property name, or file name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
@@ -189,6 +200,7 @@ export default function DocumentDirectoryPage() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Title</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Project</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Property</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Size</th>
@@ -206,12 +218,15 @@ export default function DocumentDirectoryPage() {
                           )}
                         </td>
                         <td className="py-4 px-4">
+                          <div className="font-medium text-gray-700">{doc.property_projects.name}</div>
+                        </td>
+                        <td className="py-4 px-4">
                           <Link
-                            href={`/property/${doc.property_id}`}
+                            href={`/property/${doc.property_projects.property_id}`}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
-                            <div className="font-medium">{doc.properties.name}</div>
-                            <div className="text-xs text-gray-500">{doc.properties.city}, {doc.properties.county}</div>
+                            <div className="font-medium">{doc.property_projects.properties.name}</div>
+                            <div className="text-xs text-gray-500">{doc.property_projects.properties.city}, {doc.property_projects.properties.county}</div>
                           </Link>
                         </td>
                         <td className="py-4 px-4 text-sm text-gray-600">{doc.file_name}</td>
