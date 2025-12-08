@@ -738,6 +738,21 @@ export default function SearchPage() {
   useEffect(() => {
     console.log('Filter categories:', filterCategories);
     console.log('Open dropdown:', openDropdown);
+    if (openDropdown) {
+      console.log('Dropdown menu should be visible for:', openDropdown);
+      // Check if the dropdown menu element exists in the DOM
+      setTimeout(() => {
+        const dropdownMenu = document.querySelector('.dropdown-menu');
+        console.log('Dropdown menu element in DOM:', dropdownMenu);
+        if (dropdownMenu) {
+          const styles = window.getComputedStyle(dropdownMenu);
+          console.log('Dropdown visibility:', styles.visibility);
+          console.log('Dropdown display:', styles.display);
+          console.log('Dropdown position:', styles.position);
+          console.log('Dropdown z-index:', styles.zIndex);
+        }
+      }, 100);
+    }
   }, [filterCategories, openDropdown]);
 
   useEffect(() => {
@@ -1657,7 +1672,7 @@ export default function SearchPage() {
                   </button>
 
                   {openDropdown === key && (
-                    <div className="dropdown-menu">
+                    <div className="dropdown-menu" style={{ border: '3px solid red', background: 'yellow' }}>
                       <div className="dropdown-header">{category.name}</div>
 
                       {category.hasSearch && (
