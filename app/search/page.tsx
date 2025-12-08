@@ -746,10 +746,25 @@ export default function SearchPage() {
         console.log('Dropdown menu element in DOM:', dropdownMenu);
         if (dropdownMenu) {
           const styles = window.getComputedStyle(dropdownMenu);
+          const rect = dropdownMenu.getBoundingClientRect();
           console.log('Dropdown visibility:', styles.visibility);
           console.log('Dropdown display:', styles.display);
           console.log('Dropdown position:', styles.position);
           console.log('Dropdown z-index:', styles.zIndex);
+          console.log('Dropdown top:', styles.top);
+          console.log('Dropdown left:', styles.left);
+          console.log('Dropdown rect:', {
+            top: rect.top,
+            left: rect.left,
+            bottom: rect.bottom,
+            right: rect.right,
+            width: rect.width,
+            height: rect.height
+          });
+          console.log('Viewport dimensions:', {
+            width: window.innerWidth,
+            height: window.innerHeight
+          });
         }
       }, 100);
     }
@@ -956,8 +971,7 @@ export default function SearchPage() {
           flex-wrap: wrap;
           max-width: 1200px;
           margin: 0 auto;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
+          overflow: visible;
         }
 
         @media (min-width: 768px) {
