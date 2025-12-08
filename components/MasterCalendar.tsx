@@ -33,15 +33,17 @@ interface MasterCalendarEvent extends BigCalendarEvent {
 }
 
 const EVENT_COLORS = {
-  production: '#e11921',      // Red - Production shoots
-  director_scout: '#3b82f6',  // Blue - Director/Scout
-  blocked: '#6b7280',         // Gray - Blocked dates
+  hold_days: '#f59e0b',       // Amber - Hold Days
+  blackout_days: '#1f2937',   // Dark Gray - Blackout Days
+  director_scout: '#3b82f6',  // Blue - Director Scout
+  tech_scout: '#10b981',      // Green - Tech Scout
 };
 
 const EVENT_TYPE_LABELS = {
-  production: 'Production',
-  director_scout: 'Director/Scout',
-  blocked: 'Blocked',
+  hold_days: 'Hold Days',
+  blackout_days: 'Blackout Days',
+  director_scout: 'Director Scout',
+  tech_scout: 'Tech Scout',
 };
 
 export default function MasterCalendar() {
@@ -146,35 +148,42 @@ export default function MasterCalendar() {
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
           >
             <option value="all">All Events</option>
-            <option value="production">Production Only</option>
-            <option value="director_scout">Director/Scout Only</option>
-            <option value="blocked">Blocked Only</option>
+            <option value="hold_days">Hold Days Only</option>
+            <option value="blackout_days">Blackout Days Only</option>
+            <option value="director_scout">Director Scout Only</option>
+            <option value="tech_scout">Tech Scout Only</option>
           </select>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600">Total Events</p>
           <p className="text-2xl font-bold text-gray-900">{events.length}</p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Production</p>
-          <p className="text-2xl font-bold" style={{ color: EVENT_COLORS.production }}>
-            {events.filter(e => e.event_type === 'production').length}
+          <p className="text-sm text-gray-600">Hold Days</p>
+          <p className="text-2xl font-bold" style={{ color: EVENT_COLORS.hold_days }}>
+            {events.filter(e => e.event_type === 'hold_days').length}
           </p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Director/Scout</p>
+          <p className="text-sm text-gray-600">Blackout Days</p>
+          <p className="text-2xl font-bold" style={{ color: EVENT_COLORS.blackout_days }}>
+            {events.filter(e => e.event_type === 'blackout_days').length}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-sm text-gray-600">Director Scout</p>
           <p className="text-2xl font-bold" style={{ color: EVENT_COLORS.director_scout }}>
             {events.filter(e => e.event_type === 'director_scout').length}
           </p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Blocked</p>
-          <p className="text-2xl font-bold" style={{ color: EVENT_COLORS.blocked }}>
-            {events.filter(e => e.event_type === 'blocked').length}
+          <p className="text-sm text-gray-600">Tech Scout</p>
+          <p className="text-2xl font-bold" style={{ color: EVENT_COLORS.tech_scout }}>
+            {events.filter(e => e.event_type === 'tech_scout').length}
           </p>
         </div>
       </div>
@@ -182,16 +191,20 @@ export default function MasterCalendar() {
       {/* Legend */}
       <div className="flex gap-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.production }}></div>
-          <span className="text-sm font-medium">Production</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.hold_days }}></div>
+          <span className="text-sm font-medium">Hold Days</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.blackout_days }}></div>
+          <span className="text-sm font-medium">Blackout Days</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.director_scout }}></div>
-          <span className="text-sm font-medium">Director/Scout</span>
+          <span className="text-sm font-medium">Director Scout</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.blocked }}></div>
-          <span className="text-sm font-medium">Blocked</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.tech_scout }}></div>
+          <span className="text-sm font-medium">Tech Scout</span>
         </div>
       </div>
 

@@ -13,25 +13,43 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServerSideClientWithToken(token);
 
-    // Verify user is admin
+    // Get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
       return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
-    const { data: isAdmin } = await (supabase
+    // Check if user is admin
+    const { data: adminData } = await (supabase
       .from('admins') as any)
       .select('id')
       .eq('email', user.email)
-      .single();
+      .maybeSingle();
 
+    const isAdmin = !!adminData;
+
+    // Check if user is property owner
+    let isPropertyOwner = false;
+    let userData = null;
     if (!isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      const { data: userDetails } = await (supabase
+        .from('users') as any)
+        .select('id, user_type')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      userData = userDetails;
+      isPropertyOwner = userDetails?.user_type === 'property_owner';
     }
 
-    // Fetch all calendar events from all properties
-    const { data: events, error: eventsError } = await (supabase
-      .from('property_calendar_events') as any)
+    // User must be either admin or property owner
+    if (!isAdmin && !isPropertyOwner) {
+      return NextResponse.json({ error: 'Forbidden - Access restricted to admins and property owners' }, { status: 403 });
+    }
+
+    // Build query based on user type
+    let query = supabase
+      .from('property_calendar_events')
       .select(`
         *,
         properties!inner (
@@ -39,10 +57,19 @@ export async function GET(request: NextRequest) {
           name,
           real_name,
           city,
-          county
+          county,
+          owner_id
         )
-      `)
-      .order('start_date', { ascending: true });
+      `);
+
+    // If property owner, only show events from their properties
+    if (isPropertyOwner && user.id) {
+      query = query.eq('properties.owner_id', user.id);
+    }
+
+    query = query.order('start_date', { ascending: true });
+
+    const { data: events, error: eventsError } = await query as any;
 
     if (eventsError) {
       console.error('Error fetching calendar events:', eventsError);

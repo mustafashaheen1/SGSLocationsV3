@@ -118,6 +118,24 @@ export default function PortfolioPage() {
           letter-spacing: 0.05rem;
           text-transform: uppercase;
         }
+
+        /* Additional mobile improvements */
+        @media (max-width: 767px) {
+          main h1 {
+            font-size: 1.875rem !important;
+          }
+
+          main > div {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          main h1 {
+            font-size: 1.5rem !important;
+          }
+        }
       `}</style>
 
       <main className="min-h-screen bg-white">

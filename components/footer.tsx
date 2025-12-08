@@ -135,8 +135,44 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-12">
+    <>
+      <style jsx global>{`
+        /* Footer mobile improvements */
+        @media (max-width: 767px) {
+          footer .container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+          }
+
+          footer h3 {
+            font-size: 1rem !important;
+            margin-bottom: 0.75rem !important;
+          }
+
+          footer .grid {
+            gap: 2rem !important;
+          }
+
+          footer .space-y-2 {
+            gap: 0.375rem !important;
+          }
+
+          footer .text-lg {
+            font-size: 1rem !important;
+          }
+        }
+
+        /* Better word wrapping for contact info */
+        footer .text-gray-400 {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+      `}</style>
+
+      <footer className="bg-gray-900 text-white">
+        <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
@@ -183,6 +219,7 @@ export function Footer() {
               <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
               <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
               <li><Link href="/register" className="text-gray-400 hover:text-white">Register</Link></li>
+              <li><Link href="/admin/login" className="text-gray-400 hover:text-white">Admin Panel</Link></li>
             </ul>
           </div>
 
@@ -253,5 +290,6 @@ export function Footer() {
         </div>
       </div>
     </footer>
+    </>
   );
 }

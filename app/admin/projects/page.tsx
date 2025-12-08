@@ -18,6 +18,8 @@ export default function AdminProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     banner_image: '',
@@ -168,19 +170,34 @@ export default function AdminProjectsPage() {
       return;
     }
 
-    const { error } = await (supabase
-      .from('projects') as any)
-      .delete()
-      .eq('id', id);
+    setDeletingProjectId(id);
+    setDeleteProgress('Starting deletion...');
 
-    if (error) {
+    // Give React time to render the modal
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+      setDeleteProgress('🗑️ Deleting project from database...');
+      const { error } = await (supabase
+        .from('projects') as any)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setDeleteProgress('✓ Project deleted successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      await fetchProjects();
+    } catch (error: any) {
       console.error('Error deleting project:', error);
       alert('Error deleting project: ' + error.message);
-      return;
+    } finally {
+      setDeletingProjectId(null);
+      setDeleteProgress('');
     }
-
-    alert('Project deleted successfully!');
-    fetchProjects();
   }
 
   function handleEdit(project: Project) {
@@ -407,6 +424,28 @@ export default function AdminProjectsPage() {
           </div>
         </div>
       </div>
+
+      {/* Deletion Progress Modal */}
+      {deletingProjectId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Deleting Project</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please wait while we delete the project...
+              </p>
+              {deleteProgress && (
+                <div className="bg-gray-50 rounded p-3 text-sm font-mono text-left">
+                  {deleteProgress}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

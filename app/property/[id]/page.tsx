@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Share2,
   Mail,
   Image as ImageIcon,
   Download,
@@ -39,6 +40,7 @@ export default function PropertyDetailPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
+  const [userLocation, setUserLocation] = useState<{latitude: number; longitude: number} | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
   const categoryRefs = useRef<{ [key: string]: HTMLSpanElement | null }>({});
@@ -49,6 +51,8 @@ export default function PropertyDetailPage() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [downloadingImages, setDownloadingImages] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const updateRedBarPosition = (category: string) => {
     const element = categoryRefs.current[category];
@@ -82,6 +86,24 @@ export default function PropertyDetailPage() {
       }
     }, 50);
   };
+
+  // Get user's location on component mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Geolocation error:', error.message);
+          // User denied or error - we'll fallback to city-based search
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -144,28 +166,28 @@ export default function PropertyDetailPage() {
           // Limit to 12 results
           setSimilarProperties(similarLocations.slice(0, 12));
 
-          // For nearby locations, calculate actual distances if coordinates are available
-          if (propertyData.latitude && propertyData.longitude) {
+          // For nearby locations, use user's current location if available
+          if (userLocation) {
             const nearbyLocations = (allProperties as any[])
               .filter((p: any) => p.latitude && p.longitude)
               .map((prop: any) => ({
                 ...prop,
                 distance: calculateDistance(
-                  propertyData.latitude!,
-                  propertyData.longitude!,
+                  userLocation.latitude,
+                  userLocation.longitude,
                   prop.latitude!,
                   prop.longitude!
                 )
               }))
               .sort((a: any, b: any) => a.distance - b.distance)
-              .slice(0, 12);
+              .slice(0, 4); // Limit to 4 nearest locations
 
             setNearbyProperties(nearbyLocations as any);
           } else {
-            // Fallback: use same city if no coordinates
+            // Fallback: use same city if user location not available
             const nearbyLocations = (allProperties as any[])
               .filter((p: any) => p.city === propertyData.city)
-              .slice(0, 12);
+              .slice(0, 4);
             setNearbyProperties(nearbyLocations);
           }
         }
@@ -192,7 +214,7 @@ export default function PropertyDetailPage() {
     }
 
     fetchData();
-  }, [params.id]);
+  }, [params.id, userLocation]);
 
   useEffect(() => {
     async function loadImages() {
@@ -432,6 +454,12 @@ export default function PropertyDetailPage() {
           transition: background 0.3s ease;
         }
 
+        @media (max-width: 767px) {
+          .nav-arrow {
+            width: 48px;
+          }
+        }
+
         .nav-arrow-left {
           left: 0;
           background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
@@ -464,22 +492,156 @@ export default function PropertyDetailPage() {
         div::-webkit-scrollbar {
           display: none;
         }
+
+        /* Responsive image grid */
+        .property-image-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          grid-template-rows: repeat(2, 200px);
+          gap: 4px;
+          max-height: 404px;
+          overflow: hidden;
+          padding: 0;
+          margin: 0;
+        }
+
+        @media (min-width: 640px) {
+          .property-image-grid {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 250px);
+            max-height: 504px;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .property-image-grid {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 300px);
+            max-height: 604px;
+          }
+        }
+
+        /* Responsive two-column layout */
+        .property-details-container {
+          padding: 1rem;
+          background: #fff;
+        }
+
+        @media (min-width: 768px) {
+          .property-details-container {
+            padding: 2rem;
+          }
+        }
+
+        .property-details-flex {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+          .property-details-flex {
+            flex-direction: row;
+          }
+        }
+
+        .property-left-column {
+          flex: 1 1 100%;
+          padding-right: 0;
+          border-right: none;
+          border-bottom: 1px solid #e5e5e5;
+          padding-bottom: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+          .property-left-column {
+            flex: 1 1 50%;
+            padding-right: 2rem;
+            border-right: 1px solid #e5e5e5;
+            border-bottom: none;
+            padding-bottom: 0;
+          }
+        }
+
+        .property-right-column {
+          flex: 1 1 100%;
+          padding-left: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+        }
+
+        @media (min-width: 1024px) {
+          .property-right-column {
+            flex: 1 1 50%;
+            padding-left: 2rem;
+          }
+        }
+
+        /* Action buttons responsive */
+        .action-buttons-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+        }
+
+        /* Similar locations grid */
+        .similar-locations-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        @media (min-width: 640px) {
+          .similar-locations-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .similar-locations-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        @media (min-width: 1200px) {
+          .similar-locations-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+        .similar-locations-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 1rem;
+        }
+
+        @media (min-width: 768px) {
+          .similar-locations-container {
+            padding: 0 2rem;
+          }
+        }
+
+        .similar-locations-title {
+          font-size: 2rem;
+          font-weight: 300;
+          color: #212529;
+          margin-bottom: 2rem;
+        }
+
+        @media (min-width: 768px) {
+          .similar-locations-title {
+            font-size: 3rem;
+          }
+        }
       `}</style>
 
       <main className="min-h-screen bg-white">
         <div style={{ position: 'relative', width: '100%' }}>
 
           {viewMode === 'grid' ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gridTemplateRows: 'repeat(2, 300px)',
-              gap: '4px',
-              maxHeight: '604px',
-              overflow: 'hidden',
-              padding: '0',
-              margin: '0'
-            }}>
+            <div className="property-image-grid">
               {displayedImages.slice(0, 6).map((imgData, index) => {
                 const img = imgData.url;
 
@@ -745,20 +907,10 @@ export default function PropertyDetailPage() {
         )}
 
         {/* Property Details Section - 50/50 Split Layout */}
-        <div style={{
-          padding: '2rem',
-          background: '#fff'
-        }}>
-          <div style={{
-            display: 'flex',
-            gap: '2rem'
-          }}>
+        <div className="property-details-container">
+          <div className="property-details-flex">
             {/* LEFT COLUMN - 50% Width */}
-            <div style={{
-              flex: '1 1 50%',
-              paddingRight: '2rem',
-              borderRight: '1px solid #e5e5e5'
-            }}>
+            <div className="property-left-column">
               {/* Property Title Row with City */}
               <div style={{
                 display: 'flex',
@@ -872,28 +1024,12 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* RIGHT COLUMN - 50% Width */}
-            <div style={{
-              flex: '1 1 50%',
-              paddingLeft: '2rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-start'
-            }}>
+            <div className="property-right-column">
               {/* Action Buttons - Single Row */}
-              <div style={{
-                display: 'flex',
-                flexWrap: 'nowrap',
-                gap: '0.5rem',
-                justifyContent: 'flex-start',
-                marginBottom: '2rem',
-                width: '100%'
-              }}>
-                {/* Copy Button - White with Red Border */}
+              <div className="action-buttons-container">
+                {/* Share Button - White with Red Border */}
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    console.log('Link copied!');
-                  }}
+                  onClick={() => setShowShareModal(true)}
                   style={{
                     background: '#fff',
                     color: 'rgb(33, 37, 41)',
@@ -920,8 +1056,8 @@ export default function PropertyDetailPage() {
                     e.currentTarget.style.color = 'rgb(33, 37, 41)';
                   }}
                 >
-                  <Copy style={{ width: '14px', height: '14px' }} />
-                  COPY
+                  <Share2 style={{ width: '14px', height: '14px' }} />
+                  SHARE
                 </button>
 
                 {/* Other Action Buttons */}
@@ -983,50 +1119,6 @@ export default function PropertyDetailPage() {
                     </button>
                   );
                 })}
-              </div>
-
-              {/* SGS Verified Logo */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                marginTop: '1rem'
-              }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  background: 'rgb(225, 25, 33)',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Camera style={{
-                    width: '24px',
-                    height: '24px',
-                    color: '#fff'
-                  }} />
-                </div>
-                <div>
-                  <div style={{
-                    fontSize: '18px',
-                    fontWeight: 600,
-                    color: 'rgb(33, 37, 41)',
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '0.05em'
-                  }}>
-                    SGS
-                  </div>
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: 300,
-                    color: '#6b7280',
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    letterSpacing: '0.02em'
-                  }}>
-                    VERIFIED
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1115,48 +1207,62 @@ export default function PropertyDetailPage() {
 
         <Footer />
 
-        {/* Plus button - Fixed at bottom left corner of viewport */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowThumbnails(true);
-          }}
-          style={{
-            position: 'fixed',
-            bottom: '2rem',
-            left: '2rem',
-            width: '56px',
-            height: '56px',
-            background: '#e11921',
-            border: 'none',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            zIndex: 1000,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-          }}
-          aria-label="Show all thumbnails"
-        >
-          <Plus style={{ width: '28px', height: '28px', color: '#fff' }} />
-        </button>
-
         {/* Contact Form Modal */}
         <ContactFormModal
           isOpen={showContactModal}
           onClose={() => setShowContactModal(false)}
           propertyName={property?.name}
         />
+
+        {/* Share Modal */}
+        {showShareModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            onClick={() => setShowShareModal(false)}
+          >
+            <div
+              className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Share Property</h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-3">Share this property link:</p>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={typeof window !== 'undefined' ? window.location.href : ''}
+                  readOnly
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm"
+                  style={{ fontFamily: 'monospace' }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    setCopySuccess(true);
+                    setTimeout(() => setCopySuccess(false), 2000);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  {copySuccess ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+
+              {copySuccess && (
+                <p className="text-green-600 text-sm mt-2">Link copied to clipboard!</p>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </>
   );
@@ -1203,12 +1309,12 @@ function LocationSection({
   showDistance?: boolean;
 }) {
   return (
-    <div style={{ background: bgColor, padding: '4rem 0' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
-        <h2 style={{ fontSize: '3rem', fontWeight: 300, color: '#212529', marginBottom: '2rem' }}>
+    <div style={{ background: bgColor, padding: '2rem 0' }}>
+      <div className="similar-locations-container">
+        <h2 className="similar-locations-title">
           {title}
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+        <div className="similar-locations-grid">
           {properties.map((prop) => (
             <PropertyCard
               key={prop.id}

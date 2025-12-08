@@ -292,6 +292,8 @@ export default function AddPropertyPage() {
         if (data.needsReauth) {
           alert('⚠️ SmugMug authorization expired. Please reauthorize.');
           setSmugmugAuthorized(false);
+        } else if (data.skipped && response.status === 409) {
+          alert('⚠️ This SmugMug album has already been imported. Each album can only be imported once.');
         } else {
           console.error(`Import failed: ${data.error || 'Unknown error'}`);
         }
@@ -866,6 +868,8 @@ export default function AddPropertyPage() {
         if (data.needsReauth) {
           alert('⚠️ SmugMug authorization expired. Please reauthorize.');
           setSmugmugAuthorized(false);
+        } else if (data.skipped && response.status === 409) {
+          alert('⚠️ This SmugMug album has already been imported. Each album can only be imported once.');
         } else {
           alert(`Import failed: ${data.error || 'Unknown error'}\n\n${data.details || ''}`);
         }

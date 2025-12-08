@@ -42,6 +42,33 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
     }
   }, [propertyName]);
 
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Use a small delay to ensure the modal is fully closed before resetting
+      const timeoutId = setTimeout(() => {
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          company: '',
+          message: '',
+          phone: '',
+          crewSize: '',
+          locations: propertyName || '',
+          shootingDate: '',
+          projectType: '',
+          howDidYouHear: ''
+        });
+        setSelectedStart(null);
+        setSelectedEnd(null);
+        setShowPicker(false);
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isOpen, propertyName]);
+
   // Close modal on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

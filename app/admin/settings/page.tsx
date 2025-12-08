@@ -1,232 +1,250 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { Lock } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [emailNotifications, setEmailNotifications] = useState({
-    newBookings: true,
-    propertyApprovals: true,
-    userRegistrations: false,
-    inquiries: true,
-    systemUpdates: false,
+  const router = useRouter();
+  const [adminEmail, setAdminEmail] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
-  const [priceRanges, setPriceRanges] = useState({
-    minDailyRate: '100',
-    maxDailyRate: '5000',
-    defaultRate: '500',
-  });
+  useEffect(() => {
+    checkAdminAndFetchEmail();
+  }, []);
 
-  const [categories, setCategories] = useState([
-    'Modern Loft',
-    'Warehouse',
-    'Office Space',
-    'Event Venue',
-    'Historic Building',
-    'Outdoor Space',
-    'Studio',
-    'Industrial',
-    'Residential',
-    'Commercial',
-  ]);
+  async function checkAdminAndFetchEmail() {
+    const { data: { session } } = await supabase.auth.getSession();
 
-  const [newCategory, setNewCategory] = useState('');
-  const [editingCategory, setEditingCategory] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+    if (!session) {
+      router.push('/admin/login');
+      return;
+    }
 
-  const showSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(''), 3000);
+    const { data: admin } = await (supabase
+      .from('admins') as any)
+      .select('*')
+      .eq('email', session.user.email || '')
+      .maybeSingle();
+
+    if (!admin) {
+      router.push('/admin/login');
+      return;
+    }
+
+    setAdminEmail(session.user.email || '');
+    setLoading(false);
+  }
+
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: '', text: '' }), 5000);
   };
 
-  const handleToggle = (key: keyof typeof emailNotifications) => {
-    setEmailNotifications({ ...emailNotifications, [key]: !emailNotifications[key] });
-    showSuccess('Notification settings updated');
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordData({
+      ...passwordData,
+      [e.target.name]: e.target.value
+    });
   };
 
-  const handlePriceRangeChange = (key: keyof typeof priceRanges, value: string) => {
-    setPriceRanges({ ...priceRanges, [key]: value });
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const handleSavePriceRanges = () => {
-    showSuccess('Price ranges updated successfully');
-  };
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      showMessage('error', 'Please fill in all password fields');
+      return;
+    }
 
-  const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      setCategories([...categories, newCategory.trim()]);
-      setNewCategory('');
-      showSuccess('Category added successfully');
+    if (passwordData.newPassword.length < 6) {
+      showMessage('error', 'New password must be at least 6 characters long');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showMessage('error', 'New password and confirmation do not match');
+      return;
+    }
+
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      showMessage('error', 'New password must be different from current password');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      // Step 1: Verify current password by attempting to sign in
+      // This ensures the user knows their current password before changing it
+      console.log('Verifying current password...');
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: passwordData.currentPassword,
+      });
+
+      if (signInError || !authData.user) {
+        console.error('Current password verification failed:', signInError);
+        showMessage('error', 'Current password is incorrect');
+        setSaving(false);
+        return;
+      }
+
+      console.log('Current password verified successfully');
+
+      // Step 2: Update the password in Supabase Auth
+      // This updates the password used for admin panel login
+      console.log('Updating password...');
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (updateError) {
+        console.error('Password update failed:', updateError);
+        showMessage('error', 'Failed to update password: ' + updateError.message);
+        setSaving(false);
+        return;
+      }
+
+      console.log('Password updated successfully');
+      showMessage('success', 'Password updated successfully! You can now use your new password to login.');
+
+      // Clear the form
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+
+    } catch (error: any) {
+      console.error('Error during password change:', error);
+      showMessage('error', 'An error occurred: ' + error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleEditCategory = (index: number) => {
-    setEditingCategory(index);
-    setEditValue(categories[index]);
-  };
-
-  const handleSaveEdit = () => {
-    if (editingCategory !== null && editValue.trim()) {
-      const updated = [...categories];
-      updated[editingCategory] = editValue.trim();
-      setCategories(updated);
-      setEditingCategory(null);
-      setEditValue('');
-      showSuccess('Category updated successfully');
-    }
-  };
-
-  const handleDeleteCategory = (index: number) => {
-    if (confirm('Are you sure you want to delete this category?')) {
-      setCategories(categories.filter((_, i) => i !== index));
-      showSuccess('Category deleted successfully');
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-          {successMessage}
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+        <p className="text-gray-600 mt-1">Manage your account settings</p>
+      </div>
+
+      {message.text && (
+        <div
+          className={`px-4 py-3 rounded-lg border ${
+            message.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}
+        >
+          {message.text}
         </div>
       )}
 
+      {/* Account Information */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Email Notifications</h3>
-        <div className="space-y-4">
-          {Object.entries(emailNotifications).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
-              <div>
-                <h4 className="font-medium text-gray-900">
-                  {key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
-                </h4>
-                <p className="text-sm text-gray-500">
-                  Receive notifications for {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
-                </p>
-              </div>
-              <button
-                onClick={() => handleToggle(key as keyof typeof emailNotifications)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  value ? 'bg-red-600' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    value ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          ))}
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Account Information</h3>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={adminEmail}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+          </div>
         </div>
       </div>
 
+      {/* Change Password */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Default Price Ranges</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Minimum Daily Rate ($)
-            </label>
-            <input
-              type="number"
-              value={priceRanges.minDailyRate}
-              onChange={(e) => handlePriceRangeChange('minDailyRate', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Maximum Daily Rate ($)
-            </label>
-            <input
-              type="number"
-              value={priceRanges.maxDailyRate}
-              onChange={(e) => handlePriceRangeChange('maxDailyRate', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Default Rate ($)
-            </label>
-            <input
-              type="number"
-              value={priceRanges.defaultRate}
-              onChange={(e) => handlePriceRangeChange('defaultRate', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-            />
-          </div>
-          <button
-            onClick={handleSavePriceRanges}
-            className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
-          >
-            Save Price Ranges
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Property Categories</h3>
-
-        <div className="flex gap-2 mb-6">
-          <input
-            type="text"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-            placeholder="Add new category..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-          />
-          <button
-            onClick={handleAddCategory}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
-          >
-            <Plus size={20} />
-            <span>Add</span>
-          </button>
+        <div className="flex items-center gap-2 mb-6">
+          <Lock className="w-5 h-5 text-gray-700" />
+          <h3 className="text-xl font-bold text-gray-900">Change Password</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {categories.map((category, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Current Password *
+            </label>
+            <input
+              type="password"
+              name="currentPassword"
+              value={passwordData.currentPassword}
+              onChange={handlePasswordChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              placeholder="Enter current password"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              New Password *
+            </label>
+            <input
+              type="password"
+              name="newPassword"
+              value={passwordData.newPassword}
+              onChange={handlePasswordChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              placeholder="Enter new password (min. 6 characters)"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Confirm New Password *
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={passwordData.confirmPassword}
+              onChange={handlePasswordChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              placeholder="Re-enter new password"
+              required
+            />
+          </div>
+
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
             >
-              {editingCategory === index ? (
-                <input
-                  type="text"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                  onBlur={handleSaveEdit}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                  autoFocus
-                />
-              ) : (
-                <>
-                  <span className="font-medium text-gray-900">{category}</span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditCategory(index)}
-                      className="p-1 text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(index)}
-                      className="p-1 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
+              {saving ? 'Updating Password...' : 'Update Password'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

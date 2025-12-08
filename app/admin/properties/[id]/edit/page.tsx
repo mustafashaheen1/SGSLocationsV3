@@ -98,6 +98,7 @@ export default function EditPropertyPage() {
     category_id: '',
     is_featured: false,
     is_exclusive: false,
+    albumkey: '',
   });
 
   const [contacts, setContacts] = useState<Contact[]>([
@@ -117,6 +118,8 @@ export default function EditPropertyPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts'>(
     tabParam && ['details', 'images', 'calendar', 'contacts'].includes(tabParam) ? tabParam : 'details'
   );
+
+  const [isAdminProperty, setIsAdminProperty] = useState<boolean>(true); // Track if property is admin-owned (no owner_id)
 
   useEffect(() => {
     const initializePage = async () => {
@@ -221,6 +224,11 @@ export default function EditPropertyPage() {
 
       // Set form data
       const prop = property as any;
+
+      // Check if this is an admin property (no owner_id) or user property
+      const isAdminOwned = !prop.owner_id;
+      setIsAdminProperty(isAdminOwned);
+
       setFormData({
         name: prop.name || '',
         real_name: prop.real_name || prop.name || '', // Fallback to name if real_name doesn't exist yet
@@ -234,6 +242,7 @@ export default function EditPropertyPage() {
         category_id: '', // Will be set by useEffect after categories load
         is_featured: prop.is_featured || false,
         is_exclusive: prop.is_exclusive || false,
+        albumkey: prop.albumkey || '',
       });
 
       setPropertyTags(prop.property_tags || []);
@@ -750,6 +759,11 @@ export default function EditPropertyPage() {
         updated_at: new Date().toISOString()
       };
 
+      // Only save albumkey for admin-owned properties
+      if (isAdminProperty) {
+        propertyData.albumkey = formData.albumkey || null;
+      }
+
       console.log('Updating property data:', propertyData);
 
       // Update property
@@ -965,6 +979,24 @@ export default function EditPropertyPage() {
                     placeholder="Generated automatically from real name"
                   />
                 </div>
+
+                {/* Only show albumkey field for admin-owned properties */}
+                {isAdminProperty && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium mb-2">
+                      SmugMug Album Key
+                      {formData.albumkey && <span className="text-gray-500 text-xs ml-2">(Read-only - Already set)</span>}
+                    </label>
+                    <Input
+                      name="albumkey"
+                      value={formData.albumkey}
+                      onChange={handleInputChange}
+                      placeholder={formData.albumkey ? "" : "Enter SmugMug album key if available"}
+                      disabled={!!formData.albumkey}
+                      className={formData.albumkey ? "bg-gray-100 cursor-not-allowed" : ""}
+                    />
+                  </div>
+                )}
 
                 <div className="col-span-2">
                   <label className="block text-sm font-medium mb-2">Description</label>

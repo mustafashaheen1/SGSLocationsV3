@@ -230,10 +230,37 @@ export async function GET(request: NextRequest) {
 
     console.log(`✓ Retrieved metadata for ${validAlbums.length} albums with images`);
 
+    // Filter out albums that already exist in the database
+    console.log('🔍 Checking for existing albumkeys in database...');
+
+    const albumKeys = validAlbums.map(a => a.albumKey);
+    const { data: existingProperties, error: dbError } = await supabase
+      .from('properties')
+      .select('albumkey')
+      .in('albumkey', albumKeys)
+      .not('albumkey', 'is', null);
+
+    if (dbError) {
+      console.error('Error checking existing albumkeys:', dbError);
+    }
+
+    const existingAlbumKeys = new Set(
+      (existingProperties || []).map((p: any) => p.albumkey)
+    );
+
+    const newAlbums = validAlbums.filter(
+      album => !existingAlbumKeys.has(album.albumKey)
+    );
+
+    console.log(`✓ Found ${existingAlbumKeys.size} albums already in database`);
+    console.log(`✓ Returning ${newAlbums.length} new albums for import`);
+
     return NextResponse.json({
       success: true,
-      albums: validAlbums,
-      total: validAlbums.length
+      albums: newAlbums,
+      total: newAlbums.length,
+      totalFromSmugmug: validAlbums.length,
+      alreadyImported: existingAlbumKeys.size
     });
 
   } catch (error: any) {

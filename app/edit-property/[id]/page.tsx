@@ -96,6 +96,19 @@ export default function EditPropertyPage() {
         return;
       }
 
+      // Check user type - only property owners can edit properties
+      const { data: userData } = await supabase
+        .from('users')
+        .select('user_type')
+        .eq('id', user.id)
+        .single();
+
+      if ((userData as any)?.user_type !== 'property_owner') {
+        alert('Only property owners can manage properties');
+        router.push('/dashboard');
+        return;
+      }
+
       // Fetch property data
       const { data: propertyData, error: propertyError } = await supabase
         .from('properties')

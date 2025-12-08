@@ -15,6 +15,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/scrollbar';
 import 'swiper/css/free-mode';
+import LoginModal from '@/components/LoginModal';
 
 
 interface FilterCategory {
@@ -253,6 +254,7 @@ export default function SearchPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 8;
 
@@ -521,9 +523,9 @@ export default function SearchPage() {
 
       // If we have tag filters, search property_images table
       if (selectedTags.length > 0) {
-        // Find properties that have images matching ALL selected tags (AND logic)
-        // For each tag, get the set of properties that have it
-        const propertyIdSets: Set<string>[] = [];
+        // Find properties that have images matching ANY selected tags (OR logic)
+        // Collect all property IDs that have any of the selected tags
+        const allPropertyIds = new Set<string>();
 
         for (const tag of selectedTags) {
           const { data: tagImages, error: tagError } = await (supabase
@@ -533,24 +535,14 @@ export default function SearchPage() {
 
           if (tagError) throw tagError;
 
-          const propertyIdsForTag = new Set((tagImages as any[] || []).map((img: any) => img.property_id));
-          propertyIdSets.push(propertyIdsForTag);
+          // Add all property IDs that have this tag to our set
+          (tagImages as any[] || []).forEach((img: any) => {
+            allPropertyIds.add(img.property_id);
+          });
         }
 
-        // Find intersection of all sets - properties that have ALL tags
-        let propertyIds: string[] = [];
-        if (propertyIdSets.length > 0) {
-          // Start with the first set
-          let intersection = Array.from(propertyIdSets[0]);
-
-          // Intersect with all other sets
-          for (let i = 1; i < propertyIdSets.length; i++) {
-            const currentSet = propertyIdSets[i];
-            intersection = intersection.filter(id => currentSet.has(id));
-          }
-
-          propertyIds = intersection;
-        }
+        // Convert set to array - properties that have ANY of the selected tags
+        const propertyIds: string[] = Array.from(allPropertyIds);
 
         // Now get the matching images for display
         const { data: propertyImages } = await (supabase
@@ -567,7 +559,7 @@ export default function SearchPage() {
           matchingImagesByProperty.get(img.property_id)!.push(img.image_url);
         });
 
-        console.log('Found properties with ALL matching tags:', propertyIds.length);
+        console.log('Found properties with ANY matching tags:', propertyIds.length);
 
         if (propertyIds.length === 0) {
           setHasMore(false);
@@ -816,7 +808,7 @@ export default function SearchPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        setSaveMessage('Please log in to save searches');
+        setSaveMessage('Please Login or Register to save searches');
         setIsSaving(false);
         return;
       }
@@ -934,10 +926,18 @@ export default function SearchPage() {
         .filter-row {
           display: flex;
           align-items: center;
-          gap: 15px;
+          gap: 8px;
           flex-wrap: wrap;
           max-width: 1200px;
           margin: 0 auto;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        @media (min-width: 768px) {
+          .filter-row {
+            gap: 15px;
+          }
         }
 
         .filter-dropdown {
@@ -1152,10 +1152,16 @@ export default function SearchPage() {
 
         .main-search-input {
           flex: 1;
-          padding: 12px 40px 12px 45px;
+          padding: 12px 15px 12px 35px;
           border: 1px solid #ced4da;
           border-radius: 3px;
           font-size: 16px;
+        }
+
+        @media (min-width: 768px) {
+          .main-search-input {
+            padding: 12px 40px 12px 45px;
+          }
         }
 
         .main-search-icon {
@@ -1170,7 +1176,7 @@ export default function SearchPage() {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 12px 20px;
+          padding: 12px;
           background: #e11921;
           color: white;
           border: none;
@@ -1181,6 +1187,20 @@ export default function SearchPage() {
           cursor: pointer;
           transition: background 0.2s;
           white-space: nowrap;
+        }
+
+        .save-search-btn span {
+          display: none;
+        }
+
+        @media (min-width: 640px) {
+          .save-search-btn {
+            padding: 12px 20px;
+          }
+
+          .save-search-btn span {
+            display: inline;
+          }
         }
 
         .save-search-btn:hover {
@@ -1508,11 +1528,23 @@ export default function SearchPage() {
 
         .property-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          grid-template-columns: 1fr;
           gap: 20px;
           padding: 20px;
           max-width: 1425px;
           margin: 0 auto;
+        }
+
+        @media (min-width: 640px) {
+          .property-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .property-grid {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          }
         }
 
         .loading-spinner {
@@ -1750,9 +1782,51 @@ export default function SearchPage() {
                   autoFocus
                 />
                 {saveMessage && (
-                  <p className={`save-message ${saveMessage.includes('success') ? 'success' : 'error'}`}>
-                    {saveMessage}
-                  </p>
+                  <div>
+                    <p className={`save-message ${saveMessage.includes('success') ? 'success' : 'error'}`}>
+                      {saveMessage}
+                    </p>
+                    {saveMessage.includes('Login or Register') && (
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => {
+                            setShowSaveModal(false);
+                            setIsLoginModalOpen(true);
+                          }}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: '#e11921',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: 500
+                          }}
+                        >
+                          Login
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowSaveModal(false);
+                            router.push('/register');
+                          }}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: 'white',
+                            color: '#e11921',
+                            border: '2px solid #e11921',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: 500
+                          }}
+                        >
+                          Register
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="save-modal-footer">
@@ -1766,6 +1840,8 @@ export default function SearchPage() {
             </div>
           </div>
         )}
+
+        <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
       </div>
     </>
   );

@@ -195,7 +195,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen animate-fadeIn">
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
         <video
           autoPlay
           loop
@@ -208,7 +208,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
-          <h1 className="text-6xl md:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
             {heroTitle.split('\n').map((line, i) => (
               <span key={i}>
                 {line}
@@ -216,7 +216,7 @@ export default function HomePage() {
               </span>
             ))}
           </h1>
-          <p className="text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
+          <p className="text-xl sm:text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
             {heroSubtitle}
           </p>
 
@@ -263,7 +263,7 @@ export default function HomePage() {
       <section className="py-24 bg-white">
         <div className="mx-auto px-4" style={{maxWidth: '1345px'}}>
           <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100, color: '#212529'}}>Featured Locations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {featuredProperties.map((property) => (
               <Link
                 key={property.id}

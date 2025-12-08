@@ -673,12 +673,66 @@ export default function ContactPage() {
         .il-profile-info-overlay a:hover {
           text-decoration: underline;
         }
+
+        /* Mobile responsive fixes */
+        /* Calendar picker responsive */
+        @media (max-width: 767px) {
+          .litepicker {
+            width: calc(100vw - 32px) !important;
+            left: 0 !important;
+            right: 0 !important;
+            max-width: 320px;
+          }
+
+          .container__months.columns-2 {
+            display: flex;
+            flex-direction: column !important;
+          }
+
+          .container__months.columns-2 .month-item {
+            width: 100% !important;
+          }
+
+          .container__months.columns-2 .month-item:first-child {
+            margin-bottom: 1rem;
+          }
+        }
+
+        /* ReCAPTCHA responsive scaling */
+        @media (max-width: 480px) {
+          .g-recaptcha {
+            transform: scale(0.85) !important;
+            transform-origin: 0 0 !important;
+          }
+
+          .g-recaptcha > div {
+            width: 100% !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .g-recaptcha {
+            transform: scale(0.75) !important;
+          }
+        }
+
+        /* Form container padding on mobile */
+        @media (max-width: 767px) {
+          .contact-form {
+            padding-top: 30px !important;
+          }
+
+          .container.mx-auto {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+        }
       `}</style>
 
       <div className="contact-form bg-white" style={{ paddingTop: '60px', minHeight: '100vh' }}>
         <div className="container mx-auto px-4 max-w-6xl">
           <h1 className="text-4xl pt-4 pb-8" style={{ fontWeight: 300, color: '#212529', margin: 0 }}>
-            Book A Location
+            General Inquiry
           </h1>
 
           <form onSubmit={handleSubmit}>

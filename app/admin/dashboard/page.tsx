@@ -14,7 +14,6 @@ export default function AdminDashboard() {
     totalViews: 0,
     totalDownloads: 0,
   });
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,15 +61,6 @@ export default function AdminDashboard() {
         totalViews: totalViews,
         totalDownloads: downloadsCount || 0,
       });
-
-      // Fetch recent properties - NO USER JOIN
-      const { data: recentProps } = await supabase
-        .from('properties')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(2);
-
-      setRecentActivity(recentProps || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -115,39 +105,6 @@ export default function AdminDashboard() {
             </div>
           );
         })}
-      </div>
-
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900">Recent Properties</h3>
-        </div>
-        <div className="divide-y divide-gray-200">
-          {recentActivity.length > 0 ? (
-            recentActivity.map((item) => (
-              <div key={item.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-900 font-medium">{item.name}</p>
-                    <p className="text-gray-600 text-sm mt-1">
-                      {item.city}, Texas • {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    item.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {item.status}
-                  </span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="p-6 text-center text-gray-500">
-              No recent properties found
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

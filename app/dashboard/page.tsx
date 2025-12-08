@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Edit, Trash2, Search, Bookmark } from 'lucide-react';
+import { Eye, Edit, Trash2, Search, Bookmark, Calendar } from 'lucide-react';
 import { getGuestListing, clearGuestListing } from '@/lib/guest-listing';
+import MasterCalendar from '@/components/MasterCalendar';
 
 export default function ProductionDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [userType, setUserType] = useState<'production' | 'property_owner'>('production');
   const [userData, setUserData] = useState({
     fullName: '',
     email: '',
@@ -24,12 +26,15 @@ export default function ProductionDashboard() {
     confirmPassword: ''
   });
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [activeTab, setActiveTab] = useState('my-locations');
+  const [activeTab, setActiveTab] = useState('searches'); // Default to searches for all users
   const [userProperties, setUserProperties] = useState<any[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
   const [processingPendingSubmission, setProcessingPendingSubmission] = useState(false);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<string>('');
+  const [deletingItemType, setDeletingItemType] = useState<'search' | 'property' | null>(null);
 
   useEffect(() => {
     fetchUserData();
@@ -52,7 +57,7 @@ export default function ProductionDashboard() {
 
       const { data: userDetails, error: userError } = await supabase
         .from('users')
-        .select('full_name, email, company_name, phone')
+        .select('full_name, email, company_name, phone, user_type')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -62,6 +67,7 @@ export default function ProductionDashboard() {
 
       if (userDetails) {
         console.log('User details loaded:', userDetails);
+        setUserType((userDetails as any).user_type || 'production');
         setUserData({
           fullName: (userDetails as any).full_name || '',
           email: (userDetails as any).email || user.email || '',
@@ -70,6 +76,7 @@ export default function ProductionDashboard() {
         });
       } else {
         console.log('No user details found in database, using auth metadata');
+        setUserType('production');
         setUserData({
           fullName: user.user_metadata?.full_name || '',
           email: user.email || '',
@@ -227,7 +234,15 @@ export default function ProductionDashboard() {
       return;
     }
 
+    setDeletingItemId(searchId);
+    setDeletingItemType('search');
+    setDeleteProgress('Starting deletion...');
+
+    // Give React time to render the modal
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
+      setDeleteProgress('🗑️ Deleting saved search from database...');
       const { error } = await supabase
         .from('saved_searches')
         .delete()
@@ -235,11 +250,20 @@ export default function ProductionDashboard() {
 
       if (error) throw error;
 
+      setDeleteProgress('✓ Saved search deleted successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       setMessage({ type: 'success', text: 'Search deleted successfully!' });
-      fetchSavedSearches();
+      await fetchSavedSearches();
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error: any) {
       setMessage({ type: 'error', text: 'Failed to delete search: ' + error.message });
+    } finally {
+      setDeletingItemId(null);
+      setDeletingItemType(null);
+      setDeleteProgress('');
     }
   }
 
@@ -265,7 +289,15 @@ export default function ProductionDashboard() {
       return;
     }
 
+    setDeletingItemId(propertyId);
+    setDeletingItemType('property');
+    setDeleteProgress('Starting deletion...');
+
+    // Give React time to render the modal
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
+      setDeleteProgress('🗑️ Deleting property from database...');
       const { error } = await supabase
         .from('properties')
         .delete()
@@ -273,11 +305,20 @@ export default function ProductionDashboard() {
 
       if (error) throw error;
 
+      setDeleteProgress('✓ Property deleted successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       setMessage({ type: 'success', text: 'Property deleted successfully!' });
-      fetchUserProperties();
+      await fetchUserProperties();
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error: any) {
       setMessage({ type: 'error', text: 'Failed to delete property: ' + error.message });
+    } finally {
+      setDeletingItemId(null);
+      setDeletingItemType(null);
+      setDeleteProgress('');
     }
   }
 
@@ -375,7 +416,7 @@ export default function ProductionDashboard() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'acumin-pro-wide' }}>
-              Production Dashboard
+              {userType === 'property_owner' ? 'Property Owner Dashboard' : 'Producer Dashboard'}
             </h1>
             <p className="text-gray-600 mt-1">Welcome back, {userData.fullName || 'User'}</p>
           </div>
@@ -394,16 +435,19 @@ export default function ProductionDashboard() {
         <div className="bg-white rounded-lg shadow">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('my-locations')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'my-locations'
-                    ? 'border-[#e11921] text-[#e11921]'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                My Locations
-              </button>
+              {/* Only show My Locations tab for property owners */}
+              {userType === 'property_owner' && (
+                <button
+                  onClick={() => setActiveTab('my-locations')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'my-locations'
+                      ? 'border-[#e11921] text-[#e11921]'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  My Locations
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('searches')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -443,6 +487,17 @@ export default function ProductionDashboard() {
                 message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
               }`}>
                 {message.text}
+              </div>
+            )}
+
+            {/* Master Calendar for Property Owners */}
+            {activeTab === 'my-locations' && userType === 'property_owner' && (
+              <div className="mb-8 bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Master Calendar</h3>
+                <p className="text-sm text-gray-600 mb-4">View all events across all your properties</p>
+                <div className="bg-white rounded-lg shadow">
+                  <MasterCalendar />
+                </div>
               </div>
             )}
 
@@ -561,7 +616,7 @@ export default function ProductionDashboard() {
               </div>
             )}
 
-            {activeTab === 'my-locations' && (
+            {activeTab === 'my-locations' && userType === 'property_owner' && (
               <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">My Locations</h2>
@@ -652,6 +707,13 @@ export default function ProductionDashboard() {
                                     <Eye className="w-4 h-4" />
                                   </button>
                                 )}
+                                <button
+                                  onClick={() => router.push(`/property/${property.id}/calendar`)}
+                                  className="text-purple-600 hover:text-purple-900 p-1"
+                                  title="View Calendar"
+                                >
+                                  <Calendar className="w-4 h-4" />
+                                </button>
                                 <button
                                   onClick={() => router.push(`/edit-property/${property.id}`)}
                                   className="text-gray-600 hover:text-gray-900 p-1"
@@ -788,6 +850,32 @@ export default function ProductionDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Deletion Progress Modal */}
+      {deletingItemId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                {deletingItemType === 'search' ? 'Deleting Saved Search' : 'Deleting Property'}
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                {deletingItemType === 'search'
+                  ? 'Please wait while we delete the saved search...'
+                  : 'Please wait while we delete the property...'}
+              </p>
+              {deleteProgress && (
+                <div className="bg-gray-50 rounded p-3 text-sm font-mono text-left">
+                  {deleteProgress}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

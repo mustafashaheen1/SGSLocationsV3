@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Download, Trash2, FileText, Building } from 'lucide-react';
+import { Search, Download, Trash2, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { deleteDocumentFromS3 } from '@/lib/s3-upload';
 import Link from 'next/link';
 
 interface Document {
   id: string;
-  production_company_id: string;
+  property_id: string;
   title: string;
   description: string | null;
   file_url: string;
@@ -18,9 +18,11 @@ interface Document {
   document_type: string;
   uploaded_by: string | null;
   created_at: string;
-  production_companies: {
+  properties: {
     id: string;
     name: string;
+    city: string;
+    county: string;
   };
 }
 
@@ -29,6 +31,8 @@ export default function DocumentDirectoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<string>('');
 
   useEffect(() => {
     fetchDocuments();
@@ -41,9 +45,11 @@ export default function DocumentDirectoryPage() {
         .from('documents')
         .select(`
           *,
-          production_companies!inner(
+          properties!inner(
             id,
-            name
+            name,
+            city,
+            county
           )
         `)
         .order('created_at', { ascending: false });
@@ -75,13 +81,21 @@ export default function DocumentDirectoryPage() {
       return;
     }
 
+    setDeletingDocId(doc.id);
+    setDeleteProgress('Starting deletion...');
+
+    // Give React time to render the modal
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       // Delete from S3 first
+      setDeleteProgress('🗑️ Deleting file from S3 storage...');
       console.log('Deleting from S3:', doc.file_url);
       await deleteDocumentFromS3(doc.file_url);
       console.log('✓ File deleted from S3 successfully');
 
       // Delete from database
+      setDeleteProgress('🗄️ Removing from database...');
       const { error } = await supabase
         .from('documents')
         .delete()
@@ -93,11 +107,19 @@ export default function DocumentDirectoryPage() {
       }
 
       console.log('✓ Document deleted from database successfully');
+      setDeleteProgress('✓ Document deleted successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       showSuccess('Document deleted successfully from storage and database');
-      fetchDocuments();
+      await fetchDocuments();
     } catch (error: any) {
       console.error('Delete error:', error);
       alert('Error deleting document: ' + error.message);
+    } finally {
+      setDeletingDocId(null);
+      setDeleteProgress('');
     }
   };
 
@@ -109,7 +131,8 @@ export default function DocumentDirectoryPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       doc.title.toLowerCase().includes(searchLower) ||
-      doc.production_companies.name.toLowerCase().includes(searchLower) ||
+      doc.properties.name.toLowerCase().includes(searchLower) ||
+      doc.properties.city.toLowerCase().includes(searchLower) ||
       doc.file_name.toLowerCase().includes(searchLower)
     );
   });
@@ -135,7 +158,7 @@ export default function DocumentDirectoryPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search by document title, company name, or file name..."
+              placeholder="Search by document title, property name, or file name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
@@ -166,7 +189,7 @@ export default function DocumentDirectoryPage() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Title</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Production Company</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Property</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">File Name</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Size</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Uploaded</th>
@@ -184,11 +207,11 @@ export default function DocumentDirectoryPage() {
                         </td>
                         <td className="py-4 px-4">
                           <Link
-                            href={`/admin/production-companies/${doc.production_company_id}`}
-                            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                            href={`/property/${doc.property_id}`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
-                            <Building size={16} />
-                            {doc.production_companies.name}
+                            <div className="font-medium">{doc.properties.name}</div>
+                            <div className="text-xs text-gray-500">{doc.properties.city}, {doc.properties.county}</div>
                           </Link>
                         </td>
                         <td className="py-4 px-4 text-sm text-gray-600">{doc.file_name}</td>
@@ -228,6 +251,28 @@ export default function DocumentDirectoryPage() {
           </>
         )}
       </div>
+
+      {/* Deletion Progress Modal */}
+      {deletingDocId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Deleting Document</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please wait while we delete the document from storage and database...
+              </p>
+              {deleteProgress && (
+                <div className="bg-gray-50 rounded p-3 text-sm font-mono text-left">
+                  {deleteProgress}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

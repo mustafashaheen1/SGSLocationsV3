@@ -20,6 +20,7 @@ export default function RegisterPage() {
     email: preFilledEmail,
     password: '',
     confirmPassword: '',
+    userType: 'production', // Default to production
   });
 
   // Update email if it comes from URL params
@@ -38,7 +39,7 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     // Don't allow email change if it's locked
     if (e.target.name === 'email' && isEmailLocked) {
       return;
@@ -123,7 +124,7 @@ export default function RegisterPage() {
           id: authData.user.id,
           email: formData.email,
           full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-          user_type: 'production',
+          user_type: formData.userType,
         });
 
       if (profileError) throw profileError;
@@ -144,7 +145,8 @@ export default function RegisterPage() {
       <style jsx global>{`
         .register-page input[type="text"],
         .register-page input[type="email"],
-        .register-page input[type="password"] {
+        .register-page input[type="password"],
+        .register-page select {
           border-radius: 0 !important;
           padding: 0.5rem 0.75rem;
           border: 1px solid #d1d5db;
@@ -152,7 +154,8 @@ export default function RegisterPage() {
 
         .register-page input[type="text"]:focus,
         .register-page input[type="email"]:focus,
-        .register-page input[type="password"]:focus {
+        .register-page input[type="password"]:focus,
+        .register-page select:focus {
           border-color: #f2888c !important;
           box-shadow: 0 0 0 0 rgba(225, 25, 33, 0.25) !important;
           outline: none !important;
@@ -263,6 +266,23 @@ export default function RegisterPage() {
                 {errors.email && (
                   <p className="text-red-600 text-sm mt-1">{errors.email}</p>
                 )}
+              </div>
+
+              <div className="mt-4">
+                <label htmlFor="userType" className="block text-sm font-medium text-gray-700 mb-1">
+                  I am a
+                </label>
+                <select
+                  id="userType"
+                  name="userType"
+                  value={formData.userType}
+                  onChange={handleChange}
+                  required
+                  className="w-full"
+                >
+                  <option value="production">Producer</option>
+                  <option value="property_owner">Property Owner</option>
+                </select>
               </div>
 
               <div className="mt-4">

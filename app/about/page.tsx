@@ -54,8 +54,61 @@ export default function AboutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
-      <div className="container pt-4">
+    <>
+      <style jsx global>{`
+        /* Mobile responsive improvements for About page */
+        .container {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+
+        @media (min-width: 768px) {
+          .container {
+            padding-left: 15px;
+            padding-right: 15px;
+          }
+        }
+
+        /* Responsive typography */
+        @media (max-width: 767px) {
+          .text-4xl {
+            font-size: 1.875rem !important;
+          }
+
+          .text-3xl {
+            font-size: 1.5rem !important;
+          }
+
+          .text-2xl {
+            font-size: 1.25rem !important;
+          }
+
+          .text-xl {
+            font-size: 1.125rem !important;
+          }
+        }
+
+        /* Mobile section padding */
+        @media (max-width: 767px) {
+          .row {
+            margin-left: 0;
+            margin-right: 0;
+          }
+
+          .px-md-5 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+
+          .py-5 {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+          }
+        }
+      `}</style>
+
+      <main className="min-h-screen bg-white">
+        <div className="container pt-4">
 
         {/* SECTION 1: Image Left, Content Right */}
         <section className="row">
@@ -312,7 +365,8 @@ export default function AboutPage() {
           </div>
         </section>
 
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }

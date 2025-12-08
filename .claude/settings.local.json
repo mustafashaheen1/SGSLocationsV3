@@ -16,7 +16,8 @@
       "Bash(npm install:*)",
       "Bash(npx supabase:*)",
       "Bash(timeout 180 npm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

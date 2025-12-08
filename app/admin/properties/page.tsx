@@ -147,6 +147,9 @@ export default function AdminPropertiesPage() {
     setDeletingPropertyId(id);
     setDeleteProgress('Starting deletion...');
 
+    // Give React time to render the modal before starting async operations
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       // Fetch property to get image URLs
       setDeleteProgress('📥 Fetching property data...');
@@ -320,7 +323,11 @@ export default function AdminPropertiesPage() {
               filteredProperties.map((property) => (
                 <tr key={property.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <div className="w-16 h-16 relative rounded overflow-hidden bg-gray-200">
+                    <div
+                      className="w-16 h-16 relative rounded overflow-hidden bg-gray-200 cursor-pointer hover:opacity-75 transition-opacity"
+                      onClick={() => window.open(`/property/${property.id}`, '_blank')}
+                      title="View property details"
+                    >
                       <img
                         src={property.primary_image || property.images?.[0] || '/placeholder.jpg'}
                         alt={property.name}
@@ -333,7 +340,13 @@ export default function AdminPropertiesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{property.name}</div>
+                    <div
+                      className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => window.open(`/property/${property.id}`, '_blank')}
+                      title="View property details"
+                    >
+                      {property.name}
+                    </div>
                     <div className="text-sm text-gray-500">{property.images?.length || 0} images</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">

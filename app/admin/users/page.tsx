@@ -20,6 +20,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<string>('');
 
   useEffect(() => {
     fetchUsers();
@@ -81,9 +83,15 @@ export default function UsersPage() {
       return;
     }
 
-    setActionLoading(true);
+    setDeletingUserId(id);
+    setDeleteProgress('Starting deletion...');
+
+    // Give React time to render the modal
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       // Delete from users table
+      setDeleteProgress('🗑️ Deleting user from database...');
       const { error } = await supabase
         .from('users')
         .delete()
@@ -93,13 +101,19 @@ export default function UsersPage() {
 
       // Also delete from auth.users (this should cascade due to foreign key)
       // Note: Direct deletion from auth.users may require admin privileges
+      setDeleteProgress('✓ User deleted successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       showSuccess('User deleted successfully');
       await fetchUsers();
     } catch (error: any) {
       console.error('Error deleting user:', error);
       alert(`Failed to delete user: ${error.message}`);
     } finally {
-      setActionLoading(false);
+      setDeletingUserId(null);
+      setDeleteProgress('');
     }
   };
 
@@ -213,7 +227,7 @@ export default function UsersPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(user.id, user.email)}
-                          disabled={actionLoading}
+                          disabled={actionLoading || deletingUserId === user.id}
                           className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50"
                           title="Delete User"
                         >
@@ -236,6 +250,28 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Deletion Progress Modal */}
+      {deletingUserId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Deleting User</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please wait while we delete the user account...
+              </p>
+              {deleteProgress && (
+                <div className="bg-gray-50 rounded p-3 text-sm font-mono text-left">
+                  {deleteProgress}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

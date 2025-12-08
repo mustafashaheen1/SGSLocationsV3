@@ -32,15 +32,17 @@ interface PropertyCalendarProps {
 }
 
 const EVENT_COLORS = {
-  production: '#e11921',      // Red - Production shoots
-  director_scout: '#3b82f6',  // Blue - Director/Scout
-  blocked: '#6b7280',         // Gray - Blocked dates
+  hold_days: '#f59e0b',       // Amber - Hold Days
+  blackout_days: '#1f2937',   // Dark Gray - Blackout Days
+  director_scout: '#3b82f6',  // Blue - Director Scout
+  tech_scout: '#10b981',      // Green - Tech Scout
 };
 
 const EVENT_TYPE_LABELS = {
-  production: 'Production',
-  director_scout: 'Director/Scout',
-  blocked: 'Blocked',
+  hold_days: 'Hold Days',
+  blackout_days: 'Blackout Days',
+  director_scout: 'Director Scout',
+  tech_scout: 'Tech Scout',
 };
 
 export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) {
@@ -50,7 +52,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    event_type: 'production' as CalendarEventType,
+    event_type: 'hold_days' as CalendarEventType,
     title: '',
     description: '',
     start_date: '',
@@ -107,7 +109,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
     endDate.setHours(23, 59, 59, 999);
 
     setFormData({
-      event_type: 'production',
+      event_type: 'hold_days',
       title: '',
       description: '',
       start_date: startDate.toISOString(),
@@ -268,7 +270,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
 
   const resetForm = () => {
     setFormData({
-      event_type: 'production',
+      event_type: 'hold_days',
       title: '',
       description: '',
       start_date: '',
@@ -304,16 +306,20 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
       {/* Legend */}
       <div className="flex gap-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.production }}></div>
-          <span className="text-sm font-medium">Production</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.hold_days }}></div>
+          <span className="text-sm font-medium">Hold Days</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.blackout_days }}></div>
+          <span className="text-sm font-medium">Blackout Days</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.director_scout }}></div>
-          <span className="text-sm font-medium">Director/Scout</span>
+          <span className="text-sm font-medium">Director Scout</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.blocked }}></div>
-          <span className="text-sm font-medium">Blocked</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: EVENT_COLORS.tech_scout }}></div>
+          <span className="text-sm font-medium">Tech Scout</span>
         </div>
       </div>
 
@@ -376,9 +382,10 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   onChange={(e) => setFormData({ ...formData, event_type: e.target.value as CalendarEventType })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
                 >
-                  <option value="production">Production</option>
-                  <option value="director_scout">Director/Scout</option>
-                  <option value="blocked">Blocked</option>
+                  <option value="hold_days">Hold Days</option>
+                  <option value="blackout_days">Blackout Days</option>
+                  <option value="director_scout">Director Scout</option>
+                  <option value="tech_scout">Tech Scout</option>
                 </select>
               </div>
 

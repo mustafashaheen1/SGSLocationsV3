@@ -151,14 +151,7 @@ export default function AdminLayout({
     { href: '/admin/search-filters', label: 'Search Filters', icon: Filter },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/inquiries', label: 'Inquiries', icon: Mail },
-    {
-      label: 'Documents',
-      icon: FolderOpen,
-      subItems: [
-        { href: '/admin/production-companies', label: 'Production Companies' },
-        { href: '/admin/documents', label: 'Document Directory' },
-      ]
-    },
+    { href: '/admin/documents', label: 'Documents', icon: FolderOpen },
     { href: '/admin/content', label: 'Content', icon: FileText },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];

@@ -50,8 +50,6 @@ export default function LocationLibraryPage() {
     { id: 'exclusives', label: 'Exclusives' },
     { id: 'new', label: 'New' },
     { id: 'most-viewed', label: 'Most Viewed' },
-    { id: 'top-categories', label: 'Top Categories' },
-    { id: 'all', label: 'All Categories' },
   ];
 
   useEffect(() => {
@@ -145,6 +143,12 @@ export default function LocationLibraryPage() {
           margin: 0;
           padding-left: 0;
           padding-right: 0;
+        }
+
+        @media (max-width: 767px) {
+          .location-library-main {
+            padding-top: 70px;
+          }
         }
 
         .location-library-flex {
@@ -275,6 +279,69 @@ export default function LocationLibraryPage() {
         .mobile-filter-button:hover {
           background: #f9fafb;
         }
+
+        /* Content area padding */
+        .content-area-padding {
+          padding: 1rem;
+        }
+
+        @media (min-width: 768px) {
+          .content-area-padding {
+            padding: 2rem 1.5rem;
+          }
+        }
+
+        /* Responsive typography */
+        .library-title {
+          font-size: 1.875rem;
+          font-weight: 300;
+          letter-spacing: -0.02em;
+          margin-bottom: 0.5rem;
+        }
+
+        @media (min-width: 640px) {
+          .library-title {
+            font-size: 2.5rem;
+          }
+        }
+
+        .library-subtitle {
+          font-size: 1rem;
+          font-weight: 300;
+          color: #4b5563;
+        }
+
+        @media (min-width: 640px) {
+          .library-subtitle {
+            font-size: 1.25rem;
+          }
+        }
+
+        /* Property grid container */
+        .property-grid-container {
+          background: white;
+          padding: 1rem;
+        }
+
+        @media (min-width: 768px) {
+          .property-grid-container {
+            padding: 1.5rem;
+          }
+        }
+
+        /* Section header */
+        .section-header {
+          background: #4a4a4a;
+          color: white;
+          padding: 0.75rem 1rem;
+          margin-bottom: 0;
+        }
+
+        @media (min-width: 768px) {
+          .section-header {
+            padding: 0.75rem 1.5rem;
+          }
+        }
       `}</style>
 
       <main className="location-library-main">
@@ -342,29 +409,29 @@ export default function LocationLibraryPage() {
             )}
 
             {/* Content area */}
-            <div style={{ padding: '2rem 1.5rem' }}>
+            <div className="content-area-padding">
               {/* Breadcrumbs and title */}
               <div style={{ marginBottom: '1rem' }}>
                 <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
                   Categories / {getCategoryTitle()}
                 </p>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 300, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+                <h1 className="library-title">
                   {getCategoryTitle()}
                 </h1>
-                <h5 style={{ fontSize: '1.25rem', fontWeight: 300, color: '#4b5563' }}>
+                <h5 className="library-subtitle">
                   Location Library
                 </h5>
               </div>
 
               {/* Section header */}
-              <div style={{ background: '#4a4a4a', color: 'white', padding: '0.75rem 1.5rem', marginBottom: 0 }}>
+              <div className="section-header">
                 <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
                   {getSectionTitle()}
                 </h2>
               </div>
 
               {/* Property grid */}
-              <div style={{ background: 'white', padding: '1.5rem' }}>
+              <div className="property-grid-container">
                 {loading ? (
                   <div className="property-grid">
                     {[...Array(12)].map((_, i) => (

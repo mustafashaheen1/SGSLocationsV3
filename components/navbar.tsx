@@ -15,12 +15,14 @@ export function Navbar() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [showPortfolio, setShowPortfolio] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
   const isHomepage = pathname === '/';
 
   useEffect(() => {
     checkAuth();
+    fetchPortfolioVisibility();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
@@ -31,6 +33,23 @@ export function Navbar() {
       subscription.unsubscribe();
     };
   }, []);
+
+  async function fetchPortfolioVisibility() {
+    try {
+      const { data } = await (supabase
+        .from('site_settings') as any)
+        .select('value')
+        .eq('key', 'portfolio_visible')
+        .maybeSingle();
+
+      if (data && data.value) {
+        const value = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        setShowPortfolio(value === true || value === 'true');
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio visibility:', error);
+    }
+  }
 
   useEffect(() => {
     const checkAndLogoutAdmin = async () => {
@@ -83,7 +102,7 @@ export function Navbar() {
 
   const navItems: Array<{ label: string; href: string; isButton?: boolean }> = [
     { label: 'SEARCH', href: '/search' },
-    { label: 'PORTFOLIO', href: '/portfolio' },
+    ...(showPortfolio ? [{ label: 'PORTFOLIO', href: '/portfolio' }] : []),
     { label: 'LOCATION LIBRARY', href: '/location-library' },
     { label: 'ABOUT US', href: '/about' },
     { label: 'CONTACT', href: '/contact' },
@@ -121,7 +140,7 @@ export function Navbar() {
                 placeholder="Search locations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-[350px] ${isHomepage ? 'bg-white/90 text-gray-900' : 'bg-white'}`}
+                className={`w-full max-w-[350px] ${isHomepage ? 'bg-white/90 text-gray-900' : 'bg-white'}`}
               />
               <Button
                 type="submit"
@@ -210,7 +229,7 @@ export function Navbar() {
                     setMobileMenuOpen(false);
                     setIsLoginModalOpen(true);
                   }}
-                  className="text-white text-sm tracking-widest hover:text-[#e11921] transition-colors" style={{fontWeight: 300}}
+                  className="text-white text-base tracking-widest hover:text-[#e11921] transition-colors py-3 w-full text-left" style={{fontWeight: 300}}
                 >
                   {item.label}
                 </button>
@@ -219,7 +238,7 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-white text-sm tracking-widest hover:text-[#e11921] transition-colors" style={{fontWeight: 300}}
+                  className="text-white text-base tracking-widest hover:text-[#e11921] transition-colors py-3 block w-full" style={{fontWeight: 300}}
                 >
                   {item.label}
                 </Link>

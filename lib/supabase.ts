@@ -177,7 +177,7 @@ export interface SavedSearch {
   updated_at: string;
 }
 
-export type CalendarEventType = 'production' | 'director_scout' | 'blocked';
+export type CalendarEventType = 'hold_days' | 'blackout_days' | 'director_scout' | 'tech_scout';
 
 export interface PropertyCalendarEvent {
   id: string;

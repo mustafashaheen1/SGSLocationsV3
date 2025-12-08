@@ -109,6 +109,9 @@ export default function ContentManagementPage() {
   const [generalContactPhone, setGeneralContactPhone] = useState('');
   const [generalContactAddress, setGeneralContactAddress] = useState('');
 
+  // Portfolio Visibility State
+  const [portfolioVisible, setPortfolioVisible] = useState(true);
+
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -122,6 +125,8 @@ export default function ContentManagementPage() {
     if (activeTab === 'contact') {
       fetchContactGrid();
       fetchGeneralContactInfo();
+    } else if (activeTab === 'portfolio') {
+      fetchPortfolioVisibility();
     }
   }, [activeTab]);
 
@@ -663,6 +668,48 @@ export default function ContentManagementPage() {
     }
   }
 
+  async function fetchPortfolioVisibility() {
+    try {
+      const { data } = await (supabase
+        .from('site_settings') as any)
+        .select('value')
+        .eq('key', 'portfolio_visible')
+        .maybeSingle();
+
+      if (data && data.value) {
+        const value = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        setPortfolioVisible(value === true || value === 'true');
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio visibility:', error);
+    }
+  }
+
+  async function savePortfolioVisibility() {
+    setSaving(true);
+    try {
+      const { error } = await (supabase
+        .from('site_settings') as any)
+        .upsert({
+          key: 'portfolio_visible',
+          value: JSON.stringify(portfolioVisible),
+          page: 'portfolio',
+          section: 'visibility',
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'key'
+        });
+
+      if (error) throw error;
+
+      alert('Portfolio visibility updated successfully!');
+    } catch (error: any) {
+      alert('Error saving: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function fetchTermsAndConditions() {
     try {
       const { data } = await supabase
@@ -725,7 +772,7 @@ export default function ContentManagementPage() {
       <h1 className="text-3xl font-bold mb-6">Content Management System</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6 mb-6">
+        <TabsList className="grid w-full grid-cols-7 mb-6">
           <TabsTrigger value="home">
             <Home className="w-4 h-4 mr-2" />
             Home Page
@@ -733,6 +780,10 @@ export default function ContentManagementPage() {
           <TabsTrigger value="about">
             <Info className="w-4 h-4 mr-2" />
             About Page
+          </TabsTrigger>
+          <TabsTrigger value="portfolio">
+            <ImageIcon className="w-4 h-4 mr-2" />
+            Portfolio
           </TabsTrigger>
           <TabsTrigger value="footer">
             <Globe className="w-4 h-4 mr-2" />
@@ -748,7 +799,7 @@ export default function ContentManagementPage() {
           </TabsTrigger>
           <TabsTrigger value="other">
             <FileText className="w-4 h-4 mr-2" />
-            Other Pages
+            T&C
           </TabsTrigger>
         </TabsList>
 
@@ -1264,6 +1315,56 @@ export default function ContentManagementPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* PORTFOLIO TAB */}
+        <TabsContent value="portfolio" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Portfolio Page Visibility</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Control whether the Portfolio link appears in the navigation menu</p>
+                </div>
+                <Button
+                  onClick={savePortfolioVisibility}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-6 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">Show Portfolio in Navigation</h3>
+                  <p className="text-sm text-gray-600">
+                    When enabled, the Portfolio link will appear in the main navigation menu.
+                    When disabled, users won't be able to access the portfolio page from the menu.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPortfolioVisible(!portfolioVisible)}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                    portfolioVisible ? 'bg-green-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                      portfolioVisible ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Current Status:</strong> Portfolio page is {portfolioVisible ? 'visible' : 'hidden'} in the navigation
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* FOOTER TAB */}
