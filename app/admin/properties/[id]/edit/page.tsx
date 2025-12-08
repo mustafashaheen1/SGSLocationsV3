@@ -1878,6 +1878,7 @@ export default function EditPropertyPage() {
                       </p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setShowNewProjectModal(true)}
                       className="flex items-center gap-2 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
@@ -1894,6 +1895,7 @@ export default function EditPropertyPage() {
                         Create a project folder to organize your documents
                       </p>
                       <button
+                        type="button"
                         onClick={() => setShowNewProjectModal(true)}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 transition-colors"
                       >
@@ -1912,6 +1914,7 @@ export default function EditPropertyPage() {
                           <div className="flex items-start justify-between mb-3">
                             <Folder className="h-12 w-12 text-amber-500 group-hover:text-amber-600 transition-colors" />
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteProject(project);
@@ -1940,6 +1943,7 @@ export default function EditPropertyPage() {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedProject(null);
                           setDocuments([]);
@@ -2154,6 +2158,7 @@ export default function EditPropertyPage() {
             />
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={handleCreateProject}
                 disabled={!newProjectName.trim()}
                 className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
@@ -2161,6 +2166,7 @@ export default function EditPropertyPage() {
                 Create Project
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setShowNewProjectModal(false);
                   setNewProjectName('');
