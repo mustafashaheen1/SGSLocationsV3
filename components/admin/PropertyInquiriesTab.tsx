@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Eye } from 'lucide-react';
 import InquiryDetailModal from './InquiryDetailModal';
-import { Inquiry } from '@/lib/supabase';
+import { Inquiry, supabase } from '@/lib/supabase';
 
 interface PropertyInquiriesTabProps {
   propertyId: string;
@@ -22,8 +22,21 @@ export default function PropertyInquiriesTab({ propertyId }: PropertyInquiriesTa
   async function fetchInquiries() {
     setLoading(true);
     try {
+      // Get session to include access token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      // Add Authorization header if we have a session
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/inquiries?property_id=${propertyId}`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
       const data = await response.json();
       setInquiries(data.inquiries || []);
@@ -36,9 +49,21 @@ export default function PropertyInquiriesTab({ propertyId }: PropertyInquiriesTa
 
   async function handleStatusUpdate(inquiryId: string, newStatus: string) {
     try {
+      // Get session to include access token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      // Add Authorization header if we have a session
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/inquiries/${inquiryId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ status: newStatus })
       });
