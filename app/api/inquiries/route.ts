@@ -3,7 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSideClient();
+    // Check for Authorization header first (more reliable for API requests)
+    const authHeader = request.headers.get('authorization');
+    let supabase;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const { createServerSideClientWithToken } = await import('@/lib/supabase-server');
+      supabase = createServerSideClientWithToken(token);
+    } else {
+      supabase = await createServerSideClient();
+    }
 
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

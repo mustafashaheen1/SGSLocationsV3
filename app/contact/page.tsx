@@ -180,8 +180,8 @@ export default function ContactPage() {
 
     try {
       // Check authentication in real-time
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.user) {
         setIsSubmitting(false);
         setShowLoginModal(true);
         return;
@@ -189,14 +189,17 @@ export default function ContactPage() {
 
       const response = await fetch('/api/inquiries', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         credentials: 'include',
         body: JSON.stringify({
           property_id: null, // General inquiry (no specific property)
           first_name: formData.firstName,
           last_name: formData.lastName,
-          user_email: formData.email,
-          user_phone: formData.phone || null,
+          email: formData.email,
+          phone: formData.phone || null,
           company: formData.company || null,
           message: formData.message,
           crew_size: formData.crewSize ? parseInt(formData.crewSize) : null,

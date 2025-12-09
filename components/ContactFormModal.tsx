@@ -192,9 +192,9 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
 
     try {
       // Check authentication in real-time
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!currentUser) {
+      if (!session || !session.user) {
         setIsSubmitting(false);
         setShowLoginModal(true);
         return;
@@ -202,7 +202,10 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
 
       const response = await fetch('/api/inquiries', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         credentials: 'include',
         body: JSON.stringify({
           property_id: propertyId,
@@ -442,11 +445,20 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   <input
                     name="locations"
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${
+                      propertyId ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                     placeholder="Locations"
                     value={formData.locations}
                     onChange={handleChange}
+                    readOnly={!!propertyId}
+                    disabled={!!propertyId}
                   />
+                  {propertyId && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      This is the property you're inquiring about
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative">
