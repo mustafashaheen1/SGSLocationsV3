@@ -94,12 +94,10 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
 
     console.log('Attempting to insert inquiry:', JSON.stringify(inquiryData, null, 2));
 
-    // Insert inquiry
-    const { data: inquiry, error: insertError } = await supabase
+    // Insert inquiry (without select to avoid policy check issues)
+    const { error: insertError } = await supabase
       .from('inquiries')
-      .insert(inquiryData)
-      .select()
-      .single();
+      .insert(inquiryData);
 
     if (insertError) {
       console.error('Error creating inquiry:', insertError);
@@ -110,7 +108,7 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
       );
     }
 
-    return NextResponse.json({ success: true, inquiry }, { status: 201 });
+    return NextResponse.json({ success: true, message: 'Inquiry submitted successfully' }, { status: 201 });
 
   } catch (error: any) {
     console.error('Inquiry API error:', error);
