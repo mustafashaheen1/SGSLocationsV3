@@ -281,6 +281,8 @@ export default function ProductionDashboard() {
         credentials: 'include'
       });
       const data = await response.json();
+      console.log('Fetched inquiries data:', data);
+      console.log('Number of inquiries:', data.inquiries?.length || 0);
       setInquiries(data.inquiries || []);
     } catch (error) {
       console.error('Error fetching inquiries:', error);

@@ -127,11 +127,14 @@ export async function GET(request: NextRequest) {
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.error('GET /api/inquiries - Auth error:', authError);
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
+
+    console.log('GET /api/inquiries - User ID:', user.id);
 
     // Check if user is admin
     const { data: adminCheck } = await supabase
@@ -141,6 +144,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     const isAdmin = !!adminCheck;
+    console.log('GET /api/inquiries - Is Admin:', isAdmin);
 
     // Get user type for non-admins
     let userType = null;
@@ -151,6 +155,7 @@ export async function GET(request: NextRequest) {
         .eq('id', user.id)
         .single();
       userType = userData?.user_type;
+      console.log('GET /api/inquiries - User Type:', userType);
     }
 
     // Get property_id filter from query params
@@ -204,11 +209,16 @@ export async function GET(request: NextRequest) {
     const { data: inquiries, error } = await query;
 
     if (error) {
-      console.error('Error fetching inquiries:', error);
+      console.error('GET /api/inquiries - Query error:', error);
       return NextResponse.json(
         { error: 'Failed to fetch inquiries' },
         { status: 500 }
       );
+    }
+
+    console.log('GET /api/inquiries - Found inquiries:', inquiries?.length || 0);
+    if (inquiries && inquiries.length > 0) {
+      console.log('GET /api/inquiries - First inquiry:', inquiries[0]);
     }
 
     return NextResponse.json({ inquiries: inquiries || [] });
