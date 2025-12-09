@@ -66,7 +66,7 @@ export default function InquiryDetailModal({
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-gray-900">Property</h3>
                 <button
-                  onClick={() => router.push(`/property/${inquiry.property_id}`)}
+                  onClick={() => router.push(`/admin/properties/edit/${inquiry.property_id}`)}
                   className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
                 >
                   View Property <ExternalLink className="w-4 h-4" />
