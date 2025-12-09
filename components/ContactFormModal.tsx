@@ -140,16 +140,19 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check authentication
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-
     setIsSubmitting(true);
     setSubmitError('');
 
     try {
+      // Check authentication in real-time
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      if (!currentUser) {
+        setIsSubmitting(false);
+        setShowLoginModal(true);
+        return;
+      }
+
       const response = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
