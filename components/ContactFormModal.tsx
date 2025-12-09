@@ -58,8 +58,8 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
         setUser(user);
 
         // Fetch user details from users table
-        const { data: userData } = await supabase
-          .from('users')
+        const { data: userData } = await (supabase
+          .from('users') as any)
           .select('full_name, email, phone, company_name')
           .eq('id', user.id)
           .single();
@@ -534,8 +534,8 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
               const { data: { user } } = await supabase.auth.getUser();
               if (user) {
                 setUser(user);
-                const { data: userData } = await supabase
-                  .from('users')
+                const { data: userData } = await (supabase
+                  .from('users') as any)
                   .select('full_name, email, phone, company_name')
                   .eq('id', user.id)
                   .single();

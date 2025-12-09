@@ -431,8 +431,8 @@ export default function PropertyDetailPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('favorite_properties')
+      const { data, error } = await (supabase
+        .from('favorite_properties') as any)
         .select('id')
         .eq('user_id', user.id)
         .eq('property_id', property.id)
@@ -462,8 +462,8 @@ export default function PropertyDetailPage() {
 
       if (isFavorite) {
         // Remove from favorites
-        const { error } = await supabase
-          .from('favorite_properties')
+        const { error } = await (supabase
+          .from('favorite_properties') as any)
           .delete()
           .eq('user_id', user.id)
           .eq('property_id', property.id);
@@ -473,8 +473,8 @@ export default function PropertyDetailPage() {
         setIsFavorite(false);
       } else {
         // Add to favorites
-        const { error } = await supabase
-          .from('favorite_properties')
+        const { error } = await (supabase
+          .from('favorite_properties') as any)
           .insert([{
             user_id: user.id,
             property_id: property.id

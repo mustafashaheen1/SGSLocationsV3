@@ -238,8 +238,8 @@ export default function ProductionDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('favorite_properties')
+      const { data, error } = await (supabase
+        .from('favorite_properties') as any)
         .select(`
           *,
           properties (
@@ -282,8 +282,8 @@ export default function ProductionDashboard() {
 
     try {
       setDeleteProgress('🗑️ Removing from favorites...');
-      const { error } = await supabase
-        .from('favorite_properties')
+      const { error } = await (supabase
+        .from('favorite_properties') as any)
         .delete()
         .eq('id', favoriteId);
 

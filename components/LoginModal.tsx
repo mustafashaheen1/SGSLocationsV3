@@ -11,9 +11,10 @@ interface LoginModalProps {
   preFilledEmail?: string;
   isEmailLocked?: boolean;
   redirectAfterLogin?: string;
+  onSuccess?: () => void;
 }
 
-export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEmailLocked = false, redirectAfterLogin }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEmailLocked = false, redirectAfterLogin, onSuccess }: LoginModalProps) {
   const router = useRouter();
   const [email, setEmail] = useState(preFilledEmail);
   const [password, setPassword] = useState('');
@@ -80,13 +81,17 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
       }
 
       // Step 4: Success - user exists and is not banned
-      onClose();
-      if (redirectAfterLogin) {
-        router.push(redirectAfterLogin);
+      if (onSuccess) {
+        onSuccess();
       } else {
-        router.push('/dashboard');
+        onClose();
+        if (redirectAfterLogin) {
+          router.push(redirectAfterLogin);
+        } else {
+          router.push('/dashboard');
+        }
+        router.refresh();
       }
-      router.refresh();
     } catch (err: any) {
       setErrors({
         email: '',

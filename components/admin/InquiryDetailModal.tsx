@@ -24,7 +24,7 @@ export default function InquiryDetailModal({
     setUpdating(true);
     try {
       await onStatusUpdate(inquiry.id, newStatus);
-      setStatus(newStatus);
+      setStatus(newStatus as 'new' | 'responded' | 'archived');
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update status');
