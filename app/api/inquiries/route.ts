@@ -122,11 +122,30 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
 
 export async function GET(request: NextRequest) {
   try {
+    // Try cookie-based auth first
     const supabase = await createServerSideClient();
-
-    // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    // If cookie auth fails, try token-based auth
     if (authError || !user) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const tokenSupabase = createServerSideClientWithToken(token);
+        const { data: { user: tokenUser }, error: tokenError } = await tokenSupabase.auth.getUser();
+
+        if (tokenError || !tokenUser) {
+          console.error('GET /api/inquiries - Auth error (both cookie and token failed)');
+          return NextResponse.json(
+            { error: 'Authentication required' },
+            { status: 401 }
+          );
+        }
+
+        // Use token-based client and user for the rest of the request
+        return handleInquiriesFetch(request, tokenSupabase, tokenUser);
+      }
+
       console.error('GET /api/inquiries - Auth error:', authError);
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -135,8 +154,20 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('GET /api/inquiries - User ID:', user.id);
+    return handleInquiriesFetch(request, supabase, user);
+  } catch (error: any) {
+    console.error('Inquiry fetch API error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
 
-    // Check if user is admin
+async function handleInquiriesFetch(request: NextRequest, supabase: any, user: any) {
+  try {
+    console.log('handleInquiriesFetch - User ID:', user.id);
+
     const { data: adminCheck } = await supabase
       .from('admins')
       .select('id')
@@ -144,7 +175,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     const isAdmin = !!adminCheck;
-    console.log('GET /api/inquiries - Is Admin:', isAdmin);
+    console.log('handleInquiriesFetch - Is Admin:', isAdmin);
 
     // Get user type for non-admins
     let userType = null;
@@ -155,7 +186,7 @@ export async function GET(request: NextRequest) {
         .eq('id', user.id)
         .single();
       userType = userData?.user_type;
-      console.log('GET /api/inquiries - User Type:', userType);
+      console.log('handleInquiriesFetch - User Type:', userType);
     }
 
     // Get property_id filter from query params
@@ -196,35 +227,35 @@ export async function GET(request: NextRequest) {
         if (propertyIds.length > 0) {
           // Use OR condition: their inquiries OR inquiries for their properties
           query = query.or(`user_id.eq.${user.id},property_id.in.(${propertyIds.join(',')})`);
-        } else {
-          // No properties, just show their own inquiries
-          query = query.eq('user_id', user.id);
-        }
       } else {
-        // Producers see only their own inquiries
+        // No properties, just show their own inquiries
         query = query.eq('user_id', user.id);
       }
+    } else {
+      // Producers see only their own inquiries
+      query = query.eq('user_id', user.id);
     }
+  }
 
-    const { data: inquiries, error } = await query;
+  const { data: inquiries, error } = await query;
 
-    if (error) {
-      console.error('GET /api/inquiries - Query error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch inquiries' },
-        { status: 500 }
-      );
-    }
+  if (error) {
+    console.error('handleInquiriesFetch - Query error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch inquiries' },
+      { status: 500 }
+    );
+  }
 
-    console.log('GET /api/inquiries - Found inquiries:', inquiries?.length || 0);
-    if (inquiries && inquiries.length > 0) {
-      console.log('GET /api/inquiries - First inquiry:', inquiries[0]);
-    }
+  console.log('handleInquiriesFetch - Found inquiries:', inquiries?.length || 0);
+  if (inquiries && inquiries.length > 0) {
+    console.log('handleInquiriesFetch - First inquiry:', inquiries[0]);
+  }
 
-    return NextResponse.json({ inquiries: inquiries || [] });
+  return NextResponse.json({ inquiries: inquiries || [] });
 
   } catch (error: any) {
-    console.error('Inquiry fetch API error:', error);
+    console.error('handleInquiriesFetch error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

@@ -277,8 +277,21 @@ export default function ProductionDashboard() {
   async function fetchInquiries() {
     setLoadingInquiries(true);
     try {
+      // Get session to include access token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      // Add Authorization header if we have a session
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch('/api/inquiries', {
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
       const data = await response.json();
       console.log('Fetched inquiries data:', data);
