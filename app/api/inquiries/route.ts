@@ -1,28 +1,52 @@
-import { createServerSideClient } from '@/lib/supabase-server';
+import { createServerSideClient, createServerSideClientWithToken } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check for Authorization header first (more reliable for API requests)
-    const authHeader = request.headers.get('authorization');
-    let supabase;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const { createServerSideClientWithToken } = await import('@/lib/supabase-server');
-      supabase = createServerSideClientWithToken(token);
-    } else {
-      supabase = await createServerSideClient();
-    }
+    // Try cookie-based auth first (better for RLS policies)
+    const supabase = await createServerSideClient();
 
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    // If cookie auth fails, try token-based auth
     if (authError || !user) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const tokenSupabase = createServerSideClientWithToken(token);
+        const { data: { user: tokenUser }, error: tokenError } = await tokenSupabase.auth.getUser();
+
+        if (tokenError || !tokenUser) {
+          return NextResponse.json(
+            { error: 'Authentication required. Please log in to submit an inquiry.' },
+            { status: 401 }
+          );
+        }
+
+        // Use token-based client and user for the rest of the request
+        return handleInquiryInsert(request, tokenSupabase, tokenUser);
+      }
+
       return NextResponse.json(
         { error: 'Authentication required. Please log in to submit an inquiry.' },
         { status: 401 }
       );
     }
+
+    return handleInquiryInsert(request, supabase, user);
+  } catch (error: any) {
+    console.error('Inquiry API error:', error);
+    console.error('Error stack:', error.stack);
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleInquiryInsert(request: NextRequest, supabase: any, user: any) {
+  try {
 
     // Parse request body
     const body = await request.json();
@@ -49,33 +73,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Prepare inquiry data
+    const inquiryData = {
+      property_id: property_id || null,
+      user_id: user.id,
+      user_name: `${first_name} ${last_name}`,
+      user_email: email,
+      user_phone: phone || null,
+      first_name,
+      last_name,
+      company: company || null,
+      message,
+      crew_size: crew_size ? parseInt(crew_size) : null,
+      locations: locations || null,
+      shooting_date: shooting_date || null,
+      project_type: project_type || null,
+      how_did_you_hear: how_did_you_hear || null,
+      status: 'new'
+    };
+
+    console.log('Attempting to insert inquiry:', JSON.stringify(inquiryData, null, 2));
+
     // Insert inquiry
     const { data: inquiry, error: insertError } = await supabase
       .from('inquiries')
-      .insert({
-        property_id: property_id || null,
-        user_id: user.id,
-        user_name: `${first_name} ${last_name}`,
-        user_email: email,
-        user_phone: phone || null,
-        first_name,
-        last_name,
-        company: company || null,
-        message,
-        crew_size: crew_size ? parseInt(crew_size) : null,
-        locations: locations || null,
-        shooting_date: shooting_date || null,
-        project_type: project_type || null,
-        how_did_you_hear: how_did_you_hear || null,
-        status: 'new'
-      })
+      .insert(inquiryData)
       .select()
       .single();
 
     if (insertError) {
       console.error('Error creating inquiry:', insertError);
+      console.error('Insert error details:', JSON.stringify(insertError, null, 2));
       return NextResponse.json(
-        { error: 'Failed to create inquiry. Please try again.' },
+        { error: insertError.message || 'Failed to create inquiry. Please try again.' },
         { status: 500 }
       );
     }
@@ -84,6 +114,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Inquiry API error:', error);
+    console.error('Error stack:', error.stack);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }
