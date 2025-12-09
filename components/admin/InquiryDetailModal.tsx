@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import { Inquiry } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 interface InquiryDetailModalProps {
   inquiry: Inquiry;
@@ -17,6 +18,7 @@ export default function InquiryDetailModal({
   onStatusUpdate,
   canUpdateStatus = true
 }: InquiryDetailModalProps) {
+  const router = useRouter();
   const [updating, setUpdating] = useState(false);
   const [status, setStatus] = useState(inquiry.status);
 
@@ -61,7 +63,15 @@ export default function InquiryDetailModal({
           {/* Property Info */}
           {inquiry.properties && (
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-2">Property</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-gray-900">Property</h3>
+                <button
+                  onClick={() => router.push(`/property/${inquiry.property_id}`)}
+                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  View Property <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
               <div className="flex items-center gap-3">
                 {inquiry.properties.primary_image && (
                   <img

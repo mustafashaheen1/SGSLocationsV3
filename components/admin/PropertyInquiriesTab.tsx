@@ -39,6 +39,9 @@ export default function PropertyInquiriesTab({ propertyId }: PropertyInquiriesTa
         headers
       });
       const data = await response.json();
+      console.log('PropertyInquiriesTab - Response:', data);
+      console.log('PropertyInquiriesTab - Property ID:', propertyId);
+      console.log('PropertyInquiriesTab - Inquiries count:', data.inquiries?.length || 0);
       setInquiries(data.inquiries || []);
     } catch (error) {
       console.error('Error fetching inquiries:', error);

@@ -193,6 +193,8 @@ async function handleInquiriesFetch(request: NextRequest, supabase: any, user: a
     const { searchParams } = new URL(request.url);
     const propertyId = searchParams.get('property_id');
 
+    console.log('handleInquiriesFetch - Property ID filter:', propertyId);
+
     let query = supabase
       .from('inquiries')
       .select(`
@@ -210,6 +212,7 @@ async function handleInquiriesFetch(request: NextRequest, supabase: any, user: a
 
     // Apply property filter if provided
     if (propertyId) {
+      console.log('handleInquiriesFetch - Applying property_id filter:', propertyId);
       query = query.eq('property_id', propertyId);
     } else {
       // Apply role-based filters only if not filtering by specific property
