@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Edit, Trash2, Search, Bookmark, Calendar } from 'lucide-react';
+import { Eye, Edit, Trash2, Search, Bookmark, Calendar, Heart } from 'lucide-react';
 import { getGuestListing, clearGuestListing } from '@/lib/guest-listing';
 import MasterCalendar from '@/components/MasterCalendar';
 
@@ -31,15 +31,18 @@ export default function ProductionDashboard() {
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
+  const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
   const [processingPendingSubmission, setProcessingPendingSubmission] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
-  const [deletingItemType, setDeletingItemType] = useState<'search' | 'property' | null>(null);
+  const [deletingItemType, setDeletingItemType] = useState<'search' | 'property' | 'favorite' | null>(null);
 
   useEffect(() => {
     fetchUserData();
     fetchUserProperties();
     fetchSavedSearches();
+    fetchFavoriteProperties();
     handlePendingPropertySubmission();
   }, []);
 
@@ -226,6 +229,79 @@ export default function ProductionDashboard() {
       console.error('Error loading saved searches:', error);
     } finally {
       setLoadingSearches(false);
+    }
+  }
+
+  async function fetchFavoriteProperties() {
+    setLoadingFavorites(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('favorite_properties')
+        .select(`
+          *,
+          properties (
+            id,
+            name,
+            city,
+            county,
+            address,
+            primary_image,
+            images
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching favorite properties:', error);
+        return;
+      }
+
+      setFavoriteProperties(data || []);
+    } catch (error) {
+      console.error('Error loading favorite properties:', error);
+    } finally {
+      setLoadingFavorites(false);
+    }
+  }
+
+  async function handleDeleteFavorite(favoriteId: string, propertyName: string) {
+    if (!confirm(`Are you sure you want to remove "${propertyName}" from your favorites?`)) {
+      return;
+    }
+
+    setDeletingItemId(favoriteId);
+    setDeletingItemType('favorite');
+    setDeleteProgress('Starting deletion...');
+
+    // Give React time to render the modal
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+      setDeleteProgress('🗑️ Removing from favorites...');
+      const { error } = await supabase
+        .from('favorite_properties')
+        .delete()
+        .eq('id', favoriteId);
+
+      if (error) throw error;
+
+      setDeleteProgress('✓ Removed successfully!');
+
+      // Short delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      await fetchFavoriteProperties();
+    } catch (error: any) {
+      console.error('Error removing favorite:', error);
+      alert('Failed to remove favorite: ' + error.message);
+    } finally {
+      setDeletingItemId(null);
+      setDeletingItemType(null);
+      setDeleteProgress('');
     }
   }
 
@@ -457,6 +533,16 @@ export default function ProductionDashboard() {
                 }`}
               >
                 My Searches
+              </button>
+              <button
+                onClick={() => setActiveTab('favorites')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'favorites'
+                    ? 'border-[#e11921] text-[#e11921]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Favorites
               </button>
               <button
                 onClick={() => setActiveTab('inquiries')}
@@ -834,6 +920,95 @@ export default function ProductionDashboard() {
                           >
                             View Results
                           </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'favorites' && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">My Favorite Properties</h2>
+                  <p className="text-gray-600 mt-1">Properties you've marked as favorites</p>
+                </div>
+
+                {loadingFavorites ? (
+                  <div className="text-center py-12 text-gray-500">
+                    Loading your favorite properties...
+                  </div>
+                ) : favoriteProperties.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">You haven't added any favorites yet.</p>
+                    <p className="text-sm text-gray-400 mb-6">
+                      Click the heart icon on any property page to add it to your favorites.
+                    </p>
+                    <Button
+                      onClick={() => router.push('/search')}
+                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                    >
+                      Browse Properties
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {favoriteProperties.map((favorite: any) => {
+                      const property = favorite.properties;
+                      if (!property) return null;
+
+                      return (
+                        <div key={favorite.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow bg-white">
+                          <div
+                            className="relative h-48 bg-gray-200 cursor-pointer"
+                            onClick={() => router.push(`/property/${property.id}`)}
+                          >
+                            {property.primary_image || (property.images && property.images[0]) ? (
+                              <img
+                                src={property.primary_image || property.images[0]}
+                                alt={property.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                No Image
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-1">{property.name}</h3>
+                                <p className="text-sm text-gray-600">{property.city}, {property.county}</p>
+                                {property.address && (
+                                  <p className="text-xs text-gray-500 mt-1">{property.address}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <p className="text-xs text-gray-500 mb-4">
+                              Added on {new Date(favorite.created_at).toLocaleDateString()}
+                            </p>
+
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => router.push(`/property/${property.id}`)}
+                                className="flex-1 bg-[#e11921] text-white hover:bg-[#bf151c] text-sm py-2"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View Property
+                              </Button>
+                              <button
+                                onClick={() => handleDeleteFavorite(favorite.id, property.name)}
+                                className="px-3 py-2 border border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded transition-colors"
+                                title="Remove from favorites"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}

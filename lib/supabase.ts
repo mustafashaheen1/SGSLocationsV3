@@ -177,6 +177,29 @@ export interface SavedSearch {
   updated_at: string;
 }
 
+export interface Inquiry {
+  id: string;
+  property_id: string | null;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  user_phone: string | null;
+  first_name: string;
+  last_name: string;
+  company: string | null;
+  message: string;
+  crew_size: number | null;
+  locations: string | null;
+  shooting_date: string | null;
+  project_type: string | null;
+  how_did_you_hear: string | null;
+  status: 'new' | 'responded' | 'archived';
+  admin_notes: string | null;
+  created_at: string;
+  responded_at: string | null;
+  properties?: Property;
+}
+
 export type CalendarEventType = 'hold_days' | 'blackout_days' | 'director_scout' | 'tech_scout';
 
 export interface PropertyCalendarEvent {

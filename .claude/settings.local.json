@@ -17,7 +17,10 @@
       "Bash(npx supabase:*)",
       "Bash(timeout 180 npm run build:*)",
       "Bash(npx tsc:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

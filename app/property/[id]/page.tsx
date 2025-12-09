@@ -16,12 +16,14 @@ import {
   Phone,
   Camera,
   Plus,
-  X
+  X,
+  Heart
 } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 import { generateLocationPDF } from '@/lib/pdf-generator';
 import { calculateDistance, formatDistance } from '@/lib/distance';
 import ContactFormModal from '@/components/ContactFormModal';
+import LoginModal from '@/components/LoginModal';
 
 interface ImageWithCategory {
   url: string;
@@ -53,6 +55,9 @@ export default function PropertyDetailPage() {
   const [downloadingImages, setDownloadingImages] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [checkingFavorite, setCheckingFavorite] = useState(true);
 
   const updateRedBarPosition = (category: string) => {
     const element = categoryRefs.current[category];
@@ -215,6 +220,13 @@ export default function PropertyDetailPage() {
 
     fetchData();
   }, [params.id, userLocation]);
+
+  // Check favorite status when property loads
+  useEffect(() => {
+    if (property) {
+      checkFavoriteStatus();
+    }
+  }, [property]);
 
   useEffect(() => {
     async function loadImages() {
@@ -406,6 +418,75 @@ export default function PropertyDetailPage() {
       alert('Failed to generate PDF: ' + error.message);
     } finally {
       setGeneratingPDF(false);
+    }
+  };
+
+  // Check if property is in user's favorites
+  const checkFavoriteStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user || !property) {
+        setCheckingFavorite(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('favorite_properties')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('property_id', property.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      setIsFavorite(!!data);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    } finally {
+      setCheckingFavorite(false);
+    }
+  };
+
+  // Toggle favorite status
+  const handleToggleFavorite = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setShowLoginModal(true);
+        return;
+      }
+
+      if (!property) return;
+
+      if (isFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorite_properties')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('property_id', property.id);
+
+        if (error) throw error;
+
+        setIsFavorite(false);
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorite_properties')
+          .insert([{
+            user_id: user.id,
+            property_id: property.id
+          }]);
+
+        if (error) throw error;
+
+        setIsFavorite(true);
+      }
+    } catch (error: any) {
+      console.error('Error toggling favorite:', error);
+      alert('Failed to update favorites: ' + error.message);
     }
   };
 
@@ -1062,6 +1143,7 @@ export default function PropertyDetailPage() {
 
                 {/* Other Action Buttons */}
                 {[
+                  { icon: Heart, text: 'FAVORITE', isFavorite: true },
                   { icon: Mail, text: 'CONTACT US' },
                   { icon: ImageIcon, text: 'THUMBNAILS' },
                   { icon: Download, text: 'DOWNLOAD IMAGES' },
@@ -1069,14 +1151,16 @@ export default function PropertyDetailPage() {
                 ].map((btn, index) => {
                   const isLocationPDF = btn.text === 'LOCATION PDF';
                   const isDownloadImages = btn.text === 'DOWNLOAD IMAGES';
-                  const isDisabled = (isLocationPDF && generatingPDF) || (isDownloadImages && downloadingImages);
+                  const isFavoriteBtn = btn.text === 'FAVORITE';
+                  const isDisabled = (isLocationPDF && generatingPDF) || (isDownloadImages && downloadingImages) || (isFavoriteBtn && checkingFavorite);
 
                   return (
                     <button
                       key={index}
                       disabled={isDisabled}
                       onClick={() => {
-                        if (btn.text === 'CONTACT US') setShowContactModal(true);
+                        if (btn.text === 'FAVORITE') handleToggleFavorite();
+                        else if (btn.text === 'CONTACT US') setShowContactModal(true);
                         else if (btn.text === 'THUMBNAILS') setShowThumbnails(true);
                         else if (btn.text === 'DOWNLOAD IMAGES') handleDownloadImages();
                         else if (btn.text === 'LOCATION PDF') handleDownloadPDF();
@@ -1112,9 +1196,14 @@ export default function PropertyDetailPage() {
                         }
                       }}
                     >
-                      <btn.icon style={{ width: '14px', height: '14px' }} />
+                      <btn.icon
+                        style={{ width: '14px', height: '14px' }}
+                        fill={isFavoriteBtn && isFavorite ? '#fff' : 'none'}
+                      />
                       {isLocationPDF && generatingPDF ? 'GENERATING...' :
                        isDownloadImages && downloadingImages ? 'DOWNLOADING...' :
+                       isFavoriteBtn && checkingFavorite ? 'CHECKING...' :
+                       isFavoriteBtn ? (isFavorite ? 'FAVORITED' : 'FAVORITE') :
                        btn.text}
                     </button>
                   );
@@ -1212,6 +1301,16 @@ export default function PropertyDetailPage() {
           isOpen={showContactModal}
           onClose={() => setShowContactModal(false)}
           propertyName={property?.name}
+        />
+
+        {/* Login Modal */}
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          onSuccess={() => {
+            setShowLoginModal(false);
+            checkFavoriteStatus();
+          }}
         />
 
         {/* Share Modal */}

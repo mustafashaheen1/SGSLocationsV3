@@ -2,14 +2,17 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import LoginModal from './LoginModal';
 
 interface ContactFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   propertyName?: string;
+  propertyId?: string;
 }
 
-export default function ContactFormModal({ isOpen, onClose, propertyName }: ContactFormModalProps) {
+export default function ContactFormModal({ isOpen, onClose, propertyName, propertyId }: ContactFormModalProps) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -29,6 +32,11 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
   const [selectedEnd, setSelectedEnd] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -41,6 +49,39 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
       setFormData(prev => ({ ...prev, locations: propertyName }));
     }
   }, [propertyName]);
+
+  // Check authentication and auto-fill user data
+  useEffect(() => {
+    async function checkAuthAndFetchUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+
+        // Fetch user details from users table
+        const { data: userData } = await supabase
+          .from('users')
+          .select('full_name, email, phone, company_name')
+          .eq('id', user.id)
+          .single();
+
+        if (userData) {
+          const [firstName, ...lastNameParts] = (userData.full_name || '').split(' ');
+          setFormData(prev => ({
+            ...prev,
+            firstName: firstName || '',
+            lastName: lastNameParts.join(' ') || '',
+            email: userData.email || user.email || '',
+            phone: userData.phone || '',
+            company: userData.company_name || ''
+          }));
+        }
+      }
+    }
+
+    if (isOpen) {
+      checkAuthAndFetchUser();
+    }
+  }, [isOpen]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -96,12 +137,55 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // TODO: Add your form submission logic here
-    alert('Thank you for your inquiry! We will get back to you soon.');
-    onClose();
+
+    // Check authentication
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const response = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: propertyId,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          company: formData.company,
+          phone: formData.phone,
+          message: formData.message,
+          crew_size: formData.crewSize,
+          locations: formData.locations,
+          shooting_date: formData.shootingDate,
+          project_type: formData.projectType,
+          how_did_you_hear: formData.howDidYouHear
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit inquiry');
+      }
+
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        onClose();
+        setSubmitSuccess(false);
+      }, 2000);
+
+    } catch (error: any) {
+      setSubmitError(error.message || 'Failed to submit inquiry. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -211,10 +295,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
                     required
                     name="firstName"
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="First name *"
                     value={formData.firstName}
                     onChange={handleChange}
+                    readOnly={!!user}
+                    disabled={!!user}
                   />
                 </div>
 
@@ -223,10 +309,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
                     required
                     name="lastName"
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="Last name *"
                     value={formData.lastName}
                     onChange={handleChange}
+                    readOnly={!!user}
+                    disabled={!!user}
                   />
                 </div>
 
@@ -235,10 +323,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
                     required
                     name="email"
                     type="email"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="Email *"
                     value={formData.email}
                     onChange={handleChange}
+                    readOnly={!!user}
+                    disabled={!!user}
                   />
                 </div>
 
@@ -399,24 +489,72 @@ export default function ContactFormModal({ isOpen, onClose, propertyName }: Cont
               </div>
             </div>
 
+            {/* Error/Success Messages */}
+            {submitError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+                {submitError}
+              </div>
+            )}
+
+            {submitSuccess && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded text-sm">
+                Inquiry submitted successfully! We'll get back to you soon.
+              </div>
+            )}
+
             {/* Submit Button */}
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
                 className="px-6 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
-                Send Inquiry
+                {isSubmitting ? 'Submitting...' : 'Send Inquiry'}
               </button>
             </div>
           </form>
         </div>
+
+        {/* Login Modal */}
+        {showLoginModal && (
+          <LoginModal
+            isOpen={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            onSuccess={async () => {
+              setShowLoginModal(false);
+              // Recheck authentication after login
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                setUser(user);
+                const { data: userData } = await supabase
+                  .from('users')
+                  .select('full_name, email, phone, company_name')
+                  .eq('id', user.id)
+                  .single();
+
+                if (userData) {
+                  const [firstName, ...lastNameParts] = (userData.full_name || '').split(' ');
+                  setFormData(prev => ({
+                    ...prev,
+                    firstName: firstName || '',
+                    lastName: lastNameParts.join(' ') || '',
+                    email: userData.email || user.email || '',
+                    phone: userData.phone || '',
+                    company: userData.company_name || ''
+                  }));
+                }
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );
