@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import LoginModal from '@/components/LoginModal';
 
 export default function ContactPage() {
   const [gridData, setGridData] = useState<any[]>([]);
@@ -24,6 +25,13 @@ export default function ContactPage() {
     projectType: '',
     howDidYouHear: ''
   });
+
+  const [user, setUser] = useState<any>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   const [showPicker, setShowPicker] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -102,16 +110,180 @@ export default function ContactPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    async function checkAuthAndFetchUserData() {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      if (currentUser) {
+        setUser(currentUser);
+
+        // Fetch user details from users table
+        const { data: userData, error } = await (supabase
+          .from('users') as any)
+          .select('full_name, email, phone, company_name')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (userData && !error) {
+          const nameParts = userData.full_name?.split(' ') || [];
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          setFormData(prev => ({
+            ...prev,
+            firstName,
+            lastName,
+            email: userData.email || currentUser.email || '',
+            phone: userData.phone || '',
+            company: userData.company_name || ''
+          }));
+        }
+      }
+    }
+
+    checkAuthAndFetchUserData();
+  }, []);
+
+  const formatPhoneNumber = (value: string) => {
+    const phoneNumber = value.replace(/\D/g, '');
+    if (phoneNumber.length <= 3) {
+      return phoneNumber;
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    }
+  };
+
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone) return true; // Optional field
+    const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+    const isValid = phoneRegex.test(phone.replace(/\s/g, ''));
+    if (!isValid) {
+      setPhoneError('Please enter a valid US phone number');
+      return false;
+    }
+    setPhoneError('');
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+
+    // Validate phone before submitting
+    if (formData.phone && !validatePhoneNumber(formData.phone)) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      // Check authentication in real-time
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        setIsSubmitting(false);
+        setShowLoginModal(true);
+        return;
+      }
+
+      const response = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          property_id: null, // General inquiry (no specific property)
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          user_email: formData.email,
+          user_phone: formData.phone || null,
+          company: formData.company || null,
+          message: formData.message,
+          crew_size: formData.crewSize ? parseInt(formData.crewSize) : null,
+          locations: formData.locations || null,
+          shooting_date: formData.shootingDate || null,
+          project_type: formData.projectType || null,
+          how_did_you_hear: formData.howDidYouHear || null
+        })
+      });
+
+      if (response.ok) {
+        setSubmitSuccess(true);
+        // Reset non-user fields
+        setFormData(prev => ({
+          ...prev,
+          message: '',
+          crewSize: '',
+          locations: '',
+          shootingDate: '',
+          projectType: '',
+          howDidYouHear: ''
+        }));
+        setSelectedStart(null);
+        setSelectedEnd(null);
+
+        // Auto-hide success message after 5 seconds
+        setTimeout(() => setSubmitSuccess(false), 5000);
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to submit inquiry');
+      }
+    } catch (error: any) {
+      setSubmitError(error.message || 'Failed to submit inquiry. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      const formatted = formatPhoneNumber(value);
+      setFormData({ ...formData, [name]: formatted });
+      if (phoneError) {
+        setPhoneError('');
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleLoginSuccess = async () => {
+    setShowLoginModal(false);
+
+    // Re-check auth and fetch user data
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser) {
+      setUser(currentUser);
+
+      const { data: userData } = await (supabase
+        .from('users') as any)
+        .select('full_name, email, phone, company_name')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (userData) {
+        const nameParts = userData.full_name?.split(' ') || [];
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        setFormData(prev => ({
+          ...prev,
+          firstName,
+          lastName,
+          email: userData.email || currentUser.email || '',
+          phone: userData.phone || '',
+          company: userData.company_name || ''
+        }));
+      }
+
+      // Retry form submission
+      const form = document.querySelector('form');
+      if (form) {
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
   };
 
   const formatDateRange = (start: Date, end: Date) => {
@@ -735,6 +907,34 @@ export default function ContactPage() {
             General Inquiry
           </h1>
 
+          {submitSuccess && (
+            <div style={{
+              backgroundColor: '#d4edda',
+              borderColor: '#c3e6cb',
+              color: '#155724',
+              padding: '0.75rem 1.25rem',
+              marginBottom: '1rem',
+              border: '1px solid transparent',
+              borderRadius: '0.25rem'
+            }}>
+              Your inquiry has been submitted successfully! We'll get back to you soon.
+            </div>
+          )}
+
+          {submitError && (
+            <div style={{
+              backgroundColor: '#f8d7da',
+              borderColor: '#f5c6cb',
+              color: '#721c24',
+              padding: '0.75rem 1.25rem',
+              marginBottom: '1rem',
+              border: '1px solid transparent',
+              borderRadius: '0.25rem'
+            }}>
+              {submitError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="row">
               <div className="col-sm-6">
@@ -749,6 +949,9 @@ export default function ContactPage() {
                     placeholder="First name *"
                     value={formData.firstName}
                     onChange={handleChange}
+                    readOnly={!!user}
+                    disabled={!!user}
+                    style={user ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
                   />
                 </div>
 
@@ -763,6 +966,9 @@ export default function ContactPage() {
                     placeholder="Last name *"
                     value={formData.lastName}
                     onChange={handleChange}
+                    readOnly={!!user}
+                    disabled={!!user}
+                    style={user ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
                   />
                 </div>
 
@@ -777,6 +983,9 @@ export default function ContactPage() {
                     placeholder="Email *"
                     value={formData.email}
                     onChange={handleChange}
+                    readOnly={!!user}
+                    disabled={!!user}
+                    style={user ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
                   />
                 </div>
 
@@ -817,10 +1026,16 @@ export default function ContactPage() {
                     id="phone"
                     type="text"
                     className="form-control"
-                    placeholder="Phone"
+                    placeholder="Phone (e.g., (555) 123-4567)"
                     value={formData.phone}
                     onChange={handleChange}
+                    style={phoneError ? { borderColor: '#dc3545' } : {}}
                   />
+                  {phoneError && (
+                    <p style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                      {phoneError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -1111,6 +1326,7 @@ export default function ContactPage() {
               <div className="col-md-4 offset-md-4 col-sm-6 offset-sm-3">
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="btn btn-primary btn-lg il-submit-btn w-100 mb-4"
                   style={{
                     backgroundColor: '#dc3545',
@@ -1119,10 +1335,12 @@ export default function ContactPage() {
                     padding: '0.75rem',
                     fontWeight: 400,
                     borderRadius: '0.3rem',
-                    width: '100%'
+                    width: '100%',
+                    opacity: isSubmitting ? 0.6 : 1,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  Submit
+                  {isSubmitting ? 'Submitting...' : 'Submit'}
                 </button>
               </div>
             </div>
@@ -1192,6 +1410,12 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </>
   );
 }

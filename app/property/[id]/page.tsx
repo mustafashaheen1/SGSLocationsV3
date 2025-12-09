@@ -1301,6 +1301,7 @@ export default function PropertyDetailPage() {
           isOpen={showContactModal}
           onClose={() => setShowContactModal(false)}
           propertyName={property?.name}
+          propertyId={property?.id}
         />
 
         {/* Login Modal */}

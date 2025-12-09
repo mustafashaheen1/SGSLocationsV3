@@ -22,7 +22,9 @@ export default function PropertyInquiriesTab({ propertyId }: PropertyInquiriesTa
   async function fetchInquiries() {
     setLoading(true);
     try {
-      const response = await fetch(`/api/inquiries?property_id=${propertyId}`);
+      const response = await fetch(`/api/inquiries?property_id=${propertyId}`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       setInquiries(data.inquiries || []);
     } catch (error) {
@@ -37,6 +39,7 @@ export default function PropertyInquiriesTab({ propertyId }: PropertyInquiriesTa
       const response = await fetch(`/api/inquiries/${inquiryId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus })
       });
 

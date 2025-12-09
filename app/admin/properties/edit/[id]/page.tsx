@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 import { GridPreview } from '@/components/admin/GridPreview';
+import PropertyInquiriesTab from '@/components/admin/PropertyInquiriesTab';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -49,11 +50,14 @@ interface ImageWithTags {
   existingId?: string;
 }
 
+type TabType = 'details' | 'images' | 'documents' | 'inquiries';
+
 export default function EditPropertyPage() {
   const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('details');
   const [categories, setCategories] = useState<Category[]>([]);
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
@@ -597,7 +601,61 @@ export default function EditPropertyPage() {
         <h1 className="text-3xl font-bold">Edit Property</h1>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+            <button
+              type="button"
+              onClick={() => setActiveTab('details')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'details'
+                  ? 'border-[#e11921] text-[#e11921]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Property Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('images')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'images'
+                  ? 'border-[#e11921] text-[#e11921]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Images & Tags
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('documents')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'documents'
+                  ? 'border-[#e11921] text-[#e11921]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Documents
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('inquiries')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'inquiries'
+                  ? 'border-[#e11921] text-[#e11921]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Inquiries
+            </button>
+          </nav>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+        {/* Property Details Tab */}
+        {activeTab === 'details' && (
         <div className="grid grid-cols-2 gap-6">
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">Property Name *</label>
@@ -848,7 +906,12 @@ export default function EditPropertyPage() {
               </div>
             </div>
           </div>
+        </div>
+        )}
 
+        {/* Images & Tags Tab */}
+        {activeTab === 'images' && (
+        <div className="grid grid-cols-2 gap-6">
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">
               Property Images * (Minimum 6 images required for grid display)
@@ -1071,7 +1134,27 @@ export default function EditPropertyPage() {
             )}
           </div>
         </div>
+        )}
 
+        {/* Documents Tab */}
+        {activeTab === 'documents' && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">Documents management coming soon...</p>
+            <p className="text-sm text-gray-400">
+              This section will allow you to upload and manage property documents, contracts, and other files.
+            </p>
+          </div>
+        )}
+
+        {/* Inquiries Tab */}
+        {activeTab === 'inquiries' && (
+          <div>
+            <PropertyInquiriesTab propertyId={params.id as string} />
+          </div>
+        )}
+
+        {/* Save/Cancel Buttons - Only show on details and images tabs */}
+        {(activeTab === 'details' || activeTab === 'images') && (
         <div className="flex gap-4 pt-4 border-t">
           <Button
             type="submit"
@@ -1084,6 +1167,7 @@ export default function EditPropertyPage() {
             Cancel
           </Button>
         </div>
+        )}
       </form>
 
       {/* AI Analysis Progress Modal */}

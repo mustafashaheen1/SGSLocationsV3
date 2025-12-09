@@ -20,7 +20,8 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(xargs:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

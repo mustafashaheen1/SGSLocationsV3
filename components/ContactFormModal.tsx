@@ -37,6 +37,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
   const pickerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -137,8 +138,54 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Format phone number as user types
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-numeric characters
+    const phoneNumber = value.replace(/\D/g, '');
+
+    // Format as (XXX) XXX-XXXX
+    if (phoneNumber.length <= 3) {
+      return phoneNumber;
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    }
+  };
+
+  // Validate US phone number
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone) {
+      setPhoneError('');
+      return true; // Phone is optional
+    }
+
+    const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+    const isValid = phoneRegex.test(phone.replace(/\s/g, ''));
+
+    if (!isValid) {
+      setPhoneError('Please enter a valid US phone number');
+      return false;
+    }
+
+    setPhoneError('');
+    return true;
+  };
+
+  // Handle phone input change
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setFormData({ ...formData, phone: formatted });
+    validatePhoneNumber(formatted);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate phone before submitting
+    if (formData.phone && !validatePhoneNumber(formData.phone)) {
+      return;
+    }
 
     setIsSubmitting(true);
     setSubmitError('');
@@ -156,6 +203,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
       const response = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           property_id: propertyId,
           first_name: formData.firstName,
@@ -365,12 +413,18 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                 <div>
                   <input
                     name="phone"
-                    type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                    placeholder="Phone"
+                    type="tel"
+                    className={`w-full px-4 py-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${
+                      phoneError ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Phone (XXX) XXX-XXXX"
                     value={formData.phone}
-                    onChange={handleChange}
+                    onChange={handlePhoneChange}
+                    maxLength={14}
                   />
+                  {phoneError && (
+                    <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                  )}
                 </div>
 
                 <div>

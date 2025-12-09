@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Eye, Edit, Trash2, Search, Bookmark, Calendar, Heart } from 'lucide-react';
 import { getGuestListing, clearGuestListing } from '@/lib/guest-listing';
 import MasterCalendar from '@/components/MasterCalendar';
+import { Inquiry } from '@/lib/supabase';
+import InquiryDetailModal from '@/components/admin/InquiryDetailModal';
 
 export default function ProductionDashboard() {
   const router = useRouter();
@@ -33,6 +35,9 @@ export default function ProductionDashboard() {
   const [loadingSearches, setLoadingSearches] = useState(false);
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [loadingInquiries, setLoadingInquiries] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [processingPendingSubmission, setProcessingPendingSubmission] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
@@ -43,6 +48,7 @@ export default function ProductionDashboard() {
     fetchUserProperties();
     fetchSavedSearches();
     fetchFavoriteProperties();
+    fetchInquiries();
     handlePendingPropertySubmission();
   }, []);
 
@@ -265,6 +271,21 @@ export default function ProductionDashboard() {
       console.error('Error loading favorite properties:', error);
     } finally {
       setLoadingFavorites(false);
+    }
+  }
+
+  async function fetchInquiries() {
+    setLoadingInquiries(true);
+    try {
+      const response = await fetch('/api/inquiries', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      setInquiries(data.inquiries || []);
+    } catch (error) {
+      console.error('Error fetching inquiries:', error);
+    } finally {
+      setLoadingInquiries(false);
     }
   }
 
@@ -1018,8 +1039,77 @@ export default function ProductionDashboard() {
             )}
 
             {activeTab === 'inquiries' && (
-              <div className="text-center py-12 text-gray-500">
-                Your inquiries will appear here
+              <div>
+                {loadingInquiries ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                    <p className="mt-2 text-gray-600">Loading inquiries...</p>
+                  </div>
+                ) : inquiries.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">
+                      {userType === 'property_owner'
+                        ? 'You haven\'t submitted any inquiries yet, and no one has inquired about your properties.'
+                        : 'You haven\'t submitted any inquiries yet.'}
+                    </p>
+                    <Button
+                      onClick={() => router.push('/search')}
+                      className="bg-[#e11921] hover:bg-red-700"
+                    >
+                      Browse Properties
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {inquiries.map((inquiry) => {
+                      const propertyName = inquiry.properties?.name || 'General Inquiry';
+                      const propertyImage = inquiry.properties?.primary_image;
+                      const propertyCity = inquiry.properties?.city;
+
+                      return (
+                        <div key={inquiry.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                          {propertyImage && (
+                            <div className="h-32 bg-gray-200">
+                              <img
+                                src={propertyImage}
+                                alt={propertyName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900">{propertyName}</h3>
+                                {propertyCity && <p className="text-sm text-gray-500">{propertyCity}</p>}
+                              </div>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                inquiry.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                                inquiry.status === 'responded' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {inquiry.status.charAt(0).toUpperCase() + inquiry.status.slice(1)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                              {inquiry.message}
+                            </p>
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>Submitted {new Date(inquiry.created_at).toLocaleDateString()}</span>
+                              <button
+                                onClick={() => setSelectedInquiry(inquiry)}
+                                className="text-[#e11921] hover:text-red-700 font-medium flex items-center gap-1"
+                              >
+                                <Eye size={14} />
+                                View Details
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1050,6 +1140,16 @@ export default function ProductionDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Inquiry Detail Modal */}
+      {selectedInquiry && (
+        <InquiryDetailModal
+          inquiry={selectedInquiry}
+          onClose={() => setSelectedInquiry(null)}
+          onStatusUpdate={async () => {}}
+          canUpdateStatus={false}
+        />
       )}
     </div>
   );
