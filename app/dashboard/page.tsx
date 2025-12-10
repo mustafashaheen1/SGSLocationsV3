@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Eye, Edit, Trash2, Search, Bookmark, Calendar, Heart } from 'lucide-react';
 import { getGuestListing, clearGuestListing } from '@/lib/guest-listing';
 import MasterCalendar from '@/components/MasterCalendar';
-import { Inquiry } from '@/lib/supabase';
-import InquiryDetailModal from '@/components/admin/InquiryDetailModal';
 
 export default function ProductionDashboard() {
   const router = useRouter();
@@ -35,9 +33,6 @@ export default function ProductionDashboard() {
   const [loadingSearches, setLoadingSearches] = useState(false);
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loadingInquiries, setLoadingInquiries] = useState(false);
-  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [processingPendingSubmission, setProcessingPendingSubmission] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
@@ -48,7 +43,6 @@ export default function ProductionDashboard() {
     fetchUserProperties();
     fetchSavedSearches();
     fetchFavoriteProperties();
-    fetchInquiries();
     handlePendingPropertySubmission();
   }, []);
 
@@ -271,36 +265,6 @@ export default function ProductionDashboard() {
       console.error('Error loading favorite properties:', error);
     } finally {
       setLoadingFavorites(false);
-    }
-  }
-
-  async function fetchInquiries() {
-    setLoadingInquiries(true);
-    try {
-      // Get session to include access token
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json'
-      };
-
-      // Add Authorization header if we have a session
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
-      const response = await fetch('/api/inquiries', {
-        credentials: 'include',
-        headers
-      });
-      const data = await response.json();
-      console.log('Fetched inquiries data:', data);
-      console.log('Number of inquiries:', data.inquiries?.length || 0);
-      setInquiries(data.inquiries || []);
-    } catch (error) {
-      console.error('Error fetching inquiries:', error);
-    } finally {
-      setLoadingInquiries(false);
     }
   }
 
@@ -546,7 +510,7 @@ export default function ProductionDashboard() {
 
         <div className="bg-white rounded-lg shadow">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+            <nav className="flex space-x-4 sm:space-x-8 px-6 overflow-x-auto scrollbar-hide">
               {/* Only show My Locations tab for property owners */}
               {userType === 'property_owner' && (
                 <button
@@ -579,16 +543,6 @@ export default function ProductionDashboard() {
                 }`}
               >
                 Favorites
-              </button>
-              <button
-                onClick={() => setActiveTab('inquiries')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'inquiries'
-                    ? 'border-[#e11921] text-[#e11921]'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Inquiries
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
@@ -760,7 +714,9 @@ export default function ProductionDashboard() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
@@ -857,6 +813,75 @@ export default function ProductionDashboard() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Mobile cards */}
+                  <div className="md:hidden space-y-4">
+                    {userProperties.map((property) => (
+                      <div key={property.id} className="bg-white rounded-lg shadow p-4">
+                        <div className="flex items-start gap-3">
+                          {property.primary_image && (
+                            <img
+                              src={property.primary_image}
+                              alt={property.name}
+                              className="w-20 h-20 object-cover rounded flex-shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">{property.name}</h3>
+                            <p className="text-sm text-gray-600 truncate">{property.address}</p>
+                            <p className="text-sm text-gray-500">{property.city}, {property.county}</p>
+                            <div className="mt-2 flex items-center gap-2">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                property.status === 'active'
+                                  ? 'bg-green-100 text-green-800'
+                                  : property.status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(property.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          {property.status === 'active' && (
+                            <button
+                              onClick={() => router.push(`/property/${property.id}`)}
+                              className="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View
+                            </button>
+                          )}
+                          <button
+                            onClick={() => router.push(`/property/${property.id}/calendar`)}
+                            className="py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            Calendar
+                          </button>
+                          <button
+                            onClick={() => router.push(`/edit-property/${property.id}`)}
+                            className="py-2 px-3 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProperty(property.id, property.name)}
+                            className="py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  </>
                 )}
               </div>
             )}
@@ -998,7 +1023,7 @@ export default function ProductionDashboard() {
                       return (
                         <div key={favorite.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow bg-white">
                           <div
-                            className="relative h-48 bg-gray-200 cursor-pointer"
+                            className="relative h-32 sm:h-48 bg-gray-200 cursor-pointer"
                             onClick={() => router.push(`/property/${property.id}`)}
                           >
                             {property.primary_image || (property.images && property.images[0]) ? (
@@ -1052,81 +1077,6 @@ export default function ProductionDashboard() {
                 )}
               </div>
             )}
-
-            {activeTab === 'inquiries' && (
-              <div>
-                {loadingInquiries ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                    <p className="mt-2 text-gray-600">Loading inquiries...</p>
-                  </div>
-                ) : inquiries.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">
-                      {userType === 'property_owner'
-                        ? 'You haven\'t submitted any inquiries yet, and no one has inquired about your properties.'
-                        : 'You haven\'t submitted any inquiries yet.'}
-                    </p>
-                    <Button
-                      onClick={() => router.push('/search')}
-                      className="bg-[#e11921] hover:bg-red-700"
-                    >
-                      Browse Properties
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {inquiries.map((inquiry) => {
-                      const propertyName = inquiry.properties?.name || 'General Inquiry';
-                      const propertyImage = inquiry.properties?.primary_image;
-                      const propertyCity = inquiry.properties?.city;
-
-                      return (
-                        <div key={inquiry.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                          {propertyImage && (
-                            <div className="h-32 bg-gray-200">
-                              <img
-                                src={propertyImage}
-                                alt={propertyName}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                          <div className="p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">{propertyName}</h3>
-                                {propertyCity && <p className="text-sm text-gray-500">{propertyCity}</p>}
-                              </div>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                inquiry.status === 'new' ? 'bg-blue-100 text-blue-800' :
-                                inquiry.status === 'responded' ? 'bg-green-100 text-green-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {inquiry.status.charAt(0).toUpperCase() + inquiry.status.slice(1)}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                              {inquiry.message}
-                            </p>
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>Submitted {new Date(inquiry.created_at).toLocaleDateString()}</span>
-                              <button
-                                onClick={() => setSelectedInquiry(inquiry)}
-                                className="text-[#e11921] hover:text-red-700 font-medium flex items-center gap-1"
-                              >
-                                <Eye size={14} />
-                                View Details
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -1155,16 +1105,6 @@ export default function ProductionDashboard() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Inquiry Detail Modal */}
-      {selectedInquiry && (
-        <InquiryDetailModal
-          inquiry={selectedInquiry}
-          onClose={() => setSelectedInquiry(null)}
-          onStatusUpdate={async () => {}}
-          canUpdateStatus={false}
-        />
       )}
     </div>
   );

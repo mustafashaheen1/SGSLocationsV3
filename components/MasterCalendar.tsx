@@ -157,7 +157,7 @@ export default function MasterCalendar() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600">Total Events</p>
           <p className="text-2xl font-bold text-gray-900">{events.length}</p>
@@ -209,7 +209,7 @@ export default function MasterCalendar() {
       </div>
 
       {/* Calendar */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200" style={{ height: '700px' }}>
+      <div className="bg-white p-4 rounded-lg border border-gray-200 h-[500px] md:h-[700px]">
         <Calendar
           localizer={localizer}
           events={filteredEvents}

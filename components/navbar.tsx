@@ -15,6 +15,7 @@ export function Navbar() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const [showPortfolio, setShowPortfolio] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
@@ -24,9 +25,21 @@ export function Navbar() {
     checkAuth();
     fetchPortfolioVisibility();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setIsAuthenticated(!!session);
       setUserEmail(session?.user?.email || null);
+
+      if (session?.user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('user_type')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        setUserType(userData?.user_type || null);
+      } else {
+        setUserType(null);
+      }
     });
 
     return () => {
@@ -83,6 +96,18 @@ export function Navbar() {
     const { data: { session } } = await supabase.auth.getSession();
     setIsAuthenticated(!!session);
     setUserEmail(session?.user?.email || null);
+
+    if (session?.user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('user_type')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      setUserType(userData?.user_type || null);
+    } else {
+      setUserType(null);
+    }
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -106,7 +131,8 @@ export function Navbar() {
     { label: 'LOCATION LIBRARY', href: '/location-library' },
     { label: 'ABOUT US', href: '/about' },
     { label: 'CONTACT', href: '/contact' },
-    { label: 'LIST YOUR PROPERTY', href: '/list-your-property' },
+    // Only show "List Your Property" if user is not logged in OR is a property_owner
+    ...(!isAuthenticated || userType === 'property_owner' ? [{ label: 'LIST YOUR PROPERTY', href: '/list-your-property' }] : []),
   ];
 
   if (isAuthenticated) {

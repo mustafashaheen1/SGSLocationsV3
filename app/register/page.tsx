@@ -325,7 +325,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="mt-5 mb-5">
-                <div className="border border-gray-300 bg-gray-50 p-4 mx-auto" style={{ maxWidth: '304px' }}>
+                <div className="border border-gray-300 bg-gray-50 p-4 mx-auto" style={{ width: '100%', maxWidth: '304px' }}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <input

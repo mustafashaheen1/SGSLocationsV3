@@ -169,6 +169,7 @@ export default function UsersPage() {
         </div>
 
         <div className="overflow-x-auto">
+          <div className="min-w-[800px]">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -240,6 +241,7 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {filteredUsers.length > 0 && (

@@ -9,7 +9,7 @@ declare global {
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,7 @@ import { uploadMultipleImages, deleteImageFromS3, uploadDocumentToS3, deleteDocu
 import { GridPreview } from '@/components/admin/GridPreview';
 import { generateObfuscatedName } from '@/lib/name-obfuscator';
 import PropertyCalendar from '@/components/PropertyCalendar';
+import PropertyInquiriesTab from '@/components/admin/PropertyInquiriesTab';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -67,11 +68,13 @@ export default function EditPropertyPage() {
 
   // Get tab from URL query parameter
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const tabParam = searchParams.get('tab') as 'details' | 'images' | 'calendar' | 'contacts' | 'documents' | null;
+  const tabParam = searchParams.get('tab') as 'details' | 'images' | 'calendar' | 'contacts' | 'documents' | 'inquiries' | null;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [mainCategories, setMainCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<ImageWithTags[]>([]);
   const [gridIndices, setGridIndices] = useState<number[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -96,6 +99,7 @@ export default function EditPropertyPage() {
     latitude: null as number | null,
     longitude: null as number | null,
     category_id: '',
+    sub_category_id: '',
     is_featured: false,
     is_exclusive: false,
     albumkey: '',
@@ -115,8 +119,8 @@ export default function EditPropertyPage() {
     downloads: 0
   });
 
-  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts' | 'documents'>(
-    tabParam && ['details', 'images', 'calendar', 'contacts', 'documents'].includes(tabParam) ? tabParam : 'details'
+  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts' | 'documents' | 'inquiries'>(
+    tabParam && ['details', 'images', 'calendar', 'contacts', 'documents', 'inquiries'].includes(tabParam) ? tabParam : 'details'
   );
 
   const [isAdminProperty, setIsAdminProperty] = useState<boolean>(true); // Track if property is admin-owned (no owner_id)
@@ -255,7 +259,8 @@ export default function EditPropertyPage() {
         zipcode: prop.zipcode || '',
         latitude: prop.latitude,
         longitude: prop.longitude,
-        category_id: '', // Will be set by useEffect after categories load
+        category_id: prop.category_id || '', // Direct from DB, or will be set by useEffect
+        sub_category_id: prop.sub_category_id || '', // Direct from DB, or will be set by useEffect
         is_featured: prop.is_featured || false,
         is_exclusive: prop.is_exclusive || false,
         albumkey: prop.albumkey || '',
@@ -331,10 +336,17 @@ export default function EditPropertyPage() {
     const { data, error} = await supabase
       .from('categories')
       .select('*')
-      .order('name');
+      .order('display_order');
 
     if (!error && data) {
       setCategories(data);
+
+      // Separate main categories (parent_id is null) and sub-categories (parent_id is not null)
+      const mainCats = data.filter((cat: any) => !cat.parent_id);
+      const subCats = data.filter((cat: any) => cat.parent_id);
+
+      setMainCategories(mainCats);
+      setSubCategories(subCats);
     }
   }
 
@@ -747,6 +759,29 @@ export default function EditPropertyPage() {
 
   async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number, tagsToUse?: FilterTag[]): Promise<string[]> {
     try {
+      // Check if AI photo analysis is enabled in settings
+      const { data: aiSetting } = await (supabase
+        .from('site_settings') as any)
+        .select('value')
+        .eq('key', 'ai_photo_analysis_enabled')
+        .maybeSingle();
+
+      let isAiEnabled = false;
+      if (aiSetting && aiSetting.value !== null && aiSetting.value !== undefined) {
+        const value = typeof aiSetting.value === 'string' ? JSON.parse(aiSetting.value) : aiSetting.value;
+        isAiEnabled = value === true || value === 'true';
+      }
+
+      if (!isAiEnabled) {
+        console.log(`⚙️ AI Photo Analysis is disabled - skipping analysis for image ${imageIndex + 1}/${totalImages}`);
+        setAnalysisProgress({
+          current: imageIndex + 1,
+          total: totalImages,
+          status: `Skipped AI analysis for image ${imageIndex + 1} (AI disabled)`
+        });
+        return [];
+      }
+
       const tags = tagsToUse || availableTags;
 
       console.log(`\n🤖 Starting analysis for image ${imageIndex + 1}/${totalImages}`);
@@ -968,8 +1003,9 @@ export default function EditPropertyPage() {
       const nonGridImages = images.filter((_, i) => !gridIndices.slice(0, 6).includes(i));
       const reorderedImages = [...gridImages, ...nonGridImages];
 
-      // Get the selected category name
-      const selectedCategory = categories.find(c => c.id === formData.category_id);
+      // Get the selected category and sub-category names
+      const selectedMainCategory = categories.find(c => c.id === formData.category_id);
+      const selectedSubCategory = categories.find(c => c.id === formData.sub_category_id);
 
       // Regenerate obfuscated name from real_name
       const obfuscatedName = generateObfuscatedName(formData.real_name);
@@ -986,9 +1022,15 @@ export default function EditPropertyPage() {
         zipcode: formData.zipcode || '',
         latitude: formData.latitude,
         longitude: formData.longitude,
+        category_id: formData.category_id || null,
+        sub_category_id: formData.sub_category_id || null,
         is_featured: formData.is_featured,
         is_exclusive: formData.is_exclusive,
-        categories: selectedCategory ? [selectedCategory.name] : [],
+        // Include both main category and sub-category names in categories array
+        categories: [
+          selectedMainCategory?.name,
+          selectedSubCategory?.name
+        ].filter(Boolean), // Remove null/undefined values
         property_tags: propertyTags,
         primary_image: reorderedImages[0]?.url || null,
         images: reorderedImages.map(img => img.url),
@@ -1193,6 +1235,18 @@ export default function EditPropertyPage() {
               <FileText className="w-4 h-4" />
               Documents
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('inquiries')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
+                activeTab === 'inquiries'
+                  ? 'border-[#e11921] text-[#e11921]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Inquiries
+            </button>
           </nav>
         </div>
 
@@ -1313,21 +1367,49 @@ export default function EditPropertyPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Category *</label>
+                  <label className="block text-sm font-medium mb-2">Main Category *</label>
                   <select
                     name="category_id"
                     value={formData.category_id}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      // Reset sub-category when main category changes
+                      setFormData(prev => ({ ...prev, sub_category_id: '' }));
+                    }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
                     required
                   >
-                    <option value="">Select a category</option>
-                    {categories.map(category => (
+                    <option value="">Select a main category</option>
+                    {mainCategories.map(category => (
                       <option key={category.id} value={category.id}>
                         {category.name}
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Sub-Category *</label>
+                  <select
+                    name="sub_category_id"
+                    value={formData.sub_category_id}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+                    required
+                    disabled={!formData.category_id}
+                  >
+                    <option value="">Select a sub-category</option>
+                    {subCategories
+                      .filter((subCat: any) => subCat.parent_id === formData.category_id)
+                      .map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </select>
+                  {!formData.category_id && (
+                    <p className="text-xs text-gray-500 mt-1">Select a main category first</p>
+                  )}
                 </div>
 
                 <div className="col-span-2 grid grid-cols-2 gap-6">
@@ -2047,6 +2129,13 @@ export default function EditPropertyPage() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Inquiries Tab */}
+          {activeTab === 'inquiries' && (
+            <div>
+              <PropertyInquiriesTab propertyId={propertyId} />
             </div>
           )}
         </form>

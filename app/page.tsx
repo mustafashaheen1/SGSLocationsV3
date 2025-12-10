@@ -43,6 +43,8 @@ export default function HomePage() {
   const [services, setServices] = useState<Service[]>([]);
   const [productionLogos, setProductionLogos] = useState<ProductionLogo[]>([]);
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -154,7 +156,25 @@ export default function HomePage() {
     }
 
     fetchData();
+    checkAuth();
   }, []);
+
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+
+    if (session?.user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('user_type')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      setUserType(userData?.user_type || null);
+    } else {
+      setUserType(null);
+    }
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,7 +228,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl mb-6 tracking-tight" style={{fontWeight: 100}}>
             {heroTitle.split('\n').map((line, i) => (
               <span key={i}>
                 {line}
@@ -216,7 +236,7 @@ export default function HomePage() {
               </span>
             ))}
           </h1>
-          <p className="text-xl sm:text-2xl md:text-3xl mb-12" style={{fontWeight: 300}}>
+          <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-12" style={{fontWeight: 300}}>
             {heroSubtitle}
           </p>
 
@@ -228,14 +248,16 @@ export default function HomePage() {
             >
               Search Locations
             </Button>
-            <Button
-              onClick={() => router.push('/list-your-property')}
-              size="lg"
-              variant="outline"
-              className="text-lg bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
-            >
-              List Your Property
-            </Button>
+            {(!isAuthenticated || userType === 'property_owner') && (
+              <Button
+                onClick={() => router.push('/list-your-property')}
+                size="lg"
+                variant="outline"
+                className="text-lg bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
+              >
+                List Your Property
+              </Button>
+            )}
           </div>
 
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
@@ -297,7 +319,7 @@ export default function HomePage() {
           <h2 className="text-4xl text-center mb-16" style={{fontWeight: 100, color: '#212529'}}>
             Browse by Category
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category) => (
               <Link
                 key={category.id}
@@ -367,7 +389,7 @@ export default function HomePage() {
       </section>
 
       <section className="grid md:grid-cols-2">
-        <div className="relative min-h-[400px] flex items-center justify-center p-12">
+        <div className="relative min-h-[300px] md:min-h-[400px] flex items-center justify-center p-12">
           <Image
             src="https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?w=1200&q=80"
             alt="Production professionals"
@@ -390,7 +412,7 @@ export default function HomePage() {
             </Button>
           </div>
         </div>
-        <div className="relative min-h-[400px] flex items-center justify-center p-12">
+        <div className="relative min-h-[300px] md:min-h-[400px] flex items-center justify-center p-12">
           <Image
             src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80"
             alt="Property owners"
@@ -404,13 +426,15 @@ export default function HomePage() {
             <p className="mb-6 text-lg" style={{fontWeight: 300}}>
               Turn your property into a filming location
             </p>
-            <Button
-              onClick={() => router.push('/list-your-property')}
-              size="lg"
-              className="bg-white text-gray-900 hover:bg-gray-100 rounded" style={{fontWeight: 300}}
-            >
-              List Your Property
-            </Button>
+            {(!isAuthenticated || userType === 'property_owner') && (
+              <Button
+                onClick={() => router.push('/list-your-property')}
+                size="lg"
+                className="bg-white text-gray-900 hover:bg-gray-100 rounded" style={{fontWeight: 300}}
+              >
+                List Your Property
+              </Button>
+            )}
           </div>
         </div>
       </section>

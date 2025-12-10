@@ -1280,20 +1280,23 @@ export default function ContactPage() {
                         style={{
                           transform: 'scale(1)',
                           transformOrigin: '0 0',
-                          width: '304px',
+                          width: '100%',
+                          maxWidth: '304px',
                           height: '78px',
                           margin: '0 auto'
                         }}
                       >
                         <div style={{
-                          width: '304px',
+                          width: '100%',
+                          maxWidth: '304px',
                           height: '78px',
                           border: '1px solid #d3d3d3',
                           borderRadius: '3px',
                           backgroundColor: '#f9f9f9',
                           display: 'flex',
                           alignItems: 'center',
-                          padding: '0 13px'
+                          padding: '0 13px',
+                          margin: '0 auto'
                         }}>
                           <input type="checkbox" style={{ marginRight: '12px' }} />
                           <label style={{

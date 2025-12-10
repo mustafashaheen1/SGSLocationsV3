@@ -293,7 +293,8 @@ export default function AdminPropertiesPage() {
         </Select>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <div className="min-w-[800px]">
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
@@ -417,6 +418,7 @@ export default function AdminPropertiesPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {!loading && (

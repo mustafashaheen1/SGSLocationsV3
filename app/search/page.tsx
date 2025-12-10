@@ -158,6 +158,7 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
 
       {showLightbox && (
         <div
+          className="p-5 sm:p-10"
           style={{
             position: 'fixed',
             top: 0,
@@ -166,8 +167,7 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
             bottom: 0,
             background: 'white',
             zIndex: 9999,
-            overflow: 'auto',
-            padding: '40px 20px'
+            overflow: 'auto'
           }}
           onClick={() => setShowLightbox(false)}
         >
@@ -255,6 +255,10 @@ export default function SearchPage() {
   const [saveMessage, setSaveMessage] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [mainCategories, setMainCategories] = useState<any[]>([]);
+  const [subCategories, setSubCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 8;
 
@@ -287,7 +291,30 @@ export default function SearchPage() {
 
   useEffect(() => {
     fetchFilters();
+    fetchCategories();
   }, []);
+
+  async function fetchCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('display_order');
+
+      if (error) throw error;
+
+      if (data) {
+        // Separate main categories (parent_id is null) and sub-categories
+        const mainCats = data.filter((cat: any) => !cat.parent_id);
+        const subCats = data.filter((cat: any) => cat.parent_id);
+
+        setMainCategories(mainCats);
+        setSubCategories(subCats);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }
 
   // Separate effect for restoring saved searches
   useEffect(() => {
@@ -457,7 +484,7 @@ export default function SearchPage() {
       const categoryParam = categoryName;
 
       // If no filters are active and no category/query, show all active properties
-      if (activeFilters.length === 0 && !query && !categoryParam) {
+      if (activeFilters.length === 0 && !query && !categoryParam && !selectedCategory && !selectedSubCategory) {
         console.log('Loading all properties (no filters)');
 
         const { data, error } = await supabase
@@ -484,15 +511,28 @@ export default function SearchPage() {
         return;
       }
 
-      // Handle category filter from URL (without other filters)
-      if (categoryParam && activeFilters.length === 0 && !query) {
-        console.log('Loading properties by category:', categoryParam);
+      // Handle category filter from URL or dropdowns (without other filters)
+      if ((categoryParam || selectedCategory || selectedSubCategory) && activeFilters.length === 0 && !query) {
+        console.log('Loading properties by category:', { categoryParam, selectedCategory, selectedSubCategory });
 
-        const { data, error } = await supabase
+        let categoryQuery = supabase
           .from('properties')
           .select('*')
-          .eq('status', 'active')
-          .contains('categories', [categoryParam])
+          .eq('status', 'active');
+
+        if (categoryParam) {
+          categoryQuery = categoryQuery.contains('categories', [categoryParam]);
+        }
+
+        if (selectedCategory) {
+          categoryQuery = categoryQuery.eq('category_id', selectedCategory);
+        }
+
+        if (selectedSubCategory) {
+          categoryQuery = categoryQuery.eq('sub_category_id', selectedSubCategory);
+        }
+
+        const { data, error } = await categoryQuery
           .order('is_exclusive', { ascending: false, nullsFirst: false })
           .order('name', { ascending: true })
           .range(from, to);
@@ -595,6 +635,16 @@ export default function SearchPage() {
             query = query.contains('categories', [categoryParam]);
           }
 
+          // Apply main category filter
+          if (selectedCategory) {
+            query = query.eq('category_id', selectedCategory);
+          }
+
+          // Apply sub-category filter
+          if (selectedSubCategory) {
+            query = query.eq('sub_category_id', selectedSubCategory);
+          }
+
           const { data, error: fetchError } = await query;
 
           unsortedData = data;
@@ -689,13 +739,13 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    // Reset and reload when search params or filters change
+    // Reset and reload when search params, filters, or categories change
     console.log('Resetting search state due to filter/param change');
     setProperties([]);
     setPage(1);
     setHasMore(true);
     setLoading(false); // Reset loading state to allow new search
-  }, [searchParams, activeFilters]);
+  }, [searchParams, activeFilters, selectedCategory, selectedSubCategory]);
 
   // Trigger search when needed
   useEffect(() => {
@@ -1623,6 +1673,71 @@ export default function SearchPage() {
       <div className="search-page">
         <div className="filter-bar">
           <div className="filter-row">
+            {/* Main Category Dropdown */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setSelectedSubCategory(''); // Reset sub-category when main category changes
+                setProperties([]);
+                setPage(1);
+                setHasMore(true);
+              }}
+              className="category-select"
+              style={{
+                padding: '8px 12px',
+                background: selectedCategory ? '#e11921' : 'white',
+                border: '1px solid #ced4da',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: selectedCategory ? 'white' : '#6c757d',
+                transition: 'all 0.2s',
+                fontFamily: 'acumin-pro-wide, sans-serif'
+              }}
+            >
+              <option value="">All Categories</option>
+              {mainCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Sub-Category Dropdown */}
+            <select
+              value={selectedSubCategory}
+              onChange={(e) => {
+                setSelectedSubCategory(e.target.value);
+                setProperties([]);
+                setPage(1);
+                setHasMore(true);
+              }}
+              className="category-select"
+              disabled={!selectedCategory}
+              style={{
+                padding: '8px 12px',
+                background: selectedSubCategory ? '#e11921' : 'white',
+                border: '1px solid #ced4da',
+                borderRadius: '3px',
+                cursor: selectedCategory ? 'pointer' : 'not-allowed',
+                fontSize: '14px',
+                color: selectedSubCategory ? 'white' : '#6c757d',
+                transition: 'all 0.2s',
+                opacity: selectedCategory ? 1 : 0.6,
+                fontFamily: 'acumin-pro-wide, sans-serif'
+              }}
+            >
+              <option value="">All Sub-Categories</option>
+              {subCategories
+                .filter((subCat: any) => subCat.parent_id === selectedCategory)
+                .map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+            </select>
+
             {Object.entries(filterCategories).map(([key, category]) => {
               const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
               const filteredOptions = getFilteredOptions(key, category.options);

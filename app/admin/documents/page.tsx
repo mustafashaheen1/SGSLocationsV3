@@ -196,6 +196,7 @@ export default function DocumentDirectoryPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
+                <div className="min-w-[900px]">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
@@ -222,7 +223,7 @@ export default function DocumentDirectoryPage() {
                         </td>
                         <td className="py-4 px-4">
                           <Link
-                            href={`/property/${doc.property_projects.property_id}`}
+                            href={`/admin/properties/${doc.property_projects.property_id}/edit`}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
                             <div className="font-medium">{doc.property_projects.properties.name}</div>
@@ -261,6 +262,7 @@ export default function DocumentDirectoryPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </>

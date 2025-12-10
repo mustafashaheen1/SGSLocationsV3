@@ -147,6 +147,7 @@ export default function InquiriesPage() {
         </div>
 
         <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -209,6 +210,7 @@ export default function InquiriesPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
 
         {filteredInquiries.length === 0 && (

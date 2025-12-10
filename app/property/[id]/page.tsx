@@ -663,7 +663,7 @@ export default function PropertyDetailPage() {
         .action-buttons-container {
           display: flex;
           flex-wrap: wrap;
-          gap: 0.5rem;
+          gap: 0.75rem;
           margin-bottom: 1rem;
         }
 
@@ -1238,7 +1238,7 @@ export default function PropertyDetailPage() {
                   ×
                 </button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {displayedImages.map((imgData, index) => (
                   <button
                     key={index}

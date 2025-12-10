@@ -39,7 +39,7 @@ export default function AdminDashboard() {
       const { count: inquiriesCount } = await supabase
         .from('inquiries')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+        .eq('status', 'new');
 
       // Calculate total views across all properties
       const { data: viewsData } = await supabase

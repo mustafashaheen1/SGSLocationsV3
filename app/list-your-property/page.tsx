@@ -50,6 +50,7 @@ export default function ListYourPropertyPage() {
   const router = useRouter();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isProcessingPendingSubmission, setIsProcessingPendingSubmission] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -143,13 +144,22 @@ export default function ListYourPropertyPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          setIsUserLoggedIn(true);
           // Fetch user profile from users table
           const { data: profile } = await supabase
             .from('users')
-            .select('full_name, email, phone')
+            .select('full_name, email, phone, user_type')
             .eq('id', user.id)
             .maybeSingle();
+
+          // Check if user is a producer - they cannot list properties
+          if (profile && (profile as any).user_type === 'production') {
+            console.log('Producer user trying to access list-your-property - redirecting to dashboard');
+            setCheckingAccess(false);
+            router.push('/dashboard');
+            return;
+          }
+
+          setIsUserLoggedIn(true);
 
           if (profile) {
             // Split full name into first and last name
@@ -182,8 +192,10 @@ export default function ListYourPropertyPage() {
           // Check for pending property submission
           await handlePendingSubmission(user.id);
         }
+        setCheckingAccess(false);
       } catch (error) {
         console.error('Error fetching user profile:', error);
+        setCheckingAccess(false);
       }
     }
 
@@ -571,6 +583,17 @@ export default function ListYourPropertyPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (checkingAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -16,10 +16,30 @@ export function Footer() {
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFooterContent();
+    checkAuth();
   }, []);
+
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+
+    if (session?.user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('user_type')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      setUserType(userData?.user_type || null);
+    } else {
+      setUserType(null);
+    }
+  }
 
   // Helper function to parse JSON values with multiple layers of escaping
   const parseValue = (value: any): string => {
@@ -215,7 +235,9 @@ export function Footer() {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li><Link href="/search" className="text-gray-400 hover:text-white">Search Locations</Link></li>
-              <li><Link href="/list-your-property" className="text-gray-400 hover:text-white">List Your Property</Link></li>
+              {(!isAuthenticated || userType === 'property_owner') && (
+                <li><Link href="/list-your-property" className="text-gray-400 hover:text-white">List Your Property</Link></li>
+              )}
               <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
               <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
               <li><Link href="/register" className="text-gray-400 hover:text-white">Register</Link></li>

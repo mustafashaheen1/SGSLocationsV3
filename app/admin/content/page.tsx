@@ -112,6 +112,9 @@ export default function ContentManagementPage() {
   // Portfolio Visibility State
   const [portfolioVisible, setPortfolioVisible] = useState(true);
 
+  // AI Photo Analysis State
+  const [aiPhotoAnalysisEnabled, setAiPhotoAnalysisEnabled] = useState(false);
+
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -139,6 +142,7 @@ export default function ContentManagementPage() {
   useEffect(() => {
     if (activeTab === 'other') {
       fetchTermsAndConditions();
+      fetchAiPhotoAnalysisSetting();
     }
   }, [activeTab]);
 
@@ -703,6 +707,52 @@ export default function ContentManagementPage() {
       if (error) throw error;
 
       alert('Portfolio visibility updated successfully!');
+    } catch (error: any) {
+      alert('Error saving: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function fetchAiPhotoAnalysisSetting() {
+    try {
+      const { data } = await (supabase
+        .from('site_settings') as any)
+        .select('value')
+        .eq('key', 'ai_photo_analysis_enabled')
+        .maybeSingle();
+
+      if (data && data.value !== null && data.value !== undefined) {
+        const value = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        setAiPhotoAnalysisEnabled(value === true || value === 'true');
+      } else {
+        // Default to false if setting doesn't exist
+        setAiPhotoAnalysisEnabled(false);
+      }
+    } catch (error) {
+      console.error('Error fetching AI photo analysis setting:', error);
+      setAiPhotoAnalysisEnabled(false); // Default to false on error
+    }
+  }
+
+  async function saveAiPhotoAnalysisSetting() {
+    setSaving(true);
+    try {
+      const { error } = await (supabase
+        .from('site_settings') as any)
+        .upsert({
+          key: 'ai_photo_analysis_enabled',
+          value: JSON.stringify(aiPhotoAnalysisEnabled),
+          page: 'admin',
+          section: 'settings',
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'key'
+        });
+
+      if (error) throw error;
+
+      alert('AI Photo Analysis setting updated successfully!');
     } catch (error: any) {
       alert('Error saving: ' + error.message);
     } finally {
@@ -1580,7 +1630,7 @@ export default function ContentManagementPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {contactGrid.map((entry, index) => (
                   <div key={entry.position} className="border rounded-lg p-3 bg-gray-50">
                     <div className="mb-2">
@@ -2025,6 +2075,72 @@ export default function ContentManagementPage() {
                     className="font-mono text-sm"
                     placeholder="Enter terms and conditions..."
                   />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Photo Analysis Settings Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>AI Photo Analysis</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Control whether AI analyzes photos uploaded by admins</p>
+                </div>
+                <Button
+                  onClick={saveAiPhotoAnalysisSetting}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Setting'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-900">Enable AI Photo Analysis</h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      When enabled, AI will automatically analyze and tag photos uploaded through the admin panel.
+                      When disabled, photos will be uploaded without AI analysis.
+                    </p>
+                    <p className="text-xs text-red-600 mt-2 font-medium">
+                      Default: OFF (AI analysis disabled)
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setAiPhotoAnalysisEnabled(!aiPhotoAnalysisEnabled)}
+                    className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ml-4 ${
+                      aiPhotoAnalysisEnabled ? 'bg-red-600' : 'bg-gray-300'
+                    }`}
+                    role="switch"
+                    aria-checked={aiPhotoAnalysisEnabled}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        aiPhotoAnalysisEnabled ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <Info className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-medium text-blue-900">Current Status</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        AI Photo Analysis is currently <span className="font-bold">{aiPhotoAnalysisEnabled ? 'ENABLED' : 'DISABLED'}</span>
+                      </p>
+                      <p className="text-xs text-blue-600 mt-2">
+                        {aiPhotoAnalysisEnabled
+                          ? 'Photos uploaded through the admin panel will be analyzed by AI for automatic tagging and categorization.'
+                          : 'Photos uploaded through the admin panel will NOT be analyzed by AI. Manual tagging will be required.'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
