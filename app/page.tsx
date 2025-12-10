@@ -164,13 +164,13 @@ export default function HomePage() {
     setIsAuthenticated(!!session);
 
     if (session?.user) {
-      const { data: userData } = await supabase
-        .from('users')
+      const { data: userData } = await (supabase
+        .from('users') as any)
         .select('user_type')
         .eq('id', session.user.id)
         .maybeSingle();
 
-      setUserType(userData?.user_type || null);
+      setUserType((userData as any)?.user_type || null);
     } else {
       setUserType(null);
     }
