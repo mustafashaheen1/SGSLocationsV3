@@ -59,8 +59,8 @@ export default function CategoryMigrationPage() {
 
       for (const mainCat of mainCategories) {
         // Check if exists
-        const { data: existing } = await supabase
-          .from('categories')
+        const { data: existing } = await (supabase
+          .from('categories') as any)
           .select('id')
           .eq('slug', mainCat.slug)
           .maybeSingle();
@@ -68,8 +68,8 @@ export default function CategoryMigrationPage() {
         if (existing) {
           createdMainCategories[mainCat.slug] = existing.id;
         } else {
-          const { data: created, error } = await supabase
-            .from('categories')
+          const { data: created, error } = await (supabase
+            .from('categories') as any)
             .insert({
               name: mainCat.name,
               slug: mainCat.slug,
@@ -92,8 +92,8 @@ export default function CategoryMigrationPage() {
       setMessage('Main categories created. Assigning sub-categories...');
 
       // Step 2: Get all existing categories that are not the main ones
-      const { data: existingCategories } = await supabase
-        .from('categories')
+      const { data: existingCategories } = await (supabase
+        .from('categories') as any)
         .select('id, name, slug')
         .is('parent_id', null)
         .not('slug', 'in', '(residential,commercial,industrial)');
@@ -111,8 +111,8 @@ export default function CategoryMigrationPage() {
           const mainCatId = mainCatIds[i % 3];
 
           // Update category to be a sub-category
-          await supabase
-            .from('categories')
+          await (supabase
+            .from('categories') as any)
             .update({
               parent_id: mainCatId,
               is_top: false
@@ -120,8 +120,8 @@ export default function CategoryMigrationPage() {
             .eq('id', cat.id);
 
           // Update properties that use this category
-          await supabase
-            .from('properties')
+          await (supabase
+            .from('properties') as any)
             .update({
               category_id: mainCatId,
               sub_category_id: cat.id
