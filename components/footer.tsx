@@ -33,7 +33,7 @@ export function Footer() {
         .from('users')
         .select('user_type')
         .eq('id', session.user.id)
-        .maybeSingle();
+        .maybeSingle() as { data: { user_type: string } | null };
 
       setUserType(userData?.user_type || null);
     } else {
