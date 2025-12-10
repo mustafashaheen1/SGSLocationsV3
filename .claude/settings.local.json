@@ -22,7 +22,8 @@
       "Bash(xargs:*)",
       "Bash(cat:*)",
       "Bash(wc:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": [],
     "ask": []
