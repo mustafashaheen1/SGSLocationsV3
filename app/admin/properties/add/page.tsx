@@ -1064,12 +1064,12 @@ export default function AddPropertyPage() {
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 
       // Generate property name using category-based sequential numbering
-      const { data: nameResult, error: nameError } = await supabase
+      const { data: nameResult, error: nameError } = await (supabase as any)
         .rpc('get_next_property_name', { cat_id: formData.category_id });
 
       if (nameError || !nameResult) {
         console.error('Error generating property name:', nameError);
-        toast.error('Failed to generate property name. Please try again.');
+        alert('Failed to generate property name. Please try again.');
         return;
       }
 
