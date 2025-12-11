@@ -370,9 +370,43 @@ export default function ProductionDashboard() {
         .eq('id', propertyId)
         .single();
 
-      if (error) throw error;
+      if (error || !data) throw error;
 
-      setSelectedProperty(data);
+      const propertyData = data as any;
+
+      // Fetch category name if category_id exists
+      let categoryName = null;
+      let subCategoryName = null;
+
+      if (propertyData.category_id) {
+        const { data: categoryData } = await supabase
+          .from('categories')
+          .select('name')
+          .eq('id', propertyData.category_id)
+          .single();
+
+        if (categoryData) {
+          categoryName = (categoryData as any).name;
+        }
+      }
+
+      if (propertyData.sub_category_id) {
+        const { data: subCategoryData } = await supabase
+          .from('categories')
+          .select('name')
+          .eq('id', propertyData.sub_category_id)
+          .single();
+
+        if (subCategoryData) {
+          subCategoryName = (subCategoryData as any).name;
+        }
+      }
+
+      setSelectedProperty({
+        ...propertyData,
+        categoryName,
+        subCategoryName
+      });
       setShowPropertyModal(true);
     } catch (error) {
       console.error('Error fetching property details:', error);
@@ -1227,7 +1261,15 @@ export default function ProductionDashboard() {
                     Property Details
                   </h3>
                   <div className="space-y-2">
-                    <p className="text-sm"><span className="font-medium">Type:</span> {selectedProperty.property_type || 'N/A'}</p>
+                    {selectedProperty.categoryName && (
+                      <p className="text-sm"><span className="font-medium">Category:</span> {selectedProperty.categoryName}</p>
+                    )}
+                    {selectedProperty.subCategoryName && (
+                      <p className="text-sm"><span className="font-medium">Sub-Category:</span> {selectedProperty.subCategoryName}</p>
+                    )}
+                    {selectedProperty.property_type && (
+                      <p className="text-sm"><span className="font-medium">Type:</span> {selectedProperty.property_type}</p>
+                    )}
                     {selectedProperty.square_footage && (
                       <p className="text-sm"><span className="font-medium">Square Footage:</span> {selectedProperty.square_footage.toLocaleString()} sq ft</p>
                     )}

@@ -68,8 +68,10 @@ export default function EditPropertyPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState('');
   const [propertyTags, setPropertyTags] = useState<string[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -168,19 +170,25 @@ export default function EditPropertyPage() {
         additionalNotes: (propertyData as any).description || '',
       });
 
-      // Set category
-      if ((propertyData as any).categories && (propertyData as any).categories.length > 0) {
-        // Find category by name
-        const categoryName = (propertyData as any).categories[0];
-        const { data: categoryData } = await supabase
-          .from('categories')
-          .select('id')
-          .eq('name', categoryName)
-          .maybeSingle();
+      // Set category and sub-category
+      if ((propertyData as any).category_id) {
+        setSelectedCategoryId((propertyData as any).category_id);
 
-        if (categoryData) {
-          setSelectedCategoryId((categoryData as any).id);
+        // Fetch sub-categories for this category
+        const { data: subCatsData } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('is_active', true)
+          .eq('parent_id', (propertyData as any).category_id)
+          .order('display_order');
+
+        if (subCatsData) {
+          setSubCategories(subCatsData);
         }
+      }
+
+      if ((propertyData as any).sub_category_id) {
+        setSelectedSubCategoryId((propertyData as any).sub_category_id);
       }
 
       // Set property tags
