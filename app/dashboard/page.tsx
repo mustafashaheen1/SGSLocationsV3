@@ -1302,20 +1302,6 @@ export default function ProductionDashboard() {
                 </div>
               )}
 
-              {/* Categories */}
-              {selectedProperty.categories && selectedProperty.categories.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Categories</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProperty.categories.map((category: string, idx: number) => (
-                      <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Property Tags */}
               {selectedProperty.property_tags && selectedProperty.property_tags.length > 0 && (
                 <div className="mb-6">
