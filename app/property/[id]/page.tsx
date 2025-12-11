@@ -58,6 +58,7 @@ export default function PropertyDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(true);
+  const [pendingFavoriteAction, setPendingFavoriteAction] = useState(false);
 
   // Footer content from database
   const [footerPhone, setFooterPhone] = useState('(310) 871-8004');
@@ -263,6 +264,46 @@ export default function PropertyDetailPage() {
       checkFavoriteStatus();
     }
   }, [property]);
+
+  // Execute pending favorite action after login
+  useEffect(() => {
+    async function executePendingFavorite() {
+      if (!pendingFavoriteAction || !property) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        // User is now logged in, execute the favorite action
+        setPendingFavoriteAction(false);
+
+        try {
+          // Add to favorites
+          const { error } = await (supabase
+            .from('favorite_properties') as any)
+            .insert([{
+              user_id: user.id,
+              property_id: property.id
+            }]);
+
+          if (error) {
+            // Check if it's a duplicate error (already favorited)
+            if (error.code === '23505') {
+              console.log('Property already in favorites');
+            } else {
+              throw error;
+            }
+          }
+
+          setIsFavorite(true);
+          console.log('Property added to favorites after login');
+        } catch (error: any) {
+          console.error('Error adding to favorites after login:', error);
+        }
+      }
+    }
+
+    executePendingFavorite();
+  }, [pendingFavoriteAction, property, showLoginModal]);
 
   useEffect(() => {
     async function loadImages() {
@@ -490,6 +531,7 @@ export default function PropertyDetailPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
+        setPendingFavoriteAction(true);
         setShowLoginModal(true);
         return;
       }
@@ -1349,6 +1391,7 @@ export default function PropertyDetailPage() {
         <LoginModal
           isOpen={showLoginModal}
           onClose={() => setShowLoginModal(false)}
+          redirectAfterLogin={`/property/${params.id}`}
           onSuccess={() => {
             setShowLoginModal(false);
             checkFavoriteStatus();

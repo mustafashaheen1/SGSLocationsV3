@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preFilledEmail = searchParams.get('email') || '';
+  const redirectAfterLogin = searchParams.get('redirect') || '';
   const isEmailLocked = !!preFilledEmail;
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -128,6 +129,14 @@ export default function RegisterPage() {
         });
 
       if (profileError) throw profileError;
+
+      // Check if there's a redirect URL from the query parameters
+      if (redirectAfterLogin) {
+        console.log('Registration successful. Redirecting to:', redirectAfterLogin);
+        router.push(redirectAfterLogin);
+        router.refresh();
+        return;
+      }
 
       // Check if there's a pending inquiry to redirect back to
       const pendingInquiry = sessionStorage.getItem('pendingInquiry');
@@ -401,7 +410,11 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          redirectAfterLogin={redirectAfterLogin || undefined}
+        />
       </main>
     </>
   );
