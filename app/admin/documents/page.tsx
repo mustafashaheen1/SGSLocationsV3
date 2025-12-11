@@ -25,6 +25,7 @@ interface Document {
     properties: {
       id: string;
       name: string;
+      real_name: string | null;
       city: string;
       county: string;
     };
@@ -57,6 +58,7 @@ export default function DocumentDirectoryPage() {
             properties!inner(
               id,
               name,
+              real_name,
               city,
               county
             )
@@ -143,6 +145,8 @@ export default function DocumentDirectoryPage() {
       doc.title.toLowerCase().includes(searchLower) ||
       doc.property_projects.name.toLowerCase().includes(searchLower) ||
       doc.property_projects.properties.name.toLowerCase().includes(searchLower) ||
+      (doc.property_projects.properties.real_name &&
+        doc.property_projects.properties.real_name.toLowerCase().includes(searchLower)) ||
       doc.property_projects.properties.city.toLowerCase().includes(searchLower) ||
       doc.file_name.toLowerCase().includes(searchLower)
     );
@@ -169,7 +173,7 @@ export default function DocumentDirectoryPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search by document title, project name, property name, or file name..."
+              placeholder="Search by document title, project name, property name (public or actual), or file name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"

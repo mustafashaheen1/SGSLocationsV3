@@ -541,7 +541,7 @@ export default function ProductionDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ paddingTop: '110px' }}>
+    <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 lg:pt-28">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -1267,16 +1267,16 @@ export default function ProductionDashboard() {
                     {selectedProperty.subCategoryName && (
                       <p className="text-sm"><span className="font-medium">Sub-Category:</span> {selectedProperty.subCategoryName}</p>
                     )}
-                    {selectedProperty.square_footage && (
+                    {selectedProperty.square_footage > 0 && (
                       <p className="text-sm"><span className="font-medium">Square Footage:</span> {selectedProperty.square_footage.toLocaleString()} sq ft</p>
                     )}
-                    {selectedProperty.bedrooms && (
+                    {selectedProperty.bedrooms > 0 && (
                       <p className="text-sm"><span className="font-medium">Bedrooms:</span> {selectedProperty.bedrooms}</p>
                     )}
-                    {selectedProperty.bathrooms && (
+                    {selectedProperty.bathrooms > 0 && (
                       <p className="text-sm"><span className="font-medium">Bathrooms:</span> {selectedProperty.bathrooms}</p>
                     )}
-                    {selectedProperty.year_built && (
+                    {selectedProperty.year_built > 0 && (
                       <p className="text-sm"><span className="font-medium">Year Built:</span> {selectedProperty.year_built}</p>
                     )}
                   </div>

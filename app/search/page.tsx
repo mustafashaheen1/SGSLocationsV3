@@ -1104,13 +1104,31 @@ export default function SearchPage() {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           background: #fff;
           min-height: 100vh;
-          padding-top: 60px;
+          padding-top: 4rem;
+        }
+
+        @media (min-width: 768px) {
+          .search-page {
+            padding-top: 5rem;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .search-page {
+            padding-top: 7rem;
+          }
         }
 
         .filter-bar {
           background: white;
           border-bottom: 1px solid #e5e5e5;
-          padding: 12px 20px;
+          padding: 12px 15px;
+        }
+
+        @media (min-width: 768px) {
+          .filter-bar {
+            padding: 12px 20px;
+          }
         }
 
         .filter-row {
@@ -1165,11 +1183,19 @@ export default function SearchPage() {
           border: 1px solid #dee2e6;
           border-radius: 4px;
           box-shadow: 0 6px 12px rgba(0,0,0,0.175);
-          min-width: 280px;
-          max-width: 350px;
+          min-width: 240px;
+          max-width: calc(100vw - 40px);
+          width: 280px;
           z-index: 1050;
           display: flex;
           flex-direction: column;
+        }
+
+        @media (min-width: 640px) {
+          .dropdown-menu {
+            min-width: 280px;
+            max-width: 350px;
+          }
         }
 
         .dropdown-search {
@@ -1326,8 +1352,14 @@ export default function SearchPage() {
         }
 
         .main-search-container {
-          padding: 20px;
+          padding: 15px;
           background: #f8f9fa;
+        }
+
+        @media (min-width: 768px) {
+          .main-search-container {
+            padding: 20px;
+          }
         }
 
         .main-search-wrapper {
@@ -1718,10 +1750,17 @@ export default function SearchPage() {
         .property-grid {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 20px;
-          padding: 20px;
+          gap: 15px;
+          padding: 15px;
           max-width: 1425px;
           margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+          .property-grid {
+            gap: 20px;
+            padding: 20px;
+          }
         }
 
         @media (min-width: 640px) {

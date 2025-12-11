@@ -69,6 +69,45 @@ export default function AboutPage() {
           }
         }
 
+        /* Bootstrap grid mobile stacking */
+        .row {
+          display: flex;
+          flex-wrap: wrap;
+          margin-left: -15px;
+          margin-right: -15px;
+        }
+
+        .col-md-6 {
+          position: relative;
+          width: 100%;
+          padding-left: 15px;
+          padding-right: 15px;
+          flex: 0 0 100%;
+          max-width: 100%;
+        }
+
+        @media (min-width: 768px) {
+          .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+          }
+
+          .offset-md-3 {
+            margin-left: 25%;
+          }
+        }
+
+        /* Mobile order classes */
+        @media (max-width: 767px) {
+          .m-order-0 {
+            order: 0;
+          }
+
+          .m-order-1 {
+            order: 1;
+          }
+        }
+
         /* Responsive typography */
         @media (max-width: 767px) {
           .text-4xl {
@@ -95,6 +134,11 @@ export default function AboutPage() {
             margin-right: 0;
           }
 
+          .col-md-6 {
+            padding-left: 1rem;
+            padding-right: 1rem;
+          }
+
           .px-md-5 {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
@@ -104,6 +148,43 @@ export default function AboutPage() {
             padding-top: 2rem !important;
             padding-bottom: 2rem !important;
           }
+        }
+
+        /* Utility classes used in About page */
+        .d-flex {
+          display: flex !important;
+        }
+
+        .justify-content-center {
+          justify-content: center !important;
+        }
+
+        .align-items-center {
+          align-items: center !important;
+        }
+
+        .flex-column {
+          flex-direction: column !important;
+        }
+
+        .w-100 {
+          width: 100% !important;
+        }
+
+        .h-auto {
+          height: auto !important;
+        }
+
+        .border {
+          border: 1px solid #e5e7eb;
+        }
+
+        .mb-4 {
+          margin-bottom: 1rem !important;
+        }
+
+        .mb-3 {
+          margin-bottom: 0.75rem !important;
         }
       `}</style>
 

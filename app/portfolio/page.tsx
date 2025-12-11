@@ -41,7 +41,7 @@ export default function PortfolioPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white flex items-center justify-center" style={{ paddingTop: '110px' }}>
+      <main className="min-h-screen bg-white flex items-center justify-center pt-16 md:pt-20 lg:pt-28">
         <div className="text-xl text-gray-600">Loading...</div>
       </main>
     );

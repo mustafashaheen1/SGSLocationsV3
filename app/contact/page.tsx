@@ -904,7 +904,7 @@ export default function ContactPage() {
         }
       `}</style>
 
-      <div className="contact-form bg-white" style={{ paddingTop: '60px', minHeight: '100vh' }}>
+      <div className="contact-form bg-white pt-12 md:pt-16 lg:pt-20" style={{ minHeight: '100vh' }}>
         <div className="container mx-auto px-4 max-w-6xl">
           <h1 className="text-4xl pt-4 pb-8" style={{ fontWeight: 300, color: '#212529', margin: 0 }}>
             General Inquiry
@@ -1089,7 +1089,8 @@ export default function ContactPage() {
                       top: '100%',
                       left: 0,
                       marginTop: '5px',
-                      width: '552px'
+                      maxWidth: '552px',
+                      width: '100%'
                     }}
                   >
                     <div className="container__main">

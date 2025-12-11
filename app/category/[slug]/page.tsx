@@ -98,7 +98,19 @@ export default function CategoryPage() {
           .category-page-main {
             background: #f8f9fa;
             min-height: 100vh;
-            padding-top: 110px;
+            padding-top: 4rem;
+          }
+
+          @media (min-width: 768px) {
+            .category-page-main {
+              padding-top: 5rem;
+            }
+          }
+
+          @media (min-width: 1024px) {
+            .category-page-main {
+              padding-top: 7rem;
+            }
           }
 
           .property-grid {
@@ -206,7 +218,19 @@ export default function CategoryPage() {
           .category-page-main {
             background: #f8f9fa;
             min-height: 100vh;
-            padding-top: 110px;
+            padding-top: 4rem;
+          }
+
+          @media (min-width: 768px) {
+            .category-page-main {
+              padding-top: 5rem;
+            }
+          }
+
+          @media (min-width: 1024px) {
+            .category-page-main {
+              padding-top: 7rem;
+            }
           }
         `}</style>
 
@@ -250,7 +274,19 @@ export default function CategoryPage() {
         .category-page-main {
           background: #f8f9fa;
           min-height: 100vh;
-          padding-top: 110px;
+          padding-top: 4rem;
+        }
+
+        @media (min-width: 768px) {
+          .category-page-main {
+            padding-top: 5rem;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .category-page-main {
+            padding-top: 7rem;
+          }
         }
 
         .property-grid {
@@ -323,10 +359,19 @@ export default function CategoryPage() {
 
         .category-banner {
           position: relative;
-          height: 250px;
+          min-height: 200px;
+          height: 35vh;
+          max-height: 400px;
           border-radius: 0.5rem;
           overflow: hidden;
           margin-bottom: 2rem;
+        }
+
+        @media (max-width: 767px) {
+          .category-banner {
+            min-height: 180px;
+            height: 30vh;
+          }
         }
 
         .category-banner::after {
@@ -338,11 +383,90 @@ export default function CategoryPage() {
 
         .category-banner-content {
           position: absolute;
-          bottom: 2rem;
-          left: 2rem;
-          right: 2rem;
+          bottom: 1rem;
+          left: 1rem;
+          right: 1rem;
           z-index: 10;
           color: white;
+        }
+
+        @media (min-width: 768px) {
+          .category-banner-content {
+            bottom: 1.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .category-banner-content {
+            bottom: 2rem;
+            left: 2rem;
+            right: 2rem;
+          }
+        }
+
+        .banner-category-label {
+          font-size: 0.75rem;
+          margin-bottom: 0.25rem;
+          opacity: 0.9;
+        }
+
+        @media (min-width: 768px) {
+          .banner-category-label {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+          }
+        }
+
+        .banner-title {
+          font-size: 1.5rem;
+          font-weight: 300;
+          margin-bottom: 0.25rem;
+        }
+
+        @media (min-width: 640px) {
+          .banner-title {
+            font-size: 2rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .banner-title {
+            font-size: 2.25rem;
+            margin-bottom: 0.5rem;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .banner-title {
+            font-size: 2.5rem;
+          }
+        }
+
+        .banner-description {
+          font-size: 0.875rem;
+          font-weight: 300;
+          opacity: 0.95;
+        }
+
+        @media (min-width: 768px) {
+          .banner-description {
+            font-size: 1rem;
+          }
+        }
+
+        .banner-count {
+          font-size: 0.75rem;
+          margin-top: 0.25rem;
+          opacity: 0.9;
+        }
+
+        @media (min-width: 768px) {
+          .banner-count {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+          }
         }
       `}</style>
 
@@ -357,18 +481,18 @@ export default function CategoryPage() {
               className="object-cover"
             />
             <div className="category-banner-content">
-              <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>
+              <p className="banner-category-label">
                 Categories
               </p>
-              <h1 style={{ fontSize: '2.5rem', fontWeight: 300, marginBottom: '0.5rem' }}>
+              <h1 className="banner-title">
                 {category.name}
               </h1>
               {category.description && (
-                <p style={{ fontSize: '1rem', fontWeight: 300, opacity: 0.95 }}>
+                <p className="banner-description">
                   {category.description}
                 </p>
               )}
-              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.9 }}>
+              <p className="banner-count">
                 {properties.length} {properties.length === 1 ? 'Location' : 'Locations'}
               </p>
             </div>

@@ -71,7 +71,7 @@ export default function PropertyCalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ paddingTop: '110px' }}>
+      <div className="min-h-screen flex items-center justify-center pt-16 md:pt-20 lg:pt-28">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           <p className="mt-2 text-gray-600">Loading calendar...</p>
@@ -85,7 +85,7 @@ export default function PropertyCalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ paddingTop: '110px' }}>
+    <div className="min-h-screen bg-gray-50 pt-16 md:pt-20 lg:pt-28">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-6">
           <Button
