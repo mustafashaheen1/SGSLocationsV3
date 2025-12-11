@@ -1267,9 +1267,6 @@ export default function ProductionDashboard() {
                     {selectedProperty.subCategoryName && (
                       <p className="text-sm"><span className="font-medium">Sub-Category:</span> {selectedProperty.subCategoryName}</p>
                     )}
-                    {selectedProperty.property_type && (
-                      <p className="text-sm"><span className="font-medium">Type:</span> {selectedProperty.property_type}</p>
-                    )}
                     {selectedProperty.square_footage && (
                       <p className="text-sm"><span className="font-medium">Square Footage:</span> {selectedProperty.square_footage.toLocaleString()} sq ft</p>
                     )}
@@ -1287,7 +1284,7 @@ export default function ProductionDashboard() {
               </div>
 
               {/* Daily Rate */}
-              {selectedProperty.daily_rate && (
+              {selectedProperty.daily_rate && parseInt(selectedProperty.daily_rate) > 0 && (
                 <div className="mb-6 bg-gray-50 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-gray-600" />
