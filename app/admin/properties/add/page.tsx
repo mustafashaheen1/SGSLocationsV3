@@ -16,7 +16,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase, albumKeyExists } from '@/lib/supabase';
 import { uploadMultipleImages } from '@/lib/s3-upload';
 import { getAddressFromGoogleMapsLink } from '@/lib/google-maps-utils';
-import { generateObfuscatedName } from '@/lib/name-obfuscator';
 import { normalizeUrl } from '@/lib/url-utils';
 import { GridPreview } from '@/components/admin/GridPreview';
 
@@ -1064,13 +1063,22 @@ export default function AddPropertyPage() {
       // Get the selected category name
       const selectedCategory = categories.find(c => c.id === formData.category_id);
 
-      // Generate obfuscated name from real name
-      const obfuscatedName = generateObfuscatedName(formData.real_name);
-      console.log(`🔒 Generated obfuscated name: "${formData.real_name}" → "${obfuscatedName}"`);
+      // Generate property name using category-based sequential numbering
+      const { data: nameResult, error: nameError } = await supabase
+        .rpc('get_next_property_name', { cat_id: formData.category_id });
+
+      if (nameError || !nameResult) {
+        console.error('Error generating property name:', nameError);
+        toast.error('Failed to generate property name. Please try again.');
+        return;
+      }
+
+      const propertyName = nameResult;
+      console.log(`🔒 Generated property name: "${formData.real_name}" → "${propertyName}"`);
 
       // Prepare property data with CORRECT schema
       const propertyData: any = {
-        name: obfuscatedName, // Public-facing obfuscated name
+        name: propertyName, // Category-based sequential name (e.g., COM-0001)
         real_name: formData.real_name, // Actual property name (admin only)
         description: formData.description || '',
         address: formData.address,
@@ -1084,7 +1092,8 @@ export default function AddPropertyPage() {
         is_exclusive: formData.is_exclusive,
         status: 'active',
         property_type: 'Residential',
-        // Use categories ARRAY, not category_id
+        category_id: formData.category_id, // Main category ID for naming
+        // Use categories ARRAY for backward compatibility
         categories: selectedCategory ? [selectedCategory.name] : [],
         // Add property-level tags
         property_tags: propertyTags,

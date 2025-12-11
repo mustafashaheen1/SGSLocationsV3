@@ -76,13 +76,52 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
             company: userData.company_name || ''
           }));
         }
+
+        // Check for pending inquiry after login/register
+        const pendingData = sessionStorage.getItem('pendingInquiry');
+        if (pendingData) {
+          try {
+            const { formData: savedFormData, propertyId: savedPropertyId, propertyName: savedPropertyName } = JSON.parse(pendingData);
+
+            // Only restore if we're on the same property page
+            if (savedPropertyId === propertyId) {
+              sessionStorage.removeItem('pendingInquiry');
+
+              // Restore form data
+              setFormData(savedFormData);
+
+              // Restore selected dates if they exist
+              if (savedFormData.shootingDate) {
+                const dateMatch = savedFormData.shootingDate.match(/(\d+)\s+(\w+),\s+(\d+)\s+-\s+(\d+)\s+(\w+),\s+(\d+)/);
+                if (dateMatch) {
+                  const [_, startDay, startMonth, startYear, endDay, endMonth, endYear] = dateMatch;
+                  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  const startMonthIndex = monthNames.indexOf(startMonth);
+                  const endMonthIndex = monthNames.indexOf(endMonth);
+
+                  if (startMonthIndex !== -1 && endMonthIndex !== -1) {
+                    setSelectedStart(new Date(parseInt(startYear), startMonthIndex, parseInt(startDay)));
+                    setSelectedEnd(new Date(parseInt(endYear), endMonthIndex, parseInt(endDay)));
+                  }
+                }
+              }
+
+              // Show success message
+              setSubmitSuccess(false);
+              setSubmitError('');
+            }
+          } catch (error) {
+            console.error('Error restoring pending inquiry:', error);
+            sessionStorage.removeItem('pendingInquiry');
+          }
+        }
       }
     }
 
     if (isOpen) {
       checkAuthAndFetchUser();
     }
-  }, [isOpen]);
+  }, [isOpen, propertyId]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -187,6 +226,26 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
       return;
     }
 
+    // Validate shooting date is not in the past
+    if (formData.shootingDate) {
+      // Extract the start date from the shooting date range
+      const dateMatch = formData.shootingDate.match(/(\d+)\s+(\w+),\s+(\d+)/);
+      if (dateMatch) {
+        const [_, day, month, year] = dateMatch;
+        const monthIndex = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(month);
+        const shootingDate = new Date(parseInt(year), monthIndex, parseInt(day));
+        shootingDate.setHours(0, 0, 0, 0);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (shootingDate < today) {
+          setSubmitError('Cannot submit inquiry for past shooting dates. Please select a future date.');
+          return;
+        }
+      }
+    }
+
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -195,6 +254,13 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session || !session.user) {
+        // Store inquiry data for later submission after login/register
+        sessionStorage.setItem('pendingInquiry', JSON.stringify({
+          formData,
+          propertyId,
+          propertyName,
+          returnUrl: window.location.pathname
+        }));
         setIsSubmitting(false);
         setShowLoginModal(true);
         return;
@@ -270,6 +336,13 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
   };
 
   const handleDateClick = (date: Date) => {
+    // Prevent selecting past dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date < today) {
+      return; // Don't allow selecting past dates
+    }
+
     if (!selectedStart || (selectedStart && selectedEnd)) {
       setSelectedStart(date);
       setSelectedEnd(null);
@@ -309,6 +382,14 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
     const end = selectedEnd || hoverDate;
     if (!end) return false;
     return date > selectedStart && date < end;
+  };
+
+  const isPastDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    return checkDate < today;
   };
 
   if (!isOpen) return null;
@@ -493,7 +574,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                               key={idx}
                               type="button"
                               onClick={() => handleDateClick(date)}
-                              className={`p-1 rounded hover:bg-red-100 ${
+                              disabled={isPastDate(date)}
+                              className={`p-1 rounded ${
+                                isPastDate(date)
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'hover:bg-red-100'
+                              } ${
                                 isSelected(date) ? 'bg-red-500 text-white' : ''
                               } ${isInRange(date) ? 'bg-red-100' : ''}`}
                             >
@@ -620,6 +706,15 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     company: userData.company_name || ''
                   }));
                 }
+
+                // Auto-submit the inquiry after successful login
+                // Small delay to ensure state is updated
+                setTimeout(() => {
+                  const form = document.querySelector('form') as HTMLFormElement;
+                  if (form) {
+                    form.requestSubmit();
+                  }
+                }, 100);
               }
             }}
           />

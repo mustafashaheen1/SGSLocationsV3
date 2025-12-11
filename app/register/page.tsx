@@ -129,6 +129,36 @@ export default function RegisterPage() {
 
       if (profileError) throw profileError;
 
+      // Check if there's a pending inquiry to redirect back to
+      const pendingInquiry = sessionStorage.getItem('pendingInquiry');
+      if (pendingInquiry) {
+        try {
+          const { returnUrl } = JSON.parse(pendingInquiry);
+          if (returnUrl && returnUrl.includes('/property/')) {
+            console.log('Registration successful. Redirecting back to property page:', returnUrl);
+            router.push(returnUrl);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing pending inquiry:', e);
+        }
+      }
+
+      // Check if there's a pending search save to redirect back to
+      const pendingSearchSave = sessionStorage.getItem('pendingSearchSave');
+      if (pendingSearchSave) {
+        try {
+          const { returnUrl } = JSON.parse(pendingSearchSave);
+          if (returnUrl && returnUrl.includes('/search')) {
+            console.log('Registration successful. Redirecting back to search page:', returnUrl);
+            router.push(returnUrl);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing pending search save:', e);
+        }
+      }
+
       // Redirect to dashboard (pending property submission will be handled there)
       console.log('Registration successful. isEmailLocked:', isEmailLocked, 'preFilledEmail:', preFilledEmail);
       router.push('/dashboard');

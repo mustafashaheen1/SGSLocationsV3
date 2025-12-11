@@ -105,23 +105,24 @@ export default function HomePage() {
 
       if (featured) setFeaturedProperties(featured);
 
-      // Fetch categories with property counts
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('id, name, slug, image, display_order')
+      // Fetch only sub-categories (where parent_id is not null) with property counts
+      const { data: categoriesData } = await (supabase
+        .from('categories') as any)
+        .select('id, name, slug, image, display_order, parent_id')
         .eq('is_active', true)
+        .not('parent_id', 'is', null)
         .order('display_order');
 
       if (categoriesData) {
-        // Get count for each category by checking the categories array in properties
+        // Get count for each sub-category
         const categoriesWithCounts = await Promise.all(
           (categoriesData as any[]).map(async (cat: any) => {
-            // Query properties where the categories array contains this category name
-            const { count } = await supabase
-              .from('properties')
+            // Query properties where sub_category_id matches this sub-category
+            const { count } = await (supabase
+              .from('properties') as any)
               .select('*', { count: 'exact', head: true })
               .eq('status', 'active')
-              .contains('categories', [cat.name]);
+              .eq('sub_category_id', cat.id);
 
             return {
               ...cat,

@@ -294,6 +294,44 @@ export default function SearchPage() {
     fetchCategories();
   }, []);
 
+  // Check for pending search save after login/register
+  useEffect(() => {
+    const checkPendingSearchSave = async () => {
+      const pendingData = sessionStorage.getItem('pendingSearchSave');
+      if (pendingData) {
+        try {
+          const { name, searchInput: savedSearchInput, activeFilters: savedFilters } = JSON.parse(pendingData);
+
+          // Check if user is now logged in
+          const { data: { user } } = await supabase.auth.getUser();
+
+          if (user) {
+            // User is logged in, save the search
+            sessionStorage.removeItem('pendingSearchSave');
+
+            // Set the search data
+            setSearchName(name);
+            setSearchInput(savedSearchInput);
+            setActiveFilters(savedFilters);
+
+            // Open save modal and trigger save
+            setShowSaveModal(true);
+
+            // Small delay to ensure modal is open, then trigger save
+            setTimeout(async () => {
+              await handleSaveSearch(true);
+            }, 500);
+          }
+        } catch (error) {
+          console.error('Error processing pending search save:', error);
+          sessionStorage.removeItem('pendingSearchSave');
+        }
+      }
+    };
+
+    checkPendingSearchSave();
+  }, []);
+
   async function fetchCategories() {
     try {
       const { data, error } = await supabase
@@ -850,7 +888,7 @@ export default function SearchPage() {
     return options.filter(option => option.toLowerCase().includes(searchTerm));
   };
 
-  const handleSaveSearch = async () => {
+  const handleSaveSearch = async (skipAuthCheck = false) => {
     if (!searchName.trim()) {
       setSaveMessage('Please enter a name for your search');
       return;
@@ -863,8 +901,13 @@ export default function SearchPage() {
       // Check if user is logged in
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (!user && !skipAuthCheck) {
         setSaveMessage('Please Login or Register to save searches');
+        setIsSaving(false);
+        return;
+      }
+
+      if (!user) {
         setIsSaving(false);
         return;
       }
@@ -1905,7 +1948,7 @@ export default function SearchPage() {
                   placeholder="e.g., Commercial Properties with Airport"
                   value={searchName}
                   onChange={(e) => setSearchName(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSaveSearch()}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSaveSearch(false)}
                   autoFocus
                 />
                 {saveMessage && (
@@ -1935,6 +1978,13 @@ export default function SearchPage() {
                         </button>
                         <button
                           onClick={() => {
+                            // Store search data to save after registration
+                            sessionStorage.setItem('pendingSearchSave', JSON.stringify({
+                              name: searchName,
+                              searchInput: searchInput,
+                              activeFilters: activeFilters,
+                              returnUrl: window.location.pathname + window.location.search
+                            }));
                             setShowSaveModal(false);
                             router.push('/register');
                           }}
@@ -1960,7 +2010,7 @@ export default function SearchPage() {
                 <button onClick={() => setShowSaveModal(false)} className="cancel-btn">
                   Cancel
                 </button>
-                <button onClick={handleSaveSearch} disabled={isSaving} className="save-btn">
+                <button onClick={() => handleSaveSearch(false)} disabled={isSaving} className="save-btn">
                   {isSaving ? 'Saving...' : 'Save Search'}
                 </button>
               </div>
@@ -1968,7 +2018,15 @@ export default function SearchPage() {
           </div>
         )}
 
-        <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onSuccess={async () => {
+            setIsLoginModalOpen(false);
+            // After successful login, save the search automatically
+            await handleSaveSearch(true);
+          }}
+        />
       </div>
     </>
   );
