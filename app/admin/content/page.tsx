@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -135,6 +135,9 @@ export default function ContentManagementPage() {
   const [projectImagePreview, setProjectImagePreview] = useState<string>('');
   const [properties, setProperties] = useState<any[]>([]);
   const [propertySearchQuery, setPropertySearchQuery] = useState('');
+  const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [isPropertyDropdownOpen, setIsPropertyDropdownOpen] = useState(false);
+  const [editPropertyDropdownOpen, setEditPropertyDropdownOpen] = useState(false);
 
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
@@ -1538,6 +1541,8 @@ export default function ContentManagementPage() {
                   setProjectImageFile(null);
                   setProjectImagePreview('');
                   setPropertySearchQuery('');
+                  setSelectedPropertyId('');
+                  setIsPropertyDropdownOpen(false);
                 }} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Project
@@ -1559,31 +1564,72 @@ export default function ContentManagementPage() {
 
                     <div>
                       <label className="block text-sm font-medium mb-1">Property</label>
-                      <Input
-                        placeholder="Search properties..."
-                        value={propertySearchQuery}
-                        onChange={(e) => setPropertySearchQuery(e.target.value)}
-                        className="mb-2"
-                      />
-                      <select
-                        id="new-project-property"
-                        className="w-full border rounded px-3 py-2 text-sm"
-                      >
-                        <option value="">Select a property...</option>
-                        {properties
-                          .filter(prop => {
-                            if (!propertySearchQuery) return true;
-                            const query = propertySearchQuery.toLowerCase();
-                            const name = (prop.real_name || prop.name || '').toLowerCase();
-                            return name.includes(query);
-                          })
-                          .map(prop => (
-                            <option key={prop.id} value={prop.id}>
-                              {prop.real_name || prop.name}
-                            </option>
-                          ))
-                        }
-                      </select>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsPropertyDropdownOpen(!isPropertyDropdownOpen)}
+                          className="w-full border rounded px-3 py-2 text-sm text-left flex items-center justify-between bg-white hover:bg-gray-50"
+                        >
+                          <span className={selectedPropertyId ? 'text-black' : 'text-gray-500'}>
+                            {selectedPropertyId
+                              ? properties.find(p => p.id === selectedPropertyId)?.real_name || properties.find(p => p.id === selectedPropertyId)?.name || 'Select a property...'
+                              : 'Select a property...'
+                            }
+                          </span>
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        </button>
+
+                        {isPropertyDropdownOpen && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-80 overflow-hidden">
+                            <div className="p-2 border-b sticky top-0 bg-white">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Input
+                                  placeholder="Search properties..."
+                                  value={propertySearchQuery}
+                                  onChange={(e) => setPropertySearchQuery(e.target.value)}
+                                  className="pl-8 text-sm"
+                                  autoFocus
+                                />
+                              </div>
+                            </div>
+                            <div className="overflow-y-auto max-h-64">
+                              {properties
+                                .filter(prop => {
+                                  if (!propertySearchQuery) return true;
+                                  const query = propertySearchQuery.toLowerCase();
+                                  const name = (prop.real_name || prop.name || '').toLowerCase();
+                                  return name.includes(query);
+                                })
+                                .map(prop => (
+                                  <button
+                                    key={prop.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedPropertyId(prop.id);
+                                      setIsPropertyDropdownOpen(false);
+                                      setPropertySearchQuery('');
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
+                                  >
+                                    {prop.real_name || prop.name}
+                                  </button>
+                                ))
+                              }
+                              {properties.filter(prop => {
+                                if (!propertySearchQuery) return true;
+                                const query = propertySearchQuery.toLowerCase();
+                                const name = (prop.real_name || prop.name || '').toLowerCase();
+                                return name.includes(query);
+                              }).length === 0 && (
+                                <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                                  No properties found
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -1637,9 +1683,8 @@ export default function ContentManagementPage() {
                       disabled={uploadingLogo}
                       onClick={async () => {
                         const name = (document.getElementById('new-project-name') as HTMLInputElement)?.value;
-                        const propertyId = (document.getElementById('new-project-property') as HTMLSelectElement)?.value;
 
-                        if (!name || !propertyId || !projectImageFile) {
+                        if (!name || !selectedPropertyId || !projectImageFile) {
                           alert('Please provide project name, property, and banner image');
                           return;
                         }
@@ -1649,9 +1694,10 @@ export default function ContentManagementPage() {
                           const bannerUrl = await uploadImageToS3(projectImageFile, 'projects');
                           await addProject({
                             name,
-                            property_id: propertyId,
+                            property_id: selectedPropertyId,
                             banner_image: bannerUrl
                           });
+                          setSelectedPropertyId('');
                         } catch (error: any) {
                           alert('Error adding project: ' + error.message);
                         } finally {
@@ -1669,6 +1715,8 @@ export default function ContentManagementPage() {
                         setProjectImageFile(null);
                         setProjectImagePreview('');
                         setPropertySearchQuery('');
+                        setSelectedPropertyId('');
+                        setIsPropertyDropdownOpen(false);
                       }}
                     >
                       Cancel
@@ -1687,31 +1735,71 @@ export default function ContentManagementPage() {
                           onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
                           placeholder="Project Name"
                         />
-                        <Input
-                          placeholder="Search properties..."
-                          value={propertySearchQuery}
-                          onChange={(e) => setPropertySearchQuery(e.target.value)}
-                          className="text-sm"
-                        />
-                        <select
-                          value={editingProject.property_id}
-                          onChange={(e) => setEditingProject({...editingProject, property_id: e.target.value})}
-                          className="w-full border rounded px-3 py-2 text-sm"
-                        >
-                          {properties
-                            .filter(prop => {
-                              if (!propertySearchQuery) return true;
-                              const query = propertySearchQuery.toLowerCase();
-                              const name = (prop.real_name || prop.name || '').toLowerCase();
-                              return name.includes(query);
-                            })
-                            .map(prop => (
-                              <option key={prop.id} value={prop.id}>
-                                {prop.real_name || prop.name}
-                              </option>
-                            ))
-                          }
-                        </select>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setEditPropertyDropdownOpen(!editPropertyDropdownOpen)}
+                            className="w-full border rounded px-3 py-2 text-sm text-left flex items-center justify-between bg-white hover:bg-gray-50"
+                          >
+                            <span className="text-black">
+                              {properties.find(p => p.id === editingProject.property_id)?.real_name ||
+                               properties.find(p => p.id === editingProject.property_id)?.name ||
+                               'Select a property...'}
+                            </span>
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          </button>
+
+                          {editPropertyDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-80 overflow-hidden">
+                              <div className="p-2 border-b sticky top-0 bg-white">
+                                <div className="relative">
+                                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                  <Input
+                                    placeholder="Search properties..."
+                                    value={propertySearchQuery}
+                                    onChange={(e) => setPropertySearchQuery(e.target.value)}
+                                    className="pl-8 text-sm"
+                                    autoFocus
+                                  />
+                                </div>
+                              </div>
+                              <div className="overflow-y-auto max-h-64">
+                                {properties
+                                  .filter(prop => {
+                                    if (!propertySearchQuery) return true;
+                                    const query = propertySearchQuery.toLowerCase();
+                                    const name = (prop.real_name || prop.name || '').toLowerCase();
+                                    return name.includes(query);
+                                  })
+                                  .map(prop => (
+                                    <button
+                                      key={prop.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingProject({...editingProject, property_id: prop.id});
+                                        setEditPropertyDropdownOpen(false);
+                                        setPropertySearchQuery('');
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
+                                    >
+                                      {prop.real_name || prop.name}
+                                    </button>
+                                  ))
+                                }
+                                {properties.filter(prop => {
+                                  if (!propertySearchQuery) return true;
+                                  const query = propertySearchQuery.toLowerCase();
+                                  const name = (prop.real_name || prop.name || '').toLowerCase();
+                                  return name.includes(query);
+                                }).length === 0 && (
+                                  <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                                    No properties found
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         <div>
                           <p className="text-xs text-gray-600 mb-1">Current Image:</p>
                           <img
@@ -1794,6 +1882,7 @@ export default function ContentManagementPage() {
                               setProjectImageFile(null);
                               setProjectImagePreview('');
                               setPropertySearchQuery('');
+                              setEditPropertyDropdownOpen(false);
                             }}
                           >
                             Cancel
@@ -1862,6 +1951,7 @@ export default function ContentManagementPage() {
                               setProjectImageFile(null);
                               setProjectImagePreview('');
                               setPropertySearchQuery('');
+                              setEditPropertyDropdownOpen(false);
                             }}
                           >
                             <Edit2 className="w-3 h-3 mr-1" />
@@ -1911,6 +2001,7 @@ export default function ContentManagementPage() {
                               setProjectImageFile(null);
                               setProjectImagePreview('');
                               setPropertySearchQuery('');
+                              setEditPropertyDropdownOpen(false);
                             }}
                           >
                             <Edit2 className="w-3 h-3" />
