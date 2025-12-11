@@ -59,6 +59,12 @@ export default function PropertyDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(true);
 
+  // Footer content from database
+  const [footerPhone, setFooterPhone] = useState('(310) 871-8004');
+  const [footerPartnerText, setFooterPartnerText] = useState('American Express Preferred Partner');
+  const [footerLicense, setFooterLicense] = useState('CalDRE #01234567');
+  const [footerCompanyName, setFooterCompanyName] = useState('Image Locations');
+
   const updateRedBarPosition = (category: string) => {
     const element = categoryRefs.current[category];
 
@@ -197,6 +203,36 @@ export default function PropertyDetailPage() {
           }
         }
       }
+
+      // Fetch footer settings
+      const { data: footerSettings } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('page', 'property')
+        .eq('section', 'footer');
+
+      if (footerSettings) {
+        footerSettings.forEach((setting: any) => {
+          let value = setting.value;
+          if (typeof value === 'string') {
+            try {
+              while (typeof value === 'string' && (value.startsWith('"') || value.startsWith('\\"'))) {
+                value = JSON.parse(value);
+              }
+            } catch (e) {
+              value = value.replace(/^"|"$/g, '');
+            }
+          }
+
+          switch(setting.key) {
+            case 'property_footer_phone': setFooterPhone(value); break;
+            case 'property_footer_partner_text': setFooterPartnerText(value); break;
+            case 'property_footer_license': setFooterLicense(value); break;
+            case 'property_footer_company_name': setFooterCompanyName(value); break;
+          }
+        });
+      }
+
       setLoading(false);
     }
 
@@ -1294,7 +1330,12 @@ export default function PropertyDetailPage() {
           />
         )}
 
-        <Footer />
+        <Footer
+          phone={footerPhone}
+          partnerText={footerPartnerText}
+          license={footerLicense}
+          companyName={footerCompanyName}
+        />
 
         {/* Contact Form Modal */}
         <ContactFormModal
@@ -1473,7 +1514,7 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
   );
 }
 
-function Footer() {
+function Footer({ phone, partnerText, license, companyName }: { phone: string; partnerText: string; license: string; companyName: string }) {
   return (
     <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 0', textAlign: 'center' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
@@ -1494,19 +1535,19 @@ function Footer() {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#4b5563' }}>
           <Phone style={{ width: '20px', height: '20px' }} />
-          <span style={{ fontSize: '1.125rem' }}>(310) 871-8004</span>
+          <span style={{ fontSize: '1.125rem' }}>{phone}</span>
         </div>
 
         <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '0.5rem' }}>
-          American Express Preferred Partner
+          {partnerText}
         </div>
 
         <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '1rem' }}>
-          CalDRE #01234567
+          {license}
         </div>
 
         <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-          © {new Date().getFullYear()} Image Locations. All rights reserved.
+          © {new Date().getFullYear()} {companyName}. All rights reserved.
         </div>
       </div>
     </footer>

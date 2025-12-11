@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown, Phone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -125,6 +125,12 @@ export default function ContentManagementPage() {
 
   // AI Photo Analysis State
   const [aiPhotoAnalysisEnabled, setAiPhotoAnalysisEnabled] = useState(false);
+
+  // Property Footer States
+  const [propertyFooterPhone, setPropertyFooterPhone] = useState('');
+  const [propertyFooterPartnerText, setPropertyFooterPartnerText] = useState('');
+  const [propertyFooterLicense, setPropertyFooterLicense] = useState('');
+  const [propertyFooterCompanyName, setPropertyFooterCompanyName] = useState('');
 
   // Projects State
   const [projects, setProjects] = useState<Project[]>([]);
@@ -273,6 +279,10 @@ export default function ContentManagementPage() {
             case 'contact_email': setContactEmail(value); break;
             case 'contact_address': setContactAddress(value); break;
             case 'office_hours': setOfficeHours(value); break;
+            case 'property_footer_phone': setPropertyFooterPhone(value); break;
+            case 'property_footer_partner_text': setPropertyFooterPartnerText(value); break;
+            case 'property_footer_license': setPropertyFooterLicense(value); break;
+            case 'property_footer_company_name': setPropertyFooterCompanyName(value); break;
           }
         });
       }
@@ -393,6 +403,23 @@ export default function ContentManagementPage() {
       alert('Footer content saved successfully!');
     } catch (error) {
       alert('Error saving footer content');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function savePropertyFooterContent() {
+    setSaving(true);
+    try {
+      await Promise.all([
+        saveSiteSetting('property_footer_phone', propertyFooterPhone, 'property', 'footer'),
+        saveSiteSetting('property_footer_partner_text', propertyFooterPartnerText, 'property', 'footer'),
+        saveSiteSetting('property_footer_license', propertyFooterLicense, 'property', 'footer'),
+        saveSiteSetting('property_footer_company_name', propertyFooterCompanyName, 'property', 'footer'),
+      ]);
+      alert('Property footer content saved successfully!');
+    } catch (error) {
+      alert('Error saving property footer content');
     } finally {
       setSaving(false);
     }
@@ -996,8 +1023,8 @@ export default function ContentManagementPage() {
             Contact
           </TabsTrigger>
           <TabsTrigger value="search">
-            <Search className="w-4 h-4 mr-2" />
-            Search Page
+            <Home className="w-4 h-4 mr-2" />
+            Property Page
           </TabsTrigger>
           <TabsTrigger value="other">
             <FileText className="w-4 h-4 mr-2" />
@@ -2683,11 +2710,80 @@ export default function ContentManagementPage() {
         </TabsContent>
 
         {/* SEARCH PAGE TAB */}
+        {/* PROPERTY PAGE TAB */}
         <TabsContent value="search">
           <Card>
-            <CardContent className="py-8 text-center">
-              <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600">Search page content management coming soon...</p>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Property Page Footer</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Manage the content displayed at the bottom of property detail pages</p>
+                </div>
+                <Button
+                  onClick={savePropertyFooterContent}
+                  disabled={saving}
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Contact Phone Number</label>
+                <Input
+                  value={propertyFooterPhone}
+                  onChange={(e) => setPropertyFooterPhone(e.target.value)}
+                  placeholder="(310) 871-8004"
+                />
+                <p className="text-xs text-gray-500 mt-1">Displayed with phone icon at the bottom of property pages</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Partner Text</label>
+                <Input
+                  value={propertyFooterPartnerText}
+                  onChange={(e) => setPropertyFooterPartnerText(e.target.value)}
+                  placeholder="American Express Preferred Partner"
+                />
+                <p className="text-xs text-gray-500 mt-1">Partnership or certification text</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">License Number</label>
+                <Input
+                  value={propertyFooterLicense}
+                  onChange={(e) => setPropertyFooterLicense(e.target.value)}
+                  placeholder="CalDRE #01234567"
+                />
+                <p className="text-xs text-gray-500 mt-1">Professional license or certification number</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Company Name</label>
+                <Input
+                  value={propertyFooterCompanyName}
+                  onChange={(e) => setPropertyFooterCompanyName(e.target.value)}
+                  placeholder="Image Locations"
+                />
+                <p className="text-xs text-gray-500 mt-1">Used in copyright text: "© {new Date().getFullYear()} [Company Name]. All rights reserved."</p>
+              </div>
+
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-sm mb-2">Preview:</h4>
+                <div className="space-y-2 text-center text-sm text-gray-600">
+                  <div className="flex items-center justify-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    <span>{propertyFooterPhone || '(310) 871-8004'}</span>
+                  </div>
+                  <div>{propertyFooterPartnerText || 'American Express Preferred Partner'}</div>
+                  <div>{propertyFooterLicense || 'CalDRE #01234567'}</div>
+                  <div className="text-xs text-gray-500">
+                    © {new Date().getFullYear()} {propertyFooterCompanyName || 'Image Locations'}. All rights reserved.
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
