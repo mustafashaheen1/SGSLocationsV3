@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Edit, Trash2, Search, Bookmark, Calendar, Heart } from 'lucide-react';
+import { Eye, Edit, Trash2, Search, Bookmark, Calendar, Heart, X, MapPin, Home, DollarSign } from 'lucide-react';
 import { getGuestListing, clearGuestListing } from '@/lib/guest-listing';
 import MasterCalendar from '@/components/MasterCalendar';
 
@@ -37,6 +37,8 @@ export default function ProductionDashboard() {
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
   const [deletingItemType, setDeletingItemType] = useState<'search' | 'property' | 'favorite' | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
+  const [showPropertyModal, setShowPropertyModal] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -358,6 +360,24 @@ export default function ProductionDashboard() {
 
     // Navigate to search page with a restore flag
     router.push('/search?restore=true');
+  }
+
+  async function handleViewProperty(propertyId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('id', propertyId)
+        .single();
+
+      if (error) throw error;
+
+      setSelectedProperty(data);
+      setShowPropertyModal(true);
+    } catch (error) {
+      console.error('Error fetching property details:', error);
+      alert('Failed to load property details');
+    }
   }
 
   async function handleDeleteProperty(propertyId: string, propertyName: string) {
@@ -749,9 +769,12 @@ export default function ProductionDashboard() {
                                     className="h-10 w-10 rounded object-cover mr-3"
                                   />
                                 )}
-                                <div className="text-sm font-medium text-gray-900">
+                                <button
+                                  onClick={() => handleViewProperty(property.id)}
+                                  className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                                >
                                   {property.name}
-                                </div>
+                                </button>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -827,7 +850,12 @@ export default function ProductionDashboard() {
                             />
                           )}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-900 truncate">{property.name}</h3>
+                            <button
+                              onClick={() => handleViewProperty(property.id)}
+                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block text-left w-full"
+                            >
+                              {property.name}
+                            </button>
                             <p className="text-sm text-gray-600 truncate">{property.address}</p>
                             <p className="text-sm text-gray-500">{property.city}, {property.county}</p>
                             <div className="mt-2 flex items-center gap-2">
@@ -1102,6 +1130,213 @@ export default function ProductionDashboard() {
                   {deleteProgress}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Property Details Modal */}
+      {showPropertyModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Property Details</h2>
+              <button
+                onClick={() => setShowPropertyModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+              {/* Property Names */}
+              <div className="mb-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <h3 className="text-sm font-semibold text-blue-900 mb-2">Actual Property Name (Admin Only)</h3>
+                  <p className="text-lg font-medium text-blue-800">
+                    {selectedProperty.real_name || 'Not set'}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">This name is only visible to you and admins</p>
+                </div>
+
+                {selectedProperty.status === 'active' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-green-900 mb-2">Public Name (Shown to Everyone)</h3>
+                    <p className="text-lg font-medium text-green-800">{selectedProperty.name}</p>
+                    <p className="text-xs text-green-600 mt-1">This is what people see on the website</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Badge */}
+              <div className="mb-6">
+                <span className={`px-4 py-2 inline-flex text-sm font-semibold rounded-full ${
+                  selectedProperty.status === 'active'
+                    ? 'bg-green-100 text-green-800'
+                    : selectedProperty.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  Status: {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
+                </span>
+              </div>
+
+              {/* Property Images */}
+              {selectedProperty.images && selectedProperty.images.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Images</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {selectedProperty.images.slice(0, 6).map((image: string, idx: number) => (
+                      <img
+                        key={idx}
+                        src={image}
+                        alt={`Property image ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                    ))}
+                  </div>
+                  {selectedProperty.images.length > 6 && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      + {selectedProperty.images.length - 6} more images
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Property Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-gray-600" />
+                    Location
+                  </h3>
+                  <div className="space-y-2">
+                    <p className="text-sm"><span className="font-medium">Address:</span> {selectedProperty.address}</p>
+                    <p className="text-sm"><span className="font-medium">City:</span> {selectedProperty.city}</p>
+                    <p className="text-sm"><span className="font-medium">County:</span> {selectedProperty.county}</p>
+                    <p className="text-sm"><span className="font-medium">ZIP Code:</span> {selectedProperty.zipcode}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Home className="w-5 h-5 text-gray-600" />
+                    Property Details
+                  </h3>
+                  <div className="space-y-2">
+                    <p className="text-sm"><span className="font-medium">Type:</span> {selectedProperty.property_type || 'N/A'}</p>
+                    {selectedProperty.square_footage && (
+                      <p className="text-sm"><span className="font-medium">Square Footage:</span> {selectedProperty.square_footage.toLocaleString()} sq ft</p>
+                    )}
+                    {selectedProperty.bedrooms && (
+                      <p className="text-sm"><span className="font-medium">Bedrooms:</span> {selectedProperty.bedrooms}</p>
+                    )}
+                    {selectedProperty.bathrooms && (
+                      <p className="text-sm"><span className="font-medium">Bathrooms:</span> {selectedProperty.bathrooms}</p>
+                    )}
+                    {selectedProperty.year_built && (
+                      <p className="text-sm"><span className="font-medium">Year Built:</span> {selectedProperty.year_built}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Daily Rate */}
+              {selectedProperty.daily_rate && (
+                <div className="mb-6 bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-gray-600" />
+                    Daily Rate
+                  </h3>
+                  <p className="text-2xl font-bold text-gray-900">${selectedProperty.daily_rate}</p>
+                </div>
+              )}
+
+              {/* Description */}
+              {selectedProperty.description && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedProperty.description}</p>
+                </div>
+              )}
+
+              {/* Categories */}
+              {selectedProperty.categories && selectedProperty.categories.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Categories</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProperty.categories.map((category: string, idx: number) => (
+                      <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Property Tags */}
+              {selectedProperty.property_tags && selectedProperty.property_tags.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Features & Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProperty.property_tags.map((tag: string, idx: number) => (
+                      <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full border border-gray-300">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Permits */}
+              {selectedProperty.permits_available && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Permits</h3>
+                  <p className="text-sm text-green-700 font-medium mb-2">✓ Permits Available</p>
+                  {selectedProperty.permit_details && (
+                    <p className="text-sm text-gray-700">{selectedProperty.permit_details}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Additional Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                <p><span className="font-medium">Created:</span> {new Date(selectedProperty.created_at).toLocaleDateString()}</p>
+                <p><span className="font-medium">Last Updated:</span> {new Date(selectedProperty.updated_at).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+              {selectedProperty.status === 'active' && (
+                <Button
+                  onClick={() => {
+                    setShowPropertyModal(false);
+                    router.push(`/property/${selectedProperty.id}`);
+                  }}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  View Public Page
+                </Button>
+              )}
+              <Button
+                onClick={() => {
+                  setShowPropertyModal(false);
+                  router.push(`/edit-property/${selectedProperty.id}`);
+                }}
+                className="bg-gray-600 text-white hover:bg-gray-700"
+              >
+                Edit Property
+              </Button>
+              <Button
+                onClick={() => setShowPropertyModal(false)}
+                variant="outline"
+              >
+                Close
+              </Button>
             </div>
           </div>
         </div>

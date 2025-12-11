@@ -17,19 +17,29 @@ export async function GET(
     const supabase = createServerSideClientWithToken(token);
     const propertyId = params.id;
 
-    // Verify user is admin
+    // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
       return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
+    // Check if user is admin
     const { data: isAdmin } = await (supabase
       .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
 
-    if (!isAdmin) {
+    // Check if user owns this property
+    const { data: property } = await (supabase
+      .from('properties') as any)
+      .select('owner_id')
+      .eq('id', propertyId)
+      .single();
+
+    const isOwner = property?.owner_id === user.id;
+
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -71,20 +81,38 @@ export async function POST(
     const supabase = createServerSideClientWithToken(token);
     const propertyId = params.id;
 
-    // Verify user is admin
+    // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
       return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
+    // Check if user is admin
     const { data: isAdmin } = await (supabase
       .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
 
-    if (!isAdmin) {
+    // Check if user owns this property
+    const { data: property } = await (supabase
+      .from('properties') as any)
+      .select('owner_id, status')
+      .eq('id', propertyId)
+      .single();
+
+    const isOwner = property?.owner_id === user.id;
+
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Property owners can only add events to approved/active properties
+    // Admins can add events to any property
+    if (!isAdmin && property?.status !== 'active') {
+      return NextResponse.json({
+        error: 'Events can only be added to approved properties. Please wait for admin approval.'
+      }, { status: 403 });
     }
 
     const body = await request.json();
@@ -221,21 +249,40 @@ export async function PUT(
     }
 
     const supabase = createServerSideClientWithToken(token);
+    const propertyId = params.id;
 
-    // Verify user is admin
+    // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
       return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
+    // Check if user is admin
     const { data: isAdmin } = await (supabase
       .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
 
-    if (!isAdmin) {
+    // Check if user owns this property
+    const { data: property } = await (supabase
+      .from('properties') as any)
+      .select('owner_id, status')
+      .eq('id', propertyId)
+      .single();
+
+    const isOwner = property?.owner_id === user.id;
+
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Property owners can only modify events on approved/active properties
+    // Admins can modify events on any property
+    if (!isAdmin && property?.status !== 'active') {
+      return NextResponse.json({
+        error: 'Events can only be modified on approved properties.'
+      }, { status: 403 });
     }
 
     const body = await request.json();
@@ -372,21 +419,40 @@ export async function DELETE(
     }
 
     const supabase = createServerSideClientWithToken(token);
+    const propertyId = params.id;
 
-    // Verify user is admin
+    // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
       return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
+    // Check if user is admin
     const { data: isAdmin } = await (supabase
       .from('admins') as any)
       .select('id')
       .eq('email', user.email)
       .single();
 
-    if (!isAdmin) {
+    // Check if user owns this property
+    const { data: property } = await (supabase
+      .from('properties') as any)
+      .select('owner_id, status')
+      .eq('id', propertyId)
+      .single();
+
+    const isOwner = property?.owner_id === user.id;
+
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Property owners can only delete events from approved/active properties
+    // Admins can delete events from any property
+    if (!isAdmin && property?.status !== 'active') {
+      return NextResponse.json({
+        error: 'Events can only be deleted from approved properties.'
+      }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
