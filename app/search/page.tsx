@@ -36,12 +36,11 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
       ? [property.primary_image]
       : ['https://via.placeholder.com/800x600/e5e7eb/6b7280?text=No+Image'];
 
-  // If there are matching images from tag filters, show one of them first
+  // If there are matching images from tag filters, show the first one
   let images = baseImages;
   if (property.matchingImages && property.matchingImages.length > 0) {
-    // Pick a random matching image
-    const randomIndex = Math.floor(Math.random() * property.matchingImages.length);
-    const selectedMatchingImage = property.matchingImages[randomIndex];
+    // Always use the first matching image (consistent across re-renders)
+    const selectedMatchingImage = property.matchingImages[0];
 
     // Remove the selected image from base images if it exists, then add it to the front
     const filteredImages = baseImages.filter(img => img !== selectedMatchingImage);
@@ -300,7 +299,13 @@ export default function SearchPage() {
       const pendingData = sessionStorage.getItem('pendingSearchSave');
       if (pendingData) {
         try {
-          const { name, searchInput: savedSearchInput, activeFilters: savedFilters } = JSON.parse(pendingData);
+          const {
+            name,
+            searchInput: savedSearchInput,
+            activeFilters: savedFilters,
+            selectedCategory: savedCategory,
+            selectedSubCategory: savedSubCategory
+          } = JSON.parse(pendingData);
 
           // Check if user is now logged in
           const { data: { user } } = await supabase.auth.getUser();
@@ -309,10 +314,17 @@ export default function SearchPage() {
             // User is logged in, save the search
             sessionStorage.removeItem('pendingSearchSave');
 
-            // Set the search data
+            // Set the search data (including categories)
             setSearchName(name);
             setSearchInput(savedSearchInput);
             setActiveFilters(savedFilters);
+            if (savedCategory) setSelectedCategory(savedCategory);
+            if (savedSubCategory) setSelectedSubCategory(savedSubCategory);
+
+            // Reset search state to trigger reload with filters
+            setProperties([]);
+            setPage(1);
+            setHasMore(true);
 
             // Open save modal and trigger save
             setShowSaveModal(true);
@@ -371,10 +383,28 @@ export default function SearchPage() {
             setSearchInput(searchCriteria.query);
           }
 
-          // Restore filters - this will trigger the search to reload
-          if (searchCriteria.filters && Array.isArray(searchCriteria.filters)) {
-            setActiveFilters(searchCriteria.filters);
-            console.log('Filters restored:', searchCriteria.filters);
+          // Restore filters - handle both old format (array) and new format (object)
+          if (searchCriteria.filters) {
+            // New format: filters is an object with tagFilters, category_id, sub_category_id
+            if (typeof searchCriteria.filters === 'object' && !Array.isArray(searchCriteria.filters)) {
+              if (searchCriteria.filters.tagFilters && Array.isArray(searchCriteria.filters.tagFilters)) {
+                setActiveFilters(searchCriteria.filters.tagFilters);
+                console.log('Tag filters restored:', searchCriteria.filters.tagFilters);
+              }
+              if (searchCriteria.filters.category_id) {
+                setSelectedCategory(searchCriteria.filters.category_id);
+                console.log('Category restored:', searchCriteria.filters.category_id);
+              }
+              if (searchCriteria.filters.sub_category_id) {
+                setSelectedSubCategory(searchCriteria.filters.sub_category_id);
+                console.log('Sub-category restored:', searchCriteria.filters.sub_category_id);
+              }
+            }
+            // Old format: filters is an array (backward compatibility)
+            else if (Array.isArray(searchCriteria.filters)) {
+              setActiveFilters(searchCriteria.filters);
+              console.log('Filters restored (old format):', searchCriteria.filters);
+            }
           }
 
           // Mark restoration as complete AFTER state has updated (next tick)
@@ -975,6 +1005,13 @@ export default function SearchPage() {
       // Prepare filter tags array (just the tag names)
       const filterTagNames = selectedTags;
 
+      // Prepare filters object including tag filters AND category selections
+      const filtersToSave = {
+        tagFilters: activeFilters,
+        category_id: selectedCategory || null,
+        sub_category_id: selectedSubCategory || null,
+      };
+
       // Save to database
       const { error } = await (supabase
         .from('saved_searches') as any)
@@ -982,7 +1019,7 @@ export default function SearchPage() {
           user_id: user.id,
           name: searchName.trim(),
           search_text: searchInput || null,
-          filters: activeFilters,
+          filters: filtersToSave,
           tags: filterTagNames,
           result_count: resultCount,
           last_checked_at: new Date().toISOString(),
@@ -1978,11 +2015,13 @@ export default function SearchPage() {
                         </button>
                         <button
                           onClick={() => {
-                            // Store search data to save after registration
+                            // Store search data to save after registration (including categories)
                             sessionStorage.setItem('pendingSearchSave', JSON.stringify({
                               name: searchName,
                               searchInput: searchInput,
                               activeFilters: activeFilters,
+                              selectedCategory: selectedCategory,
+                              selectedSubCategory: selectedSubCategory,
                               returnUrl: window.location.pathname + window.location.search
                             }));
                             setShowSaveModal(false);
@@ -2023,8 +2062,12 @@ export default function SearchPage() {
           onClose={() => setIsLoginModalOpen(false)}
           onSuccess={async () => {
             setIsLoginModalOpen(false);
-            // After successful login, save the search automatically
-            await handleSaveSearch(true);
+            // Reopen the save modal to show the success message
+            setShowSaveModal(true);
+            // Small delay to ensure modal is visible before showing message
+            setTimeout(async () => {
+              await handleSaveSearch(true);
+            }, 100);
           }}
         />
       </div>
