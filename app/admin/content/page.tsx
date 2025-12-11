@@ -46,6 +46,17 @@ interface SocialLink {
   is_active: boolean;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  banner_image: string;
+  property_id: string;
+  display_order: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 async function uploadVideoToS3(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
@@ -115,6 +126,14 @@ export default function ContentManagementPage() {
   // AI Photo Analysis State
   const [aiPhotoAnalysisEnabled, setAiPhotoAnalysisEnabled] = useState(false);
 
+  // Projects State
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [newProjectForm, setNewProjectForm] = useState(false);
+  const [projectImageFile, setProjectImageFile] = useState<File | null>(null);
+  const [projectImagePreview, setProjectImagePreview] = useState<string>('');
+  const [properties, setProperties] = useState<any[]>([]);
+
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -130,6 +149,8 @@ export default function ContentManagementPage() {
       fetchGeneralContactInfo();
     } else if (activeTab === 'portfolio') {
       fetchPortfolioVisibility();
+      fetchProjects();
+      fetchProperties();
     }
   }, [activeTab]);
 
@@ -711,6 +732,94 @@ export default function ContentManagementPage() {
       alert('Error saving: ' + error.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function fetchProjects() {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('display_order');
+
+      if (error) throw error;
+      if (data) setProjects(data);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  }
+
+  async function fetchProperties() {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name, real_name')
+        .eq('status', 'active')
+        .order('name');
+
+      if (error) throw error;
+      if (data) setProperties(data);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+    }
+  }
+
+  async function addProject(project: Partial<Project>) {
+    try {
+      const { error } = await (supabase
+        .from('projects') as any)
+        .insert([{
+          ...project,
+          display_order: projects.length + 1,
+          status: 'active'
+        }]);
+
+      if (error) throw error;
+      fetchProjects();
+      setNewProjectForm(false);
+      setProjectImageFile(null);
+      setProjectImagePreview('');
+      alert('Project added successfully!');
+    } catch (error: any) {
+      alert('Error adding project: ' + error.message);
+    }
+  }
+
+  async function updateProject(id: string, updates: Partial<Project>) {
+    try {
+      const { error } = await (supabase
+        .from('projects') as any)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchProjects();
+      setEditingProject(null);
+      setProjectImageFile(null);
+      setProjectImagePreview('');
+      alert('Project updated successfully!');
+    } catch (error: any) {
+      alert('Error updating project: ' + error.message);
+    }
+  }
+
+  async function deleteProject(id: string) {
+    if (!confirm('Are you sure you want to delete this project?')) return;
+
+    try {
+      const { error } = await (supabase
+        .from('projects') as any)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchProjects();
+      alert('Project deleted successfully!');
+    } catch (error: any) {
+      alert('Error deleting project: ' + error.message);
     }
   }
 
@@ -1369,6 +1478,7 @@ export default function ContentManagementPage() {
 
         {/* PORTFOLIO TAB */}
         <TabsContent value="portfolio" className="space-y-6">
+          {/* Portfolio Visibility Card */}
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -1412,6 +1522,286 @@ export default function ContentManagementPage() {
                 <p className="text-sm text-blue-800">
                   <strong>Current Status:</strong> Portfolio page is {portfolioVisible ? 'visible' : 'hidden'} in the navigation
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Projects Management Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Portfolio Projects</CardTitle>
+                <Button onClick={() => {
+                  setNewProjectForm(true);
+                  setProjectImageFile(null);
+                  setProjectImagePreview('');
+                }} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Project
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {newProjectForm && (
+                <div className="mb-6 p-4 border rounded bg-gray-50">
+                  <h4 className="font-medium mb-3">Add New Project</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Project Name</label>
+                      <Input
+                        placeholder="e.g. Selena Gomez - Vanity Fair - Hermosa House"
+                        id="new-project-name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Property</label>
+                      <select
+                        id="new-project-property"
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      >
+                        <option value="">Select a property...</option>
+                        {properties.map(prop => (
+                          <option key={prop.id} value={prop.id}>
+                            {prop.real_name || prop.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Banner Image</label>
+                      {!projectImagePreview ? (
+                        <div
+                          className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                          onClick={() => document.getElementById('projectImageUpload')?.click()}
+                        >
+                          <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                          <p className="text-sm text-gray-600">Click to upload banner image</p>
+                          <input
+                            id="projectImageUpload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setProjectImageFile(file);
+                                setProjectImagePreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <img
+                            src={projectImagePreview}
+                            alt="Preview"
+                            className="w-full h-40 object-cover border rounded"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProjectImageFile(null);
+                              setProjectImagePreview('');
+                            }}
+                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      size="sm"
+                      disabled={uploadingLogo}
+                      onClick={async () => {
+                        const name = (document.getElementById('new-project-name') as HTMLInputElement)?.value;
+                        const propertyId = (document.getElementById('new-project-property') as HTMLSelectElement)?.value;
+
+                        if (!name || !propertyId || !projectImageFile) {
+                          alert('Please provide project name, property, and banner image');
+                          return;
+                        }
+
+                        setUploadingLogo(true);
+                        try {
+                          const bannerUrl = await uploadImageToS3(projectImageFile, 'projects');
+                          await addProject({
+                            name,
+                            property_id: propertyId,
+                            banner_image: bannerUrl
+                          });
+                        } catch (error: any) {
+                          alert('Error adding project: ' + error.message);
+                        } finally {
+                          setUploadingLogo(false);
+                        }
+                      }}
+                    >
+                      {uploadingLogo ? 'Uploading...' : 'Save'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setNewProjectForm(false);
+                        setProjectImageFile(null);
+                        setProjectImagePreview('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {projects.map(project => (
+                  <div key={project.id} className="border rounded p-4">
+                    {editingProject?.id === project.id ? (
+                      <div className="space-y-2">
+                        <Input
+                          value={editingProject.name}
+                          onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
+                          placeholder="Project Name"
+                        />
+                        <select
+                          value={editingProject.property_id}
+                          onChange={(e) => setEditingProject({...editingProject, property_id: e.target.value})}
+                          className="w-full border rounded px-3 py-2 text-sm"
+                        >
+                          {properties.map(prop => (
+                            <option key={prop.id} value={prop.id}>
+                              {prop.real_name || prop.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Current Image:</p>
+                          <img
+                            src={editingProject.banner_image}
+                            alt={editingProject.name}
+                            className="w-full h-32 object-cover rounded mb-2"
+                          />
+                          {!projectImagePreview ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => document.getElementById(`editProject-${project.id}`)?.click()}
+                            >
+                              <Upload className="w-3 h-3 mr-1" />
+                              Change Image
+                            </Button>
+                          ) : (
+                            <div className="relative">
+                              <img
+                                src={projectImagePreview}
+                                alt="New preview"
+                                className="w-full h-32 object-cover border rounded"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProjectImageFile(null);
+                                  setProjectImagePreview('');
+                                }}
+                                className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                          <input
+                            id={`editProject-${project.id}`}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setProjectImageFile(file);
+                                setProjectImagePreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            disabled={uploadingLogo}
+                            onClick={async () => {
+                              setUploadingLogo(true);
+                              try {
+                                let bannerUrl = editingProject.banner_image;
+                                if (projectImageFile) {
+                                  bannerUrl = await uploadImageToS3(projectImageFile, 'projects');
+                                }
+                                await updateProject(project.id, {
+                                  name: editingProject.name,
+                                  property_id: editingProject.property_id,
+                                  banner_image: bannerUrl
+                                });
+                              } catch (error: any) {
+                                alert('Error updating project: ' + error.message);
+                              } finally {
+                                setUploadingLogo(false);
+                              }
+                            }}
+                          >
+                            {uploadingLogo ? 'Saving...' : 'Save'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingProject(null);
+                              setProjectImageFile(null);
+                              setProjectImagePreview('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src={project.banner_image}
+                          alt={project.name}
+                          className="w-full h-32 object-cover rounded mb-2"
+                        />
+                        <p className="text-sm font-medium mb-1">{project.name}</p>
+                        <p className="text-xs text-gray-500 mb-2">
+                          Property: {properties.find(p => p.id === project.property_id)?.name || 'Unknown'}
+                        </p>
+                        <div className="flex space-x-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingProject(project);
+                              setProjectImageFile(null);
+                              setProjectImagePreview('');
+                            }}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteProject(project.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
