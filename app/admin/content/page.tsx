@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -129,10 +129,12 @@ export default function ContentManagementPage() {
   // Projects State
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [newProjectForm, setNewProjectForm] = useState(false);
   const [projectImageFile, setProjectImageFile] = useState<File | null>(null);
   const [projectImagePreview, setProjectImagePreview] = useState<string>('');
   const [properties, setProperties] = useState<any[]>([]);
+  const [propertySearchQuery, setPropertySearchQuery] = useState('');
 
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
@@ -1535,6 +1537,7 @@ export default function ContentManagementPage() {
                   setNewProjectForm(true);
                   setProjectImageFile(null);
                   setProjectImagePreview('');
+                  setPropertySearchQuery('');
                 }} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Project
@@ -1556,16 +1559,30 @@ export default function ContentManagementPage() {
 
                     <div>
                       <label className="block text-sm font-medium mb-1">Property</label>
+                      <Input
+                        placeholder="Search properties..."
+                        value={propertySearchQuery}
+                        onChange={(e) => setPropertySearchQuery(e.target.value)}
+                        className="mb-2"
+                      />
                       <select
                         id="new-project-property"
                         className="w-full border rounded px-3 py-2 text-sm"
                       >
                         <option value="">Select a property...</option>
-                        {properties.map(prop => (
-                          <option key={prop.id} value={prop.id}>
-                            {prop.real_name || prop.name}
-                          </option>
-                        ))}
+                        {properties
+                          .filter(prop => {
+                            if (!propertySearchQuery) return true;
+                            const query = propertySearchQuery.toLowerCase();
+                            const name = (prop.real_name || prop.name || '').toLowerCase();
+                            return name.includes(query);
+                          })
+                          .map(prop => (
+                            <option key={prop.id} value={prop.id}>
+                              {prop.real_name || prop.name}
+                            </option>
+                          ))
+                        }
                       </select>
                     </div>
 
@@ -1651,6 +1668,7 @@ export default function ContentManagementPage() {
                         setNewProjectForm(false);
                         setProjectImageFile(null);
                         setProjectImagePreview('');
+                        setPropertySearchQuery('');
                       }}
                     >
                       Cancel
@@ -1669,16 +1687,30 @@ export default function ContentManagementPage() {
                           onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
                           placeholder="Project Name"
                         />
+                        <Input
+                          placeholder="Search properties..."
+                          value={propertySearchQuery}
+                          onChange={(e) => setPropertySearchQuery(e.target.value)}
+                          className="text-sm"
+                        />
                         <select
                           value={editingProject.property_id}
                           onChange={(e) => setEditingProject({...editingProject, property_id: e.target.value})}
                           className="w-full border rounded px-3 py-2 text-sm"
                         >
-                          {properties.map(prop => (
-                            <option key={prop.id} value={prop.id}>
-                              {prop.real_name || prop.name}
-                            </option>
-                          ))}
+                          {properties
+                            .filter(prop => {
+                              if (!propertySearchQuery) return true;
+                              const query = propertySearchQuery.toLowerCase();
+                              const name = (prop.real_name || prop.name || '').toLowerCase();
+                              return name.includes(query);
+                            })
+                            .map(prop => (
+                              <option key={prop.id} value={prop.id}>
+                                {prop.real_name || prop.name}
+                              </option>
+                            ))
+                          }
                         </select>
                         <div>
                           <p className="text-xs text-gray-600 mb-1">Current Image:</p>
@@ -1761,9 +1793,92 @@ export default function ContentManagementPage() {
                               setEditingProject(null);
                               setProjectImageFile(null);
                               setProjectImagePreview('');
+                              setPropertySearchQuery('');
                             }}
                           >
                             Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : viewingProject?.id === project.id ? (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-base">Project Details</h4>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setViewingProject(null)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div>
+                          <img
+                            src={project.banner_image}
+                            alt={project.name}
+                            className="w-full h-48 object-cover rounded mb-3"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Project Name</p>
+                            <p className="text-sm font-medium">{project.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Property</p>
+                            <p className="text-sm">{properties.find(p => p.id === project.property_id)?.real_name || properties.find(p => p.id === project.property_id)?.name || 'Unknown'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Property ID</p>
+                            <p className="text-sm font-mono text-xs">{project.property_id}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Status</p>
+                            <p className="text-sm capitalize">{project.status}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Display Order</p>
+                            <p className="text-sm">{project.display_order}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Created</p>
+                            <p className="text-sm">{new Date(project.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Last Updated</p>
+                            <p className="text-sm">{new Date(project.updated_at).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 uppercase">Banner Image URL</p>
+                            <p className="text-xs text-gray-600 break-all">{project.banner_image}</p>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 pt-2 border-t">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setViewingProject(null);
+                              setEditingProject(project);
+                              setProjectImageFile(null);
+                              setProjectImagePreview('');
+                              setPropertySearchQuery('');
+                            }}
+                          >
+                            <Edit2 className="w-3 h-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this project?')) {
+                                deleteProject(project.id);
+                                setViewingProject(null);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Delete
                           </Button>
                         </div>
                       </div>
@@ -1772,7 +1887,8 @@ export default function ContentManagementPage() {
                         <img
                           src={project.banner_image}
                           alt={project.name}
-                          className="w-full h-32 object-cover rounded mb-2"
+                          className="w-full h-32 object-cover rounded mb-2 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setViewingProject(project)}
                         />
                         <p className="text-sm font-medium mb-1">{project.name}</p>
                         <p className="text-xs text-gray-500 mb-2">
@@ -1782,10 +1898,19 @@ export default function ContentManagementPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => setViewingProject(project)}
+                            title="View Details"
+                          >
+                            <Eye className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => {
                               setEditingProject(project);
                               setProjectImageFile(null);
                               setProjectImagePreview('');
+                              setPropertySearchQuery('');
                             }}
                           >
                             <Edit2 className="w-3 h-3" />
@@ -1793,7 +1918,11 @@ export default function ContentManagementPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => deleteProject(project.id)}
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this project?')) {
+                                deleteProject(project.id);
+                              }
+                            }}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
