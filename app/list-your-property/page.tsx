@@ -77,8 +77,10 @@ export default function ListYourPropertyPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [termsContent, setTermsContent] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState('');
   const [propertyTags, setPropertyTags] = useState<string[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -101,6 +103,7 @@ export default function ListYourPropertyPage() {
         // Restore form data
         setFormData(pendingListing.formData);
         setSelectedCategoryId(pendingListing.selectedCategoryId);
+        setSelectedSubCategoryId(pendingListing.selectedSubCategoryId || '');
         setPropertyTags(pendingListing.propertyTags);
 
         // Restore image files
@@ -224,12 +227,30 @@ export default function ListYourPropertyPage() {
         .from('categories')
         .select('*')
         .eq('is_active', true)
+        .is('parent_id', null)
         .order('display_order');
 
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    }
+  }
+
+  async function fetchSubCategories(categoryId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .eq('parent_id', categoryId)
+        .order('display_order');
+
+      if (error) throw error;
+      setSubCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching sub-categories:', error);
+      setSubCategories([]);
     }
   }
 
@@ -474,6 +495,7 @@ export default function ListYourPropertyPage() {
     if (formData.listedWith.length === 0) newErrors.listedWith = 'Select at least one option';
     if (formData.howDidYouHear.length === 0) newErrors.howDidYouHear = 'Select at least one option';
     if (!selectedCategoryId) newErrors.category = 'Please select a category';
+    if (subCategories.length > 0 && !selectedSubCategoryId) newErrors.subCategory = 'Please select a sub-category';
     if (uploadedFiles.length < 10) newErrors.files = 'Minimum 10 images required';
     if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms and conditions';
 
@@ -506,6 +528,7 @@ export default function ListYourPropertyPage() {
         await saveGuestListing({
           formData,
           selectedCategoryId,
+          selectedSubCategoryId,
           propertyTags,
           imageFiles,
         });
@@ -531,8 +554,6 @@ export default function ListYourPropertyPage() {
       const imageFiles = uploadedFiles.map(img => img.file);
       const uploadedImageUrls = await uploadMultipleImages(imageFiles, 'properties');
 
-      const selectedCategory = categories.find(c => c.id === selectedCategoryId);
-
       const { data: property, error: propertyError } = await (supabase
         .from('properties') as any)
         .insert([{
@@ -545,7 +566,8 @@ export default function ListYourPropertyPage() {
           owner_id: userId,
           property_type: 'Residential',
           daily_rate: '0',
-          categories: selectedCategory ? [selectedCategory.name] : [],
+          category_id: selectedCategoryId,
+          sub_category_id: selectedSubCategoryId || null,
           property_tags: propertyTags,
           images: uploadedImageUrls,
           primary_image: uploadedImageUrls[0],
@@ -1000,7 +1022,13 @@ export default function ListYourPropertyPage() {
                   id="category"
                   value={selectedCategoryId}
                   onChange={(e) => {
-                    setSelectedCategoryId(e.target.value);
+                    const newCategoryId = e.target.value;
+                    setSelectedCategoryId(newCategoryId);
+                    setSelectedSubCategoryId(''); // Reset sub-category when category changes
+                    setSubCategories([]); // Clear sub-categories
+                    if (newCategoryId) {
+                      fetchSubCategories(newCategoryId);
+                    }
                     if (errors.category) {
                       setErrors(prev => ({ ...prev, category: '' }));
                     }
@@ -1018,6 +1046,36 @@ export default function ListYourPropertyPage() {
                 </select>
                 {errors.category && <p className="text-red-600 text-sm mt-1">{errors.category}</p>}
               </section>
+
+              {/* SUB-CATEGORY SELECTION */}
+              {selectedCategoryId && subCategories.length > 0 && (
+                <section className="mb-6">
+                  <label htmlFor="subCategory" className="block font-medium text-gray-700 text-sm mb-1">
+                    Property Sub-Category <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    id="subCategory"
+                    value={selectedSubCategoryId}
+                    onChange={(e) => {
+                      setSelectedSubCategoryId(e.target.value);
+                      if (errors.subCategory) {
+                        setErrors(prev => ({ ...prev, subCategory: '' }));
+                      }
+                    }}
+                    className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
+                      errors.subCategory ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">-- Select a sub-category --</option>
+                    {subCategories.map(subCategory => (
+                      <option key={subCategory.id} value={subCategory.id}>
+                        {subCategory.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.subCategory && <p className="text-red-600 text-sm mt-1">{errors.subCategory}</p>}
+                </section>
+              )}
 
               {/* PROPERTY TAGS SECTION */}
               <section className="mb-6">

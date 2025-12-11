@@ -6,6 +6,7 @@
 export interface GuestListingData {
   formData: any;
   selectedCategoryId: string;
+  selectedSubCategoryId?: string;
   propertyTags: string[];
   imageFiles: File[]; // Actual File objects
   timestamp: number;
