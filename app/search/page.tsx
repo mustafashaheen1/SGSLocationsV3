@@ -254,6 +254,7 @@ export default function SearchPage() {
   const [saveMessage, setSaveMessage] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [hasPendingSearchChecked, setHasPendingSearchChecked] = useState(false);
   const [mainCategories, setMainCategories] = useState<any[]>([]);
   const [subCategories, setSubCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -315,16 +316,16 @@ export default function SearchPage() {
             sessionStorage.removeItem('pendingSearchSave');
 
             // Set the search data (including categories)
+            // Note: Setting these will automatically trigger the reset useEffect
+            // on line 809 which resets properties, page, and hasMore
             setSearchName(name);
             setSearchInput(savedSearchInput);
             setActiveFilters(savedFilters);
             if (savedCategory) setSelectedCategory(savedCategory);
             if (savedSubCategory) setSelectedSubCategory(savedSubCategory);
 
-            // Reset search state to trigger reload with filters
-            setProperties([]);
-            setPage(1);
-            setHasMore(true);
+            // Mark that we've checked for pending data
+            setHasPendingSearchChecked(true);
 
             // Open save modal and trigger save
             setShowSaveModal(true);
@@ -333,11 +334,18 @@ export default function SearchPage() {
             setTimeout(async () => {
               await handleSaveSearch(true);
             }, 500);
+          } else {
+            // No user or no pending data, mark as checked
+            setHasPendingSearchChecked(true);
           }
         } catch (error) {
           console.error('Error processing pending search save:', error);
           sessionStorage.removeItem('pendingSearchSave');
+          setHasPendingSearchChecked(true);
         }
+      } else {
+        // No pending data, mark as checked
+        setHasPendingSearchChecked(true);
       }
     };
 
@@ -824,17 +832,24 @@ export default function SearchPage() {
       return;
     }
 
+    // Don't load until we've checked for pending search data (after registration)
+    if (!hasPendingSearchChecked) {
+      console.log('Skipping load - waiting for pending search check');
+      return;
+    }
+
     // Trigger load when:
     // 1. We have no properties
     // 2. We're on page 1
     // 3. We're not currently loading
     // 4. We think there might be more results
     // 5. We're not restoring
+    // 6. We've checked for pending search data
     if (page === 1 && properties.length === 0 && !loading && hasMore && !isRestoring) {
       console.log('Triggering load - activeFilters:', activeFilters.length, 'filters:', activeFilters);
       loadMoreProperties();
     }
-  }, [page, properties.length, loading, hasMore, isRestoring, searchParams, activeFilters]);
+  }, [page, properties.length, loading, hasMore, isRestoring, searchParams, activeFilters, hasPendingSearchChecked]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -978,27 +993,66 @@ export default function SearchPage() {
           if (searchInput && searchInput.trim()) {
             const { data: searchData } = await (supabase as any)
               .rpc('search_properties', { search_query: searchInput.trim() });
-            resultCount = searchData?.filter((prop: any) => propertyIds.includes(prop.id)).length || 0;
+
+            // Filter by property IDs and categories
+            let filteredResults = searchData?.filter((prop: any) => propertyIds.includes(prop.id)) || [];
+            if (selectedCategory) {
+              filteredResults = filteredResults.filter((prop: any) => prop.category_id === selectedCategory);
+            }
+            if (selectedSubCategory) {
+              filteredResults = filteredResults.filter((prop: any) => prop.sub_category_id === selectedSubCategory);
+            }
+            resultCount = filteredResults.length;
           } else {
-            const { data } = await (supabase
+            // Build query with category filters
+            let query = (supabase
               .from('properties') as any)
               .select('id')
               .eq('status', 'active')
               .in('id', propertyIds);
+
+            // Apply category filters
+            if (selectedCategory) {
+              query = query.eq('category_id', selectedCategory);
+            }
+            if (selectedSubCategory) {
+              query = query.eq('sub_category_id', selectedSubCategory);
+            }
+
+            const { data } = await query;
             resultCount = data?.length || 0;
           }
         }
       } else if (searchInput && searchInput.trim()) {
-        // Just text search
+        // Text search with optional category filters
         const { data } = await (supabase as any)
           .rpc('search_properties', { search_query: searchInput.trim() });
-        resultCount = data?.length || 0;
+
+        // Apply category filters to results
+        let filteredResults = data || [];
+        if (selectedCategory) {
+          filteredResults = filteredResults.filter((prop: any) => prop.category_id === selectedCategory);
+        }
+        if (selectedSubCategory) {
+          filteredResults = filteredResults.filter((prop: any) => prop.sub_category_id === selectedSubCategory);
+        }
+        resultCount = filteredResults.length;
       } else {
-        // No filters, no query - all active properties
-        const { count } = await supabase
+        // No tag filters, no text search - but might have category filters
+        let query = supabase
           .from('properties')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'active');
+
+        // Apply category filters if present
+        if (selectedCategory) {
+          query = query.eq('category_id', selectedCategory);
+        }
+        if (selectedSubCategory) {
+          query = query.eq('sub_category_id', selectedSubCategory);
+        }
+
+        const { count } = await query;
         resultCount = count || 0;
       }
 
