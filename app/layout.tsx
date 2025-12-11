@@ -6,6 +6,7 @@ import { Inter } from 'next/font/google';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Toaster } from '@/components/ui/toaster';
+import { SessionMonitor } from '@/components/SessionMonitor';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
       </head>
       <body className={inter.className}>
+        <SessionMonitor />
         {!isAdminPage && <Navbar />}
         {children}
         {!isAdminPage && <Footer />}

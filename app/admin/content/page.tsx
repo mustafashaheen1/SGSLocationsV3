@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
@@ -139,6 +139,10 @@ export default function ContentManagementPage() {
   const [isPropertyDropdownOpen, setIsPropertyDropdownOpen] = useState(false);
   const [editPropertyDropdownOpen, setEditPropertyDropdownOpen] = useState(false);
 
+  // Refs for click-outside detection
+  const addPropertyDropdownRef = useRef<HTMLDivElement>(null);
+  const editPropertyDropdownRef = useRef<HTMLDivElement>(null);
+
   // Edit States
   const [editingLogo, setEditingLogo] = useState<ProductionLogo | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -147,6 +151,40 @@ export default function ContentManagementPage() {
   useEffect(() => {
     fetchAllContent();
   }, []);
+
+  // Click-outside detection for add property dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (addPropertyDropdownRef.current && !addPropertyDropdownRef.current.contains(event.target as Node)) {
+        setIsPropertyDropdownOpen(false);
+        setPropertySearchQuery('');
+      }
+    }
+
+    if (isPropertyDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isPropertyDropdownOpen]);
+
+  // Click-outside detection for edit property dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (editPropertyDropdownRef.current && !editPropertyDropdownRef.current.contains(event.target as Node)) {
+        setEditPropertyDropdownOpen(false);
+        setPropertySearchQuery('');
+      }
+    }
+
+    if (editPropertyDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [editPropertyDropdownOpen]);
 
   useEffect(() => {
     if (activeTab === 'contact') {
@@ -1564,7 +1602,7 @@ export default function ContentManagementPage() {
 
                     <div>
                       <label className="block text-sm font-medium mb-1">Property</label>
-                      <div className="relative">
+                      <div className="relative" ref={addPropertyDropdownRef}>
                         <button
                           type="button"
                           onClick={() => setIsPropertyDropdownOpen(!isPropertyDropdownOpen)}
@@ -1735,7 +1773,7 @@ export default function ContentManagementPage() {
                           onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
                           placeholder="Project Name"
                         />
-                        <div className="relative">
+                        <div className="relative" ref={editPropertyDropdownRef}>
                           <button
                             type="button"
                             onClick={() => setEditPropertyDropdownOpen(!editPropertyDropdownOpen)}

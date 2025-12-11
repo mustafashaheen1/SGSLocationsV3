@@ -22,6 +22,8 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
         auth: {
           persistSession: true,
           autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
         }
       });
     }
@@ -38,6 +40,8 @@ export function createClient() {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     }
   });
 }
