@@ -31,15 +31,6 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
             'pragma': 'no-cache',
             'expires': '0'
           }
-        },
-        db: {
-          schema: 'public',
-        },
-        // Disable query caching
-        realtime: {
-          params: {
-            eventsPerSecond: 10
-          }
         }
       });
     }
@@ -64,15 +55,6 @@ export function createClient() {
         'cache-control': 'no-cache, no-store, must-revalidate',
         'pragma': 'no-cache',
         'expires': '0'
-      }
-    },
-    db: {
-      schema: 'public',
-    },
-    // Disable query caching
-    realtime: {
-      params: {
-        eventsPerSecond: 10
       }
     }
   });
