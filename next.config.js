@@ -40,25 +40,11 @@ const nextConfig = {
     ],
     unoptimized: false,
   },
-  // Disable caching for dynamic content
+  // Disable static page caching for dynamic content
   experimental: {
     staleTimes: {
       dynamic: 0,
-      static: 0,
     },
-  },
-  // Ensure headers are set correctly
-  async headers() {
-    return [
-      {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate' },
-          { key: 'Pragma', value: 'no-cache' },
-          { key: 'Expires', value: '0' },
-        ],
-      },
-    ];
   },
 };
 

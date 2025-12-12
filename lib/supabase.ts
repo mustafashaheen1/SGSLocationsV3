@@ -24,13 +24,6 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
           autoRefreshToken: true,
           detectSessionInUrl: true,
           storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        },
-        global: {
-          headers: {
-            'cache-control': 'no-cache, no-store, must-revalidate',
-            'pragma': 'no-cache',
-            'expires': '0'
-          }
         }
       });
     }
@@ -49,13 +42,6 @@ export function createClient() {
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    },
-    global: {
-      headers: {
-        'cache-control': 'no-cache, no-store, must-revalidate',
-        'pragma': 'no-cache',
-        'expires': '0'
-      }
     }
   });
 }
