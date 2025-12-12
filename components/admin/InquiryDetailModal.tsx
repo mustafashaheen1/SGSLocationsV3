@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, ExternalLink } from 'lucide-react';
-import { Inquiry } from '@/lib/supabase';
+import { Inquiry, supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 interface InquiryDetailModalProps {
@@ -10,6 +10,14 @@ interface InquiryDetailModalProps {
   onClose: () => void;
   onStatusUpdate: (inquiryId: string, newStatus: string) => Promise<void>;
   canUpdateStatus?: boolean;
+}
+
+interface PropertyOwner {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  company_name: string | null;
 }
 
 export default function InquiryDetailModal({
@@ -21,6 +29,40 @@ export default function InquiryDetailModal({
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
   const [status, setStatus] = useState(inquiry.status);
+  const [propertyOwner, setPropertyOwner] = useState<PropertyOwner | null>(null);
+  const [loadingOwner, setLoadingOwner] = useState(false);
+
+  // Fetch property owner details if the property has an owner
+  useEffect(() => {
+    async function fetchPropertyOwner() {
+      // Check if property has an owner_id (user-submitted property)
+      if (inquiry.properties?.owner_id) {
+        setLoadingOwner(true);
+        try {
+          const { data: ownerData, error } = await (supabase
+            .from('users') as any)
+            .select('id, email, full_name, phone, company_name')
+            .eq('id', inquiry.properties.owner_id)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Error fetching property owner:', error);
+            return;
+          }
+
+          if (ownerData) {
+            setPropertyOwner(ownerData);
+          }
+        } catch (error) {
+          console.error('Error loading property owner:', error);
+        } finally {
+          setLoadingOwner(false);
+        }
+      }
+    }
+
+    fetchPropertyOwner();
+  }, [inquiry.properties?.owner_id]);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdating(true);
@@ -92,7 +134,7 @@ export default function InquiryDetailModal({
 
           {/* Contact Info */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-3">Contact Information</h3>
+            <h3 className="font-semibold text-gray-900 mb-3">Contact Information (Inquirer)</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">First Name</label>
@@ -120,6 +162,52 @@ export default function InquiryDetailModal({
               </div>
             </div>
           </div>
+
+          {/* Property Owner Contact - Only shown for user-submitted properties */}
+          {inquiry.properties?.owner_id && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Property Owner Contact</h3>
+              {loadingOwner ? (
+                <div className="text-center py-4">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                  <p className="mt-2 text-sm text-gray-600">Loading owner details...</p>
+                </div>
+              ) : propertyOwner ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Full Name</label>
+                    <p className="text-gray-900">{propertyOwner.full_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Email</label>
+                    <p className="text-gray-900">
+                      <a href={`mailto:${propertyOwner.email}`} className="text-blue-600 hover:text-blue-800">
+                        {propertyOwner.email}
+                      </a>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Phone</label>
+                    <p className="text-gray-900">
+                      {propertyOwner.phone ? (
+                        <a href={`tel:${propertyOwner.phone}`} className="text-blue-600 hover:text-blue-800">
+                          {propertyOwner.phone}
+                        </a>
+                      ) : (
+                        'N/A'
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Company</label>
+                    <p className="text-gray-900">{propertyOwner.company_name || 'N/A'}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">Unable to load property owner information.</p>
+              )}
+            </div>
+          )}
 
           {/* Project Details */}
           <div>

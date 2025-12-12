@@ -59,6 +59,7 @@ export default function PropertyDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(true);
   const [pendingFavoriteAction, setPendingFavoriteAction] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
 
   // Footer content from database
   const [footerPhone, setFooterPhone] = useState('(310) 871-8004');
@@ -116,6 +117,55 @@ export default function PropertyDetailPage() {
       );
     }
   }, []);
+
+  // Fetch user type on component mount
+  useEffect(() => {
+    async function fetchUserType() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          setUserType(null);
+          return;
+        }
+
+        const { data: userData, error } = await (supabase
+          .from('users') as any)
+          .select('user_type')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching user type:', error);
+          return;
+        }
+
+        if (userData) {
+          setUserType(userData.user_type);
+        }
+      } catch (error) {
+        console.error('Error loading user type:', error);
+      }
+    }
+
+    fetchUserType();
+  }, []);
+
+  // Check for pending inquiry after registration and auto-open modal
+  useEffect(() => {
+    const pendingInquiry = sessionStorage.getItem('pendingInquiry');
+    if (pendingInquiry) {
+      try {
+        const { propertyId: savedPropertyId } = JSON.parse(pendingInquiry);
+        // Only open modal if we're on the same property page
+        if (savedPropertyId === params.id) {
+          setShowContactModal(true);
+        }
+      } catch (error) {
+        console.error('Error checking pending inquiry:', error);
+      }
+    }
+  }, [params.id]);
 
   useEffect(() => {
     async function fetchData() {
@@ -1173,50 +1223,52 @@ export default function PropertyDetailPage() {
                 </p>
               </div>
 
-              {/* Inquire Button */}
-              <div style={{ marginTop: '1.5rem' }}>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowContactModal(true);
-                  }}
-                  style={{
-                    background: 'rgb(225, 25, 33)',
-                    backgroundColor: 'rgb(225, 25, 33)',
-                    color: 'rgb(255, 255, 255)',
-                    border: '1px solid rgb(225, 25, 33)',
-                    borderRadius: '3.2px',
-                    padding: '4px 8px',
-                    fontSize: '14px',
-                    fontWeight: 300,
-                    fontFamily: 'acumin-pro-wide, sans-serif',
-                    lineHeight: '21px',
-                    height: '31px',
-                    width: '266.07px',
-                    textAlign: 'center',
-                    display: 'inline-block',
-                    cursor: 'pointer',
-                    textDecoration: 'none',
-                    transition: 'color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out',
-                    userSelect: 'none',
-                    verticalAlign: 'middle',
-                    boxSizing: 'border-box'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#bf151c';
-                    e.currentTarget.style.backgroundColor = '#bf151c';
-                    e.currentTarget.style.borderColor = '#bf151c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgb(225, 25, 33)';
-                    e.currentTarget.style.backgroundColor = 'rgb(225, 25, 33)';
-                    e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
-                  }}
-                >
-                  Inquire About {property.name}
-                </a>
-              </div>
+              {/* Inquire Button - Only show for non-property owners */}
+              {userType !== 'property_owner' && (
+                <div style={{ marginTop: '1.5rem' }}>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowContactModal(true);
+                    }}
+                    style={{
+                      background: 'rgb(225, 25, 33)',
+                      backgroundColor: 'rgb(225, 25, 33)',
+                      color: 'rgb(255, 255, 255)',
+                      border: '1px solid rgb(225, 25, 33)',
+                      borderRadius: '3.2px',
+                      padding: '4px 8px',
+                      fontSize: '14px',
+                      fontWeight: 300,
+                      fontFamily: 'acumin-pro-wide, sans-serif',
+                      lineHeight: '21px',
+                      height: '31px',
+                      width: '266.07px',
+                      textAlign: 'center',
+                      display: 'inline-block',
+                      cursor: 'pointer',
+                      textDecoration: 'none',
+                      transition: 'color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out',
+                      userSelect: 'none',
+                      verticalAlign: 'middle',
+                      boxSizing: 'border-box'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#bf151c';
+                      e.currentTarget.style.backgroundColor = '#bf151c';
+                      e.currentTarget.style.borderColor = '#bf151c';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgb(225, 25, 33)';
+                      e.currentTarget.style.backgroundColor = 'rgb(225, 25, 33)';
+                      e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
+                    }}
+                  >
+                    Inquire About {property.name}
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* RIGHT COLUMN - 50% Width */}
@@ -1263,7 +1315,13 @@ export default function PropertyDetailPage() {
                   { icon: ImageIcon, text: 'THUMBNAILS' },
                   { icon: Download, text: 'DOWNLOAD IMAGES' },
                   { icon: FileText, text: 'LOCATION PDF' }
-                ].map((btn, index) => {
+                ].filter(btn => {
+                  // Hide FAVORITE button for property owners
+                  if (btn.text === 'FAVORITE' && userType === 'property_owner') {
+                    return false;
+                  }
+                  return true;
+                }).map((btn, index) => {
                   const isLocationPDF = btn.text === 'LOCATION PDF';
                   const isDownloadImages = btn.text === 'DOWNLOAD IMAGES';
                   const isFavoriteBtn = btn.text === 'FAVORITE';

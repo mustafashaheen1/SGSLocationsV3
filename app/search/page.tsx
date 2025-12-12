@@ -259,6 +259,7 @@ export default function SearchPage() {
   const [subCategories, setSubCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
+  const [userType, setUserType] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 8;
 
@@ -292,7 +293,37 @@ export default function SearchPage() {
   useEffect(() => {
     fetchFilters();
     fetchCategories();
+    fetchUserType();
   }, []);
+
+  // Fetch user type
+  async function fetchUserType() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setUserType(null);
+        return;
+      }
+
+      const { data: userData, error } = await (supabase
+        .from('users') as any)
+        .select('user_type')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user type:', error);
+        return;
+      }
+
+      if (userData) {
+        setUserType(userData.user_type);
+      }
+    } catch (error) {
+      console.error('Error loading user type:', error);
+    }
+  }
 
   // Check for pending search save after login/register
   useEffect(() => {
@@ -1995,15 +2026,18 @@ export default function SearchPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
-            <button
-              type="button"
-              className="save-search-btn"
-              onClick={() => setShowSaveModal(true)}
-              title="Save this search"
-            >
-              <Bookmark size={20} />
-              <span>Save Search</span>
-            </button>
+            {/* Only show Save Search button for non-property owners */}
+            {userType !== 'property_owner' && (
+              <button
+                type="button"
+                className="save-search-btn"
+                onClick={() => setShowSaveModal(true)}
+                title="Save this search"
+              >
+                <Bookmark size={20} />
+                <span>Save Search</span>
+              </button>
+            )}
           </div>
         </div>
 

@@ -39,12 +39,15 @@ export default function ProductionDashboard() {
   const [deletingItemType, setDeletingItemType] = useState<'search' | 'property' | 'favorite' | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [userInquiries, setUserInquiries] = useState<any[]>([]);
+  const [loadingInquiries, setLoadingInquiries] = useState(false);
 
   useEffect(() => {
     fetchUserData();
     fetchUserProperties();
     fetchSavedSearches();
     fetchFavoriteProperties();
+    fetchUserInquiries();
     handlePendingPropertySubmission();
   }, []);
 
@@ -267,6 +270,42 @@ export default function ProductionDashboard() {
       console.error('Error loading favorite properties:', error);
     } finally {
       setLoadingFavorites(false);
+    }
+  }
+
+  async function fetchUserInquiries() {
+    setLoadingInquiries(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoadingInquiries(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('inquiries')
+        .select(`
+          *,
+          properties (
+            id,
+            name,
+            city,
+            primary_image
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching inquiries:', error);
+        return;
+      }
+
+      setUserInquiries(data || []);
+    } catch (error) {
+      console.error('Error loading inquiries:', error);
+    } finally {
+      setLoadingInquiries(false);
     }
   }
 
@@ -578,26 +617,40 @@ export default function ProductionDashboard() {
                   My Locations
                 </button>
               )}
-              <button
-                onClick={() => setActiveTab('searches')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'searches'
-                    ? 'border-[#e11921] text-[#e11921]'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                My Searches
-              </button>
-              <button
-                onClick={() => setActiveTab('favorites')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'favorites'
-                    ? 'border-[#e11921] text-[#e11921]'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Favorites
-              </button>
+              {userType === 'production' && (
+                <>
+                  <button
+                    onClick={() => setActiveTab('inquiries')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'inquiries'
+                        ? 'border-[#e11921] text-[#e11921]'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    My Inquiries
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('searches')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'searches'
+                        ? 'border-[#e11921] text-[#e11921]'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    My Searches
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('favorites')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'favorites'
+                        ? 'border-[#e11921] text-[#e11921]'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Favorites
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -1046,6 +1099,89 @@ export default function ProductionDashboard() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'inquiries' && userType === 'production' && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">My Inquiries</h2>
+                  <p className="text-gray-600 mt-1">View all inquiries you've submitted</p>
+                </div>
+
+                {loadingInquiries ? (
+                  <div className="text-center py-12 text-gray-500">
+                    Loading your inquiries...
+                  </div>
+                ) : userInquiries.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">You haven't submitted any inquiries yet.</p>
+                    <p className="text-sm text-gray-400 mb-6">
+                      Browse properties and click "Inquire" to submit an inquiry.
+                    </p>
+                    <Button
+                      onClick={() => router.push('/search')}
+                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                    >
+                      Browse Properties
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {userInquiries.map((inquiry: any) => (
+                      <div key={inquiry.id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                        <div className="flex items-start gap-4">
+                          {inquiry.properties && (
+                            <div
+                              className="w-24 h-24 bg-gray-200 rounded overflow-hidden cursor-pointer flex-shrink-0"
+                              onClick={() => inquiry.property_id && router.push(`/property/${inquiry.property_id}`)}
+                            >
+                              {inquiry.properties.primary_image ? (
+                                <img
+                                  src={inquiry.properties.primary_image}
+                                  alt={inquiry.properties.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                  No Image
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-gray-900">
+                                  {inquiry.property_id && inquiry.properties
+                                    ? inquiry.properties.name
+                                    : 'General Inquiry'}
+                                </h3>
+                                {inquiry.properties && (
+                                  <p className="text-sm text-gray-600">{inquiry.properties.city}</p>
+                                )}
+                              </div>
+                              <span className={`px-2 py-1 text-xs rounded ${
+                                inquiry.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                                inquiry.status === 'responded' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {inquiry.status.charAt(0).toUpperCase() + inquiry.status.slice(1)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-700 mb-2 line-clamp-2">{inquiry.message}</p>
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span>Submitted: {new Date(inquiry.created_at).toLocaleDateString()}</span>
+                              {inquiry.shooting_date && <span>Shoot Date: {inquiry.shooting_date}</span>}
+                              {inquiry.project_type && <span>Type: {inquiry.project_type}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
