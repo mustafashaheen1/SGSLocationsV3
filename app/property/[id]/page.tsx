@@ -191,8 +191,8 @@ export default function PropertyDetailPage() {
             return bMatches - aMatches;
           });
 
-          // Limit to 12 results
-          setSimilarProperties(similarLocations.slice(0, 12));
+          // Limit to 8 results
+          setSimilarProperties(similarLocations.slice(0, 8));
 
           // For nearby locations, use user's current location if available
           if (userLocation) {
