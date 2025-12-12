@@ -151,20 +151,36 @@ export default function PropertyDetailPage() {
         if (allProperties) {
           // Filter for similar locations (matching categories AND tags)
           const currentCategories = propertyData.categories || [];
+          const currentCategoryId = propertyData.category_id;
+          const currentSubCategoryId = propertyData.sub_category_id;
           const currentTags = propertyData.property_tags || [];
 
           const similarLocations = (allProperties as any[]).filter((location: any) => {
-            // Check if at least one category matches
-            const hasMatchingCategory = location.categories?.some((cat: string) =>
-              currentCategories.includes(cat)
-            );
+            // Check if at least one category matches (handle both old and new format)
+            let hasMatchingCategory = false;
+
+            // Check old format (categories array)
+            if (currentCategories.length > 0 && location.categories?.length > 0) {
+              hasMatchingCategory = location.categories.some((cat: string) =>
+                currentCategories.includes(cat)
+              );
+            }
+
+            // Check new format (category_id / sub_category_id)
+            if (!hasMatchingCategory && (currentCategoryId || currentSubCategoryId)) {
+              // Match on category_id or sub_category_id
+              hasMatchingCategory =
+                (currentCategoryId && location.category_id === currentCategoryId) ||
+                (currentSubCategoryId && location.sub_category_id === currentSubCategoryId);
+            }
 
             // Check if at least one tag matches
-            const hasMatchingTag = location.property_tags?.some((tag: string) =>
-              currentTags.includes(tag)
-            );
+            const hasMatchingTag = currentTags.length === 0 ||
+              location.property_tags?.some((tag: string) =>
+                currentTags.includes(tag)
+              );
 
-            // Must have both matching category AND matching tag
+            // Must have matching category, tags are optional
             return hasMatchingCategory && hasMatchingTag;
           });
 
@@ -239,20 +255,41 @@ export default function PropertyDetailPage() {
 
     // Helper function to count matching attributes
     function countMatches(location: Property, currentProperty: Property): number {
+      let matches = 0;
+
+      // Count category matches (handle both old and new format)
       const currentCategories = currentProperty.categories || [];
-      const currentTags = currentProperty.property_tags || [];
       const locationCategories = location.categories || [];
+
+      // Old format: categories array
+      if (currentCategories.length > 0 && locationCategories.length > 0) {
+        matches += locationCategories.filter((cat: string) =>
+          currentCategories.includes(cat)
+        ).length;
+      }
+
+      // New format: category_id and sub_category_id
+      const currentCategoryId = (currentProperty as any).category_id;
+      const currentSubCategoryId = (currentProperty as any).sub_category_id;
+      const locationCategoryId = (location as any).category_id;
+      const locationSubCategoryId = (location as any).sub_category_id;
+
+      if (currentCategoryId && locationCategoryId === currentCategoryId) {
+        matches += 2; // Main category match is worth 2 points
+      }
+      if (currentSubCategoryId && locationSubCategoryId === currentSubCategoryId) {
+        matches += 3; // Sub-category match is worth 3 points (more specific)
+      }
+
+      // Count tag matches
+      const currentTags = currentProperty.property_tags || [];
       const locationTags = location.property_tags || [];
 
-      const categoryMatches = locationCategories.filter((cat: string) =>
-        currentCategories.includes(cat)
-      ).length;
-
-      const tagMatches = locationTags.filter((tag: string) =>
+      matches += locationTags.filter((tag: string) =>
         currentTags.includes(tag)
       ).length;
 
-      return categoryMatches + tagMatches;
+      return matches;
     }
 
     fetchData();

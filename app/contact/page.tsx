@@ -276,8 +276,9 @@ export default function ContactPage() {
           firstName,
           lastName,
           email: userData.email || currentUser.email || '',
-          phone: userData.phone || '',
-          company: userData.company_name || ''
+          // Only update phone and company if user hasn't filled them in yet
+          phone: prev.phone || userData.phone || '',
+          company: prev.company || userData.company_name || ''
         }));
       }
 

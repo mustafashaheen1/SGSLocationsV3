@@ -557,7 +557,8 @@ export default function ListYourPropertyPage() {
       const { data: property, error: propertyError } = await (supabase
         .from('properties') as any)
         .insert([{
-          name: `${formData.streetAddress}, ${formData.city}`,
+          name: `Property in ${formData.city}, ${formData.state}`,
+          real_name: `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
           description: `Submitted by ${formData.firstName} ${formData.lastName} (${formData.email})`,
           address: formData.streetAddress,
           city: formData.city,
