@@ -1,5 +1,6 @@
 import { createServerSideClient } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export async function PATCH(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function PATCH(
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Authentication required' },
         { status: 401 }
       );
@@ -23,7 +24,7 @@ export async function PATCH(
 
     // Validate status if provided
     if (status && !['new', 'responded', 'archived'].includes(status)) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Invalid status value. Must be: new, responded, or archived' },
         { status: 400 }
       );
@@ -54,14 +55,14 @@ export async function PATCH(
           .single();
 
         if (property?.owner_id !== user.id) {
-          return NextResponse.json(
+          return jsonResponseNoCache(
             { error: 'Insufficient permissions. Only admins and property owners can update inquiry status.' },
             { status: 403 }
           );
         }
       } else {
         // No property associated with inquiry, only admins can update
-        return NextResponse.json(
+        return jsonResponseNoCache(
           { error: 'Insufficient permissions' },
           { status: 403 }
         );
@@ -90,17 +91,17 @@ export async function PATCH(
 
     if (updateError) {
       console.error('Error updating inquiry:', updateError);
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Failed to update inquiry' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, inquiry });
+    return jsonResponseNoCache({ success: true, inquiry });
 
   } catch (error: any) {
     console.error('Inquiry update API error:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message || 'Internal server error' },
       { status: 500 }
     );

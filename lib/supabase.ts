@@ -3,6 +3,43 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// ✨ NEW: Add session cleanup function
+function clearStaleSession() {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const storedAuth = localStorage.getItem('supabase.auth.token');
+    if (!storedAuth) return;
+
+    const authData = JSON.parse(storedAuth);
+    const expiresAt = authData?.expires_at;
+
+    if (expiresAt) {
+      const expiryTime = new Date(expiresAt * 1000).getTime();
+      const now = Date.now();
+
+      // If token expired more than 5 minutes ago, clear it
+      if (now > expiryTime + (5 * 60 * 1000)) {
+        console.log('🧹 Clearing stale session from localStorage');
+
+        // Clear all Supabase-related items
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.auth')) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error clearing stale session:', error);
+  }
+}
+
+// ✨ NEW: Clear stale sessions on page load
+if (typeof window !== 'undefined') {
+  clearStaleSession();
+}
+
 if (typeof window !== 'undefined' || process.env.NODE_ENV !== 'production' || (supabaseUrl && supabaseAnonKey)) {
   console.log('🔧 Supabase Client Initialization:');
   console.log('URL:', supabaseUrl);
@@ -24,8 +61,30 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
           autoRefreshToken: true,
           detectSessionInUrl: true,
           storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        }
+          // ✨ NEW: Add explicit storage key and flowType
+          storageKey: 'supabase.auth.token',
+          flowType: 'pkce',
+        },
+        // ✨ NEW: Add global headers
+        global: {
+          headers: {
+            'x-application-name': 'sgs-locations',
+          },
+        },
       });
+
+      // ✨ NEW: Monitor auth state changes
+      if (typeof window !== 'undefined') {
+        _supabase.auth.onAuthStateChange((event, session) => {
+          console.log(`🔐 Auth event: ${event}`);
+
+          // If token refresh fails, clear everything
+          if (event === 'TOKEN_REFRESHED' && !session) {
+            console.warn('⚠️ Token refresh failed, clearing session');
+            clearStaleSession();
+          }
+        });
+      }
     }
     return (_supabase as any)[prop];
   }
@@ -36,13 +95,25 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables');
   }
 
+  // ✨ NEW: Clear stale sessions before creating new client
+  clearStaleSession();
+
   return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    }
+      // ✨ NEW: Add explicit storage configuration
+      storageKey: 'supabase.auth.token',
+      flowType: 'pkce',
+    },
+    // ✨ NEW: Add global headers
+    global: {
+      headers: {
+        'x-application-name': 'sgs-locations',
+      },
+    },
   });
 }
 

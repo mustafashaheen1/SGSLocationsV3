@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSideClientWithToken } from '@/lib/supabase-server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
     const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - No token provided' }, { status: 401 });
     }
 
     const supabase = createServerSideClientWithToken(token);
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     // Check if user is admin
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // User must be either admin or property owner
     if (!isAdmin && !isPropertyOwner) {
-      return NextResponse.json({ error: 'Forbidden - Access restricted to admins and property owners' }, { status: 403 });
+      return jsonResponseNoCache({ error: 'Forbidden - Access restricted to admins and property owners' }, { status: 403 });
     }
 
     // Build query based on user type
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     if (eventsError) {
       console.error('Error fetching calendar events:', eventsError);
-      return NextResponse.json({ error: eventsError.message }, { status: 500 });
+      return jsonResponseNoCache({ error: eventsError.message }, { status: 500 });
     }
 
     // Transform the data to include property info at the top level
@@ -95,10 +96,10 @@ export async function GET(request: NextRequest) {
       created_by: event.created_by,
     })) || [];
 
-    return NextResponse.json({ events: transformedEvents });
+    return jsonResponseNoCache({ events: transformedEvents });
   } catch (error) {
     console.error('Error in GET /api/calendar/master:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: 'Internal server error' },
       { status: 500 }
     );

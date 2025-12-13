@@ -1,5 +1,6 @@
 import { createServerSideClient, createServerSideClientWithToken } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
         const { data: { user: tokenUser }, error: tokenError } = await tokenSupabase.auth.getUser();
 
         if (tokenError || !tokenUser) {
-          return NextResponse.json(
+          return jsonResponseNoCache(
             { error: 'Authentication required. Please log in to submit an inquiry.' },
             { status: 401 }
           );
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
         return handleInquiryInsert(request, tokenSupabase, tokenUser);
       }
 
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Authentication required. Please log in to submit an inquiry.' },
         { status: 401 }
       );
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Inquiry API error:', error);
     console.error('Error stack:', error.stack);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message || 'Internal server error' },
       { status: 500 }
     );
@@ -67,7 +68,7 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
 
     // Validate required fields
     if (!first_name || !last_name || !email || !message) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Missing required fields: firstName, lastName, email, and message are required.' },
         { status: 400 }
       );
@@ -102,18 +103,18 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
     if (insertError) {
       console.error('Error creating inquiry:', insertError);
       console.error('Insert error details:', JSON.stringify(insertError, null, 2));
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: insertError.message || 'Failed to create inquiry. Please try again.' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, message: 'Inquiry submitted successfully' }, { status: 201 });
+    return jsonResponseNoCache({ success: true, message: 'Inquiry submitted successfully' }, { status: 201 });
 
   } catch (error: any) {
     console.error('Inquiry API error:', error);
     console.error('Error stack:', error.stack);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message || 'Internal server error' },
       { status: 500 }
     );
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
 
         if (tokenError || !tokenUser) {
           console.error('GET /api/inquiries - Auth error (both cookie and token failed)');
-          return NextResponse.json(
+          return jsonResponseNoCache(
             { error: 'Authentication required' },
             { status: 401 }
           );
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest) {
       }
 
       console.error('GET /api/inquiries - Auth error:', authError);
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Authentication required' },
         { status: 401 }
       );
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
     return handleInquiriesFetch(request, supabase, user);
   } catch (error: any) {
     console.error('Inquiry fetch API error:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message || 'Internal server error' },
       { status: 500 }
     );
@@ -244,7 +245,7 @@ async function handleInquiriesFetch(request: NextRequest, supabase: any, user: a
 
   if (error) {
     console.error('handleInquiriesFetch - Query error:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: 'Failed to fetch inquiries' },
       { status: 500 }
     );
@@ -255,11 +256,11 @@ async function handleInquiriesFetch(request: NextRequest, supabase: any, user: a
     console.log('handleInquiriesFetch - First inquiry:', inquiries[0]);
   }
 
-  return NextResponse.json({ inquiries: inquiries || [] });
+  return jsonResponseNoCache({ inquiries: inquiries || [] });
 
   } catch (error: any) {
     console.error('handleInquiriesFetch error:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message || 'Internal server error' },
       { status: 500 }
     );
