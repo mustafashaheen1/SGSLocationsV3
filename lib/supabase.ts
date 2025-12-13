@@ -8,30 +8,61 @@ function clearStaleSession() {
   if (typeof window === 'undefined') return;
 
   try {
+    // ALWAYS clear localStorage on page load to prevent any stale cache issues
     const storedAuth = localStorage.getItem('supabase.auth.token');
-    if (!storedAuth) return;
+
+    if (!storedAuth) {
+      // Also clear any other supabase auth keys just in case
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
+          console.log('🧹 Removing stale key:', key);
+          localStorage.removeItem(key);
+        }
+      });
+      return;
+    }
 
     const authData = JSON.parse(storedAuth);
     const expiresAt = authData?.expires_at;
 
     if (expiresAt) {
-      const expiryTime = new Date(expiresAt * 1000).getTime();
+      const expiryTime = expiresAt * 1000; // Convert to milliseconds
       const now = Date.now();
 
-      // If token expired more than 5 minutes ago, clear it
-      if (now > expiryTime + (5 * 60 * 1000)) {
-        console.log('🧹 Clearing stale session from localStorage');
+      // ✅ FIX: Clear if expired AT ALL, not just > 5 minutes
+      if (now >= expiryTime) {
+        console.log('🧹 Clearing expired session from localStorage');
+        console.log(`   Expired: ${new Date(expiryTime).toLocaleString()}`);
+        console.log(`   Now: ${new Date(now).toLocaleString()}`);
 
-        // Clear all Supabase-related items
+        // Clear ALL Supabase-related items
         Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('supabase.auth')) {
+          if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
             localStorage.removeItem(key);
           }
         });
       }
+    } else {
+      // No expiry time found, clear it to be safe
+      console.log('🧹 Clearing session with missing expiry time');
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
     }
   } catch (error) {
     console.error('Error clearing stale session:', error);
+    // If error parsing, clear everything to be safe
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.error('Failed to clear localStorage:', e);
+    }
   }
 }
 
