@@ -72,19 +72,6 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
           },
         },
       });
-
-      // ✨ NEW: Monitor auth state changes
-      if (typeof window !== 'undefined') {
-        _supabase.auth.onAuthStateChange((event, session) => {
-          console.log(`🔐 Auth event: ${event}`);
-
-          // If token refresh fails, clear everything
-          if (event === 'TOKEN_REFRESHED' && !session) {
-            console.warn('⚠️ Token refresh failed, clearing session');
-            clearStaleSession();
-          }
-        });
-      }
     }
     return (_supabase as any)[prop];
   }

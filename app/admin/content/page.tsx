@@ -525,23 +525,27 @@ export default function ContentManagementPage() {
         console.log('No data found, using defaults');
         setAboutSections([
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800',
             title: 'The Art of Locations™',
             subtitle: 'SGS Locations: Your Premier Destination for Exclusive Filming Locations in Dallas-Fort Worth',
             content: `For over 20 years, SGS Locations has been a leading provider of exclusive filming locations in the Dallas-Fort Worth metroplex.\n\nSGS Locations specializes in a wide range of productions, including commercials, television series, feature films, and still photography.\n\nOur dedicated team includes location scouts, photographers, permitting specialists, and production coordinators.`
           },
           {
+            mediaType: 'video',
             title: 'Discover Our Locations',
             content: "Whether you're looking for a sprawling ranch, modern architecture, historic properties, or urban settings, SGS Locations has the perfect backdrop for your production needs.",
             videoUrl: 'https://player.vimeo.com/video/616445043'
           },
           {
+            mediaType: 'none',
             title: 'Trusted by Major Productions',
             content: 'SGS Locations provides exclusive filming locations to the entertainment industry for motion picture, television, commercial, and print projects across the Dallas-Fort Worth area.',
             linkText: 'Learn More About Our Services →',
             linkUrl: '/search'
           },
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800',
             title: 'Dallas Business Journal | SGS Locations Brings Professional Location Services to DFW',
             content: 'SGS Locations has been featured in the Dallas Business Journal for its innovative approach to connecting property owners with production companies.',
@@ -549,16 +553,19 @@ export default function ContentManagementPage() {
             linkUrl: '#'
           },
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800',
             title: 'SGS Locations is a proud member of the Film Industry',
             content: 'We are committed to upholding the highest professional standards in the location services industry.'
           },
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=800',
             title: 'SGS Locations is in full compliance with the Texas Film Commission',
             content: 'As a licensed location service operating in Texas, we maintain full compliance with all Texas Film Commission regulations.'
           },
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=800',
             title: 'SGS Locations partners with DFWFC',
             content: 'We proudly partner with the Dallas-Fort Worth Film Commission to promote the region as a premier destination.',
@@ -566,6 +573,7 @@ export default function ContentManagementPage() {
             linkUrl: 'https://www.dfwfilmtx.com'
           },
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=800',
             title: 'Featured in Local Media Coverage',
             content: 'SGS Locations has been featured in numerous local media outlets for our role in bringing major productions to the Dallas-Fort Worth area.',
@@ -573,6 +581,7 @@ export default function ContentManagementPage() {
             linkUrl: '#'
           },
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=800',
             title: 'Check out recent recognition we received:',
             content: 'SGS Locations has been recognized by the Dallas business community for excellence in location services.',
@@ -580,11 +589,13 @@ export default function ContentManagementPage() {
             linkUrl: '#'
           },
           {
+            mediaType: 'image',
             image: 'https://images.unsplash.com/photo-1554224311-beee460c201f?w=800',
             title: 'Licensed & Insured',
             content: 'SGS Locations maintains all required business licenses and comprehensive insurance coverage.'
           },
           {
+            mediaType: 'none',
             title: 'Professional Filmmakers Code of Conduct',
             linkText: 'Professional Filmmakers Code of Conduct PDF',
             linkUrl: '/pdfs/code-of-conduct.pdf'
@@ -596,9 +607,30 @@ export default function ContentManagementPage() {
     }
   }
 
+  function deleteAboutSection(indexToDelete: number) {
+    const confirmDelete = window.confirm(`Are you sure you want to delete Section ${indexToDelete + 1}? This action cannot be undone.`);
+    if (!confirmDelete) return;
+
+    const newSections = aboutSections.filter((_, index) => index !== indexToDelete);
+    setAboutSections(newSections);
+  }
+
+  function addAboutSection() {
+    const newSection = {
+      mediaType: 'image',
+      title: '',
+      content: '',
+      image: ''
+    };
+    setAboutSections([...aboutSections, newSection]);
+  }
+
   async function saveAllAboutContent() {
     setSaving(true);
     try {
+      // First, delete all existing about_page_content entries
+      await (supabase.from('about_page_content') as any).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
       const promises: Promise<any>[] = [];
 
       aboutSections.forEach((section, index) => {
@@ -2503,39 +2535,104 @@ export default function ContentManagementPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle>About Page Content Management</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">Edit all 11 sections of the About page</p>
+                  <p className="text-sm text-gray-600 mt-1">Manage sections of the About page - Add, edit, or remove sections</p>
                 </div>
-                <Button
-                  onClick={saveAllAboutContent}
-                  disabled={saving}
-                  size="lg"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={addAboutSection}
+                    variant="outline"
+                    size="lg"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Section
+                  </Button>
+                  <Button
+                    onClick={saveAllAboutContent}
+                    disabled={saving}
+                    size="lg"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save All Changes'}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6 max-h-[600px] overflow-y-auto">
               {aboutSections.map((section, index) => (
-                <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                  <h4 className="font-semibold mb-3 text-lg">
-                    Section {index + 1}
-                    {index === 0 && ' - Main Hero Section'}
-                    {index === 1 && ' - Video Section'}
-                    {index === 2 && ' - Trusted by Major Productions (Centered)'}
-                    {index === 3 && ' - Dallas Business Journal'}
-                    {index === 4 && ' - Film Industry Member'}
-                    {index === 5 && ' - Texas Film Commission'}
-                    {index === 6 && ' - DFWFC Partnership'}
-                    {index === 7 && ' - Media Coverage'}
-                    {index === 8 && ' - Recent Recognition'}
-                    {index === 9 && ' - Licensed & Insured'}
-                    {index === 10 && ' - Code of Conduct (Centered)'}
-                  </h4>
+                <div key={index} className="border rounded-lg p-4 bg-gray-50 relative">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-semibold text-lg">
+                      Section {index + 1}
+                    </h4>
+                    <Button
+                      onClick={() => deleteAboutSection(index)}
+                      variant="destructive"
+                      size="sm"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete Section
+                    </Button>
+                  </div>
 
                   <div className="space-y-3">
-                    {/* Image preview and upload for sections with images */}
-                    {index !== 1 && index !== 2 && index !== 10 && (
+                    {/* Media Type Selector */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Media Type</label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={(!section.mediaType || section.mediaType === 'image') ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => {
+                            const newSections = [...aboutSections];
+                            if (!newSections[index]) newSections[index] = {};
+                            newSections[index].mediaType = 'image';
+                            // Clear video data when switching to image
+                            delete newSections[index].videoUrl;
+                            setAboutSections(newSections);
+                          }}
+                        >
+                          <ImageIcon className="w-4 h-4 mr-1" />
+                          Image
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={section.mediaType === 'video' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => {
+                            const newSections = [...aboutSections];
+                            if (!newSections[index]) newSections[index] = {};
+                            newSections[index].mediaType = 'video';
+                            // Clear image data when switching to video
+                            delete newSections[index].image;
+                            setAboutSections(newSections);
+                          }}
+                        >
+                          <Video className="w-4 h-4 mr-1" />
+                          Video
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={section.mediaType === 'none' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => {
+                            const newSections = [...aboutSections];
+                            if (!newSections[index]) newSections[index] = {};
+                            newSections[index].mediaType = 'none';
+                            // Clear media data
+                            delete newSections[index].image;
+                            delete newSections[index].videoUrl;
+                            setAboutSections(newSections);
+                          }}
+                        >
+                          <FileText className="w-4 h-4 mr-1" />
+                          Text Only
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Image upload for image type */}
+                    {(!section.mediaType || section.mediaType === 'image') && (
                       <div>
                         <label className="block text-sm font-medium mb-1">Image</label>
                         {section?.image && (
@@ -2579,8 +2676,8 @@ export default function ContentManagementPage() {
                       </div>
                     )}
 
-                    {/* Video preview and URL for section 2 */}
-                    {index === 1 && (
+                    {/* Video URL for video type */}
+                    {section.mediaType === 'video' && (
                       <div>
                         <label className="block text-sm font-medium mb-1">Video Preview</label>
                         {section?.videoUrl && (
@@ -2613,95 +2710,87 @@ export default function ContentManagementPage() {
                     )}
 
                     {/* Title field */}
-                    {index !== 10 && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Title</label>
-                        <Input
-                          value={section?.title || ''}
-                          onChange={(e) => {
-                            const newSections = [...aboutSections];
-                            if (!newSections[index]) newSections[index] = {};
-                            newSections[index].title = e.target.value;
-                            setAboutSections(newSections);
-                          }}
-                          placeholder="Enter section title..."
-                        />
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Title</label>
+                      <Input
+                        value={section?.title || ''}
+                        onChange={(e) => {
+                          const newSections = [...aboutSections];
+                          if (!newSections[index]) newSections[index] = {};
+                          newSections[index].title = e.target.value;
+                          setAboutSections(newSections);
+                        }}
+                        placeholder="Enter section title..."
+                      />
+                    </div>
 
-                    {/* Subtitle for section 1 */}
-                    {index === 0 && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Subtitle</label>
-                        <Input
-                          value={section?.subtitle || ''}
-                          onChange={(e) => {
-                            const newSections = [...aboutSections];
-                            if (!newSections[index]) newSections[index] = {};
-                            newSections[index].subtitle = e.target.value;
-                            setAboutSections(newSections);
-                          }}
-                          placeholder="Enter subtitle..."
-                        />
-                      </div>
-                    )}
+                    {/* Subtitle field (optional) */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Subtitle (Optional)</label>
+                      <Input
+                        value={section?.subtitle || ''}
+                        onChange={(e) => {
+                          const newSections = [...aboutSections];
+                          if (!newSections[index]) newSections[index] = {};
+                          newSections[index].subtitle = e.target.value;
+                          setAboutSections(newSections);
+                        }}
+                        placeholder="Enter subtitle..."
+                      />
+                    </div>
 
                     {/* Content field with proper line breaks support */}
-                    {index !== 10 && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Content
-                          <span className="text-xs text-gray-500 ml-2">(Use double line breaks for paragraphs)</span>
-                        </label>
-                        <Textarea
-                          value={section?.content || ''}
-                          onChange={(e) => {
-                            const newSections = [...aboutSections];
-                            if (!newSections[index]) newSections[index] = {};
-                            newSections[index].content = e.target.value;
-                            setAboutSections(newSections);
-                          }}
-                          rows={5}
-                          placeholder="Enter section content..."
-                          className="font-mono text-sm"
-                        />
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Content
+                        <span className="text-xs text-gray-500 ml-2">(Use double line breaks for paragraphs)</span>
+                      </label>
+                      <Textarea
+                        value={section?.content || ''}
+                        onChange={(e) => {
+                          const newSections = [...aboutSections];
+                          if (!newSections[index]) newSections[index] = {};
+                          newSections[index].content = e.target.value;
+                          setAboutSections(newSections);
+                        }}
+                        rows={5}
+                        placeholder="Enter section content..."
+                        className="font-mono text-sm"
+                      />
+                    </div>
 
-                    {/* Link fields for sections that have them */}
-                    {(index === 2 || index === 3 || index === 6 || index === 7 || index === 8 || index === 10) && (
-                      <div className="border-t pt-3">
-                        <h5 className="text-sm font-medium mb-2">Link Settings</h5>
-                        <div className="space-y-2">
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Link Text</label>
-                            <Input
-                              value={section?.linkText || ''}
-                              onChange={(e) => {
-                                const newSections = [...aboutSections];
-                                if (!newSections[index]) newSections[index] = {};
-                                newSections[index].linkText = e.target.value;
-                                setAboutSections(newSections);
-                              }}
-                              placeholder="e.g., Learn More →"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Link URL</label>
-                            <Input
-                              value={section?.linkUrl || ''}
-                              onChange={(e) => {
-                                const newSections = [...aboutSections];
-                                if (!newSections[index]) newSections[index] = {};
-                                newSections[index].linkUrl = e.target.value;
-                                setAboutSections(newSections);
-                              }}
-                              placeholder="e.g., /search or https://..."
-                            />
-                          </div>
+                    {/* Link fields - always available */}
+                    <div className="border-t pt-3">
+                      <h5 className="text-sm font-medium mb-2">Link Settings (Optional)</h5>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-xs font-medium mb-1">Link Text</label>
+                          <Input
+                            value={section?.linkText || ''}
+                            onChange={(e) => {
+                              const newSections = [...aboutSections];
+                              if (!newSections[index]) newSections[index] = {};
+                              newSections[index].linkText = e.target.value;
+                              setAboutSections(newSections);
+                            }}
+                            placeholder="e.g., Learn More →"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium mb-1">Link URL</label>
+                          <Input
+                            value={section?.linkUrl || ''}
+                            onChange={(e) => {
+                              const newSections = [...aboutSections];
+                              if (!newSections[index]) newSections[index] = {};
+                              newSections[index].linkUrl = e.target.value;
+                              setAboutSections(newSections);
+                            }}
+                            placeholder="e.g., /search or https://..."
+                          />
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))}
