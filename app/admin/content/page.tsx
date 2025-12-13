@@ -2030,27 +2030,29 @@ export default function ContentManagementPage() {
                           )}
                         </div>
                         <div>
-                          <p className="text-xs text-gray-600 mb-1">Current Image:</p>
-                          <img
-                            src={editingProject.banner_image}
-                            alt={editingProject.name}
-                            className="w-full h-32 object-cover rounded mb-2"
-                          />
+                          <p className="text-xs text-gray-600 mb-1">{projectImagePreview ? 'New Image:' : 'Current Image:'}</p>
                           {!projectImagePreview ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => document.getElementById(`editProject-${project.id}`)?.click()}
-                            >
-                              <Upload className="w-3 h-3 mr-1" />
-                              Change Image
-                            </Button>
+                            <>
+                              <img
+                                src={editingProject.banner_image}
+                                alt={editingProject.name}
+                                className="w-full h-32 object-cover rounded mb-2"
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => document.getElementById(`editProject-${project.id}`)?.click()}
+                              >
+                                <Upload className="w-3 h-3 mr-1" />
+                                Change Image
+                              </Button>
+                            </>
                           ) : (
                             <div className="relative">
                               <img
                                 src={projectImagePreview}
                                 alt="New preview"
-                                className="w-full h-32 object-cover border rounded"
+                                className="w-full h-32 object-cover rounded"
                               />
                               <button
                                 type="button"

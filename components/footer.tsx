@@ -76,11 +76,11 @@ export function Footer() {
         const officeHours = (settings as any[]).find((s: any) => s.key === 'office_hours')?.value;
 
         setFooterContent({
-          description: parseValue(description) || "Dallas Fort Worth's largest location database connecting property owners with production companies. Over 20 years of experience serving the film and television industry.",
-          phone: parseValue(phone) || '(214) 555-0100',
-          email: parseValue(email) || 'info@sgslocations.com',
-          address: parseValue(address) || '123 Main Street, Dallas, TX 75201',
-          officeHours: parseValue(officeHours) || 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed'
+          description: parseValue(description) || '',
+          phone: parseValue(phone) || '',
+          email: parseValue(email) || '',
+          address: parseValue(address) || '',
+          officeHours: parseValue(officeHours) || ''
         });
       }
 
@@ -109,14 +109,14 @@ export function Footer() {
 
     } catch (error) {
       console.error('Error fetching footer content:', error);
-      // Set defaults on error
-      setFooterContent(prev => ({
-        description: prev.description || "Dallas Fort Worth's largest location database connecting property owners with production companies. Over 20 years of experience serving the film and television industry.",
-        phone: prev.phone || '(214) 555-0100',
-        email: prev.email || 'info@sgslocations.com',
-        address: prev.address || '123 Main Street, Dallas, TX 75201',
-        officeHours: prev.officeHours || 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed'
-      }));
+      // Keep empty values on error
+      setFooterContent({
+        description: '',
+        phone: '',
+        email: '',
+        address: '',
+        officeHours: ''
+      });
     } finally {
       setLoading(false);
     }
@@ -204,9 +204,11 @@ export function Footer() {
                 <span className="text-xl font-bold">SGS LOCATIONS®</span>
               </div>
             </Link>
-            <p className="text-gray-400 mb-4">
-              {footerContent.description}
-            </p>
+            {footerContent.description && (
+              <p className="text-gray-400 mb-4">
+                {footerContent.description}
+              </p>
+            )}
             {/* Social Links - Only show if URL exists */}
             {socialLinks.length > 0 && (
               <div className="flex space-x-3">
@@ -270,37 +272,45 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
             <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-400">
-                  {footerContent.address.split(',').map((line, i) => (
-                    <span key={i}>
-                      {line.trim()}
-                      {i < footerContent.address.split(',').length - 1 && <br />}
-                    </span>
-                  ))}
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-gray-400" />
-                <a href={`tel:${footerContent.phone.replace(/\D/g, '')}`} className="text-gray-400 hover:text-white">
-                  {footerContent.phone}
-                </a>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Mail className="w-5 h-5 text-gray-400" />
-                <a href={`mailto:${footerContent.email}`} className="text-gray-400 hover:text-white">
-                  {footerContent.email}
-                </a>
-              </div>
-              <div className="flex items-start space-x-3">
-                <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                <div className="text-gray-400">
-                  {footerContent.officeHours.split('\n').map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
+              {footerContent.address && (
+                <div className="flex items-start space-x-3">
+                  <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-400">
+                    {footerContent.address.split(',').map((line, i) => (
+                      <span key={i}>
+                        {line.trim()}
+                        {i < footerContent.address.split(',').length - 1 && <br />}
+                      </span>
+                    ))}
+                  </span>
                 </div>
-              </div>
+              )}
+              {footerContent.phone && (
+                <div className="flex items-center space-x-3">
+                  <Phone className="w-5 h-5 text-gray-400" />
+                  <a href={`tel:${footerContent.phone.replace(/\D/g, '')}`} className="text-gray-400 hover:text-white">
+                    {footerContent.phone}
+                  </a>
+                </div>
+              )}
+              {footerContent.email && (
+                <div className="flex items-center space-x-3">
+                  <Mail className="w-5 h-5 text-gray-400" />
+                  <a href={`mailto:${footerContent.email}`} className="text-gray-400 hover:text-white">
+                    {footerContent.email}
+                  </a>
+                </div>
+              )}
+              {footerContent.officeHours && (
+                <div className="flex items-start space-x-3">
+                  <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-gray-400">
+                    {footerContent.officeHours.split('\n').map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

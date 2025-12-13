@@ -978,14 +978,7 @@ export default function EditPropertyPage() {
       return;
     }
 
-    // Check if all contact fields are filled
-    for (let i = 0; i < contacts.length; i++) {
-      const contact = contacts[i];
-      if (!contact.name || !contact.email) {
-        alert(`Contact ${i + 1}: Name and Email are required fields`);
-        return;
-      }
-    }
+    // Contacts are optional - no validation needed
 
     setSaving(true);
 
@@ -1845,22 +1838,20 @@ export default function EditPropertyPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Name *</label>
+                          <label className="block text-sm font-medium mb-1">Name</label>
                           <Input
                             value={contact.name}
                             onChange={(e) => updateContact(index, 'name', e.target.value)}
                             placeholder="Contact name"
-                            required
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-1">Email *</label>
+                          <label className="block text-sm font-medium mb-1">Email</label>
                           <Input
                             type="email"
                             value={contact.email}
                             onChange={(e) => updateContact(index, 'email', e.target.value)}
                             placeholder="email@example.com"
-                            required
                           />
                         </div>
                         <div>
