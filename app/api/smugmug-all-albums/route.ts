@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import axios from 'axios';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { supabase } from '@/lib/supabase';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
 import { extractGoogleMapsLink } from '@/lib/google-maps-utils';
@@ -14,7 +16,7 @@ export async function GET(request: NextRequest) {
     const apiSecret = process.env.SMUGMUG_API_SECRET;
 
     if (!apiKey || !apiSecret) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'SmugMug API credentials not configured' },
         { status: 500 }
       );
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (tokenError || !tokenData) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'SmugMug not authorized. Please authorize first.' },
         { status: 401 }
       );
@@ -255,7 +257,7 @@ export async function GET(request: NextRequest) {
     console.log(`✓ Found ${existingAlbumKeys.size} albums already in database`);
     console.log(`✓ Returning ${newAlbums.length} new albums for import`);
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       success: true,
       albums: newAlbums,
       total: newAlbums.length,
@@ -265,7 +267,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error fetching SmugMug albums:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message || 'Failed to fetch albums' },
       { status: 500 }
     );

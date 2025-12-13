@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { supabase } from '@/lib/supabase';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export async function GET() {
   try {
@@ -29,7 +31,7 @@ export async function GET() {
 
     if (error) {
       console.error('❌ Database error:', error);
-      return NextResponse.json({
+      return jsonResponseNoCache({
         authorized: false,
         reason: 'database_error',
         error: error.message
@@ -43,7 +45,7 @@ export async function GET() {
         (data as any).access_token_secret.trim() === '') {
 
       console.log('❌ Missing or empty tokens');
-      return NextResponse.json({
+      return jsonResponseNoCache({
         authorized: false,
         reason: 'missing_tokens',
         debug: {
@@ -57,14 +59,14 @@ export async function GET() {
     }
 
     console.log('✅ Valid tokens found');
-    return NextResponse.json({
+    return jsonResponseNoCache({
       authorized: true,
       authorizedAt: (data as any).created_at
     });
 
   } catch (error: any) {
     console.error('❌ Check auth exception:', error);
-    return NextResponse.json({
+    return jsonResponseNoCache({
       authorized: false,
       reason: 'exception',
       error: error.message

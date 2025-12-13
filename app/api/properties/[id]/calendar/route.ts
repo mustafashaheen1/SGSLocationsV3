@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSideClientWithToken } from '@/lib/supabase-server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - No token provided' }, { status: 401 });
     }
 
     const supabase = createServerSideClientWithToken(token);
@@ -20,7 +21,7 @@ export async function GET(
     // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     // Check if user is admin
@@ -40,7 +41,7 @@ export async function GET(
     const isOwner = property?.owner_id === user.id;
 
     if (!isAdmin && !isOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return jsonResponseNoCache({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Fetch all calendar events for this property
@@ -52,13 +53,13 @@ export async function GET(
 
     if (error) {
       console.error('Error fetching calendar events:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return jsonResponseNoCache({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ events });
+    return jsonResponseNoCache({ events });
   } catch (error) {
     console.error('Error in GET /api/properties/[id]/calendar:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: 'Internal server error' },
       { status: 500 }
     );
@@ -75,7 +76,7 @@ export async function POST(
     const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - No token provided' }, { status: 401 });
     }
 
     const supabase = createServerSideClientWithToken(token);
@@ -84,7 +85,7 @@ export async function POST(
     // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     // Check if user is admin
@@ -104,13 +105,13 @@ export async function POST(
     const isOwner = property?.owner_id === user.id;
 
     if (!isAdmin && !isOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return jsonResponseNoCache({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Property owners can only add events to approved/active properties
     // Admins can add events to any property
     if (!isAdmin && property?.status !== 'active') {
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'Events can only be added to approved properties. Please wait for admin approval.'
       }, { status: 403 });
     }
@@ -120,7 +121,7 @@ export async function POST(
 
     // Validate required fields
     if (!event_type || !title || !start_date || !end_date) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Missing required fields' },
         { status: 400 }
       );
@@ -129,7 +130,7 @@ export async function POST(
     // Validate event type
     const validTypes = ['production', 'director_scout', 'blocked'];
     if (!validTypes.includes(event_type)) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Invalid event type' },
         { status: 400 }
       );
@@ -143,7 +144,7 @@ export async function POST(
 
     // Check if dates are valid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Invalid date format' },
         { status: 400 }
       );
@@ -151,7 +152,7 @@ export async function POST(
 
     // Check if start date is in the past
     if (startDate < today) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Start date cannot be in the past' },
         { status: 400 }
       );
@@ -159,7 +160,7 @@ export async function POST(
 
     // Check if end date is in the past
     if (endDate < today) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'End date cannot be in the past' },
         { status: 400 }
       );
@@ -167,7 +168,7 @@ export async function POST(
 
     // Check if start date is after end date
     if (startDate > endDate) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Start date cannot be after end date' },
         { status: 400 }
       );
@@ -181,7 +182,7 @@ export async function POST(
 
     if (checkError) {
       console.error('Error checking for overlaps:', checkError);
-      return NextResponse.json({ error: checkError.message }, { status: 500 });
+      return jsonResponseNoCache({ error: checkError.message }, { status: 500 });
     }
 
     // Check if any existing event overlaps with the new date range
@@ -197,7 +198,7 @@ export async function POST(
     });
 
     if (hasOverlap) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'This property already has an event during the selected dates' },
         { status: 409 }
       );
@@ -222,13 +223,13 @@ export async function POST(
 
     if (error) {
       console.error('Error creating calendar event:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return jsonResponseNoCache({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ event }, { status: 201 });
+    return jsonResponseNoCache({ event }, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/properties/[id]/calendar:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: 'Internal server error' },
       { status: 500 }
     );
@@ -245,7 +246,7 @@ export async function PUT(
     const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - No token provided' }, { status: 401 });
     }
 
     const supabase = createServerSideClientWithToken(token);
@@ -254,7 +255,7 @@ export async function PUT(
     // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     // Check if user is admin
@@ -274,13 +275,13 @@ export async function PUT(
     const isOwner = property?.owner_id === user.id;
 
     if (!isAdmin && !isOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return jsonResponseNoCache({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Property owners can only modify events on approved/active properties
     // Admins can modify events on any property
     if (!isAdmin && property?.status !== 'active') {
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'Events can only be modified on approved properties.'
       }, { status: 403 });
     }
@@ -289,7 +290,7 @@ export async function PUT(
     const { event_id, event_type, title, description, start_date, end_date, all_day, color } = body;
 
     if (!event_id) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Event ID is required' },
         { status: 400 }
       );
@@ -311,7 +312,7 @@ export async function PUT(
 
       // Check if dates are valid
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return NextResponse.json(
+        return jsonResponseNoCache(
           { error: 'Invalid date format' },
           { status: 400 }
         );
@@ -319,7 +320,7 @@ export async function PUT(
 
       // Check if start date is in the past
       if (startDate < today) {
-        return NextResponse.json(
+        return jsonResponseNoCache(
           { error: 'Start date cannot be in the past' },
           { status: 400 }
         );
@@ -327,7 +328,7 @@ export async function PUT(
 
       // Check if end date is in the past
       if (endDate < today) {
-        return NextResponse.json(
+        return jsonResponseNoCache(
           { error: 'End date cannot be in the past' },
           { status: 400 }
         );
@@ -335,7 +336,7 @@ export async function PUT(
 
       // Check if start date is after end date
       if (startDate > endDate) {
-        return NextResponse.json(
+        return jsonResponseNoCache(
           { error: 'Start date cannot be after end date' },
           { status: 400 }
         );
@@ -350,7 +351,7 @@ export async function PUT(
 
       if (checkError) {
         console.error('Error checking for overlaps:', checkError);
-        return NextResponse.json({ error: checkError.message }, { status: 500 });
+        return jsonResponseNoCache({ error: checkError.message }, { status: 500 });
       }
 
       // Check if any existing event overlaps with the updated date range
@@ -366,7 +367,7 @@ export async function PUT(
       });
 
       if (hasOverlap) {
-        return NextResponse.json(
+        return jsonResponseNoCache(
           { error: 'This property already has an event during the selected dates' },
           { status: 409 }
         );
@@ -392,13 +393,13 @@ export async function PUT(
 
     if (error) {
       console.error('Error updating calendar event:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return jsonResponseNoCache({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ event });
+    return jsonResponseNoCache({ event });
   } catch (error) {
     console.error('Error in PUT /api/properties/[id]/calendar:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: 'Internal server error' },
       { status: 500 }
     );
@@ -415,7 +416,7 @@ export async function DELETE(
     const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - No token provided' }, { status: 401 });
     }
 
     const supabase = createServerSideClientWithToken(token);
@@ -424,7 +425,7 @@ export async function DELETE(
     // Verify user is admin or property owner
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email) {
-      return NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
     // Check if user is admin
@@ -444,13 +445,13 @@ export async function DELETE(
     const isOwner = property?.owner_id === user.id;
 
     if (!isAdmin && !isOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return jsonResponseNoCache({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Property owners can only delete events from approved/active properties
     // Admins can delete events from any property
     if (!isAdmin && property?.status !== 'active') {
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'Events can only be deleted from approved properties.'
       }, { status: 403 });
     }
@@ -459,7 +460,7 @@ export async function DELETE(
     const eventId = searchParams.get('event_id');
 
     if (!eventId) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Event ID is required' },
         { status: 400 }
       );
@@ -472,13 +473,13 @@ export async function DELETE(
 
     if (error) {
       console.error('Error deleting calendar event:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return jsonResponseNoCache({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return jsonResponseNoCache({ success: true });
   } catch (error) {
     console.error('Error in DELETE /api/properties/[id]/calendar:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: 'Internal server error' },
       { status: 500 }
     );

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import JSZip from 'jszip';
 
 export const maxDuration = 300;
@@ -26,7 +27,7 @@ export async function GET(
       .single();
 
     if (propertyError || !property) {
-      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+      return jsonResponseNoCache({ error: 'Property not found' }, { status: 404 });
     }
 
     console.log('✓ Property:', property.name);
@@ -38,7 +39,7 @@ export async function GET(
       .order('display_order');
 
     if (imagesError || !images || images.length === 0) {
-      return NextResponse.json({ error: 'No images found' }, { status: 404 });
+      return jsonResponseNoCache({ error: 'No images found' }, { status: 404 });
     }
 
     console.log(`✓ Found ${images.length} images`);
@@ -124,7 +125,7 @@ export async function GET(
     console.log(`All images processed: ${successCount} success, ${failCount} failed`);
 
     if (successCount === 0) {
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Failed to download any images' },
         { status: 500 }
       );
@@ -157,7 +158,7 @@ export async function GET(
     console.error('❌ Fatal error:', error);
     console.error('Stack:', error.stack);
 
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: 'Server error', message: error.message },
       { status: 500 }
     );

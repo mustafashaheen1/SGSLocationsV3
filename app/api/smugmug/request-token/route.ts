@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { supabase } from '@/lib/supabase';
 import axios from 'axios';
 
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     if (!apiKey || !apiSecret) {
       console.error('❌ Missing API credentials');
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'SmugMug credentials not configured'
       }, { status: 500 });
     }
@@ -96,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     const authUrl = `https://api.smugmug.com/services/oauth/1.0a/authorize?oauth_token=${requestToken}&Access=Full&Permissions=Read`;
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       success: true,
       authUrl,
       requestToken
@@ -105,7 +107,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ Request token error:', error.message);
     console.error('Stack:', error.stack);
-    return NextResponse.json({
+    return jsonResponseNoCache({
       error: 'Failed to get request token',
       details: error.message
     }, { status: 500 });

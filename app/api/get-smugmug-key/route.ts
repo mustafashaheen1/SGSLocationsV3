@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import axios from 'axios';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
     const albumKeyMatch = html.match(/"AlbumKey":"([^"]+)"/);
     if (albumKeyMatch) {
       console.log('✓ Found album key via JSON:', albumKeyMatch[1]);
-      return NextResponse.json({ albumKey: albumKeyMatch[1] });
+      return jsonResponseNoCache({ albumKey: albumKeyMatch[1] });
     }
 
     const dataConfigMatch = html.match(/data-config='([^']+)'/);
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
         const config = JSON.parse(dataConfigMatch[1].replace(/&quot;/g, '"'));
         if (config.albumKey) {
           console.log('✓ Found album key in data-config:', config.albumKey);
-          return NextResponse.json({ albumKey: config.albumKey });
+          return jsonResponseNoCache({ albumKey: config.albumKey });
         }
       } catch (e) {
         console.log('Could not parse data-config');
@@ -53,13 +55,13 @@ export async function POST(request: NextRequest) {
     const apiMatch = html.match(/https:\/\/api\.smugmug\.com\/api\/v2\/album\/([^"!\/\s]+)/);
     if (apiMatch) {
       console.log('✓ Found album key in API URL:', apiMatch[1]);
-      return NextResponse.json({ albumKey: apiMatch[1] });
+      return jsonResponseNoCache({ albumKey: apiMatch[1] });
     }
 
     const scriptMatch = html.match(/"albumKey"\s*:\s*"([^"]+)"/i);
     if (scriptMatch) {
       console.log('✓ Found album key in script:', scriptMatch[1]);
-      return NextResponse.json({ albumKey: scriptMatch[1] });
+      return jsonResponseNoCache({ albumKey: scriptMatch[1] });
     }
 
     if (hasApiKey) {
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error in get-smugmug-key:', error);
-    return NextResponse.json({
+    return jsonResponseNoCache({
       error: error.message || 'Album key extraction failed',
       suggestion: 'Please enter the album key manually in the field below'
     }, { status: 500 });
@@ -115,7 +117,7 @@ async function extractFromApiPath(url: string) {
 
     if (album && album.AlbumKey) {
       console.log('✓ Found album via API:', album.AlbumKey);
-      return NextResponse.json({ albumKey: album.AlbumKey });
+      return jsonResponseNoCache({ albumKey: album.AlbumKey });
     }
 
     throw new Error(`Album not found in ${albums.length} albums`);

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import axios from 'axios';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { supabase } from '@/lib/supabase';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
 
@@ -12,7 +14,7 @@ export async function GET(request: NextRequest) {
     const albumKey = searchParams.get('albumKey');
 
     if (!albumKey) {
-      return NextResponse.json({ error: 'Album key required' }, { status: 400 });
+      return jsonResponseNoCache({ error: 'Album key required' }, { status: 400 });
     }
 
     const apiKey = process.env.NEXT_PUBLIC_SMUGMUG_API_KEY;
@@ -27,7 +29,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!tokenData) {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+      return jsonResponseNoCache({ error: 'Not authorized' }, { status: 401 });
     }
 
     const albumUrl = `https://api.smugmug.com/api/v2/album/${albumKey}`;
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     const album = response.data.Response.Album;
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       success: true,
       name: album.Name,
       description: album.Description,
@@ -67,7 +69,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error fetching album metadata:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message },
       { status: 500 }
     );

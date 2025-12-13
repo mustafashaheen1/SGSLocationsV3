@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { supabase } from '@/lib/supabase';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
 import { normalizeUrl } from '@/lib/url-utils';
@@ -71,14 +73,14 @@ export async function POST(request: NextRequest) {
     console.log('Property ID:', propertyId);
 
     if (!albumKey) {
-      return NextResponse.json({ error: 'Album key required' }, { status: 400 });
+      return jsonResponseNoCache({ error: 'Album key required' }, { status: 400 });
     }
 
     // Check if this albumkey already exists
     const alreadyExists = await albumKeyExists(albumKey);
     if (alreadyExists) {
       console.log('⚠️ AlbumKey already exists in database, skipping import');
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'Album already imported',
         details: 'This SmugMug album has already been imported. Each album can only be imported once.',
         albumkey: albumKey,
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
     const apiSecret = process.env.SMUGMUG_API_SECRET;
 
     if (!apiKey || !apiSecret) {
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'SmugMug credentials not configured'
       }, { status: 500 });
     }
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     if (tokenError || !tokenData || !(tokenData as any).access_token || !(tokenData as any).access_token_secret) {
       console.error('❌ No valid tokens found');
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'SmugMug not authorized',
         details: 'Please authorize SmugMug access first.',
         needsAuth: true
@@ -189,14 +191,14 @@ export async function POST(request: NextRequest) {
       console.error('Error:', albumError.response?.data);
 
       if (albumError.response?.status === 401) {
-        return NextResponse.json({
+        return jsonResponseNoCache({
           error: 'Authorization expired',
           details: 'Please reauthorize SmugMug access using the "Authorize SmugMug" button.',
           needsReauth: true
         }, { status: 401 });
       }
 
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'SmugMug API request failed',
         details: albumError.response?.data?.Message || albumError.message
       }, { status: albumError.response?.status || 500 });
@@ -205,7 +207,7 @@ export async function POST(request: NextRequest) {
     const images = albumResponse.data.Response?.AlbumImage || [];
 
     if (images.length === 0) {
-      return NextResponse.json({
+      return jsonResponseNoCache({
         error: 'No images found in album',
         details: 'This album appears to be empty.'
       }, { status: 400 });
@@ -329,7 +331,7 @@ export async function POST(request: NextRequest) {
     console.log(`✓ Successfully imported: ${uploadedUrls.length}`);
     console.log(`✗ Failed: ${errors.length}`);
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       success: true,
       uploadedUrls,
       urls: uploadedUrls,
@@ -345,7 +347,7 @@ export async function POST(request: NextRequest) {
     console.error('Error:', error.message);
     console.error('Stack:', error.stack);
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       error: 'Import failed',
       details: error.message
     }, { status: 500 });

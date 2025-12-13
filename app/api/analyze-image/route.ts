@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import OpenAI from 'openai';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { normalizeUrl } from '@/lib/url-utils';
 
 function getOpenAI() {
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       console.error('❌ OPENAI_API_KEY is not configured!');
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'OpenAI API key not configured' },
         { status: 500 }
       );
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     if (!imageUrl) {
       console.error('❌ No image URL provided');
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'Image URL is required' },
         { status: 400 }
       );
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     if (!availableTags || availableTags.length === 0) {
       console.error('❌ No available tags provided');
-      return NextResponse.json(
+      return jsonResponseNoCache(
         { error: 'No tags available for analysis' },
         { status: 400 }
       );
@@ -157,7 +159,7 @@ Analyze the image and return the matching tags:`;
     console.log('Tokens used:', response.usage?.total_tokens || 0);
     console.log('=== END ANALYSIS ===\n');
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       success: true,
       tags: validatedTags,
       tokensUsed: response.usage?.total_tokens || 0,
@@ -180,7 +182,7 @@ Analyze the image and return the matching tags:`;
       console.error('OpenAI API error response:', error.response.data);
     }
 
-    return NextResponse.json(
+    return jsonResponseNoCache(
       {
         error: error.message || 'Failed to analyze image',
         type: error.type || 'unknown',

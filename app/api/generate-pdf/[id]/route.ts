@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +16,7 @@ export async function GET(
       .single();
 
     if (propertyError || !property) {
-      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+      return jsonResponseNoCache({ error: 'Property not found' }, { status: 404 });
     }
 
     const { data: images, error: imagesError } = await (supabase
@@ -26,7 +27,7 @@ export async function GET(
 
     const imageData = images || [];
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       property: {
         name: property.name,
         city: property.city,
@@ -42,6 +43,6 @@ export async function GET(
 
   } catch (error) {
     console.error('Error fetching property data:', error);
-    return NextResponse.json({ error: 'Failed to fetch property data' }, { status: 500 });
+    return jsonResponseNoCache({ error: 'Failed to fetch property data' }, { status: 500 });
   }
 }

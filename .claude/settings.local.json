@@ -24,7 +24,16 @@
       "Bash(wc:*)",
       "Bash(curl:*)",
       "Bash(npx ts-node:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(for file in app/api/upload-video/route.ts app/api/import-smugmug/route.ts app/api/expand-google-maps-url/route.ts app/api/fetch-image/route.ts app/api/get-smugmug-key/route.ts app/api/analyze-image/route.ts app/api/smugmug-album-metadata/route.ts app/api/smugmug-callback/route.ts app/api/smugmug/check-auth/route.ts app/api/smugmug/request-token/route.ts app/api/download-images/[id]/route.ts app/api/generate-pdf/[id]/route.ts app/api/smugmug-all-albums/route.ts app/api/admin/migrate-categories/route.ts)",
+      "Bash(do)",
+      "Bash(if [ -f \"$file\" ])",
+      "Bash(then)",
+      "Bash(if ! grep -q \"jsonResponseNoCache\" \"$file\")",
+      "Bash(echo:*)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

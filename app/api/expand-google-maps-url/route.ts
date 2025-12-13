@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,14 +21,14 @@ export async function POST(request: NextRequest) {
     const finalUrl = response.url;
     console.log('✓ Expanded to:', finalUrl);
 
-    return NextResponse.json({
+    return jsonResponseNoCache({
       success: true,
       expandedUrl: finalUrl
     });
 
   } catch (error: any) {
     console.error('Error expanding URL:', error);
-    return NextResponse.json(
+    return jsonResponseNoCache(
       { error: error.message },
       { status: 500 }
     );

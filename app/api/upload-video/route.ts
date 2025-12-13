@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { randomUUID } from 'crypto';
 
 const s3Client = new S3Client({
@@ -17,7 +19,7 @@ export async function POST(request: NextRequest) {
     const folder = formData.get('folder') as string || 'videos';
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return jsonResponseNoCache({ error: 'No file provided' }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -38,9 +40,9 @@ export async function POST(request: NextRequest) {
       ? `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${fileName}`
       : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileName}`;
 
-    return NextResponse.json({ url });
+    return jsonResponseNoCache({ url });
   } catch (error) {
     console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return jsonResponseNoCache({ error: 'Upload failed' }, { status: 500 });
   }
 }
