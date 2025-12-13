@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jsonResponseNoCache } from '@/lib/api-helpers';
 import OpenAI from 'openai';
-import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { normalizeUrl } from '@/lib/url-utils';
 
 function getOpenAI() {
