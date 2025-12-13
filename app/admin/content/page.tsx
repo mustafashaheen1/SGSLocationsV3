@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown, Phone } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown, Phone, ClipboardList } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,16 @@ interface Project {
   updated_at: string;
 }
 
+interface FormQuestion {
+  id: string;
+  form_name: string;
+  question_text: string;
+  question_type: 'radio' | 'checkbox' | 'text';
+  is_required: boolean;
+  display_order: number;
+  options: string[];
+}
+
 async function uploadVideoToS3(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
@@ -108,6 +118,10 @@ export default function ContentManagementPage() {
 
   // About Page Content States
   const [aboutSections, setAboutSections] = useState<any[]>([]);
+
+  // List Your Property Form Questions State
+  const [formQuestions, setFormQuestions] = useState<FormQuestion[]>([]);
+  const [editingQuestion, setEditingQuestion] = useState<FormQuestion | null>(null);
 
   // Terms & Conditions State
   const [termsContent, setTermsContent] = useState('');
@@ -208,6 +222,12 @@ export default function ContentManagementPage() {
       fetchAboutContent();
     }
   }, [activeTab, aboutSections.length]);
+
+  useEffect(() => {
+    if (activeTab === 'list-property' && formQuestions.length === 0) {
+      fetchFormQuestions();
+    }
+  }, [activeTab, formQuestions.length]);
 
   useEffect(() => {
     if (activeTab === 'other') {
@@ -664,6 +684,114 @@ export default function ContentManagementPage() {
     }
   }
 
+  // List Your Property Form Questions Functions
+  async function fetchFormQuestions() {
+    try {
+      const { data, error } = await supabase
+        .from('form_questions')
+        .select('*')
+        .eq('form_name', 'list_your_property')
+        .order('display_order');
+
+      if (error) throw error;
+
+      if (data) {
+        setFormQuestions(data.map((q: any) => ({
+          ...q,
+          options: Array.isArray(q.options) ? q.options : []
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching form questions:', error);
+    }
+  }
+
+  async function saveFormQuestion(question: FormQuestion) {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('form_questions')
+        .upsert({
+          id: question.id,
+          form_name: 'list_your_property',
+          question_text: question.question_text,
+          question_type: question.question_type,
+          is_required: question.is_required,
+          display_order: question.display_order,
+          options: question.options
+        });
+
+      if (error) throw error;
+
+      await fetchFormQuestions();
+      setEditingQuestion(null);
+      alert('Question saved successfully!');
+    } catch (error: any) {
+      alert('Error saving question: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteFormQuestion(id: string) {
+    if (!confirm('Are you sure you want to delete this question?')) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('form_questions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await fetchFormQuestions();
+      alert('Question deleted successfully!');
+    } catch (error: any) {
+      alert('Error deleting question: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function addNewQuestion() {
+    const newQuestion: FormQuestion = {
+      id: crypto.randomUUID(),
+      form_name: 'list_your_property',
+      question_text: '',
+      question_type: 'radio',
+      is_required: true,
+      display_order: formQuestions.length + 1,
+      options: []
+    };
+    setEditingQuestion(newQuestion);
+  }
+
+  function addOption(question: FormQuestion) {
+    const updatedQuestion = {
+      ...question,
+      options: [...question.options, '']
+    };
+    setEditingQuestion(updatedQuestion);
+  }
+
+  function updateOption(question: FormQuestion, index: number, value: string) {
+    const updatedOptions = [...question.options];
+    updatedOptions[index] = value;
+    setEditingQuestion({
+      ...question,
+      options: updatedOptions
+    });
+  }
+
+  function removeOption(question: FormQuestion, index: number) {
+    const updatedOptions = question.options.filter((_, i) => i !== index);
+    setEditingQuestion({
+      ...question,
+      options: updatedOptions
+    });
+  }
+
   async function fetchContactGrid() {
     try {
       const { data } = await supabase
@@ -1033,7 +1161,7 @@ export default function ContentManagementPage() {
       <h1 className="text-3xl font-bold mb-6">Content Management System</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7 mb-6">
+        <TabsList className="grid w-full grid-cols-8 mb-6">
           <TabsTrigger value="home">
             <Home className="w-4 h-4 mr-2" />
             Home Page
@@ -1057,6 +1185,10 @@ export default function ContentManagementPage() {
           <TabsTrigger value="search">
             <Home className="w-4 h-4 mr-2" />
             Property Page
+          </TabsTrigger>
+          <TabsTrigger value="list-property">
+            <ClipboardList className="w-4 h-4 mr-2" />
+            List Property
           </TabsTrigger>
           <TabsTrigger value="other">
             <FileText className="w-4 h-4 mr-2" />
@@ -2875,6 +3007,195 @@ export default function ContentManagementPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* LIST YOUR PROPERTY TAB */}
+        <TabsContent value="list-property" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>List Your Property - Form Questions</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">Manage questions for the property listing form</p>
+                </div>
+                <Button
+                  onClick={addNewQuestion}
+                  size="lg"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Question
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {formQuestions.map((question, index) => (
+                  <Card key={question.id} className="border-2">
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">Question {index + 1}</h4>
+                            {question.is_required && <span className="text-red-600">*</span>}
+                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                              {question.question_type}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{question.question_text}</p>
+                          {question.options.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium text-gray-500 mb-1">Options:</p>
+                              <ul className="list-disc list-inside text-sm text-gray-600">
+                                {question.options.map((opt, i) => (
+                                  <li key={i}>{opt}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setEditingQuestion(question)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => deleteFormQuestion(question.id)}
+                            variant="destructive"
+                            size="sm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Edit Question Modal */}
+          {editingQuestion && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>
+                      {formQuestions.find(q => q.id === editingQuestion.id) ? 'Edit Question' : 'Add New Question'}
+                    </CardTitle>
+                    <Button
+                      onClick={() => setEditingQuestion(null)}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Question Text</Label>
+                    <Textarea
+                      value={editingQuestion.question_text}
+                      onChange={(e) => setEditingQuestion({
+                        ...editingQuestion,
+                        question_text: e.target.value
+                      })}
+                      placeholder="Enter your question"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Question Type</Label>
+                    <select
+                      value={editingQuestion.question_type}
+                      onChange={(e) => setEditingQuestion({
+                        ...editingQuestion,
+                        question_type: e.target.value as 'radio' | 'checkbox' | 'text'
+                      })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    >
+                      <option value="radio">Single Choice (Radio)</option>
+                      <option value="checkbox">Multiple Choice (Checkbox)</option>
+                      <option value="text">Text Input</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={editingQuestion.is_required}
+                      onChange={(e) => setEditingQuestion({
+                        ...editingQuestion,
+                        is_required: e.target.checked
+                      })}
+                      className="w-4 h-4"
+                    />
+                    <Label>Required Question</Label>
+                  </div>
+
+                  {(editingQuestion.question_type === 'radio' || editingQuestion.question_type === 'checkbox') && (
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <Label>Options</Label>
+                        <Button
+                          onClick={() => addOption(editingQuestion)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Add Option
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {editingQuestion.options.map((option, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={option}
+                              onChange={(e) => updateOption(editingQuestion, index, e.target.value)}
+                              placeholder={`Option ${index + 1}`}
+                            />
+                            <Button
+                              onClick={() => removeOption(editingQuestion, index)}
+                              variant="destructive"
+                              size="sm"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        {editingQuestion.options.length === 0 && (
+                          <p className="text-sm text-gray-500">No options added yet. Click "Add Option" to start.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      onClick={() => setEditingQuestion(null)}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => saveFormQuestion(editingQuestion)}
+                      disabled={!editingQuestion.question_text ||
+                        ((editingQuestion.question_type === 'radio' || editingQuestion.question_type === 'checkbox') &&
+                        editingQuestion.options.length === 0)}
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Question
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         {/* OTHER PAGES TAB */}
