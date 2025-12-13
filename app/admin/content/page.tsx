@@ -687,8 +687,8 @@ export default function ContentManagementPage() {
   // List Your Property Form Questions Functions
   async function fetchFormQuestions() {
     try {
-      const { data, error } = await supabase
-        .from('form_questions')
+      const { data, error } = await (supabase
+        .from('form_questions') as any)
         .select('*')
         .eq('form_name', 'list_your_property')
         .order('display_order');
@@ -709,8 +709,8 @@ export default function ContentManagementPage() {
   async function saveFormQuestion(question: FormQuestion) {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('form_questions')
+      const { error } = await (supabase
+        .from('form_questions') as any)
         .upsert({
           id: question.id,
           form_name: 'list_your_property',
@@ -738,8 +738,8 @@ export default function ContentManagementPage() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('form_questions')
+      const { error } = await (supabase
+        .from('form_questions') as any)
         .delete()
         .eq('id', id);
 
