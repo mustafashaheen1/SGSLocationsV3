@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jsonResponseNoCache } from '@/lib/api-helpers';
 import axios from 'axios';
-import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { supabase } from '@/lib/supabase';
 import { generateOAuthSignature, createOAuthParams } from '@/lib/smugmug-oauth';
 import { extractGoogleMapsLink } from '@/lib/google-maps-utils';
