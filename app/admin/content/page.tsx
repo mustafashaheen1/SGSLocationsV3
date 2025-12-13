@@ -118,6 +118,7 @@ export default function ContentManagementPage() {
 
   // About Page Content States
   const [aboutSections, setAboutSections] = useState<any[]>([]);
+  const [uploadingVideoForSection, setUploadingVideoForSection] = useState<number | null>(null);
 
   // List Your Property Form Questions State
   const [formQuestions, setFormQuestions] = useState<FormQuestion[]>([]);
@@ -555,7 +556,7 @@ export default function ContentManagementPage() {
             mediaType: 'video',
             title: 'Discover Our Locations',
             content: "Whether you're looking for a sprawling ranch, modern architecture, historic properties, or urban settings, SGS Locations has the perfect backdrop for your production needs.",
-            videoUrl: 'https://player.vimeo.com/video/616445043'
+            videoUrl: ''
           },
           {
             mediaType: 'none',
@@ -643,6 +644,23 @@ export default function ContentManagementPage() {
       image: ''
     };
     setAboutSections([...aboutSections, newSection]);
+  }
+
+  async function handleAboutVideoUpload(file: File, sectionIndex: number) {
+    setUploadingVideoForSection(sectionIndex);
+    try {
+      const videoUrl = await uploadVideoToS3(file);
+      const newSections = [...aboutSections];
+      if (!newSections[sectionIndex]) newSections[sectionIndex] = {};
+      newSections[sectionIndex].videoUrl = videoUrl;
+      setAboutSections(newSections);
+      alert('Video uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      alert('Error uploading video. Please try again.');
+    } finally {
+      setUploadingVideoForSection(null);
+    }
   }
 
   async function saveAllAboutContent() {
@@ -2810,36 +2828,73 @@ export default function ContentManagementPage() {
                       </div>
                     )}
 
-                    {/* Video URL for video type */}
+                    {/* Video upload for video type */}
                     {section.mediaType === 'video' && (
                       <div>
-                        <label className="block text-sm font-medium mb-1">Video Preview</label>
+                        <label className="block text-sm font-medium mb-1">Video</label>
                         {section?.videoUrl && (
                           <div className="w-full max-w-md mb-2">
                             <div className="relative" style={{ paddingBottom: '56.25%' }}>
-                              <iframe
+                              <video
                                 src={section.videoUrl}
                                 className="absolute top-0 left-0 w-full h-full rounded"
-                                frameBorder="0"
-                                allow="autoplay; fullscreen"
-                                allowFullScreen
+                                controls
                               />
                             </div>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => {
+                                const newSections = [...aboutSections];
+                                if (!newSections[index]) newSections[index] = {};
+                                delete newSections[index].videoUrl;
+                                setAboutSections(newSections);
+                              }}
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Remove Video
+                            </Button>
                           </div>
                         )}
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Vimeo Video URL</label>
-                          <Input
-                            value={section?.videoUrl || ''}
-                            onChange={(e) => {
-                              const newSections = [...aboutSections];
-                              if (!newSections[index]) newSections[index] = {};
-                              newSections[index].videoUrl = e.target.value;
-                              setAboutSections(newSections);
-                            }}
-                            placeholder="https://player.vimeo.com/video/..."
-                          />
-                        </div>
+                        {!section?.videoUrl && (
+                          <div>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              id={`video-upload-${index}`}
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleAboutVideoUpload(file, index);
+                                }
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById(`video-upload-${index}`)?.click()}
+                              disabled={uploadingVideoForSection === index}
+                            >
+                              {uploadingVideoForSection === index ? (
+                                <>
+                                  <Video className="w-4 h-4 mr-2 animate-pulse" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Upload Video
+                                </>
+                              )}
+                            </Button>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Upload a video file (MP4, MOV, etc.). The video will be stored on S3.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 

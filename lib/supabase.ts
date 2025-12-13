@@ -135,6 +135,25 @@ export function createClient() {
   });
 }
 
+/**
+ * Create admin client for server-side operations only
+ * IMPORTANT: Only use this in API routes or server components
+ */
+export function createAdminClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing Supabase admin environment variables');
+  }
+
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
+
 console.log('✅ Supabase client created');
 
 /**

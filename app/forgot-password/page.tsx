@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { nunito } from '@/lib/fonts';
 
 export default function ForgotPasswordPage() {
@@ -38,17 +37,28 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setErrors({ email: '', form: '' });
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      const response = await fetch('/api/send-password-reset-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
 
-    if (error) {
-      setErrors({ email: '', form: error.message });
-    } else {
-      setSuccess(true);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrors({ email: '', form: data.error || 'Failed to send password reset email' });
+      } else {
+        setSuccess(true);
+      }
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setErrors({ email: '', form: 'An unexpected error occurred. Please try again.' });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

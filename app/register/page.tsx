@@ -130,6 +130,21 @@ export default function RegisterPage() {
 
       if (profileError) throw profileError;
 
+      // Send welcome email
+      try {
+        await fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            name: `${formData.firstName} ${formData.lastName}`.trim()
+          })
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't block registration if email fails
+      }
+
       // Check if there's a redirect URL from the query parameters
       if (redirectAfterLogin) {
         console.log('Registration successful. Redirecting to:', redirectAfterLogin);
