@@ -3,98 +3,55 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Clear any stale sessions from localStorage
-function clearStaleSession() {
-  if (typeof window === 'undefined') return;
-
-  try {
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
-        const item = localStorage.getItem(key);
-        if (!item) return;
-
-        try {
-          const data = JSON.parse(item);
-          if (data?.expires_at) {
-            const expiryTime = data.expires_at * 1000;
-            const now = Date.now();
-
-            if (now >= expiryTime) {
-              console.log('🧹 Removing expired session:', key);
-              localStorage.removeItem(key);
-            }
-          }
-        } catch (e) {
-          console.log('🧹 Removing invalid session data:', key);
-          localStorage.removeItem(key);
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error clearing stale sessions:', error);
-  }
-}
-
-// Run cleanup on load
-if (typeof window !== 'undefined') {
-  clearStaleSession();
-}
-
-// ✅ CACHED SINGLETON with periodic refresh
 let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
-let _lastCreated: number = 0;
-const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000; // Refresh every 5 minutes
 
-function getSupabaseClient() {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables');
-  }
-
-  const now = Date.now();
-
-  // Create new client if:
-  // 1. No client exists
-  // 2. Client is older than 5 minutes
-  if (!_supabase || (now - _lastCreated) > CLIENT_REFRESH_INTERVAL) {
-    console.log('🔄 Creating fresh Supabase client');
-
-    _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storageKey: 'supabase.auth.token',
-        flowType: 'pkce',
-      },
-      global: {
-        headers: {
-          'x-application-name': 'sgs-locations',
-        },
-      },
-    });
-
-    _lastCreated = now;
-  }
-
-  return _supabase;
-}
-
-// Export the cached client
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(target, prop) {
-    const client = getSupabaseClient();
-    const value = (client as any)[prop];
+    if (!_supabase) {
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Missing Supabase environment variables');
+      }
 
-    if (typeof value === 'function') {
-      return value.bind(client);
+      _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+          storageKey: 'supabase.auth.token',
+          flowType: 'pkce',
+        },
+        global: {
+          headers: {
+            'x-application-name': 'sgs-locations',
+          },
+        },
+      });
     }
-
-    return value;
+    return (_supabase as any)[prop];
   }
 });
 
 export function createClient() {
-  return getSupabaseClient();
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'supabase.auth.token',
+      flowType: 'pkce',
+    },
+    global: {
+      headers: {
+        'x-application-name': 'sgs-locations',
+      },
+    },
+  });
 }
 
 export function createAdminClient() {
@@ -112,7 +69,7 @@ export function createAdminClient() {
   });
 }
 
-console.log('✅ Supabase client initialized');
+console.log('✅ Supabase client created');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -149,7 +106,7 @@ export async function getPropertyByAlbumKey(albumkey: string): Promise<Property 
 }
 
 // ============================================
-// INTERFACES (keep all your existing ones)
+// INTERFACES
 // ============================================
 
 export interface PropertyContact {
