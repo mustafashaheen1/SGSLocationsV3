@@ -244,29 +244,34 @@ export default function PropertyDetailPage() {
           // Limit to 8 results
           setSimilarProperties(similarLocations.slice(0, 8));
 
-          // For nearby locations, use user's current location if available
-          if (userLocation) {
-            const nearbyLocations = (allProperties as any[])
-              .filter((p: any) => p.latitude && p.longitude)
+          // For nearby locations, use user's current location OR current property's location
+          // Only show properties that have coordinates (so we can display distance)
+          const referenceLocation = userLocation ||
+            (propertyData.latitude && propertyData.longitude ? {
+              latitude: propertyData.latitude,
+              longitude: propertyData.longitude
+            } : null);
+
+          if (referenceLocation) {
+            // Calculate distance for all properties that have coordinates
+            const propertiesWithDistance = (allProperties as any[])
+              .filter((p: any) => p.latitude && p.longitude) // Only properties with coordinates
               .map((prop: any) => ({
                 ...prop,
                 distance: calculateDistance(
-                  userLocation.latitude,
-                  userLocation.longitude,
+                  referenceLocation.latitude,
+                  referenceLocation.longitude,
                   prop.latitude!,
                   prop.longitude!
                 )
               }))
               .sort((a: any, b: any) => a.distance - b.distance)
-              .slice(0, 4); // Limit to 4 nearest locations
+              .slice(0, 4); // Take exactly 4 nearest locations
 
-            setNearbyProperties(nearbyLocations as any);
+            setNearbyProperties(propertiesWithDistance as any);
           } else {
-            // Fallback: use same city if user location not available
-            const nearbyLocations = (allProperties as any[])
-              .filter((p: any) => p.city === propertyData.city)
-              .slice(0, 4);
-            setNearbyProperties(nearbyLocations);
+            // No reference location, don't show nearby section
+            setNearbyProperties([]);
           }
         }
       }

@@ -477,17 +477,29 @@ export default function SearchPage() {
 
       // Initialize subcategory from URL
       const subcategoryParam = searchParams.get('subcategory');
-      if (subcategoryParam && !selectedSubCategory) {
+      if (subcategoryParam && subcategoryParam !== selectedSubCategory) {
         setSelectedSubCategory(subcategoryParam);
 
-        // Also find and set the parent category
-        const subCat = subCategories.find((cat: any) => cat.id === subcategoryParam);
-        if (subCat && subCat.parent_id) {
-          setSelectedCategory(subCat.parent_id);
+        // Also find and set the parent category (only if subCategories is loaded)
+        if (subCategories.length > 0) {
+          const subCat = subCategories.find((cat: any) => cat.id === subcategoryParam);
+          if (subCat && subCat.parent_id) {
+            setSelectedCategory(subCat.parent_id);
+          }
         }
       }
     }
   }, [searchParams, subCategories, selectedSubCategory]);
+
+  // Ensure parent category is set when subcategory is selected (in case categories loaded late)
+  useEffect(() => {
+    if (selectedSubCategory && !selectedCategory && subCategories.length > 0) {
+      const subCat = subCategories.find((cat: any) => cat.id === selectedSubCategory);
+      if (subCat && subCat.parent_id) {
+        setSelectedCategory(subCat.parent_id);
+      }
+    }
+  }, [selectedSubCategory, selectedCategory, subCategories]);
 
   // Debounced search - update URL after user stops typing
   useEffect(() => {
