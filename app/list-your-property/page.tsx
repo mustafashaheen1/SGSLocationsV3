@@ -595,6 +595,25 @@ export default function ListYourPropertyPage() {
       // Clear guest listing data
       clearGuestListing();
 
+      // Send property submission confirmation email
+      try {
+        const propertyAddress = `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`;
+        const ownerName = `${formData.firstName} ${formData.lastName}`;
+
+        await fetch('/api/send-property-submission-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            name: ownerName,
+            propertyAddress: propertyAddress
+          })
+        });
+      } catch (emailError) {
+        console.error('Failed to send property submission confirmation email:', emailError);
+        // Don't block submission if email fails
+      }
+
       alert('Property submitted successfully! We will review it and get back to you soon.');
       router.push('/dashboard');
 

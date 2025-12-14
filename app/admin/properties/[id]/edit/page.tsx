@@ -9,7 +9,7 @@ declare global {
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2, MessageSquare, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,7 +68,7 @@ export default function EditPropertyPage() {
 
   // Get tab from URL query parameter
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const tabParam = searchParams.get('tab') as 'details' | 'images' | 'calendar' | 'contacts' | 'documents' | 'inquiries' | null;
+  const tabParam = searchParams.get('tab') as 'details' | 'images' | 'calendar' | 'contacts' | 'documents' | 'inquiries' | 'terms' | null;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -119,8 +119,8 @@ export default function EditPropertyPage() {
     downloads: 0
   });
 
-  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts' | 'documents' | 'inquiries'>(
-    tabParam && ['details', 'images', 'calendar', 'contacts', 'documents', 'inquiries'].includes(tabParam) ? tabParam : 'details'
+  const [activeTab, setActiveTab] = useState<'details' | 'images' | 'calendar' | 'contacts' | 'documents' | 'inquiries' | 'terms'>(
+    tabParam && ['details', 'images', 'calendar', 'contacts', 'documents', 'inquiries', 'terms'].includes(tabParam) ? tabParam : 'details'
   );
 
   const [isAdminProperty, setIsAdminProperty] = useState<boolean>(true); // Track if property is admin-owned (no owner_id)
@@ -139,6 +139,26 @@ export default function EditPropertyPage() {
   const [isDraggingDoc, setIsDraggingDoc] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+
+  // Terms and Conditions state
+  const [existingTerms, setExistingTerms] = useState<{
+    type: 'text' | 'pdf' | null;
+    content: string | null;
+    pdfUrl: string | null;
+    sentAt: string | null;
+    sentBy: string | null;
+  }>({
+    type: null,
+    content: null,
+    pdfUrl: null,
+    sentAt: null,
+    sentBy: null
+  });
+  const [termsType, setTermsType] = useState<'text' | 'pdf'>('text');
+  const [termsContent, setTermsContent] = useState('');
+  const [termsPdfFile, setTermsPdfFile] = useState<File | null>(null);
+  const [sendingTerms, setSendingTerms] = useState(false);
+  const [ownerInfo, setOwnerInfo] = useState<{ email: string; name: string } | null>(null);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -322,6 +342,31 @@ export default function EditPropertyPage() {
       // Set grid indices (first 6 images)
       const initialGrid = loadedImages.slice(0, 6).map((_, i) => i);
       setGridIndices(initialGrid);
+
+      // Load terms and conditions data
+      setExistingTerms({
+        type: prop.terms_type || null,
+        content: prop.terms_content || null,
+        pdfUrl: prop.terms_pdf_url || null,
+        sentAt: prop.terms_sent_at || null,
+        sentBy: prop.terms_sent_by || null
+      });
+
+      // Fetch owner information if property has an owner
+      if (prop.owner_id) {
+        const { data: owner, error: ownerError } = await (supabase
+          .from('users') as any)
+          .select('email, full_name')
+          .eq('id', prop.owner_id)
+          .single();
+
+        if (!ownerError && owner) {
+          setOwnerInfo({
+            email: owner.email,
+            name: owner.full_name || 'Property Owner'
+          });
+        }
+      }
 
     } catch (error: any) {
       console.error('Error fetching property:', error);
@@ -959,6 +1004,73 @@ export default function EditPropertyPage() {
     setContacts(prev => prev.filter((_, i) => i !== index));
   }
 
+  async function handleSendTerms() {
+    if (!ownerInfo) {
+      alert('No property owner found. This property does not have an owner assigned.');
+      return;
+    }
+
+    if (termsType === 'text' && !termsContent.trim()) {
+      alert('Please enter terms and conditions content');
+      return;
+    }
+
+    if (termsType === 'pdf' && !termsPdfFile) {
+      alert('Please select a PDF file');
+      return;
+    }
+
+    if (!confirm(`Send terms and conditions to ${ownerInfo.email}?`)) {
+      return;
+    }
+
+    setSendingTerms(true);
+
+    try {
+      let pdfUrl = null;
+
+      // Upload PDF if selected
+      if (termsType === 'pdf' && termsPdfFile) {
+        // Import uploadDocumentToS3 function
+        const { uploadDocumentToS3 } = await import('@/lib/s3-upload');
+        pdfUrl = await uploadDocumentToS3(termsPdfFile, propertyId);
+      }
+
+      // Send terms via API
+      const response = await fetch('/api/send-property-terms-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
+          termsType,
+          termsContent: termsType === 'text' ? termsContent : undefined,
+          termsPdfUrl: termsType === 'pdf' ? pdfUrl : undefined
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send terms and conditions');
+      }
+
+      alert('Terms and conditions sent successfully!');
+
+      // Refresh property data to show updated terms
+      await fetchProperty();
+
+      // Clear form
+      setTermsContent('');
+      setTermsPdfFile(null);
+
+    } catch (error: any) {
+      console.error('Error sending terms:', error);
+      alert('Error sending terms and conditions: ' + error.message);
+    } finally {
+      setSendingTerms(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -1239,6 +1351,18 @@ export default function EditPropertyPage() {
             >
               <MessageSquare className="w-4 h-4" />
               Inquiries
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('terms')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
+                activeTab === 'terms'
+                  ? 'border-[#e11921] text-[#e11921]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Terms & Conditions
             </button>
           </nav>
         </div>
@@ -2127,6 +2251,258 @@ export default function EditPropertyPage() {
           {activeTab === 'inquiries' && (
             <div>
               <PropertyInquiriesTab propertyId={propertyId} />
+            </div>
+          )}
+
+          {/* Terms & Conditions Tab */}
+          {activeTab === 'terms' && (
+            <div className="space-y-6">
+              {/* Owner Information Alert */}
+              {!ownerInfo ? (
+                <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-amber-900 mb-1">No Property Owner</h4>
+                      <p className="text-sm text-amber-800">
+                        This property does not have an owner assigned. Terms and conditions can only be sent to properties with an assigned owner.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+                  <div className="flex items-start gap-3">
+                    <User className="h-5 w-5 text-blue-500 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-blue-900 mb-1">Property Owner</h4>
+                      <p className="text-sm text-blue-800">
+                        <strong>{ownerInfo.name}</strong> ({ownerInfo.email})
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Existing Terms Display */}
+              {existingTerms.type && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-6 w-6 text-green-500 mt-0.5" />
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Previously Sent Terms & Conditions</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Sent on {existingTerms.sentAt ? new Date(existingTerms.sentAt).toLocaleString() : 'Unknown date'}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full uppercase">
+                      {existingTerms.type}
+                    </span>
+                  </div>
+
+                  {existingTerms.type === 'text' && existingTerms.content && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Text Content:</p>
+                      <div className="text-sm text-gray-900 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                        {existingTerms.content}
+                      </div>
+                    </div>
+                  )}
+
+                  {existingTerms.type === 'pdf' && existingTerms.pdfUrl && (
+                    <div className="mt-4">
+                      <a
+                        href={existingTerms.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Download className="h-4 w-4" />
+                        View PDF Document
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Send New Terms Form */}
+              {ownerInfo && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Send {existingTerms.type ? 'New' : ''} Terms & Conditions
+                  </h3>
+
+                  {/* Terms Type Selection */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Terms Format
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setTermsType('text')}
+                        className={`p-4 border-2 rounded-lg transition-all ${
+                          termsType === 'text'
+                            ? 'border-[#e11921] bg-red-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            termsType === 'text' ? 'border-[#e11921]' : 'border-gray-300'
+                          }`}>
+                            {termsType === 'text' && (
+                              <div className="w-3 h-3 rounded-full bg-[#e11921]"></div>
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium text-gray-900">Text Content</p>
+                            <p className="text-xs text-gray-600">Write terms directly in the email</p>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTermsType('pdf')}
+                        className={`p-4 border-2 rounded-lg transition-all ${
+                          termsType === 'pdf'
+                            ? 'border-[#e11921] bg-red-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            termsType === 'pdf' ? 'border-[#e11921]' : 'border-gray-300'
+                          }`}>
+                            {termsType === 'pdf' && (
+                              <div className="w-3 h-3 rounded-full bg-[#e11921]"></div>
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium text-gray-900">PDF Document</p>
+                            <p className="text-xs text-gray-600">Upload a PDF file</p>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Conditional Input based on Terms Type */}
+                  {termsType === 'text' ? (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Terms & Conditions Content *
+                      </label>
+                      <Textarea
+                        value={termsContent}
+                        onChange={(e) => setTermsContent(e.target.value)}
+                        placeholder="Enter the terms and conditions that will be sent to the property owner..."
+                        rows={12}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        This content will be included in the email sent to the property owner
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Upload PDF Document *
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <label className="flex-1 cursor-pointer">
+                          <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                            termsPdfFile
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}>
+                            {termsPdfFile ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                                <span className="text-sm font-medium text-green-700">
+                                  {termsPdfFile.name}
+                                </span>
+                              </div>
+                            ) : (
+                              <>
+                                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                                <p className="text-sm text-gray-600">
+                                  Click to select PDF file
+                                </p>
+                              </>
+                            )}
+                          </div>
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.type !== 'application/pdf') {
+                                  alert('Please select a PDF file');
+                                  e.target.value = '';
+                                  return;
+                                }
+                                setTermsPdfFile(file);
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        {termsPdfFile && (
+                          <button
+                            type="button"
+                            onClick={() => setTermsPdfFile(null)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        The PDF will be uploaded to S3 and a download link will be included in the email
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Send Button */}
+                  <div className="flex items-center gap-4">
+                    <Button
+                      type="button"
+                      onClick={handleSendTerms}
+                      disabled={sendingTerms || (termsType === 'text' && !termsContent.trim()) || (termsType === 'pdf' && !termsPdfFile)}
+                      className="bg-[#e11921] hover:bg-red-700 flex items-center gap-2"
+                    >
+                      {sendingTerms ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          Send Terms & Conditions
+                        </>
+                      )}
+                    </Button>
+                    {(termsContent || termsPdfFile) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setTermsContent('');
+                          setTermsPdfFile(null);
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </form>

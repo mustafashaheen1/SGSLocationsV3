@@ -49,7 +49,12 @@ export default function ForgotPasswordPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrors({ email: '', form: data.error || 'Failed to send password reset email' });
+        // Show specific error messages based on the response
+        if (response.status === 404) {
+          setErrors({ email: 'No account found with this email address', form: '' });
+        } else {
+          setErrors({ email: '', form: data.error || 'Failed to send password reset email' });
+        }
       } else {
         setSuccess(true);
       }
@@ -112,8 +117,8 @@ export default function ForgotPasswordPage() {
           <div className="w-full sm:max-w-sm mt-6 px-8 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg">
             {success ? (
               <div className="space-y-4">
-                <div className="mb-4 text-sm text-gray-600">
-                  We've sent you an email with a password reset link. Please check your inbox
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+                  Password reset link has been sent to your email. Please check your inbox
                   and follow the instructions to reset your password.
                 </div>
                 <div className="flex items-center justify-end mt-4">

@@ -44,12 +44,49 @@ export default function PendingPropertiesPage() {
 
   async function handleApprove(id: string) {
     try {
+      // First, get the property details and owner information
+      const { data: property, error: fetchError } = await (supabase
+        .from('properties') as any)
+        .select('*, owner_id')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Get owner details
+      const { data: owner, error: ownerError } = await (supabase
+        .from('users') as any)
+        .select('email, full_name')
+        .eq('id', property.owner_id)
+        .single();
+
+      if (ownerError) throw ownerError;
+
+      // Update property status
       const { error } = await (supabase
         .from('properties') as any)
         .update({ status: 'active', updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send approval email
+      try {
+        await fetch('/api/send-property-approval-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: owner.email,
+            name: owner.full_name || 'Property Owner',
+            propertyName: property.name,
+            propertyId: id
+          })
+        });
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+        // Don't block approval if email fails
+      }
+
       showSuccess('Property approved successfully');
       fetchProperties();
     } catch (error: any) {
@@ -58,13 +95,52 @@ export default function PendingPropertiesPage() {
   }
 
   async function handleReject(id: string) {
+    const rejectionReason = prompt('Optional: Enter a reason for rejection (this will be sent to the property owner):');
+
     try {
+      // First, get the property details and owner information
+      const { data: property, error: fetchError } = await (supabase
+        .from('properties') as any)
+        .select('*, owner_id')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Get owner details
+      const { data: owner, error: ownerError } = await (supabase
+        .from('users') as any)
+        .select('email, full_name')
+        .eq('id', property.owner_id)
+        .single();
+
+      if (ownerError) throw ownerError;
+
+      // Update property status
       const { error } = await (supabase
         .from('properties') as any)
         .update({ status: 'inactive', updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send rejection email
+      try {
+        await fetch('/api/send-property-rejection-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: owner.email,
+            name: owner.full_name || 'Property Owner',
+            propertyName: property.name,
+            rejectionReason: rejectionReason || undefined
+          })
+        });
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+        // Don't block rejection if email fails
+      }
+
       showSuccess('Property rejected');
       fetchProperties();
     } catch (error: any) {

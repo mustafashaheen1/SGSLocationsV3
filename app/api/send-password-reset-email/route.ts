@@ -26,12 +26,20 @@ export async function POST(request: NextRequest) {
       .eq('email', email)
       .maybeSingle();
 
-    if (userError || !userData) {
-      // Don't reveal if user exists or not (security best practice)
-      return jsonResponseNoCache({
-        success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.'
-      });
+    if (userError) {
+      console.error('Error checking user:', userError);
+      return jsonResponseNoCache(
+        { error: 'An error occurred while processing your request' },
+        { status: 500 }
+      );
+    }
+
+    if (!userData) {
+      // User doesn't exist - return error
+      return jsonResponseNoCache(
+        { error: 'No account found with this email address' },
+        { status: 404 }
+      );
     }
 
     // Generate password reset link using admin client (doesn't send email automatically)
@@ -46,19 +54,18 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase password reset link generation error:', error);
-      // Still return success to not reveal if user exists
-      return jsonResponseNoCache({
-        success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.'
-      });
+      return jsonResponseNoCache(
+        { error: 'Failed to generate password reset link' },
+        { status: 500 }
+      );
     }
 
     if (!data.properties?.action_link) {
       console.error('No action link generated');
-      return jsonResponseNoCache({
-        success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.'
-      });
+      return jsonResponseNoCache(
+        { error: 'Failed to generate password reset link' },
+        { status: 500 }
+      );
     }
 
     // Send password reset email via SendGrid
@@ -68,16 +75,19 @@ export async function POST(request: NextRequest) {
       data.properties.action_link
     );
 
-    if (emailSent) {
-      console.log(`📧 Password reset email sent to ${email} via SendGrid`);
-    } else {
+    if (!emailSent) {
       console.error(`Failed to send password reset email to ${email}`);
+      return jsonResponseNoCache(
+        { error: 'Failed to send password reset email' },
+        { status: 500 }
+      );
     }
 
-    // Always return success to not reveal if user exists
+    console.log(`📧 Password reset email sent to ${email} via SendGrid`);
+
     return jsonResponseNoCache({
       success: true,
-      message: 'If an account exists with this email, a password reset link has been sent.'
+      message: 'Password reset link has been sent to your email'
     });
   } catch (error: any) {
     console.error('Error sending password reset email:', error);
