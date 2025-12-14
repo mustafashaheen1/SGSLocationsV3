@@ -42,7 +42,6 @@ export default function PropertyDetailPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
-  const [userLocation, setUserLocation] = useState<{latitude: number; longitude: number} | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('Pool');
   const categoryTags = ['Pool', 'Jacuzzi', 'Hot Tub', 'Patio', 'Kitchen', 'Garden', 'Staircase', 'Gazebo', 'Living Room', 'Bathroom', 'Dining Room', 'Studio', 'Rooftop', 'Parking'];
   const categoryRefs = useRef<{ [key: string]: HTMLSpanElement | null }>({});
@@ -99,24 +98,6 @@ export default function PropertyDetailPage() {
       }
     }, 50);
   };
-
-  // Get user's location on component mount
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.log('Geolocation error:', error.message);
-          // User denied or error - we'll fallback to city-based search
-        }
-      );
-    }
-  }, []);
 
   // Fetch user type on component mount
   useEffect(() => {
@@ -199,39 +180,26 @@ export default function PropertyDetailPage() {
           .eq('status', 'active');
 
         if (allProperties) {
-          // Filter for similar locations (matching categories AND tags)
-          const currentCategories = propertyData.categories || [];
+          // Filter for similar locations (matching category OR sub-category OR tags)
           const currentCategoryId = propertyData.category_id;
           const currentSubCategoryId = propertyData.sub_category_id;
           const currentTags = propertyData.property_tags || [];
 
           const similarLocations = (allProperties as any[]).filter((location: any) => {
-            // Check if at least one category matches (handle both old and new format)
-            let hasMatchingCategory = false;
+            // Match if ANY of these conditions are true:
+            // 1. Same category_id
+            const hasSameCategory = currentCategoryId && location.category_id === currentCategoryId;
 
-            // Check old format (categories array)
-            if (currentCategories.length > 0 && location.categories?.length > 0) {
-              hasMatchingCategory = location.categories.some((cat: string) =>
-                currentCategories.includes(cat)
-              );
-            }
+            // 2. Same sub_category_id
+            const hasSameSubCategory = currentSubCategoryId && location.sub_category_id === currentSubCategoryId;
 
-            // Check new format (category_id / sub_category_id)
-            if (!hasMatchingCategory && (currentCategoryId || currentSubCategoryId)) {
-              // Match on category_id or sub_category_id
-              hasMatchingCategory =
-                (currentCategoryId && location.category_id === currentCategoryId) ||
-                (currentSubCategoryId && location.sub_category_id === currentSubCategoryId);
-            }
+            // 3. At least one matching tag
+            const hasSameTag = currentTags.length > 0 && location.property_tags?.some((tag: string) =>
+              currentTags.includes(tag)
+            );
 
-            // Check if at least one tag matches
-            const hasMatchingTag = currentTags.length === 0 ||
-              location.property_tags?.some((tag: string) =>
-                currentTags.includes(tag)
-              );
-
-            // Must have matching category, tags are optional
-            return hasMatchingCategory && hasMatchingTag;
+            // Return true if ANY match (OR logic)
+            return hasSameCategory || hasSameSubCategory || hasSameTag;
           });
 
           // Sort by number of matching attributes (most relevant first)
@@ -241,26 +209,19 @@ export default function PropertyDetailPage() {
             return bMatches - aMatches;
           });
 
-          // Limit to 8 results
+          // Take exactly 8 results
           setSimilarProperties(similarLocations.slice(0, 8));
 
-          // For nearby locations, use user's current location OR current property's location
-          // Only show properties that have coordinates (so we can display distance)
-          const referenceLocation = userLocation ||
-            (propertyData.latitude && propertyData.longitude ? {
-              latitude: propertyData.latitude,
-              longitude: propertyData.longitude
-            } : null);
-
-          if (referenceLocation) {
-            // Calculate distance for all properties that have coordinates
+          // For nearby locations, use cascading fallback strategy
+          if (propertyData.latitude && propertyData.longitude) {
+            // PRIORITY 1: Property has coordinates - calculate distance to other properties
             const propertiesWithDistance = (allProperties as any[])
               .filter((p: any) => p.latitude && p.longitude) // Only properties with coordinates
               .map((prop: any) => ({
                 ...prop,
                 distance: calculateDistance(
-                  referenceLocation.latitude,
-                  referenceLocation.longitude,
+                  propertyData.latitude!,
+                  propertyData.longitude!,
                   prop.latitude!,
                   prop.longitude!
                 )
@@ -269,8 +230,22 @@ export default function PropertyDetailPage() {
               .slice(0, 4); // Take exactly 4 nearest locations
 
             setNearbyProperties(propertiesWithDistance as any);
+          } else if (propertyData.city) {
+            // PRIORITY 2: No coordinates but has city - show properties in same city
+            const sameCityProperties = (allProperties as any[])
+              .filter((p: any) => p.city === propertyData.city)
+              .slice(0, 4);
+
+            setNearbyProperties(sameCityProperties as any);
+          } else if (propertyData.county) {
+            // PRIORITY 3: No city but has state/county - show properties in same state
+            const sameStateProperties = (allProperties as any[])
+              .filter((p: any) => p.county === propertyData.county)
+              .slice(0, 4);
+
+            setNearbyProperties(sameStateProperties as any);
           } else {
-            // No reference location, don't show nearby section
+            // No location data at all, don't show nearby section
             setNearbyProperties([]);
           }
         }
@@ -348,7 +323,7 @@ export default function PropertyDetailPage() {
     }
 
     fetchData();
-  }, [params.id, userLocation]);
+  }, [params.id]);
 
   // Check favorite status when property loads
   useEffect(() => {
