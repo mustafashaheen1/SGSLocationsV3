@@ -230,21 +230,29 @@ export default function PropertyDetailPage() {
               .slice(0, 4); // Take exactly 4 nearest locations
 
             setNearbyProperties(propertiesWithDistance as any);
-          } else if (propertyData.city) {
-            // PRIORITY 2: No coordinates but has city - show ALL properties in same city
-            // (including those with and without coordinates, but can't show distance)
-            const sameCityProperties = (allProperties as any[])
-              .filter((p: any) => p.city === propertyData.city)
-              .slice(0, 4);
+          } else if (propertyData.city || propertyData.county) {
+            // PRIORITY 2: No coordinates - show properties from same city, then supplement with state
+            let nearbyLocations: any[] = [];
 
-            setNearbyProperties(sameCityProperties as any);
-          } else if (propertyData.county) {
-            // PRIORITY 3: No city but has county - show ALL properties in same county
-            const sameCountyProperties = (allProperties as any[])
-              .filter((p: any) => p.county === propertyData.county)
-              .slice(0, 4);
+            // First, get properties from same city
+            if (propertyData.city) {
+              nearbyLocations = (allProperties as any[])
+                .filter((p: any) => p.city === propertyData.city);
+            }
 
-            setNearbyProperties(sameCountyProperties as any);
+            // If we don't have 4 yet, supplement with properties from same state/county
+            if (nearbyLocations.length < 4 && propertyData.county) {
+              const sameStateProperties = (allProperties as any[])
+                .filter((p: any) =>
+                  p.county === propertyData.county &&
+                  !nearbyLocations.find((nl: any) => nl.id === p.id) // Avoid duplicates
+                );
+
+              nearbyLocations = [...nearbyLocations, ...sameStateProperties];
+            }
+
+            // Take up to 4 locations
+            setNearbyProperties(nearbyLocations.slice(0, 4) as any);
           } else {
             // No location data at all, don't show nearby section
             setNearbyProperties([]);
