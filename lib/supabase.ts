@@ -3,136 +3,93 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// ✨ NEW: Add session cleanup function
+// Clear any stale sessions from localStorage
 function clearStaleSession() {
   if (typeof window === 'undefined') return;
 
   try {
-    // ALWAYS clear localStorage on page load to prevent any stale cache issues
-    const storedAuth = localStorage.getItem('supabase.auth.token');
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
+        const item = localStorage.getItem(key);
+        if (!item) return;
 
-    if (!storedAuth) {
-      // Also clear any other supabase auth keys just in case
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
-          console.log('🧹 Removing stale key:', key);
-          localStorage.removeItem(key);
-        }
-      });
-      return;
-    }
+        try {
+          const data = JSON.parse(item);
+          if (data?.expires_at) {
+            const expiryTime = data.expires_at * 1000;
+            const now = Date.now();
 
-    const authData = JSON.parse(storedAuth);
-    const expiresAt = authData?.expires_at;
-
-    if (expiresAt) {
-      const expiryTime = expiresAt * 1000; // Convert to milliseconds
-      const now = Date.now();
-
-      // ✅ FIX: Clear if expired AT ALL, not just > 5 minutes
-      if (now >= expiryTime) {
-        console.log('🧹 Clearing expired session from localStorage');
-        console.log(`   Expired: ${new Date(expiryTime).toLocaleString()}`);
-        console.log(`   Now: ${new Date(now).toLocaleString()}`);
-
-        // Clear ALL Supabase-related items
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
-            localStorage.removeItem(key);
+            // Clear if expired
+            if (now >= expiryTime) {
+              console.log('🧹 Removing expired session:', key);
+              localStorage.removeItem(key);
+            }
           }
-        });
+        } catch (e) {
+          // Invalid JSON, remove it
+          console.log('🧹 Removing invalid session data:', key);
+          localStorage.removeItem(key);
+        }
       }
-    } else {
-      // No expiry time found, clear it to be safe
-      console.log('🧹 Clearing session with missing expiry time');
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-    }
+    });
   } catch (error) {
-    console.error('Error clearing stale session:', error);
-    // If error parsing, clear everything to be safe
-    try {
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-    } catch (e) {
-      console.error('Failed to clear localStorage:', e);
-    }
+    console.error('Error clearing stale sessions:', error);
   }
 }
 
-// ✨ NEW: Clear stale sessions on page load
+// Run cleanup on load
 if (typeof window !== 'undefined') {
   clearStaleSession();
-}
 
-if (typeof window !== 'undefined' || process.env.NODE_ENV !== 'production' || (supabaseUrl && supabaseAnonKey)) {
-  console.log('🔧 Supabase Client Initialization:');
-  console.log('URL:', supabaseUrl);
-  console.log('Key exists:', !!supabaseAnonKey);
-  console.log('Key length:', supabaseAnonKey?.length);
-}
-
-let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
-
-export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
-  get(target, prop) {
-    if (!_supabase) {
-      if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error('Missing Supabase environment variables');
-      }
-      _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-          // ✨ NEW: Add explicit storage key and flowType
-          storageKey: 'supabase.auth.token',
-          flowType: 'pkce',
-        },
-        // ✨ NEW: Add global headers
-        global: {
-          headers: {
-            'x-application-name': 'sgs-locations',
-          },
-        },
-      });
+  // Also clear on visibility change (when user comes back to tab)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      clearStaleSession();
     }
-    return (_supabase as any)[prop];
-  }
-});
+  });
+}
 
-export function createClient() {
+// ✅ NEW: Factory function instead of singleton
+function getSupabaseClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
   }
-
-  // ✨ NEW: Clear stale sessions before creating new client
-  clearStaleSession();
 
   return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      // ✨ NEW: Add explicit storage configuration
       storageKey: 'supabase.auth.token',
       flowType: 'pkce',
     },
-    // ✨ NEW: Add global headers
     global: {
       headers: {
         'x-application-name': 'sgs-locations',
       },
     },
   });
+}
+
+// ✅ NEW: Export a Proxy that creates FRESH clients
+export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(target, prop) {
+    // Create a fresh client on EVERY access
+    const client = getSupabaseClient();
+    const value = (client as any)[prop];
+
+    // If it's a function, bind it to the client
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+
+    return value;
+  }
+});
+
+// ✅ Export createClient for components that need it
+export function createClient() {
+  return getSupabaseClient();
 }
 
 /**
@@ -154,7 +111,7 @@ export function createAdminClient() {
   });
 }
 
-console.log('✅ Supabase client created');
+console.log('✅ Supabase client factory initialized');
 
 /**
  * Check if a property with the given SmugMug albumkey already exists
@@ -162,7 +119,8 @@ console.log('✅ Supabase client created');
  * @returns True if property exists, false otherwise
  */
 export async function albumKeyExists(albumkey: string): Promise<boolean> {
-  const { data, error } = await supabase
+  const client = getSupabaseClient();
+  const { data, error } = await client
     .from('properties')
     .select('id')
     .eq('albumkey', albumkey)
@@ -182,7 +140,8 @@ export async function albumKeyExists(albumkey: string): Promise<boolean> {
  * @returns Property if found, null otherwise
  */
 export async function getPropertyByAlbumKey(albumkey: string): Promise<Property | null> {
-  const { data, error } = await supabase
+  const client = getSupabaseClient();
+  const { data, error } = await client
     .from('properties')
     .select('*')
     .eq('albumkey', albumkey)

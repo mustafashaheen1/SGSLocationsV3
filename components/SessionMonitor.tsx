@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 
 /**
  * SessionMonitor - Monitors Supabase auth state and handles session expiration
@@ -12,13 +12,17 @@ import { supabase } from '@/lib/supabase';
  * 2. Detects when session expires
  * 3. Redirects to login for protected pages
  * 4. Refreshes the page when session is restored
+ * 5. Proactively refreshes sessions before expiry
  */
 export function SessionMonitor() {
   const router = useRouter();
   const pathname = usePathname();
   const lastSessionRef = useRef<string | null>(null);
+  const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    const supabase = createClient();
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       lastSessionRef.current = session?.access_token || null;
@@ -41,19 +45,16 @@ export function SessionMonitor() {
         if (hadSession && !hasSession) {
           console.warn('⚠️ Session expired or user signed out');
 
-          // If on a protected page, redirect to appropriate login
           if (pathname?.startsWith('/admin')) {
-            console.log('Redirecting to admin login...');
             router.push('/admin/login');
           } else if (pathname?.startsWith('/dashboard') ||
                      pathname?.startsWith('/edit-property') ||
                      pathname?.startsWith('/list-your-property')) {
-            console.log('Redirecting to user login...');
             router.push('/register');
           }
         }
 
-        // Session restored (e.g., after token refresh)
+        // Session restored
         if (!hadSession && hasSession && event === 'SIGNED_IN') {
           console.log('✅ Session restored, refreshing page...');
           router.refresh();
@@ -64,17 +65,46 @@ export function SessionMonitor() {
           console.log('🔄 Token refreshed successfully');
         }
 
-        // Update last session reference
         lastSessionRef.current = currentToken;
       }
     );
 
-    // Cleanup subscription on unmount
+    // ✅ NEW: Periodic session check (every 30 seconds)
+    checkIntervalRef.current = setInterval(async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('Session check error:', error);
+          return;
+        }
+
+        if (session) {
+          // Check if session is about to expire (within 5 minutes)
+          const expiresAt = session.expires_at;
+          if (expiresAt) {
+            const expiryTime = expiresAt * 1000;
+            const now = Date.now();
+            const fiveMinutes = 5 * 60 * 1000;
+
+            if (expiryTime - now < fiveMinutes) {
+              console.log('🔄 Session expiring soon, refreshing...');
+              await supabase.auth.refreshSession();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      }
+    }, 30000); // Check every 30 seconds
+
     return () => {
       subscription.unsubscribe();
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
+      }
     };
   }, [router, pathname]);
 
-  // This component doesn't render anything
   return null;
 }
