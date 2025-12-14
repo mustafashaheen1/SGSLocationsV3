@@ -214,7 +214,7 @@ export default function PropertyDetailPage() {
 
           // For nearby locations, use cascading fallback strategy
           if (propertyData.latitude && propertyData.longitude) {
-            // PRIORITY 1: Property has coordinates - calculate distance to other properties
+            // PRIORITY 1: Property has coordinates - calculate distance to other properties with coordinates
             const propertiesWithDistance = (allProperties as any[])
               .filter((p: any) => p.latitude && p.longitude) // Only properties with coordinates
               .map((prop: any) => ({
@@ -231,19 +231,20 @@ export default function PropertyDetailPage() {
 
             setNearbyProperties(propertiesWithDistance as any);
           } else if (propertyData.city) {
-            // PRIORITY 2: No coordinates but has city - show properties in same city
+            // PRIORITY 2: No coordinates but has city - show ALL properties in same city
+            // (including those with and without coordinates, but can't show distance)
             const sameCityProperties = (allProperties as any[])
               .filter((p: any) => p.city === propertyData.city)
               .slice(0, 4);
 
             setNearbyProperties(sameCityProperties as any);
           } else if (propertyData.county) {
-            // PRIORITY 3: No city but has state/county - show properties in same state
-            const sameStateProperties = (allProperties as any[])
+            // PRIORITY 3: No city but has county - show ALL properties in same county
+            const sameCountyProperties = (allProperties as any[])
               .filter((p: any) => p.county === propertyData.county)
               .slice(0, 4);
 
-            setNearbyProperties(sameStateProperties as any);
+            setNearbyProperties(sameCountyProperties as any);
           } else {
             // No location data at all, don't show nearby section
             setNearbyProperties([]);
