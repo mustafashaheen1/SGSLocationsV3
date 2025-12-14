@@ -67,6 +67,13 @@ export default function AdminLayout({
         }
 
         // Check admin status
+        if (!session.user.email) {
+          console.log('[Admin Layout] No email found in session');
+          await supabase.auth.signOut();
+          router.push('/admin/login');
+          return;
+        }
+
         const { data: adminData, error: adminError } = await supabase
           .from('admins')
           .select('id, email, role')

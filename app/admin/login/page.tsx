@@ -41,6 +41,14 @@ export default function AdminLoginPage() {
       console.log('[Admin Login] Checking admin status in admins table...');
 
       // Step 2: Check if user exists in ADMINS table (not users table!)
+      if (!authData.user.email) {
+        console.log('[Admin Login] No email found in auth data');
+        await supabase.auth.signOut();
+        setError('Access denied. Invalid authentication data.');
+        setIsLoading(false);
+        return;
+      }
+
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('id, email, role')
@@ -55,7 +63,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      console.log('[Admin Login] Admin verified! Role:', adminData.role);
+      console.log('[Admin Login] Admin verified! Role:', (adminData as any).role);
       console.log('[Admin Login] Redirecting to dashboard...');
       router.push('/admin/dashboard');
       router.refresh();

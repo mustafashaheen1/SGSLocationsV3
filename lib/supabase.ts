@@ -19,14 +19,12 @@ function clearStaleSession() {
             const expiryTime = data.expires_at * 1000;
             const now = Date.now();
 
-            // Clear if expired
             if (now >= expiryTime) {
               console.log('🧹 Removing expired session:', key);
               localStorage.removeItem(key);
             }
           }
         } catch (e) {
-          // Invalid JSON, remove it
           console.log('🧹 Removing invalid session data:', key);
           localStorage.removeItem(key);
         }
@@ -40,45 +38,53 @@ function clearStaleSession() {
 // Run cleanup on load
 if (typeof window !== 'undefined') {
   clearStaleSession();
-
-  // Also clear on visibility change (when user comes back to tab)
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      clearStaleSession();
-    }
-  });
 }
 
-// ✅ NEW: Factory function instead of singleton
+// ✅ CACHED SINGLETON with periodic refresh
+let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
+let _lastCreated: number = 0;
+const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000; // Refresh every 5 minutes
+
 function getSupabaseClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
   }
 
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      storageKey: 'supabase.auth.token',
-      flowType: 'pkce',
-    },
-    global: {
-      headers: {
-        'x-application-name': 'sgs-locations',
+  const now = Date.now();
+
+  // Create new client if:
+  // 1. No client exists
+  // 2. Client is older than 5 minutes
+  if (!_supabase || (now - _lastCreated) > CLIENT_REFRESH_INTERVAL) {
+    console.log('🔄 Creating fresh Supabase client');
+
+    _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storageKey: 'supabase.auth.token',
+        flowType: 'pkce',
       },
-    },
-  });
+      global: {
+        headers: {
+          'x-application-name': 'sgs-locations',
+        },
+      },
+    });
+
+    _lastCreated = now;
+  }
+
+  return _supabase;
 }
 
-// ✅ NEW: Export a Proxy that creates FRESH clients
+// Export the cached client
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(target, prop) {
-    // Create a fresh client on EVERY access
     const client = getSupabaseClient();
     const value = (client as any)[prop];
 
-    // If it's a function, bind it to the client
     if (typeof value === 'function') {
       return value.bind(client);
     }
@@ -87,15 +93,10 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   }
 });
 
-// ✅ Export createClient for components that need it
 export function createClient() {
   return getSupabaseClient();
 }
 
-/**
- * Create admin client for server-side operations only
- * IMPORTANT: Only use this in API routes or server components
- */
 export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -111,16 +112,14 @@ export function createAdminClient() {
   });
 }
 
-console.log('✅ Supabase client factory initialized');
+console.log('✅ Supabase client initialized');
 
-/**
- * Check if a property with the given SmugMug albumkey already exists
- * @param albumkey SmugMug album identifier
- * @returns True if property exists, false otherwise
- */
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
 export async function albumKeyExists(albumkey: string): Promise<boolean> {
-  const client = getSupabaseClient();
-  const { data, error } = await client
+  const { data, error } = await supabase
     .from('properties')
     .select('id')
     .eq('albumkey', albumkey)
@@ -134,14 +133,8 @@ export async function albumKeyExists(albumkey: string): Promise<boolean> {
   return data !== null;
 }
 
-/**
- * Get property by SmugMug albumkey
- * @param albumkey SmugMug album identifier
- * @returns Property if found, null otherwise
- */
 export async function getPropertyByAlbumKey(albumkey: string): Promise<Property | null> {
-  const client = getSupabaseClient();
-  const { data, error } = await client
+  const { data, error } = await supabase
     .from('properties')
     .select('*')
     .eq('albumkey', albumkey)
@@ -155,6 +148,10 @@ export async function getPropertyByAlbumKey(albumkey: string): Promise<Property 
   return data;
 }
 
+// ============================================
+// INTERFACES (keep all your existing ones)
+// ============================================
+
 export interface PropertyContact {
   name: string;
   cell_number: string;
@@ -166,7 +163,7 @@ export interface PropertyContact {
 export interface Property {
   id: string;
   name: string;
-  real_name?: string; // The actual property name (admin only, not shown publicly)
+  real_name?: string;
   description: string | null;
   address: string;
   city: string;
@@ -232,7 +229,6 @@ export interface Project {
   status: string;
   created_at: string;
   updated_at: string;
-  // Joined property data
   property?: Property;
 }
 
