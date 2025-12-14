@@ -474,8 +474,20 @@ export default function SearchPage() {
       if (query) {
         setSearchInput(query);
       }
+
+      // Initialize subcategory from URL
+      const subcategoryParam = searchParams.get('subcategory');
+      if (subcategoryParam && !selectedSubCategory) {
+        setSelectedSubCategory(subcategoryParam);
+
+        // Also find and set the parent category
+        const subCat = subCategories.find((cat: any) => cat.id === subcategoryParam);
+        if (subCat && subCat.parent_id) {
+          setSelectedCategory(subCat.parent_id);
+        }
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, subCategories, selectedSubCategory]);
 
   // Debounced search - update URL after user stops typing
   useEffect(() => {

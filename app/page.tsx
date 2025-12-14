@@ -101,12 +101,12 @@ export default function HomePage() {
           setFeaturedProperties(featured);
         }
 
-        // Fetch categories with counts
+        // Fetch sub-categories with counts (where parent_id is NOT null)
         const { data: categoriesData } = await supabase
           .from('categories')
           .select('*')
           .eq('is_active', true)
-          .is('parent_id', null)
+          .not('parent_id', 'is', null)
           .order('display_order');
 
         if (isMounted && categoriesData) {
@@ -115,7 +115,7 @@ export default function HomePage() {
               const { count } = await supabase
                 .from('properties')
                 .select('*', { count: 'exact', head: true })
-                .contains('categories', [cat.name])
+                .eq('sub_category_id', cat.id)
                 .eq('status', 'active');
 
               return {
@@ -313,7 +313,7 @@ export default function HomePage() {
             {categories.map((category) => (
               <Link
                 key={category.id}
-                href={`/category/${category.slug}`}
+                href={`/search?subcategory=${category.id}`}
                 className="group relative h-48 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all"
               >
                 <Image
