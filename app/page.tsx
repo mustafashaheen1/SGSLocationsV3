@@ -52,126 +52,76 @@ export default function HomePage() {
 
     async function fetchData() {
       try {
-        // Set timeout for all queries
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Query timeout')), 10000)
-        );
-
-        // Fetch hero section content with timeout
-        const settingsPromise = supabase
+        // Fetch hero section content
+        const { data: settings } = await supabase
           .from('site_settings')
           .select('*')
           .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
 
-        const { data: settings, error: settingsError } = await Promise.race([
-          settingsPromise,
-          timeout
-        ]) as any;
-
-        if (settingsError) {
-          console.error('Error fetching settings:', settingsError);
-          // Continue anyway with defaults
-        }
-
-        // Track fetched values
-        let fetchedVideo = '';
-        let fetchedTitle = '';
-        let fetchedSubtitle = '';
-
         if (isMounted && settings) {
-          (settings as any[]).forEach((setting: any) => {
-            // Parse the JSON value properly - handle multiple layers of escaping
-            let value = setting.value;
-            if (typeof value === 'string') {
-              try {
-                // Keep parsing until we get a plain string
-                while (typeof value === 'string' && (value.startsWith('"') || value.startsWith('\\"'))) {
-                  value = JSON.parse(value);
-                }
-              } catch (e) {
-                // If parsing fails, just remove outer quotes
-                value = value.replace(/^"|"$/g, '');
-              }
-            }
-
-            switch(setting.key) {
-              case 'hero_video':
-                fetchedVideo = value;
-                break;
-              case 'hero_title':
-                fetchedTitle = value;
-                break;
-              case 'hero_subtitle':
-                fetchedSubtitle = value;
-                break;
-            }
+          settings.forEach((setting: any) => {
+            if (setting.key === 'hero_video') setHeroVideo(setting.value || '');
+            if (setting.key === 'hero_title') setHeroTitle(setting.value || '');
+            if (setting.key === 'hero_subtitle') setHeroSubtitle(setting.value || '');
           });
         }
 
-        if (isMounted) {
-          // Set values with fallbacks
-          setHeroVideo(fetchedVideo || 'https://imagelocations.com/video/versace-evo-short.mp4');
-          setHeroTitle(fetchedTitle || "Dallas Fort Worth's Largest\nLocation Database");
-          setHeroSubtitle(fetchedSubtitle || '65+ filming locations across North and Central Texas');
+        // Fetch services
+        const { data: servicesData } = await supabase
+          .from('services')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
+
+        if (isMounted && servicesData) {
+          setServices(servicesData);
         }
 
-        // Fetch featured properties with timeout
-        const featuredPromise = supabase
+        // Fetch production logos
+        const { data: logosData } = await supabase
+          .from('production_logos')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
+
+        if (isMounted && logosData) {
+          setProductionLogos(logosData);
+        }
+
+        // Fetch featured properties
+        const { data: featured } = await supabase
           .from('properties')
           .select('*')
           .eq('status', 'active')
           .eq('is_featured', true)
+          .order('name')
           .limit(6);
 
-        const { data: featured, error: featuredError } = await Promise.race([
-          featuredPromise,
-          timeout
-        ]) as any;
-
-        if (featuredError) {
-          console.error('Error fetching featured properties:', featuredError);
-        } else if (isMounted && featured) {
+        if (isMounted && featured) {
           setFeaturedProperties(featured);
         }
 
-        // Fetch categories with timeout
-        const categoriesPromise = (supabase
-          .from('categories') as any)
-          .select('id, name, slug, image, display_order, parent_id')
+        // Fetch categories with counts
+        const { data: categoriesData } = await supabase
+          .from('categories')
+          .select('*')
           .eq('is_active', true)
-          .not('parent_id', 'is', null)
+          .is('parent_id', null)
           .order('display_order');
 
-        const { data: categoriesData, error: categoriesError } = await Promise.race([
-          categoriesPromise,
-          timeout
-        ]) as any;
-
-        if (categoriesError) {
-          console.error('Error fetching categories:', categoriesError);
-        } else if (isMounted && categoriesData) {
-          // Get count for each sub-category
+        if (isMounted && categoriesData) {
           const categoriesWithCounts = await Promise.all(
-            (categoriesData as any[]).map(async (cat: any) => {
-              try {
-                // Query properties where sub_category_id matches this sub-category
-                const { count } = await (supabase
-                  .from('properties') as any)
-                  .select('*', { count: 'exact', head: true })
-                  .eq('status', 'active')
-                  .eq('sub_category_id', cat.id);
+            categoriesData.map(async (cat: any) => {
+              const { count } = await supabase
+                .from('properties')
+                .select('*', { count: 'exact', head: true })
+                .contains('categories', [cat.name])
+                .eq('status', 'active');
 
-                return {
-                  ...cat,
-                  count: count || 0
-                };
-              } catch (error) {
-                console.error('Error counting properties for category:', cat.name, error);
-                return {
-                  ...cat,
-                  count: 0
-                };
-              }
+              return {
+                ...cat,
+                count: count || 0
+              };
             })
           );
 
@@ -180,50 +130,13 @@ export default function HomePage() {
           }
         }
 
-        // Fetch services with timeout
-        const servicesPromise = supabase
-          .from('services')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
-
-        const { data: servicesData, error: servicesError } = await Promise.race([
-          servicesPromise,
-          timeout
-        ]) as any;
-
-        if (servicesError) {
-          console.error('Error fetching services:', servicesError);
-        } else if (isMounted && servicesData) {
-          setServices(servicesData);
-        }
-
-        // Fetch production logos with timeout
-        const logosPromise = supabase
-          .from('production_logos')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
-
-        const { data: logosData, error: logosError } = await Promise.race([
-          logosPromise,
-          timeout
-        ]) as any;
-
-        if (logosError) {
-          console.error('Error fetching production logos:', logosError);
-        } else if (isMounted && logosData) {
-          setProductionLogos(logosData);
-        }
-
-        // Mark content as loaded
         if (isMounted) {
           setContentLoaded(true);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
         if (isMounted) {
-          setContentLoaded(true); // Show page even on error
+          setContentLoaded(true); // Still show page
         }
       }
     }
@@ -231,17 +144,8 @@ export default function HomePage() {
     fetchData();
     checkAuth();
 
-    // Force content to load after 5 seconds regardless
-    const forceLoadTimeout = setTimeout(() => {
-      if (!contentLoaded && isMounted) {
-        console.warn('⚠️ Forcing content load after timeout');
-        setContentLoaded(true);
-      }
-    }, 5000);
-
     return () => {
       isMounted = false;
-      clearTimeout(forceLoadTimeout);
     };
   }, []);
 
