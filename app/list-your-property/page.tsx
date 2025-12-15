@@ -296,14 +296,25 @@ export default function ListYourPropertyPage() {
 
   async function fetchDynamicQuestions() {
     try {
+      console.log('🔍 Fetching dynamic questions...');
       const response = await fetch('/api/form-questions?form_name=list_your_property');
       const result = await response.json();
 
+      console.log('📦 API Response:', result);
+
       if (response.ok && result.data) {
-        setDynamicQuestions(result.data);
+        // Parse options if they're strings
+        const parsedQuestions = result.data.map((q: any) => ({
+          ...q,
+          options: typeof q.options === 'string' ? JSON.parse(q.options) : (Array.isArray(q.options) ? q.options : [])
+        }));
+
+        console.log('✅ Parsed questions:', parsedQuestions);
+        setDynamicQuestions(parsedQuestions);
+
         // Initialize answers for each question
         const initialAnswers: Record<string, any> = {};
-        result.data.forEach((q: any) => {
+        parsedQuestions.forEach((q: any) => {
           if (q.question_type === 'checkbox') {
             initialAnswers[q.id] = [];
           } else {
@@ -311,9 +322,11 @@ export default function ListYourPropertyPage() {
           }
         });
         setDynamicAnswers(initialAnswers);
+      } else {
+        console.error('❌ Failed to fetch questions:', result);
       }
     } catch (error) {
-      console.error('Error fetching dynamic questions:', error);
+      console.error('❌ Error fetching dynamic questions:', error);
     }
   }
 
@@ -960,101 +973,6 @@ export default function ListYourPropertyPage() {
                     {errors[question.id] && <p className="text-red-600 text-sm mt-1">{errors[question.id]}</p>}
                   </div>
                 ))}
-
-                {/* Legacy hardcoded question - keep for backwards compatibility */}
-                <div className="mb-6">
-                  <label className="block font-medium text-gray-700 text-sm mb-3">
-                    Is this location currently listed for sale? <span className="text-red-600">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="listedForSale"
-                        value="yes"
-                        checked={formData.listedForSale === 'yes'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                      />
-                      <span className="ml-2">Yes</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="listedForSale"
-                        value="no"
-                        checked={formData.listedForSale === 'no'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                      />
-                      <span className="ml-2">No</span>
-                    </label>
-                  </div>
-                  {errors.listedForSale && <p className="text-red-600 text-sm mt-1">{errors.listedForSale}</p>}
-                </div>
-              </section>
-
-              {/* Checkbox Sections */}
-              <section className="mb-6">
-                <div className="mb-6">
-                  <label className="block font-medium text-gray-700 text-sm mb-3">
-                    I request that my property be considered for location and event use as follows: (check all that apply) <span className="text-red-600">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {['Still & Print Photography', 'TV & Motion Pictures', 'Corporate Events', 'Long or Short Term Lease'].map(option => (
-                      <label key={option} className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.requestedUse.includes(option)}
-                          onChange={() => handleCheckboxChange('requestedUse', option)}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
-                        />
-                        <span className="ml-2 text-sm">{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.requestedUse && <p className="text-red-600 text-sm mt-1">{errors.requestedUse}</p>}
-                </div>
-
-                <div className="mb-6">
-                  <label className="block font-medium text-gray-700 text-sm mb-3">
-                    I request that my property be listed with: (check all that apply) <span className="text-red-600">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {['SGS Locations', 'Wedding Estates (Wedding Photography)', 'FilmHere.com (Student Films)'].map(option => (
-                      <label key={option} className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.listedWith.includes(option)}
-                          onChange={() => handleCheckboxChange('listedWith', option)}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
-                        />
-                        <span className="ml-2 text-sm">{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.listedWith && <p className="text-red-600 text-sm mt-1">{errors.listedWith}</p>}
-                </div>
-
-                <div>
-                  <label className="block font-medium text-gray-700 text-sm mb-3">
-                    How did you hear about us? <span className="text-red-600">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {['Online Search', 'Currently Listed Property Owner', 'Production Referral', 'Other'].map(option => (
-                      <label key={option} className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.howDidYouHear.includes(option)}
-                          onChange={() => handleCheckboxChange('howDidYouHear', option)}
-                          className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
-                        />
-                        <span className="ml-2 text-sm">{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.howDidYouHear && <p className="text-red-600 text-sm mt-1">{errors.howDidYouHear}</p>}
-                </div>
               </section>
 
               {/* CATEGORY SELECTION */}
