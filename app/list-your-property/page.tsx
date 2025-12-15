@@ -88,6 +88,8 @@ export default function ListYourPropertyPage() {
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [dynamicQuestions, setDynamicQuestions] = useState<any[]>([]);
+  const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
@@ -205,6 +207,7 @@ export default function ListYourPropertyPage() {
     fetchTerms();
     fetchCategories();
     fetchTags();
+    fetchDynamicQuestions();
     fetchUserProfile();
 
     // Listen for auth state changes to handle post-registration flow
@@ -288,6 +291,29 @@ export default function ListYourPropertyPage() {
       }
     } catch (error) {
       console.error('Error fetching tags:', error);
+    }
+  }
+
+  async function fetchDynamicQuestions() {
+    try {
+      const response = await fetch('/api/form-questions?form_name=list_your_property');
+      const result = await response.json();
+
+      if (response.ok && result.data) {
+        setDynamicQuestions(result.data);
+        // Initialize answers for each question
+        const initialAnswers: Record<string, any> = {};
+        result.data.forEach((q: any) => {
+          if (q.question_type === 'checkbox') {
+            initialAnswers[q.id] = [];
+          } else {
+            initialAnswers[q.id] = '';
+          }
+        });
+        setDynamicAnswers(initialAnswers);
+      }
+    } catch (error) {
+      console.error('Error fetching dynamic questions:', error);
     }
   }
 
@@ -864,91 +890,78 @@ export default function ListYourPropertyPage() {
                 </div>
               </section>
 
-              {/* Radio Questions */}
+              {/* Dynamic Questions */}
               <section className="mb-6">
-                <div className="mb-6">
-                  <label className="block font-medium text-gray-700 text-sm mb-3">
-                    Is this location listed on any other location platforms such as Airbnb or Peerspace? <span className="text-red-600">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="listedElsewhere"
-                        value="yes"
-                        checked={formData.listedElsewhere === 'yes'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                      />
-                      <span className="ml-2">Yes</span>
+                {dynamicQuestions.map((question) => (
+                  <div key={question.id} className="mb-6">
+                    <label className="block font-medium text-gray-700 text-sm mb-3">
+                      {question.question_text} {question.is_required && <span className="text-red-600">*</span>}
                     </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="listedElsewhere"
-                        value="no"
-                        checked={formData.listedElsewhere === 'no'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                      />
-                      <span className="ml-2">No</span>
-                    </label>
-                  </div>
-                  {errors.listedElsewhere && <p className="text-red-600 text-sm mt-1">{errors.listedElsewhere}</p>}
-                </div>
 
-                <div className="mb-6">
-                  <label className="block font-medium text-gray-700 text-sm mb-3">
-                    Are you currently: <span className="text-red-600">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-4 mb-2">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="propertyRole"
-                        value="owner"
-                        checked={formData.propertyRole === 'owner'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                      />
-                      <span className="ml-2">Property Owner</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="propertyRole"
-                        value="manager"
-                        checked={formData.propertyRole === 'manager'}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                      />
-                      <span className="ml-2">Property Manager</span>
-                    </label>
-                  </div>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="propertyRole"
-                      value="other"
-                      checked={formData.propertyRole === 'other'}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 accent-red-600 focus:ring-red-500"
-                    />
-                    <span className="ml-2">Other</span>
-                  </label>
-                  {formData.propertyRole === 'other' && (
-                    <input
-                      type="text"
-                      name="propertyRoleOther"
-                      value={formData.propertyRoleOther}
-                      onChange={handleInputChange}
-                      placeholder="Specify Other"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 mt-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
-                    />
-                  )}
-                  {errors.propertyRole && <p className="text-red-600 text-sm mt-1">{errors.propertyRole}</p>}
-                </div>
+                    {question.question_type === 'radio' && (
+                      <div className="space-y-2">
+                        {question.options.map((option: string, index: number) => (
+                          <label key={index} className="flex items-center cursor-pointer">
+                            <input
+                              type="radio"
+                              name={question.id}
+                              value={option}
+                              checked={dynamicAnswers[question.id] === option}
+                              onChange={(e) => setDynamicAnswers({...dynamicAnswers, [question.id]: e.target.value})}
+                              className="w-4 h-4 accent-red-600 focus:ring-red-500"
+                            />
+                            <span className="ml-2">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
 
+                    {question.question_type === 'checkbox' && (
+                      <div className="space-y-2">
+                        {question.options.map((option: string, index: number) => (
+                          <label key={index} className="flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              value={option}
+                              checked={(dynamicAnswers[question.id] || []).includes(option)}
+                              onChange={(e) => {
+                                const currentAnswers = dynamicAnswers[question.id] || [];
+                                const newAnswers = e.target.checked
+                                  ? [...currentAnswers, option]
+                                  : currentAnswers.filter((a: string) => a !== option);
+                                setDynamicAnswers({...dynamicAnswers, [question.id]: newAnswers});
+                              }}
+                              className="w-4 h-4 accent-red-600 focus:ring-red-500"
+                            />
+                            <span className="ml-2">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {question.question_type === 'text' && (
+                      <input
+                        type="text"
+                        value={dynamicAnswers[question.id] || ''}
+                        onChange={(e) => setDynamicAnswers({...dynamicAnswers, [question.id]: e.target.value})}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                      />
+                    )}
+
+                    {question.question_type === 'textarea' && (
+                      <textarea
+                        value={dynamicAnswers[question.id] || ''}
+                        onChange={(e) => setDynamicAnswers({...dynamicAnswers, [question.id]: e.target.value})}
+                        rows={4}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                      />
+                    )}
+
+                    {errors[question.id] && <p className="text-red-600 text-sm mt-1">{errors[question.id]}</p>}
+                  </div>
+                ))}
+
+                {/* Legacy hardcoded question - keep for backwards compatibility */}
                 <div className="mb-6">
                   <label className="block font-medium text-gray-700 text-sm mb-3">
                     Is this location currently listed for sale? <span className="text-red-600">*</span>
