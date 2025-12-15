@@ -705,16 +705,15 @@ export default function ContentManagementPage() {
   // List Your Property Form Questions Functions
   async function fetchFormQuestions() {
     try {
-      const { data, error } = await (supabase
-        .from('form_questions') as any)
-        .select('*')
-        .eq('form_name', 'list_your_property')
-        .order('display_order');
+      const response = await fetch('/api/form-questions?form_name=list_your_property');
+      const result = await response.json();
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch form questions');
+      }
 
-      if (data) {
-        setFormQuestions(data.map((q: any) => ({
+      if (result.data) {
+        setFormQuestions(result.data.map((q: any) => ({
           ...q,
           options: Array.isArray(q.options) ? q.options : []
         })));
@@ -727,9 +726,10 @@ export default function ContentManagementPage() {
   async function saveFormQuestion(question: FormQuestion) {
     setSaving(true);
     try {
-      const { error } = await (supabase
-        .from('form_questions') as any)
-        .upsert({
+      const response = await fetch('/api/form-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           id: question.id,
           form_name: 'list_your_property',
           question_text: question.question_text,
@@ -737,9 +737,14 @@ export default function ContentManagementPage() {
           is_required: question.is_required,
           display_order: question.display_order,
           options: question.options
-        });
+        })
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save form question');
+      }
 
       await fetchFormQuestions();
       setEditingQuestion(null);
@@ -756,12 +761,15 @@ export default function ContentManagementPage() {
 
     setSaving(true);
     try {
-      const { error } = await (supabase
-        .from('form_questions') as any)
-        .delete()
-        .eq('id', id);
+      const response = await fetch(`/api/form-questions?id=${id}`, {
+        method: 'DELETE'
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete form question');
+      }
 
       await fetchFormQuestions();
       alert('Question deleted successfully!');
