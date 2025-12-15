@@ -518,6 +518,7 @@ export default function ListYourPropertyPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
+    // Validate static form fields
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
@@ -527,12 +528,26 @@ export default function ListYourPropertyPage() {
     if (!formData.city.trim()) newErrors.city = 'City is required';
     if (!formData.state) newErrors.state = 'State is required';
     if (!formData.zipCode.trim()) newErrors.zipCode = 'Zip code is required';
-    if (!formData.listedElsewhere) newErrors.listedElsewhere = 'This field is required';
-    if (!formData.propertyRole) newErrors.propertyRole = 'This field is required';
-    if (!formData.listedForSale) newErrors.listedForSale = 'This field is required';
-    if (formData.requestedUse.length === 0) newErrors.requestedUse = 'Select at least one option';
-    if (formData.listedWith.length === 0) newErrors.listedWith = 'Select at least one option';
-    if (formData.howDidYouHear.length === 0) newErrors.howDidYouHear = 'Select at least one option';
+
+    // Validate dynamic questions
+    dynamicQuestions.forEach((question) => {
+      if (question.is_required) {
+        const answer = dynamicAnswers[question.id];
+
+        if (question.question_type === 'checkbox') {
+          // Checkbox answers should be non-empty arrays
+          if (!answer || !Array.isArray(answer) || answer.length === 0) {
+            newErrors[question.id] = 'Please select at least one option';
+          }
+        } else if (question.question_type === 'radio' || question.question_type === 'text' || question.question_type === 'textarea') {
+          // Radio/text/textarea should have non-empty values
+          if (!answer || (typeof answer === 'string' && !answer.trim())) {
+            newErrors[question.id] = 'This field is required';
+          }
+        }
+      }
+    });
+
     if (!selectedCategoryId) newErrors.category = 'Please select a category';
     if (subCategories.length > 0 && !selectedSubCategoryId) newErrors.subCategory = 'Please select a sub-category';
     if (uploadedFiles.length < 10) newErrors.files = 'Minimum 10 images required';
