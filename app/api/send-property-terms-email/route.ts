@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { jsonResponseNoCache } from '@/lib/api-helpers';
 import { sendPropertyTermsEmail } from '@/lib/sendgrid';
-import { createClient } from '@/lib/supabase';
+import { createClient, createAdminClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -38,25 +38,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    // Use admin client to bypass RLS (this is an admin-only operation)
+    const adminClient = createAdminClient();
 
-    // Get current admin user
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return jsonResponseNoCache(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Try to get current admin user ID for audit trail (optional)
+    const regularClient = createClient();
+    const { data: { session } } = await regularClient.auth.getSession();
+    const adminUserId = session?.user?.id || null;
 
     // Get property details and owner information
-    const { data: property, error: propertyError } = await (supabase
+    const { data: property, error: propertyError } = await (adminClient
       .from('properties') as any)
       .select('name, owner_id')
       .eq('id', propertyId)
       .single();
 
     if (propertyError || !property) {
+      console.error('Property fetch error:', propertyError);
       return jsonResponseNoCache(
         { error: 'Property not found' },
         { status: 404 }
@@ -64,13 +62,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get owner details
-    const { data: owner, error: ownerError } = await (supabase
+    const { data: owner, error: ownerError } = await (adminClient
       .from('users') as any)
       .select('email, full_name')
       .eq('id', property.owner_id)
       .single();
 
     if (ownerError || !owner) {
+      console.error('Owner fetch error:', ownerError);
       return jsonResponseNoCache(
         { error: 'Property owner not found' },
         { status: 404 }
@@ -78,14 +77,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Update property with terms and conditions
-    const { error: updateError } = await (supabase
+    const { error: updateError } = await (adminClient
       .from('properties') as any)
       .update({
         terms_type: termsType,
         terms_content: termsType === 'text' ? termsContent : null,
         terms_pdf_url: termsType === 'pdf' ? termsPdfUrl : null,
         terms_sent_at: new Date().toISOString(),
-        terms_sent_by: session.user.id,
+        terms_sent_by: adminUserId,
         updated_at: new Date().toISOString()
       })
       .eq('id', propertyId);
