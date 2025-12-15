@@ -554,10 +554,21 @@ export default function ListYourPropertyPage() {
       const imageFiles = uploadedFiles.map(img => img.file);
       const uploadedImageUrls = await uploadMultipleImages(imageFiles, 'properties');
 
+      // Generate property name using the same category-based sequential numbering as admin
+      const { data: propertyName, error: nameError } = await (supabase as any)
+        .rpc('get_next_property_name', { cat_id: selectedCategoryId });
+
+      if (nameError || !propertyName) {
+        console.error('Error generating property name:', nameError);
+        throw new Error('Failed to generate property name');
+      }
+
+      console.log(`Generated property name: ${propertyName}`);
+
       const { data: property, error: propertyError } = await (supabase
         .from('properties') as any)
         .insert([{
-          name: `Property in ${formData.city}, ${formData.state}`,
+          name: propertyName, // Use category-based sequential name (e.g., RES-0001, COM-0002)
           real_name: `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
           description: `Submitted by ${formData.firstName} ${formData.lastName} (${formData.email})`,
           address: formData.streetAddress,
