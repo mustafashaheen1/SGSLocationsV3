@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
       type: 'recovery',
       email: email,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`
+        // Use production URL directly to avoid localhost issues
+        redirectTo: 'https://sgs-locations-v3.vercel.app/reset-password'
       }
     });
 
