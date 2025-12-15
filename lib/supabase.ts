@@ -4,52 +4,60 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // ============================================
-// NUCLEAR CLEANUP - Clear ALL Supabase storage on load
-// This prevents ANY corrupted data from blocking queries
+// NUCLEAR CLEANUP - Runs ONCE per browser session
+// Clears ALL Supabase data to prevent corrupted sessions
+// User will need to login once after opening browser
 // ============================================
 
-function clearAllSupabaseStorage() {
-  if (typeof window === 'undefined') return false;
+function nuclearCleanupOnce() {
+  if (typeof window === 'undefined') return;
   
-  try {
-    const keysToRemove: string[] = [];
-    
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (
-        key.includes('supabase') || 
-        key.startsWith('sb-') ||
-        key.includes('auth-token')
-      )) {
-        keysToRemove.push(key);
-      }
-    }
-    
-    if (keysToRemove.length > 0) {
-      keysToRemove.forEach(key => {
-        console.log('🧹 Removing:', key);
-        localStorage.removeItem(key);
-      });
-      console.log(`🧹 Cleared ${keysToRemove.length} Supabase items from localStorage`);
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    console.error('Error clearing storage:', error);
-    return false;
+  const cleanupKey = 'sgs_session_cleaned_v2';
+  
+  // Check if we've already cleaned in this browser session
+  if (sessionStorage.getItem(cleanupKey)) {
+    console.log('✅ Supabase storage already cleaned this session');
+    return;
   }
+  
+  console.log('🔥 Running one-time Supabase cleanup...');
+  
+  let cleared = 0;
+  const keysToRemove: string[] = [];
+  
+  // Collect keys first (can't modify while iterating)
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.includes('supabase') || key.startsWith('sb-'))) {
+      keysToRemove.push(key);
+    }
+  }
+  
+  // Remove collected keys
+  keysToRemove.forEach(key => {
+    console.log('🧹 Removing:', key);
+    localStorage.removeItem(key);
+    cleared++;
+  });
+  
+  if (cleared > 0) {
+    console.log(`🧹 Cleared ${cleared} Supabase items from localStorage`);
+  } else {
+    console.log('✅ No Supabase items to clear');
+  }
+  
+  // Mark as cleaned for this browser session
+  // This flag persists until ALL browser windows are closed
+  sessionStorage.setItem(cleanupKey, Date.now().toString());
 }
 
-// Run cleanup on EVERY page load to ensure no blocking data exists
+// Run nuclear cleanup on module load
 if (typeof window !== 'undefined') {
-  console.log('🔍 Running Supabase storage cleanup...');
-  clearAllSupabaseStorage();
+  nuclearCleanupOnce();
 }
 
 // ============================================
-// SUPABASE CLIENT - No session persistence for main client
-// This ensures anonymous browsing always works
+// SUPABASE CLIENT - Single instance with auth persistence
 // ============================================
 
 let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
@@ -60,52 +68,9 @@ function getClient(): ReturnType<typeof createSupabaseClient> {
       throw new Error('Missing Supabase environment variables');
     }
 
-    console.log('✅ Creating new Supabase client');
+    console.log('✅ Creating Supabase client');
     
-    // CRITICAL: persistSession = false prevents localStorage blocking issues
-    // Auth operations use a separate client with persistence
     _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-      global: {
-        headers: {
-          'x-application-name': 'sgs-locations',
-        },
-      },
-    });
-  }
-
-  return _supabase;
-}
-
-// Export proxy for database operations (NO session persistence)
-export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
-  get(target, prop) {
-    const client = getClient();
-    const value = (client as any)[prop];
-    if (typeof value === 'function') {
-      return value.bind(client);
-    }
-    return value;
-  }
-});
-
-// ============================================
-// AUTH CLIENT - For login/logout operations (WITH persistence)
-// ============================================
-
-let _authClient: ReturnType<typeof createSupabaseClient> | null = null;
-
-export function getAuthClient(): ReturnType<typeof createSupabaseClient> {
-  if (!_authClient) {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-
-    _authClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -120,29 +85,33 @@ export function getAuthClient(): ReturnType<typeof createSupabaseClient> {
         },
       },
     });
+
+    // Auth state listener for debugging
+    if (typeof window !== 'undefined') {
+      _supabase.auth.onAuthStateChange((event, session) => {
+        console.log('🔐 Auth event:', event, session ? '(has session)' : '(no session)');
+      });
+    }
   }
 
-  return _authClient;
+  return _supabase;
 }
 
-// Export createClient for components that need fresh instances
-export function createClient() {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables');
+// Export proxy for all operations
+export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(target, prop) {
+    const client = getClient();
+    const value = (client as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
   }
+});
 
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        'x-application-name': 'sgs-locations',
-      },
-    },
-  });
+// Export createClient - returns the same singleton
+export function createClient() {
+  return getClient();
 }
 
 // Admin client for server-side operations
