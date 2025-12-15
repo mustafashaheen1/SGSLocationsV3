@@ -3,6 +3,16 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// ===== DEBUG LOGGING - REMOVE AFTER FIXING =====
+if (typeof window !== 'undefined') {
+  console.log('🔍 SUPABASE CONFIG:');
+  console.log('  URL exists:', !!supabaseUrl);
+  console.log('  URL value:', supabaseUrl || 'UNDEFINED');
+  console.log('  KEY exists:', !!supabaseAnonKey);
+  console.log('  KEY starts with:', supabaseAnonKey?.substring(0, 10) || 'UNDEFINED');
+}
+// ===== END DEBUG =====
+
 // ============================================
 // SESSION CLEANUP - Critical for fixing stale sessions
 // ============================================
