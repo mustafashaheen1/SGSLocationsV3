@@ -17,41 +17,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use admin client to check if user exists in Supabase Auth
+    // Use admin client to generate password reset link and get user info
     const adminClient = createAdminClient();
 
-    // Check if user exists in auth
-    const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
-
-    if (authError) {
-      console.error('Error checking auth users:', authError);
-      return jsonResponseNoCache(
-        { error: 'An error occurred while processing your request' },
-        { status: 500 }
-      );
-    }
-
-    const authUser = authUsers.users.find((u: any) => u.email === email);
-
-    if (!authUser) {
-      // User doesn't exist in auth - return error
-      return jsonResponseNoCache(
-        { error: 'No account found with this email address' },
-        { status: 404 }
-      );
-    }
-
-    // Try to get user's full name from users table (optional)
-    const supabase = createClient();
-    const { data: userData } = await (supabase
-      .from('users') as any)
+    // Try to get user's full name from users table using admin client (bypasses RLS)
+    const { data: userData } = await adminClient
+      .from('users')
       .select('full_name')
       .eq('email', email)
       .maybeSingle();
 
-    const fullName = userData?.full_name || authUser.user_metadata?.full_name || 'User';
+    const fullName = userData?.full_name || 'User';
 
-    // Generate password reset link (reuse admin client from above)
+    // Generate password reset link
+    // This will fail if user doesn't exist in Supabase Auth
     const { data, error } = await adminClient.auth.admin.generateLink({
       type: 'recovery',
       email: email,
@@ -62,6 +41,15 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase password reset link generation error:', error);
+
+      // Check if user doesn't exist
+      if (error.message?.includes('not found') || error.message?.includes('User not found')) {
+        return jsonResponseNoCache(
+          { error: 'No account found with this email address' },
+          { status: 404 }
+        );
+      }
+
       return jsonResponseNoCache(
         { error: 'Failed to generate password reset link' },
         { status: 500 }
