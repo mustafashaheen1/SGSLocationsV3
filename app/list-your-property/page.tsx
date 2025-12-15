@@ -224,6 +224,14 @@ export default function ListYourPropertyPage() {
     };
   }, []);
 
+  // Initialize Google Autocomplete when Maps API is loaded and component is mounted
+  useEffect(() => {
+    if (googleMapsLoaded && addressInputRef.current) {
+      console.log('🔧 Google Maps loaded and input ready, initializing autocomplete');
+      initializeGoogleAutocomplete();
+    }
+  }, [googleMapsLoaded]);
+
   async function fetchCategories() {
     try {
       const { data, error } = await supabase
