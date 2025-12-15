@@ -17,33 +17,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    // Use admin client to check if user exists in Supabase Auth
+    const adminClient = createAdminClient();
 
-    // Check if user exists
-    const { data: userData, error: userError } = await (supabase
-      .from('users') as any)
-      .select('id, full_name, email')
-      .eq('email', email)
-      .maybeSingle();
+    // Check if user exists in auth
+    const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
 
-    if (userError) {
-      console.error('Error checking user:', userError);
+    if (authError) {
+      console.error('Error checking auth users:', authError);
       return jsonResponseNoCache(
         { error: 'An error occurred while processing your request' },
         { status: 500 }
       );
     }
 
-    if (!userData) {
-      // User doesn't exist - return error
+    const authUser = authUsers.users.find((u: any) => u.email === email);
+
+    if (!authUser) {
+      // User doesn't exist in auth - return error
       return jsonResponseNoCache(
         { error: 'No account found with this email address' },
         { status: 404 }
       );
     }
 
-    // Generate password reset link using admin client (doesn't send email automatically)
-    const adminClient = createAdminClient();
+    // Try to get user's full name from users table (optional)
+    const supabase = createClient();
+    const { data: userData } = await (supabase
+      .from('users') as any)
+      .select('full_name')
+      .eq('email', email)
+      .maybeSingle();
+
+    const fullName = userData?.full_name || authUser.user_metadata?.full_name || 'User';
+
+    // Generate password reset link (reuse admin client from above)
     const { data, error } = await adminClient.auth.admin.generateLink({
       type: 'recovery',
       email: email,
@@ -71,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Send password reset email via SendGrid
     const emailSent = await sendPasswordResetEmail(
       email,
-      userData.full_name || 'User',
+      fullName,
       data.properties.action_link
     );
 
