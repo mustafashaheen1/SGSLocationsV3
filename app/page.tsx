@@ -50,7 +50,7 @@ export default function HomePage() {
   useEffect(() => {
     let isMounted = true;
 
-    // Force load after 5 seconds no matter what
+    // Force load after 5 seconds
     const forceLoadTimeout = setTimeout(() => {
       if (isMounted && !contentLoaded) {
         console.warn('⚠️ Force loading page after 5 second timeout');
@@ -59,128 +59,103 @@ export default function HomePage() {
     }, 5000);
 
     async function fetchData() {
+      console.log('📡 Starting data fetch...');
+
       try {
-        // Helper: fetch with timeout
-        const fetchWithTimeout = async <T,>(
-          promise: Promise<T>,
-          timeoutMs: number = 8000
-        ): Promise<T | null> => {
-          try {
-            const result = await Promise.race([
-              promise,
-              new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
-              ),
-            ]);
-            return result;
-          } catch (error) {
-            console.error('Query failed or timed out:', error);
-            return null;
-          }
-        };
+        // Test 1: Simple query with detailed logging
+        console.log('🔍 Query 1: site_settings - STARTING');
+        const startTime = Date.now();
 
-        // Fetch hero section content (with timeout)
-        const settingsResult = await fetchWithTimeout(
-          (async () => {
-            const { data } = await supabase
-              .from('site_settings')
-              .select('*')
-              .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
-            return { data };
-          })()
-        );
+        const settingsPromise = supabase
+          .from('site_settings')
+          .select('*')
+          .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
 
-        if (isMounted && settingsResult?.data) {
-          settingsResult.data.forEach((setting: any) => {
+        console.log('🔍 Query 1: Promise created, awaiting...');
+
+        const { data: settings, error: settingsError } = await settingsPromise;
+
+        console.log('🔍 Query 1: COMPLETED in', Date.now() - startTime, 'ms');
+        console.log('🔍 Query 1: Data:', settings);
+        console.log('🔍 Query 1: Error:', settingsError);
+
+        if (isMounted && settings) {
+          settings.forEach((setting: any) => {
             if (setting.key === 'hero_video') setHeroVideo(setting.value || '');
             if (setting.key === 'hero_title') setHeroTitle(setting.value || '');
             if (setting.key === 'hero_subtitle') setHeroSubtitle(setting.value || '');
           });
         }
 
-        // Fetch services (with timeout)
-        const servicesResult = await fetchWithTimeout(
-          (async () => {
-            const { data } = await supabase
-              .from('services')
-              .select('*')
-              .eq('is_active', true)
-              .order('display_order');
-            return { data };
-          })()
-        );
+        // Test 2: Services
+        console.log('🔍 Query 2: services - STARTING');
+        const { data: servicesData, error: servicesError } = await supabase
+          .from('services')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
 
-        if (isMounted && servicesResult?.data) {
-          setServices(servicesResult.data);
+        console.log('🔍 Query 2: Data:', servicesData?.length, 'items');
+        console.log('🔍 Query 2: Error:', servicesError);
+
+        if (isMounted && servicesData) {
+          setServices(servicesData);
         }
 
-        // Fetch production logos (with timeout)
-        const logosResult = await fetchWithTimeout(
-          (async () => {
-            const { data } = await supabase
-              .from('production_logos')
-              .select('*')
-              .eq('is_active', true)
-              .order('display_order');
-            return { data };
-          })()
-        );
+        // Test 3: Production logos
+        console.log('🔍 Query 3: production_logos - STARTING');
+        const { data: logosData, error: logosError } = await supabase
+          .from('production_logos')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
 
-        if (isMounted && logosResult?.data) {
-          setProductionLogos(logosResult.data);
+        console.log('🔍 Query 3: Data:', logosData?.length, 'items');
+        console.log('🔍 Query 3: Error:', logosError);
+
+        if (isMounted && logosData) {
+          setProductionLogos(logosData);
         }
 
-        // Fetch featured properties (with timeout)
-        const featuredResult = await fetchWithTimeout(
-          (async () => {
-            const { data } = await supabase
-              .from('properties')
-              .select('*')
-              .eq('status', 'active')
-              .eq('is_featured', true)
-              .order('name')
-              .limit(6);
-            return { data };
-          })()
-        );
+        // Test 4: Featured properties
+        console.log('🔍 Query 4: properties - STARTING');
+        const { data: featured, error: featuredError } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active')
+          .eq('is_featured', true)
+          .order('name')
+          .limit(6);
 
-        if (isMounted && featuredResult?.data) {
-          setFeaturedProperties(featuredResult.data);
+        console.log('🔍 Query 4: Data:', featured?.length, 'items');
+        console.log('🔍 Query 4: Error:', featuredError);
+
+        if (isMounted && featured) {
+          setFeaturedProperties(featured);
         }
 
-        // Fetch categories (with timeout)
-        const categoriesResult = await fetchWithTimeout(
-          (async () => {
-            const { data } = await supabase
-              .from('categories')
-              .select('*')
-              .eq('is_active', true)
-              .not('parent_id', 'is', null)
-              .order('display_order');
-            return { data };
-          })()
-        );
+        // Test 5: Categories
+        console.log('🔍 Query 5: categories - STARTING');
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('is_active', true)
+          .not('parent_id', 'is', null)
+          .order('display_order');
 
-        if (isMounted && categoriesResult?.data) {
-          // Fetch counts for each category (with individual timeouts)
+        console.log('🔍 Query 5: Data:', categoriesData?.length, 'items');
+        console.log('🔍 Query 5: Error:', categoriesError);
+
+        if (isMounted && categoriesData) {
           const categoriesWithCounts = await Promise.all(
-            categoriesResult.data.map(async (cat: any) => {
-              const countResult = await fetchWithTimeout(
-                (async () => {
-                  const { count } = await supabase
-                    .from('properties')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('sub_category_id', cat.id)
-                    .eq('status', 'active');
-                  return { count };
-                })(),
-                3000 // Shorter timeout for count queries
-              );
+            categoriesData.map(async (cat: any) => {
+              const { count } = await supabase
+                .from('properties')
+                .select('*', { count: 'exact', head: true })
+                .eq('sub_category_id', cat.id)
+                .eq('status', 'active');
 
-              return {
-                ...cat,
-                count: countResult?.count || 0
-              };
+              return { ...cat, count: count || 0 };
             })
           );
 
@@ -189,13 +164,13 @@ export default function HomePage() {
           }
         }
 
-        // All done - show content
+        console.log('✅ All queries completed!');
+
         if (isMounted) {
           setContentLoaded(true);
         }
       } catch (error) {
-        console.error('Error fetching homepage data:', error);
-        // Show page anyway even if there's an error
+        console.error('❌ Error in fetchData:', error);
         if (isMounted) {
           setContentLoaded(true);
         }
