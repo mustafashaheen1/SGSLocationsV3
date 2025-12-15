@@ -912,7 +912,7 @@ export default function ListYourPropertyPage() {
                     </label>
 
                     {question.question_type === 'radio' && (
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-4">
                         {question.options.map((option: string, index: number) => (
                           <label key={index} className="flex items-center cursor-pointer">
                             <input
@@ -923,14 +923,14 @@ export default function ListYourPropertyPage() {
                               onChange={(e) => setDynamicAnswers({...dynamicAnswers, [question.id]: e.target.value})}
                               className="w-4 h-4 accent-red-600 focus:ring-red-500"
                             />
-                            <span className="ml-2">{option}</span>
+                            <span className="ml-2 text-sm">{option}</span>
                           </label>
                         ))}
                       </div>
                     )}
 
                     {question.question_type === 'checkbox' && (
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-3">
                         {question.options.map((option: string, index: number) => (
                           <label key={index} className="flex items-center cursor-pointer">
                             <input
@@ -944,9 +944,9 @@ export default function ListYourPropertyPage() {
                                   : currentAnswers.filter((a: string) => a !== option);
                                 setDynamicAnswers({...dynamicAnswers, [question.id]: newAnswers});
                               }}
-                              className="w-4 h-4 accent-red-600 focus:ring-red-500"
+                              className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
                             />
-                            <span className="ml-2">{option}</span>
+                            <span className="ml-2 text-sm">{option}</span>
                           </label>
                         ))}
                       </div>
