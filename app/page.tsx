@@ -50,34 +50,21 @@ export default function HomePage() {
   useEffect(() => {
     let isMounted = true;
 
-    // Force load after 5 seconds
+    // Force load after 10 seconds (increased from 5)
     const forceLoadTimeout = setTimeout(() => {
       if (isMounted && !contentLoaded) {
-        console.warn('⚠️ Force loading page after 5 second timeout');
+        console.warn('⚠️ Force loading page after 10 second timeout');
         setContentLoaded(true);
       }
-    }, 5000);
+    }, 10000);
 
     async function fetchData() {
-      console.log('📡 Starting data fetch...');
-
       try {
-        // Test 1: Simple query with detailed logging
-        console.log('🔍 Query 1: site_settings - STARTING');
-        const startTime = Date.now();
-
-        const settingsPromise = supabase
+        // Fetch hero section content
+        const { data: settings } = await supabase
           .from('site_settings')
           .select('*')
           .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
-
-        console.log('🔍 Query 1: Promise created, awaiting...');
-
-        const { data: settings, error: settingsError } = await settingsPromise;
-
-        console.log('🔍 Query 1: COMPLETED in', Date.now() - startTime, 'ms');
-        console.log('🔍 Query 1: Data:', settings);
-        console.log('🔍 Query 1: Error:', settingsError);
 
         if (isMounted && settings) {
           settings.forEach((setting: any) => {
@@ -87,39 +74,30 @@ export default function HomePage() {
           });
         }
 
-        // Test 2: Services
-        console.log('🔍 Query 2: services - STARTING');
-        const { data: servicesData, error: servicesError } = await supabase
+        // Fetch services
+        const { data: servicesData } = await supabase
           .from('services')
           .select('*')
           .eq('is_active', true)
           .order('display_order');
 
-        console.log('🔍 Query 2: Data:', servicesData?.length, 'items');
-        console.log('🔍 Query 2: Error:', servicesError);
-
         if (isMounted && servicesData) {
           setServices(servicesData);
         }
 
-        // Test 3: Production logos
-        console.log('🔍 Query 3: production_logos - STARTING');
-        const { data: logosData, error: logosError } = await supabase
+        // Fetch production logos
+        const { data: logosData } = await supabase
           .from('production_logos')
           .select('*')
           .eq('is_active', true)
           .order('display_order');
 
-        console.log('🔍 Query 3: Data:', logosData?.length, 'items');
-        console.log('🔍 Query 3: Error:', logosError);
-
         if (isMounted && logosData) {
           setProductionLogos(logosData);
         }
 
-        // Test 4: Featured properties
-        console.log('🔍 Query 4: properties - STARTING');
-        const { data: featured, error: featuredError } = await supabase
+        // Fetch featured properties
+        const { data: featured } = await supabase
           .from('properties')
           .select('*')
           .eq('status', 'active')
@@ -127,24 +105,17 @@ export default function HomePage() {
           .order('name')
           .limit(6);
 
-        console.log('🔍 Query 4: Data:', featured?.length, 'items');
-        console.log('🔍 Query 4: Error:', featuredError);
-
         if (isMounted && featured) {
           setFeaturedProperties(featured);
         }
 
-        // Test 5: Categories
-        console.log('🔍 Query 5: categories - STARTING');
-        const { data: categoriesData, error: categoriesError } = await supabase
+        // Fetch categories
+        const { data: categoriesData } = await supabase
           .from('categories')
           .select('*')
           .eq('is_active', true)
           .not('parent_id', 'is', null)
           .order('display_order');
-
-        console.log('🔍 Query 5: Data:', categoriesData?.length, 'items');
-        console.log('🔍 Query 5: Error:', categoriesError);
 
         if (isMounted && categoriesData) {
           const categoriesWithCounts = await Promise.all(
@@ -164,13 +135,11 @@ export default function HomePage() {
           }
         }
 
-        console.log('✅ All queries completed!');
-
         if (isMounted) {
           setContentLoaded(true);
         }
       } catch (error) {
-        console.error('❌ Error in fetchData:', error);
+        console.error('Error fetching homepage data:', error);
         if (isMounted) {
           setContentLoaded(true);
         }

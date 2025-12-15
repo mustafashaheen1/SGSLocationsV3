@@ -4,67 +4,52 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // ============================================
-// AUTOMATIC SESSION CLEANUP - Prevents hanging
+// NUCLEAR CLEANUP - Clear ALL Supabase storage on load
+// This prevents ANY corrupted data from blocking queries
 // ============================================
 
-function clearCorruptedSessions() {
-  if (typeof window === 'undefined') return;
-
+function clearAllSupabaseStorage() {
+  if (typeof window === 'undefined') return false;
+  
   try {
-    let cleared = 0;
-
-    Object.keys(localStorage).forEach(key => {
-      if (!key.includes('supabase') && !key.startsWith('sb-')) return;
-
-      try {
-        const item = localStorage.getItem(key);
-        if (!item) return;
-
-        const data = JSON.parse(item);
-
-        // Check for expired tokens
-        const expiresAt = data?.expires_at || data?.currentSession?.expires_at;
-        if (expiresAt) {
-          const expiryTime = expiresAt * 1000;
-          const now = Date.now();
-
-          // Clear if expired (with 1 minute buffer)
-          if (now >= expiryTime - 60000) {
-            console.log('🧹 Clearing expired session:', key);
-            localStorage.removeItem(key);
-            cleared++;
-          }
-        }
-      } catch (e) {
-        // Invalid JSON - remove it
-        console.log('🧹 Clearing corrupted data:', key);
-        localStorage.removeItem(key);
-        cleared++;
+    const keysToRemove: string[] = [];
+    
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.includes('supabase') || 
+        key.startsWith('sb-') ||
+        key.includes('auth-token')
+      )) {
+        keysToRemove.push(key);
       }
-    });
-
-    if (cleared > 0) {
-      console.log(`🧹 Cleared ${cleared} stale/corrupted items`);
     }
+    
+    if (keysToRemove.length > 0) {
+      keysToRemove.forEach(key => {
+        console.log('🧹 Removing:', key);
+        localStorage.removeItem(key);
+      });
+      console.log(`🧹 Cleared ${keysToRemove.length} Supabase items from localStorage`);
+      return true;
+    }
+    
+    return false;
   } catch (error) {
-    console.error('Error in clearCorruptedSessions:', error);
+    console.error('Error clearing storage:', error);
+    return false;
   }
 }
 
-// Run cleanup IMMEDIATELY on page load
+// Run cleanup on EVERY page load to ensure no blocking data exists
 if (typeof window !== 'undefined') {
-  clearCorruptedSessions();
-
-  // Also run when user returns to tab
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      clearCorruptedSessions();
-    }
-  });
+  console.log('🔍 Running Supabase storage cleanup...');
+  clearAllSupabaseStorage();
 }
 
 // ============================================
-// SUPABASE CLIENT
+// SUPABASE CLIENT - No session persistence for main client
+// This ensures anonymous browsing always works
 // ============================================
 
 let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
@@ -76,8 +61,51 @@ function getClient(): ReturnType<typeof createSupabaseClient> {
     }
 
     console.log('✅ Creating new Supabase client');
-
+    
+    // CRITICAL: persistSession = false prevents localStorage blocking issues
+    // Auth operations use a separate client with persistence
     _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+      global: {
+        headers: {
+          'x-application-name': 'sgs-locations',
+        },
+      },
+    });
+  }
+
+  return _supabase;
+}
+
+// Export proxy for database operations (NO session persistence)
+export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(target, prop) {
+    const client = getClient();
+    const value = (client as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
+  }
+});
+
+// ============================================
+// AUTH CLIENT - For login/logout operations (WITH persistence)
+// ============================================
+
+let _authClient: ReturnType<typeof createSupabaseClient> | null = null;
+
+export function getAuthClient(): ReturnType<typeof createSupabaseClient> {
+  if (!_authClient) {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    _authClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -92,34 +120,12 @@ function getClient(): ReturnType<typeof createSupabaseClient> {
         },
       },
     });
-
-    // Listen for sign out to clear client
-    if (typeof window !== 'undefined') {
-      _supabase.auth.onAuthStateChange((event) => {
-        if (event === 'SIGNED_OUT') {
-          console.log('👋 Signed out, will create fresh client');
-          _supabase = null;
-        }
-      });
-    }
   }
 
-  return _supabase;
+  return _authClient;
 }
 
-// Export proxy
-export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
-  get(target, prop) {
-    const client = getClient();
-    const value = (client as any)[prop];
-    if (typeof value === 'function') {
-      return value.bind(client);
-    }
-    return value;
-  }
-});
-
-// Export createClient for components
+// Export createClient for components that need fresh instances
 export function createClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
@@ -127,12 +133,9 @@ export function createClient() {
 
   return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      storageKey: 'supabase.auth.token',
-      flowType: 'pkce',
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
     },
     global: {
       headers: {
