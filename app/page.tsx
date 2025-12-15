@@ -50,77 +50,136 @@ export default function HomePage() {
   useEffect(() => {
     let isMounted = true;
 
+    // Force load after 5 seconds no matter what
+    const forceLoadTimeout = setTimeout(() => {
+      if (isMounted && !contentLoaded) {
+        console.warn('⚠️ Force loading page after 5 second timeout');
+        setContentLoaded(true);
+      }
+    }, 5000);
+
     async function fetchData() {
       try {
-        // Fetch hero section content
-        const { data: settings } = await supabase
-          .from('site_settings')
-          .select('*')
-          .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
+        // Helper: fetch with timeout
+        const fetchWithTimeout = async <T,>(
+          promise: Promise<T>,
+          timeoutMs: number = 8000
+        ): Promise<T | null> => {
+          try {
+            const result = await Promise.race([
+              promise,
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+              ),
+            ]);
+            return result;
+          } catch (error) {
+            console.error('Query failed or timed out:', error);
+            return null;
+          }
+        };
 
-        if (isMounted && settings) {
-          settings.forEach((setting: any) => {
+        // Fetch hero section content (with timeout)
+        const settingsResult = await fetchWithTimeout(
+          (async () => {
+            const { data } = await supabase
+              .from('site_settings')
+              .select('*')
+              .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
+            return { data };
+          })()
+        );
+
+        if (isMounted && settingsResult?.data) {
+          settingsResult.data.forEach((setting: any) => {
             if (setting.key === 'hero_video') setHeroVideo(setting.value || '');
             if (setting.key === 'hero_title') setHeroTitle(setting.value || '');
             if (setting.key === 'hero_subtitle') setHeroSubtitle(setting.value || '');
           });
         }
 
-        // Fetch services
-        const { data: servicesData } = await supabase
-          .from('services')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
+        // Fetch services (with timeout)
+        const servicesResult = await fetchWithTimeout(
+          (async () => {
+            const { data } = await supabase
+              .from('services')
+              .select('*')
+              .eq('is_active', true)
+              .order('display_order');
+            return { data };
+          })()
+        );
 
-        if (isMounted && servicesData) {
-          setServices(servicesData);
+        if (isMounted && servicesResult?.data) {
+          setServices(servicesResult.data);
         }
 
-        // Fetch production logos
-        const { data: logosData } = await supabase
-          .from('production_logos')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
+        // Fetch production logos (with timeout)
+        const logosResult = await fetchWithTimeout(
+          (async () => {
+            const { data } = await supabase
+              .from('production_logos')
+              .select('*')
+              .eq('is_active', true)
+              .order('display_order');
+            return { data };
+          })()
+        );
 
-        if (isMounted && logosData) {
-          setProductionLogos(logosData);
+        if (isMounted && logosResult?.data) {
+          setProductionLogos(logosResult.data);
         }
 
-        // Fetch featured properties
-        const { data: featured } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('status', 'active')
-          .eq('is_featured', true)
-          .order('name')
-          .limit(6);
+        // Fetch featured properties (with timeout)
+        const featuredResult = await fetchWithTimeout(
+          (async () => {
+            const { data } = await supabase
+              .from('properties')
+              .select('*')
+              .eq('status', 'active')
+              .eq('is_featured', true)
+              .order('name')
+              .limit(6);
+            return { data };
+          })()
+        );
 
-        if (isMounted && featured) {
-          setFeaturedProperties(featured);
+        if (isMounted && featuredResult?.data) {
+          setFeaturedProperties(featuredResult.data);
         }
 
-        // Fetch sub-categories with counts (where parent_id is NOT null)
-        const { data: categoriesData } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('is_active', true)
-          .not('parent_id', 'is', null)
-          .order('display_order');
+        // Fetch categories (with timeout)
+        const categoriesResult = await fetchWithTimeout(
+          (async () => {
+            const { data } = await supabase
+              .from('categories')
+              .select('*')
+              .eq('is_active', true)
+              .not('parent_id', 'is', null)
+              .order('display_order');
+            return { data };
+          })()
+        );
 
-        if (isMounted && categoriesData) {
+        if (isMounted && categoriesResult?.data) {
+          // Fetch counts for each category (with individual timeouts)
           const categoriesWithCounts = await Promise.all(
-            categoriesData.map(async (cat: any) => {
-              const { count } = await supabase
-                .from('properties')
-                .select('*', { count: 'exact', head: true })
-                .eq('sub_category_id', cat.id)
-                .eq('status', 'active');
+            categoriesResult.data.map(async (cat: any) => {
+              const countResult = await fetchWithTimeout(
+                (async () => {
+                  const { count } = await supabase
+                    .from('properties')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('sub_category_id', cat.id)
+                    .eq('status', 'active');
+                  return { count };
+                })(),
+                3000 // Shorter timeout for count queries
+              );
 
               return {
                 ...cat,
-                count: count || 0
+                count: countResult?.count || 0
               };
             })
           );
@@ -130,13 +189,15 @@ export default function HomePage() {
           }
         }
 
+        // All done - show content
         if (isMounted) {
           setContentLoaded(true);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching homepage data:', error);
+        // Show page anyway even if there's an error
         if (isMounted) {
-          setContentLoaded(true); // Still show page
+          setContentLoaded(true);
         }
       }
     }
@@ -146,6 +207,7 @@ export default function HomePage() {
 
     return () => {
       isMounted = false;
+      clearTimeout(forceLoadTimeout);
     };
   }, []);
 

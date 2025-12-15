@@ -4,47 +4,48 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // ============================================
-// SESSION CLEANUP - Runs on every page load
+// SESSION CLEANUP - Critical for fixing stale sessions
 // ============================================
 
 function clearStaleSession() {
   if (typeof window === 'undefined') return;
 
   try {
-    // Find and remove expired sessions
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('supabase.auth') || key.startsWith('sb-')) {
-        try {
-          const item = localStorage.getItem(key);
-          if (!item) return;
+    const keysToCheck = Object.keys(localStorage).filter(
+      key => key.startsWith('supabase.auth') || key.startsWith('sb-')
+    );
 
-          const data = JSON.parse(item);
-          
-          // Check for expired tokens
-          if (data?.expires_at) {
-            const expiryTime = data.expires_at * 1000;
-            const now = Date.now();
-            const bufferTime = 5 * 60 * 1000; // 5 minute buffer
+    keysToCheck.forEach(key => {
+      try {
+        const item = localStorage.getItem(key);
+        if (!item) return;
 
-            if (now >= expiryTime - bufferTime) {
-              console.log('🧹 Clearing expired/expiring session:', key);
-              localStorage.removeItem(key);
-            }
+        const data = JSON.parse(item);
+
+        // Check expires_at (token expiry)
+        if (data?.expires_at) {
+          const expiryTime = data.expires_at * 1000;
+          const now = Date.now();
+          const bufferTime = 5 * 60 * 1000; // 5 minute buffer
+
+          if (now >= expiryTime - bufferTime) {
+            console.log('🧹 Clearing expired session:', key);
+            localStorage.removeItem(key);
           }
-          
-          // Check for currentSession with expired access_token
-          if (data?.currentSession?.expires_at) {
-            const expiryTime = data.currentSession.expires_at * 1000;
-            if (Date.now() >= expiryTime) {
-              console.log('🧹 Clearing expired currentSession:', key);
-              localStorage.removeItem(key);
-            }
-          }
-        } catch (e) {
-          // Invalid JSON - remove it
-          console.log('🧹 Removing invalid session data:', key);
-          localStorage.removeItem(key);
         }
+
+        // Check nested currentSession
+        if (data?.currentSession?.expires_at) {
+          const expiryTime = data.currentSession.expires_at * 1000;
+          if (Date.now() >= expiryTime) {
+            console.log('🧹 Clearing expired currentSession:', key);
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        // Invalid JSON - remove it
+        console.log('🧹 Removing corrupted session data:', key);
+        localStorage.removeItem(key);
       }
     });
   } catch (error) {
@@ -52,33 +53,35 @@ function clearStaleSession() {
   }
 }
 
-// Run cleanup immediately on module load (client-side only)
+// Run cleanup on module load
 if (typeof window !== 'undefined') {
   clearStaleSession();
 
-  // Also run when user returns to tab
+  // Run when user returns to tab
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       clearStaleSession();
     }
   });
+
+  // Run periodically every 2 minutes
+  setInterval(clearStaleSession, 2 * 60 * 1000);
 }
 
 // ============================================
-// SUPABASE CLIENT - Single instance with refresh
+// SUPABASE CLIENT
 // ============================================
 
 let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
-let _lastRefresh: number = 0;
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+let _lastCreated: number = 0;
+const MAX_CLIENT_AGE = 5 * 60 * 1000; // Recreate client every 5 minutes
 
-function getOrCreateClient(): ReturnType<typeof createSupabaseClient> {
+function getClient(): ReturnType<typeof createSupabaseClient> {
   const now = Date.now();
-  
-  // Force new client if it's been more than 5 minutes
-  // This ensures we don't keep stale clients forever
-  if (_supabase && (now - _lastRefresh) > REFRESH_INTERVAL) {
-    console.log('🔄 Refreshing Supabase client (5 min interval)');
+
+  // Force new client if old one is stale
+  if (_supabase && (now - _lastCreated) > MAX_CLIENT_AGE) {
+    console.log('🔄 Refreshing Supabase client (age limit)');
     _supabase = null;
   }
 
@@ -87,8 +90,8 @@ function getOrCreateClient(): ReturnType<typeof createSupabaseClient> {
       throw new Error('Missing Supabase environment variables');
     }
 
-    console.log('✅ Creating Supabase client');
-    
+    console.log('✅ Creating new Supabase client');
+
     _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
@@ -105,17 +108,17 @@ function getOrCreateClient(): ReturnType<typeof createSupabaseClient> {
       },
     });
 
-    _lastRefresh = now;
+    _lastCreated = now;
 
-    // Set up auth state listener for token refresh
+    // Listen for auth events
     if (typeof window !== 'undefined') {
       _supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'TOKEN_REFRESHED') {
-          console.log('🔄 Token refreshed successfully');
-          _lastRefresh = Date.now();
+          console.log('🔄 Token refreshed');
+          _lastCreated = Date.now();
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 User signed out');
-          _supabase = null; // Force new client on next access
+          console.log('👋 Signed out, clearing client');
+          _supabase = null;
         }
       });
     }
@@ -124,12 +127,11 @@ function getOrCreateClient(): ReturnType<typeof createSupabaseClient> {
   return _supabase;
 }
 
-// Export proxy that uses getOrCreateClient
+// Export proxy
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(target, prop) {
-    const client = getOrCreateClient();
+    const client = getClient();
     const value = (client as any)[prop];
-    
     if (typeof value === 'function') {
       return value.bind(client);
     }
@@ -137,7 +139,7 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   }
 });
 
-// Export createClient for components that need a fresh instance
+// Export createClient for components
 export function createClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
@@ -160,7 +162,7 @@ export function createClient() {
   });
 }
 
-// Admin client for server-side operations
+// Admin client
 export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -211,7 +213,7 @@ export async function getPropertyByAlbumKey(albumkey: string): Promise<Property 
 }
 
 // ============================================
-// INTERFACES
+// INTERFACES (keep all existing interfaces)
 // ============================================
 
 export interface PropertyContact {
