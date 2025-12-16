@@ -32,63 +32,120 @@ export async function POST(request: NextRequest) {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
           <title>Inquiry Confirmation</title>
+          <style type="text/css">
+            body {
+              margin: 0;
+              padding: 0;
+              -webkit-text-size-adjust: 100%;
+              -ms-text-size-adjust: 100%;
+            }
+            table {
+              border-collapse: collapse;
+              mso-table-lspace: 0pt;
+              mso-table-rspace: 0pt;
+            }
+            img {
+              border: 0;
+              height: auto;
+              line-height: 100%;
+              outline: none;
+              text-decoration: none;
+              -ms-interpolation-mode: bicubic;
+            }
+            @media only screen and (max-width: 600px) {
+              .email-container {
+                width: 100% !important;
+              }
+              .mobile-padding {
+                padding: 20px 15px !important;
+              }
+              .mobile-padding-small {
+                padding: 15px 10px !important;
+              }
+              .mobile-heading {
+                font-size: 24px !important;
+              }
+              .mobile-text {
+                font-size: 14px !important;
+              }
+              .mobile-small-text {
+                font-size: 12px !important;
+              }
+              .mobile-logo {
+                height: 50px !important;
+              }
+            }
+          </style>
         </head>
         <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4;">
             <tr>
-              <td style="padding: 40px 0; text-align: center; background-color: #ffffff;">
-                <img src="https://sgslocations.com/logo.png" alt="SGS Locations" style="height: 60px;" />
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 40px 30px; background-color: #ffffff;">
-                <h1 style="color: #e11921; margin: 0 0 20px 0; font-size: 28px;">Inquiry Received</h1>
+              <td align="center" style="padding: 20px 10px;">
+                <table class="email-container" role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                  <!-- Logo Header -->
+                  <tr>
+                    <td class="mobile-padding" style="padding: 40px 30px; text-align: center; background-color: #ffffff;">
+                      <img src="https://sgslocations.com/logo.png" alt="SGS Locations" class="mobile-logo" style="height: 60px; max-width: 100%;" />
+                    </td>
+                  </tr>
 
-                <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                  Dear ${name},
-                </p>
+                  <!-- Main Content -->
+                  <tr>
+                    <td class="mobile-padding" style="padding: 40px 30px; background-color: #ffffff;">
+                      <h1 class="mobile-heading" style="color: #e11921; margin: 0 0 20px 0; font-size: 28px; font-weight: bold;">Inquiry Received</h1>
 
-                <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                  Thank you for your inquiry! We have received your message and will get back to you as soon as possible.
-                </p>
+                      <p class="mobile-text" style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                        Dear ${name},
+                      </p>
 
-                ${propertyName ? `
-                  <div style="background-color: #f8f8f8; border-left: 4px solid #e11921; padding: 15px; margin: 20px 0;">
-                    <p style="color: #333333; font-size: 14px; margin: 0 0 5px 0;"><strong>Property:</strong></p>
-                    <p style="color: #555555; font-size: 14px; margin: 0;">${propertyName}</p>
-                    ${propertyAddress ? `<p style="color: #777777; font-size: 13px; margin: 5px 0 0 0;">${propertyAddress}</p>` : ''}
-                  </div>
-                ` : ''}
+                      <p class="mobile-text" style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                        Thank you for your inquiry! We have received your message and will get back to you as soon as possible.
+                      </p>
 
-                <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                  Our team typically responds within 24 business hours. If you need immediate assistance, please call us at <strong>(214) 555-0100</strong>.
-                </p>
+                      ${propertyName ? `
+                        <div class="mobile-padding-small" style="background-color: #f8f8f8; border-left: 4px solid #e11921; padding: 15px; margin: 20px 0; border-radius: 0 5px 5px 0;">
+                          <p class="mobile-text" style="color: #333333; font-size: 14px; margin: 0 0 5px 0;"><strong>Property:</strong></p>
+                          <p class="mobile-text" style="color: #555555; font-size: 14px; margin: 0; word-wrap: break-word;">${propertyName}</p>
+                          ${propertyAddress ? `<p class="mobile-small-text" style="color: #777777; font-size: 13px; margin: 5px 0 0 0; word-wrap: break-word;">${propertyAddress}</p>` : ''}
+                        </div>
+                      ` : ''}
 
-                <div style="margin: 30px 0; padding: 20px; background-color: #f8f8f8; border-radius: 5px;">
-                  <p style="color: #555555; font-size: 14px; line-height: 1.6; margin: 0;">
-                    <strong>What happens next?</strong><br/>
-                    • Our team will review your inquiry<br/>
-                    • We'll reach out with available options<br/>
-                    • You'll receive all the information you need to move forward
-                  </p>
-                </div>
+                      <p class="mobile-text" style="color: #333333; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                        Our team typically responds within 24 business hours. If you need immediate assistance, please call us at <strong style="white-space: nowrap;">(214) 555-0100</strong>.
+                      </p>
 
-                <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 20px 0 0 0;">
-                  Best regards,<br/>
-                  <strong>The SGS Locations Team</strong>
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 30px; text-align: center; background-color: #333333;">
-                <p style="color: #ffffff; font-size: 14px; margin: 0 0 10px 0;">
-                  SGS Locations - Dallas-Fort Worth's Premier Location Service
-                </p>
-                <p style="color: #999999; font-size: 12px; margin: 0;">
-                  <a href="https://sgslocations.com" style="color: #e11921; text-decoration: none;">Visit our website</a> |
-                  <a href="mailto:info@sgslocations.com" style="color: #e11921; text-decoration: none;">Contact us</a>
-                </p>
+                      <div class="mobile-padding-small" style="margin: 30px 0; padding: 20px; background-color: #f8f8f8; border-radius: 5px;">
+                        <p class="mobile-text" style="color: #555555; font-size: 14px; line-height: 1.8; margin: 0;">
+                          <strong>What happens next?</strong><br/>
+                          • Our team will review your inquiry<br/>
+                          • We'll reach out with available options<br/>
+                          • You'll receive all the information you need to move forward
+                        </p>
+                      </div>
+
+                      <p class="mobile-text" style="color: #333333; font-size: 16px; line-height: 1.6; margin: 20px 0 0 0;">
+                        Best regards,<br/>
+                        <strong>The SGS Locations Team</strong>
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td class="mobile-padding-small" style="padding: 30px; text-align: center; background-color: #333333;">
+                      <p class="mobile-text" style="color: #ffffff; font-size: 14px; margin: 0 0 10px 0; line-height: 1.4;">
+                        SGS Locations - Dallas-Fort Worth's Premier Location Service
+                      </p>
+                      <p class="mobile-small-text" style="color: #999999; font-size: 12px; margin: 0; line-height: 1.6;">
+                        <a href="https://sgslocations.com" style="color: #e11921; text-decoration: none;">Visit our website</a>
+                        <span style="color: #666666; padding: 0 5px;">|</span>
+                        <a href="mailto:info@sgslocations.com" style="color: #e11921; text-decoration: none;">Contact us</a>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>

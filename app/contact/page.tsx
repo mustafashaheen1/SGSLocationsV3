@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import LoginModal from '@/components/LoginModal';
 import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 
 export default function ContactPage() {
@@ -13,6 +12,9 @@ export default function ContactPage() {
     address: '9663 Santa Monica Blvd. Suite 842,\nBeverly Hills, CA 90210',
   });
 
+  const [dynamicQuestions, setDynamicQuestions] = useState<any[]>([]);
+  const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22,13 +24,9 @@ export default function ContactPage() {
     phone: '',
     crewSize: '',
     locations: '',
-    shootingDate: '',
-    projectType: '',
-    howDidYouHear: ''
+    shootingDate: ''
   });
 
-  const [user, setUser] = useState<any>(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -46,6 +44,34 @@ export default function ContactPage() {
   const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   useEffect(() => {
+    async function fetchDynamicQuestions() {
+      try {
+        const { data: questions } = await supabase
+          .from('contact_form_questions')
+          .select(`
+            *,
+            contact_form_question_options (
+              id,
+              option_value,
+              option_label,
+              display_order
+            )
+          `)
+          .order('display_order');
+
+        if (questions) {
+          const formatted = questions.map((q: any) => ({
+            ...q,
+            options: (q.contact_form_question_options || [])
+              .sort((a: any, b: any) => a.display_order - b.display_order)
+          }));
+          setDynamicQuestions(formatted);
+        }
+      } catch (error) {
+        console.error('Error fetching dynamic questions:', error);
+      }
+    }
+
     async function fetchContactGrid() {
       const { data } = await supabase
         .from('contact_grid')
@@ -99,6 +125,7 @@ export default function ContactPage() {
       }
     }
 
+    fetchDynamicQuestions();
     fetchContactGrid();
     fetchContactInfo();
   }, []);
@@ -114,39 +141,6 @@ export default function ContactPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    async function checkAuthAndFetchUserData() {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-
-      if (currentUser) {
-        setUser(currentUser);
-
-        // Fetch user details from users table
-        const { data: userData, error } = await (supabase
-          .from('users') as any)
-          .select('full_name, email, phone, company_name')
-          .eq('id', currentUser.id)
-          .single();
-
-        if (userData && !error) {
-          const nameParts = userData.full_name?.split(' ') || [];
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-
-          setFormData(prev => ({
-            ...prev,
-            firstName,
-            lastName,
-            email: userData.email || currentUser.email || '',
-            phone: userData.phone || '',
-            company: userData.company_name || ''
-          }));
-        }
-      }
-    }
-
-    checkAuthAndFetchUserData();
-  }, []);
 
   const formatPhoneNumber = (value: string) => {
     const phoneNumber = value.replace(/\D/g, '');
@@ -189,21 +183,17 @@ export default function ContactPage() {
     setSubmitError('');
 
     try {
-      // Check authentication in real-time
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !session.user) {
-        setIsSubmitting(false);
-        setShowLoginModal(true);
-        return;
-      }
+      // Build dynamic data object
+      const dynamicData: Record<string, string> = {};
+      dynamicQuestions.forEach(q => {
+        dynamicData[q.field_name] = dynamicAnswers[q.field_name] || null;
+      });
 
       const response = await fetch('/api/inquiries', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
         body: JSON.stringify({
           property_id: null, // General inquiry (no specific property)
           first_name: formData.firstName,
@@ -215,8 +205,7 @@ export default function ContactPage() {
           crew_size: formData.crewSize ? parseInt(formData.crewSize) : null,
           locations: formData.locations || null,
           shooting_date: formData.shootingDate || null,
-          project_type: formData.projectType || null,
-          how_did_you_hear: formData.howDidYouHear || null,
+          ...dynamicData,
           recaptcha_token: recaptchaToken
         })
       });
@@ -229,10 +218,9 @@ export default function ContactPage() {
           message: '',
           crewSize: '',
           locations: '',
-          shootingDate: '',
-          projectType: '',
-          howDidYouHear: ''
+          shootingDate: ''
         }));
+        setDynamicAnswers({});
         setSelectedStart(null);
         setSelectedEnd(null);
         // Reset reCAPTCHA
@@ -266,43 +254,6 @@ export default function ContactPage() {
     }
   };
 
-  const handleLoginSuccess = async () => {
-    setShowLoginModal(false);
-
-    // Re-check auth and fetch user data
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (currentUser) {
-      setUser(currentUser);
-
-      const { data: userData } = await (supabase
-        .from('users') as any)
-        .select('full_name, email, phone, company_name')
-        .eq('id', currentUser.id)
-        .single();
-
-      if (userData) {
-        const nameParts = userData.full_name?.split(' ') || [];
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
-        setFormData(prev => ({
-          ...prev,
-          firstName,
-          lastName,
-          email: userData.email || currentUser.email || '',
-          // Only update phone and company if user hasn't filled them in yet
-          phone: prev.phone || userData.phone || '',
-          company: prev.company || userData.company_name || ''
-        }));
-      }
-
-      // Retry form submission
-      const form = document.querySelector('form');
-      if (form) {
-        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-      }
-    }
-  };
 
   const formatDateRange = (start: Date, end: Date) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -967,9 +918,6 @@ export default function ContactPage() {
                     placeholder="First name *"
                     value={formData.firstName}
                     onChange={handleChange}
-                    readOnly={!!user}
-                    disabled={!!user}
-                    style={user ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
                   />
                 </div>
 
@@ -984,9 +932,6 @@ export default function ContactPage() {
                     placeholder="Last name *"
                     value={formData.lastName}
                     onChange={handleChange}
-                    readOnly={!!user}
-                    disabled={!!user}
-                    style={user ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
                   />
                 </div>
 
@@ -1001,9 +946,6 @@ export default function ContactPage() {
                     placeholder="Email *"
                     value={formData.email}
                     onChange={handleChange}
-                    readOnly={!!user}
-                    disabled={!!user}
-                    style={user ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
                   />
                 </div>
 
@@ -1229,45 +1171,36 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="project_type" style={{ fontSize: '14px', fontWeight: 500 }}>
-                    Project Type *
-                  </label>
-                  <select
-                    required
-                    className="form-control"
-                    name="projectType"
-                    id="project_type"
-                    value={formData.projectType}
-                    onChange={handleChange}
-                  >
-                    <option value="" disabled>Select project type</option>
-                    <option value="motion">Motion</option>
-                    <option value="stills">Stills</option>
-                    <option value="event">Event</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="how_did_you_hear_from_us" style={{ fontSize: '14px', fontWeight: 500 }}>
-                    How did you hear about us? *
-                  </label>
-                  <select
-                    required
-                    className="form-control"
-                    name="howDidYouHear"
-                    id="how_did_you_hear_from_us"
-                    value={formData.howDidYouHear}
-                    onChange={handleChange}
-                  >
-                    <option value="" disabled>How did you hear about us?</option>
-                    <option value="google">Google</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="referral">Referral</option>
-                    <option value="returning-client">Returning Client</option>
-                  </select>
-                </div>
+                {/* Dynamic Questions */}
+                {dynamicQuestions.map((question) => (
+                  <div key={question.id} className="form-group">
+                    <label htmlFor={question.field_name} style={{ fontSize: '14px', fontWeight: 500 }}>
+                      {question.question_text} {question.is_required && '*'}
+                    </label>
+                    <select
+                      required={question.is_required}
+                      className="form-control"
+                      name={question.field_name}
+                      id={question.field_name}
+                      value={dynamicAnswers[question.field_name] || ''}
+                      onChange={(e) => {
+                        setDynamicAnswers(prev => ({
+                          ...prev,
+                          [question.field_name]: e.target.value
+                        }));
+                      }}
+                    >
+                      <option value="" disabled>
+                        {question.question_text.includes('?') ? question.question_text : `Select ${question.question_text.toLowerCase()}`}
+                      </option>
+                      {question.options && question.options.map((option: any) => (
+                        <option key={option.id} value={option.option_value}>
+                          {option.option_label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
 
                 <div className="mt-4">
                   <h6 className="text-xl mb-2" style={{ color: '#dc3545', fontWeight: 500 }}>
@@ -1401,11 +1334,6 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onSuccess={handleLoginSuccess}
-      />
     </>
   );
 }

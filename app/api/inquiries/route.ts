@@ -5,6 +5,10 @@ import { verifyRecaptcha } from '@/lib/recaptcha';
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse request body first to check if it's a general inquiry
+    const body = await request.json();
+    const isGeneralInquiry = !body.property_id || body.property_id === null;
+
     // Try cookie-based auth first (better for RLS policies)
     const supabase = await createServerSideClient();
 
@@ -20,6 +24,10 @@ export async function POST(request: NextRequest) {
         const { data: { user: tokenUser }, error: tokenError } = await tokenSupabase.auth.getUser();
 
         if (tokenError || !tokenUser) {
+          // Allow unauthenticated general inquiries (contact form)
+          if (isGeneralInquiry) {
+            return handleInquiryInsert(request, supabase, null, body);
+          }
           return jsonResponseNoCache(
             { error: 'Authentication required. Please log in to submit an inquiry.' },
             { status: 401 }
@@ -27,7 +35,12 @@ export async function POST(request: NextRequest) {
         }
 
         // Use token-based client and user for the rest of the request
-        return handleInquiryInsert(request, tokenSupabase, tokenUser);
+        return handleInquiryInsert(request, tokenSupabase, tokenUser, body);
+      }
+
+      // Allow unauthenticated general inquiries (contact form)
+      if (isGeneralInquiry) {
+        return handleInquiryInsert(request, supabase, null, body);
       }
 
       return jsonResponseNoCache(
@@ -36,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return handleInquiryInsert(request, supabase, user);
+    return handleInquiryInsert(request, supabase, user, body);
   } catch (error: any) {
     console.error('Inquiry API error:', error);
     console.error('Error stack:', error.stack);
@@ -47,11 +60,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleInquiryInsert(request: NextRequest, supabase: any, user: any) {
+async function handleInquiryInsert(request: NextRequest, supabase: any, user: any, body?: any) {
   try {
 
-    // Parse request body
-    const body = await request.json();
+    // Use provided body or parse from request
+    if (!body) {
+      body = await request.json();
+    }
+
     const {
       property_id,
       first_name,
@@ -88,7 +104,7 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
     // Prepare inquiry data
     const inquiryData = {
       property_id: property_id || null,
-      user_id: user.id,
+      user_id: user ? user.id : null,
       user_name: `${first_name} ${last_name}`,
       user_email: email,
       user_phone: phone || null,
@@ -106,8 +122,28 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
 
     console.log('Attempting to insert inquiry:', JSON.stringify(inquiryData, null, 2));
 
+    // For unauthenticated users, use service role to bypass RLS
+    let insertSupabase = supabase;
+    if (!user) {
+      // Create a service role client for unauthenticated general inquiries
+      const { createClient } = await import('@supabase/supabase-js');
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (serviceRoleKey) {
+        insertSupabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          serviceRoleKey,
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false
+            }
+          }
+        );
+      }
+    }
+
     // Insert inquiry (without select to avoid policy check issues)
-    const { error: insertError } = await supabase
+    const { error: insertError } = await insertSupabase
       .from('inquiries')
       .insert(inquiryData);
 
@@ -139,6 +175,7 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
         }
       }
 
+      // Send user confirmation email
       await fetch(`${request.nextUrl.origin}/api/send-inquiry-confirmation-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,8 +186,29 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
           propertyAddress: propertyAddress
         })
       });
+
+      // Send admin notification email
+      await fetch(`${request.nextUrl.origin}/api/send-admin-inquiry-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: first_name,
+          lastName: last_name,
+          email: email,
+          phone: phone,
+          company: company,
+          message: message,
+          crewSize: crew_size,
+          locations: locations,
+          shootingDate: shooting_date,
+          projectType: project_type,
+          howDidYouHear: how_did_you_hear,
+          propertyName: propertyName,
+          propertyAddress: propertyAddress
+        })
+      });
     } catch (emailError) {
-      console.error('Failed to send inquiry confirmation email:', emailError);
+      console.error('Failed to send inquiry emails:', emailError);
       // Don't block the inquiry submission if email fails
     }
 

@@ -13,6 +13,9 @@ interface ContactFormModalProps {
 }
 
 export default function ContactFormModal({ isOpen, onClose, propertyName, propertyId }: ContactFormModalProps) {
+  const [dynamicQuestions, setDynamicQuestions] = useState<any[]>([]);
+  const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22,9 +25,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
     phone: '',
     crewSize: '',
     locations: propertyName || '',
-    shootingDate: '',
-    projectType: '',
-    howDidYouHear: ''
+    shootingDate: ''
   });
 
   const [showPicker, setShowPicker] = useState(false);
@@ -53,6 +54,34 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
 
   // Check authentication and auto-fill user data
   useEffect(() => {
+    async function fetchDynamicQuestions() {
+      try {
+        const { data: questions } = await supabase
+          .from('contact_form_questions')
+          .select(`
+            *,
+            contact_form_question_options (
+              id,
+              option_value,
+              option_label,
+              display_order
+            )
+          `)
+          .order('display_order');
+
+        if (questions) {
+          const formatted = questions.map((q: any) => ({
+            ...q,
+            options: (q.contact_form_question_options || [])
+              .sort((a: any, b: any) => a.display_order - b.display_order)
+          }));
+          setDynamicQuestions(formatted);
+        }
+      } catch (error) {
+        console.error('Error fetching dynamic questions:', error);
+      }
+    }
+
     async function checkAuthAndFetchUser() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -119,6 +148,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
     }
 
     if (isOpen) {
+      fetchDynamicQuestions();
       checkAuthAndFetchUser();
     }
   }, [isOpen, propertyId]);
@@ -137,10 +167,9 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
           phone: '',
           crewSize: '',
           locations: propertyName || '',
-          shootingDate: '',
-          projectType: '',
-          howDidYouHear: ''
+          shootingDate: ''
         });
+        setDynamicAnswers({});
         setSelectedStart(null);
         setSelectedEnd(null);
         setShowPicker(false);
@@ -266,6 +295,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
         return;
       }
 
+      // Build dynamic data object
+      const dynamicData: Record<string, string> = {};
+      dynamicQuestions.forEach(q => {
+        dynamicData[q.field_name] = dynamicAnswers[q.field_name] || null;
+      });
+
       const response = await fetch('/api/inquiries', {
         method: 'POST',
         headers: {
@@ -284,8 +319,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
           crew_size: formData.crewSize,
           locations: formData.locations,
           shooting_date: formData.shootingDate,
-          project_type: formData.projectType,
-          how_did_you_hear: formData.howDidYouHear
+          ...dynamicData
         })
       });
 
@@ -610,37 +644,32 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   )}
                 </div>
 
-                <div>
-                  <select
-                    required
-                    name="projectType"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                    value={formData.projectType}
-                    onChange={handleChange}
-                  >
-                    <option value="" disabled>Project Type *</option>
-                    <option value="motion">Motion</option>
-                    <option value="stills">Stills</option>
-                    <option value="event">Event</option>
-                  </select>
-                </div>
-
-                <div>
-                  <select
-                    required
-                    name="howDidYouHear"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                    value={formData.howDidYouHear}
-                    onChange={handleChange}
-                  >
-                    <option value="" disabled>How did you hear about us? *</option>
-                    <option value="google">Google</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="referral">Referral</option>
-                    <option value="returning-client">Returning Client</option>
-                  </select>
-                </div>
+                {/* Dynamic Questions */}
+                {dynamicQuestions.map((question) => (
+                  <div key={question.id}>
+                    <select
+                      required={question.is_required}
+                      name={question.field_name}
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                      value={dynamicAnswers[question.field_name] || ''}
+                      onChange={(e) => {
+                        setDynamicAnswers(prev => ({
+                          ...prev,
+                          [question.field_name]: e.target.value
+                        }));
+                      }}
+                    >
+                      <option value="" disabled>
+                        {question.question_text} {question.is_required && '*'}
+                      </option>
+                      {question.options && question.options.map((option: any) => (
+                        <option key={option.id} value={option.option_value}>
+                          {option.option_label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
               </div>
             </div>
 

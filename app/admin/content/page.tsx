@@ -135,6 +135,12 @@ export default function ContentManagementPage() {
   const [generalContactPhone, setGeneralContactPhone] = useState('');
   const [generalContactAddress, setGeneralContactAddress] = useState('');
 
+  // Contact Form Questions State
+  const [contactFormQuestions, setContactFormQuestions] = useState<any[]>([]);
+  const [editingContactQuestion, setEditingContactQuestion] = useState<any | null>(null);
+  const [newQuestionText, setNewQuestionText] = useState('');
+  const [newQuestionRequired, setNewQuestionRequired] = useState(true);
+
   // Portfolio Visibility State
   const [portfolioVisible, setPortfolioVisible] = useState(true);
 
@@ -211,6 +217,7 @@ export default function ContentManagementPage() {
     if (activeTab === 'contact') {
       fetchContactGrid();
       fetchGeneralContactInfo();
+      fetchContactFormQuestions();
     } else if (activeTab === 'portfolio') {
       fetchPortfolioVisibility();
       fetchProjects();
@@ -882,6 +889,186 @@ export default function ContentManagementPage() {
       }
     } catch (error) {
       console.error('Error fetching general contact info:', error);
+    }
+  }
+
+  async function fetchContactFormQuestions() {
+    try {
+      const { data: questions } = await supabase
+        .from('contact_form_questions')
+        .select(`
+          *,
+          contact_form_question_options (
+            id,
+            option_value,
+            option_label,
+            display_order
+          )
+        `)
+        .order('display_order');
+
+      if (questions) {
+        const formattedQuestions = questions.map((q: any) => ({
+          ...q,
+          options: (q.contact_form_question_options || [])
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+        }));
+        setContactFormQuestions(formattedQuestions);
+      }
+    } catch (error) {
+      console.error('Error fetching contact form questions:', error);
+    }
+  }
+
+  async function addContactFormQuestion() {
+    if (!newQuestionText.trim()) {
+      alert('Please enter a question text');
+      return;
+    }
+
+    if (contactFormQuestions.length >= 2) {
+      alert('Maximum 2 questions allowed. Please delete one first.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const fieldName = newQuestionText.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const displayOrder = contactFormQuestions.length + 1;
+
+      const { data, error } = await supabase
+        .from('contact_form_questions')
+        .insert({
+          question_text: newQuestionText,
+          field_name: fieldName,
+          is_required: newQuestionRequired,
+          display_order: displayOrder
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setNewQuestionText('');
+      setNewQuestionRequired(true);
+      await fetchContactFormQuestions();
+      alert('Question added successfully!');
+    } catch (error: any) {
+      alert('Error adding question: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateContactFormQuestion(questionId: string, updates: any) {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('contact_form_questions')
+        .update(updates)
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      await fetchContactFormQuestions();
+      alert('Question updated successfully!');
+    } catch (error: any) {
+      alert('Error updating question: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteContactFormQuestion(questionId: string) {
+    if (!confirm('Are you sure you want to delete this question? This will also delete all its options.')) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('contact_form_questions')
+        .delete()
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      await fetchContactFormQuestions();
+      alert('Question deleted successfully!');
+    } catch (error: any) {
+      alert('Error deleting question: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function addQuestionOption(questionId: string, optionValue: string, optionLabel: string) {
+    if (!optionValue.trim() || !optionLabel.trim()) {
+      alert('Please enter both option value and label');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const question = contactFormQuestions.find(q => q.id === questionId);
+      const displayOrder = (question?.options?.length || 0) + 1;
+
+      const { error } = await supabase
+        .from('contact_form_question_options')
+        .insert({
+          question_id: questionId,
+          option_value: optionValue,
+          option_label: optionLabel,
+          display_order: displayOrder
+        });
+
+      if (error) throw error;
+
+      await fetchContactFormQuestions();
+    } catch (error: any) {
+      alert('Error adding option: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateQuestionOption(optionId: string, updates: any) {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('contact_form_question_options')
+        .update(updates)
+        .eq('id', optionId);
+
+      if (error) throw error;
+
+      await fetchContactFormQuestions();
+    } catch (error: any) {
+      alert('Error updating option: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteQuestionOption(optionId: string) {
+    if (!confirm('Delete this option?')) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('contact_form_question_options')
+        .delete()
+        .eq('id', optionId);
+
+      if (error) throw error;
+
+      await fetchContactFormQuestions();
+    } catch (error: any) {
+      alert('Error deleting option: ' + error.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -2683,6 +2870,178 @@ export default function ContentManagementPage() {
                     )}
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Form Questions Management */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Contact Form Questions</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Manage dynamic questions for contact and inquiry forms (Maximum 2 questions)
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Existing Questions */}
+              {contactFormQuestions.map((question, qIndex) => (
+                <div key={question.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Input
+                          value={question.question_text}
+                          onChange={(e) => {
+                            const updated = [...contactFormQuestions];
+                            updated[qIndex].question_text = e.target.value;
+                            setContactFormQuestions(updated);
+                          }}
+                          onBlur={() => updateContactFormQuestion(question.id, { question_text: question.question_text })}
+                          className="font-medium"
+                          placeholder="Question text"
+                        />
+                        <label className="flex items-center gap-2 text-sm whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={question.is_required}
+                            onChange={(e) => {
+                              updateContactFormQuestion(question.id, { is_required: e.target.checked });
+                            }}
+                            className="w-4 h-4"
+                          />
+                          Required
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500">Field name: {question.field_name}</p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteContactFormQuestion(question.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Question Options */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Options:</label>
+                    {question.options && question.options.length > 0 ? (
+                      question.options.map((option: any, optIndex: number) => (
+                        <div key={option.id} className="flex gap-2 items-center">
+                          <Input
+                            value={option.option_label}
+                            onChange={(e) => {
+                              const updated = [...contactFormQuestions];
+                              updated[qIndex].options[optIndex].option_label = e.target.value;
+                              setContactFormQuestions(updated);
+                            }}
+                            onBlur={() => updateQuestionOption(option.id, { option_label: option.option_label })}
+                            placeholder="Option label"
+                            className="flex-1"
+                          />
+                          <Input
+                            value={option.option_value}
+                            onChange={(e) => {
+                              const updated = [...contactFormQuestions];
+                              updated[qIndex].options[optIndex].option_value = e.target.value;
+                              setContactFormQuestions(updated);
+                            }}
+                            onBlur={() => updateQuestionOption(option.id, { option_value: option.option_value })}
+                            placeholder="Value"
+                            className="w-32"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteQuestionOption(option.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No options yet</p>
+                    )}
+
+                    {/* Add New Option */}
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id={`new-option-label-${question.id}`}
+                        placeholder="New option label (e.g., Motion)"
+                        className="flex-1"
+                      />
+                      <Input
+                        id={`new-option-value-${question.id}`}
+                        placeholder="Value (e.g., motion)"
+                        className="w-32"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const labelInput = document.getElementById(`new-option-label-${question.id}`) as HTMLInputElement;
+                          const valueInput = document.getElementById(`new-option-value-${question.id}`) as HTMLInputElement;
+                          if (labelInput && valueInput) {
+                            addQuestionOption(question.id, valueInput.value, labelInput.value);
+                            labelInput.value = '';
+                            valueInput.value = '';
+                          }
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Option
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add New Question */}
+              {contactFormQuestions.length < 2 && (
+                <div className="border-2 border-dashed rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Add New Question</h4>
+                  <div className="space-y-3">
+                    <Input
+                      value={newQuestionText}
+                      onChange={(e) => setNewQuestionText(e.target.value)}
+                      placeholder="Question text (e.g., Project Type)"
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="new-question-required"
+                        checked={newQuestionRequired}
+                        onChange={(e) => setNewQuestionRequired(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor="new-question-required" className="text-sm">
+                        Required field
+                      </label>
+                    </div>
+                    <Button
+                      onClick={addContactFormQuestion}
+                      disabled={saving || !newQuestionText.trim()}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Question
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {contactFormQuestions.length >= 2 && (
+                <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded p-3">
+                  Maximum number of questions reached (2). Delete a question to add a new one.
+                </div>
+              )}
+
+              <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded p-3">
+                <strong>Note:</strong> These questions will appear on both the contact form and property inquiry forms.
+                Changes are applied immediately.
               </div>
             </CardContent>
           </Card>
