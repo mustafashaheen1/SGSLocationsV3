@@ -86,7 +86,9 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
                       style={{
                         objectFit: 'cover'
                       }}
-                      loading="lazy"
+                      loading={idx === 0 ? "eager" : "lazy"}
+                      priority={idx === 0}
+                      quality={75}
                       unoptimized={img.includes('placeholder.com')}
                     />
                   </Link>
@@ -1727,13 +1729,20 @@ export default function SearchPage() {
           position: absolute !important;
           top: 50% !important;
           transform: translateY(-50%) !important;
-          width: 96px !important;
+          width: 60px !important;
           height: min(50px, 40%) !important;
           z-index: 10 !important;
           cursor: pointer !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
+        }
+
+        @media (min-width: 768px) {
+          .swiper-button-prev,
+          .swiper-button-next {
+            width: 96px !important;
+          }
         }
 
         .swiper-button-prev {
@@ -1795,11 +1804,13 @@ export default function SearchPage() {
         .swiper-container-wrapper {
           position: relative;
           width: 100%;
+          max-width: 100%;
+          overflow: hidden;
         }
 
         .il-search-result {
           background: white;
-          overflow: visible;
+          overflow: hidden;
         }
 
         .property-grid {
@@ -1809,6 +1820,7 @@ export default function SearchPage() {
           padding: 15px;
           max-width: 1425px;
           margin: 0 auto;
+          overflow-x: hidden;
         }
 
         @media (min-width: 768px) {
