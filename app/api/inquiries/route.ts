@@ -109,6 +109,40 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
       );
     }
 
+    // Send confirmation email to the user
+    try {
+      // Get property details if inquiry is for a specific property
+      let propertyName = null;
+      let propertyAddress = null;
+
+      if (property_id) {
+        const { data: propertyData } = await supabase
+          .from('properties')
+          .select('name, address, city, county')
+          .eq('id', property_id)
+          .single();
+
+        if (propertyData) {
+          propertyName = propertyData.name;
+          propertyAddress = `${propertyData.address}, ${propertyData.city}, ${propertyData.county || ''}`.trim();
+        }
+      }
+
+      await fetch(`${request.nextUrl.origin}/api/send-inquiry-confirmation-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          name: `${first_name} ${last_name}`,
+          propertyName: propertyName,
+          propertyAddress: propertyAddress
+        })
+      });
+    } catch (emailError) {
+      console.error('Failed to send inquiry confirmation email:', emailError);
+      // Don't block the inquiry submission if email fails
+    }
+
     return jsonResponseNoCache({ success: true, message: 'Inquiry submitted successfully' }, { status: 201 });
 
   } catch (error: any) {

@@ -271,9 +271,11 @@ export default function PendingPropertiesPage() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="text-sm text-gray-900">
-                          {property.sub_category?.name || property.main_category?.name || 'N/A'}
+                          {property.main_category?.name || 'N/A'}
                         </div>
-                        <div className="text-sm text-gray-500">{property.address}</div>
+                        {property.sub_category?.name && (
+                          <div className="text-sm text-gray-500">{property.sub_category.name}</div>
+                        )}
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-900">
                         {property.city}, {property.county}
