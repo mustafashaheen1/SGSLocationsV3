@@ -56,8 +56,8 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
   useEffect(() => {
     async function fetchDynamicQuestions() {
       try {
-        const { data: questions } = await supabase
-          .from('contact_form_questions')
+        const { data: questions } = await (supabase
+          .from('contact_form_questions') as any)
           .select(`
             *,
             contact_form_question_options (

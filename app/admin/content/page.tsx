@@ -894,8 +894,8 @@ export default function ContentManagementPage() {
 
   async function fetchContactFormQuestions() {
     try {
-      const { data: questions } = await supabase
-        .from('contact_form_questions')
+      const { data: questions } = await (supabase
+        .from('contact_form_questions') as any)
         .select(`
           *,
           contact_form_question_options (
@@ -936,8 +936,8 @@ export default function ContentManagementPage() {
       const fieldName = newQuestionText.toLowerCase().replace(/[^a-z0-9]+/g, '_');
       const displayOrder = contactFormQuestions.length + 1;
 
-      const { data, error } = await supabase
-        .from('contact_form_questions')
+      const { data, error } = await (supabase
+        .from('contact_form_questions') as any)
         .insert({
           question_text: newQuestionText,
           field_name: fieldName,
@@ -963,8 +963,8 @@ export default function ContentManagementPage() {
   async function updateContactFormQuestion(questionId: string, updates: any) {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('contact_form_questions')
+      const { error } = await (supabase
+        .from('contact_form_questions') as any)
         .update(updates)
         .eq('id', questionId);
 
@@ -986,8 +986,8 @@ export default function ContentManagementPage() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('contact_form_questions')
+      const { error } = await (supabase
+        .from('contact_form_questions') as any)
         .delete()
         .eq('id', questionId);
 
@@ -1013,8 +1013,8 @@ export default function ContentManagementPage() {
       const question = contactFormQuestions.find(q => q.id === questionId);
       const displayOrder = (question?.options?.length || 0) + 1;
 
-      const { error } = await supabase
-        .from('contact_form_question_options')
+      const { error } = await (supabase
+        .from('contact_form_question_options') as any)
         .insert({
           question_id: questionId,
           option_value: optionValue,
@@ -1035,8 +1035,8 @@ export default function ContentManagementPage() {
   async function updateQuestionOption(optionId: string, updates: any) {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('contact_form_question_options')
+      const { error } = await (supabase
+        .from('contact_form_question_options') as any)
         .update(updates)
         .eq('id', optionId);
 
@@ -1057,8 +1057,8 @@ export default function ContentManagementPage() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('contact_form_question_options')
+      const { error } = await (supabase
+        .from('contact_form_question_options') as any)
         .delete()
         .eq('id', optionId);
 
