@@ -296,7 +296,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
       }
 
       // Build dynamic data object
-      const dynamicData: Record<string, string> = {};
+      const dynamicData: Record<string, string | null> = {};
       dynamicQuestions.forEach(q => {
         dynamicData[q.field_name] = dynamicAnswers[q.field_name] || null;
       });
