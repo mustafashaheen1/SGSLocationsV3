@@ -1,6 +1,7 @@
 import { createServerSideClient, createServerSideClientWithToken } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 import { jsonResponseNoCache } from '@/lib/api-helpers';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,8 +64,18 @@ async function handleInquiryInsert(request: NextRequest, supabase: any, user: an
       locations,
       shooting_date,
       project_type,
-      how_did_you_hear
+      how_did_you_hear,
+      recaptcha_token
     } = body;
+
+    // Verify reCAPTCHA token
+    const recaptchaResult = await verifyRecaptcha(recaptcha_token);
+    if (!recaptchaResult.success) {
+      return jsonResponseNoCache(
+        { error: recaptchaResult.error || 'reCAPTCHA verification failed' },
+        { status: 400 }
+      );
+    }
 
     // Validate required fields
     if (!first_name || !last_name || !email || !message) {

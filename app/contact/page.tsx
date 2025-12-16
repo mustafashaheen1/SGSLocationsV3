@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import LoginModal from '@/components/LoginModal';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 
 export default function ContactPage() {
   const [gridData, setGridData] = useState<any[]>([]);
@@ -32,6 +33,8 @@ export default function ContactPage() {
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [phoneError, setPhoneError] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaError, setRecaptchaError] = useState('');
 
   const [showPicker, setShowPicker] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -40,6 +43,7 @@ export default function ContactPage() {
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   useEffect(() => {
     async function fetchContactGrid() {
@@ -175,6 +179,12 @@ export default function ContactPage() {
       return;
     }
 
+    // Validate reCAPTCHA
+    if (!recaptchaToken) {
+      setRecaptchaError('Please complete the reCAPTCHA verification');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -206,7 +216,8 @@ export default function ContactPage() {
           locations: formData.locations || null,
           shooting_date: formData.shootingDate || null,
           project_type: formData.projectType || null,
-          how_did_you_hear: formData.howDidYouHear || null
+          how_did_you_hear: formData.howDidYouHear || null,
+          recaptcha_token: recaptchaToken
         })
       });
 
@@ -224,6 +235,9 @@ export default function ContactPage() {
         }));
         setSelectedStart(null);
         setSelectedEnd(null);
+        // Reset reCAPTCHA
+        setRecaptchaToken(null);
+        recaptchaRef.current?.reset();
 
         // Auto-hide success message after 5 seconds
         setTimeout(() => setSubmitSuccess(false), 5000);
@@ -1275,58 +1289,26 @@ export default function ContactPage() {
               {/* Full Width reCAPTCHA Section - Centered */}
               <div className="col-12">
                 <div className="form-group mt-2 text-center">
-                  <div className="text-center">
-                    <div className="d-inline-block">
-                      <div
-                        className="g-recaptcha"
-                        style={{
-                          transform: 'scale(1)',
-                          transformOrigin: '0 0',
-                          width: '100%',
-                          maxWidth: '304px',
-                          height: '78px',
-                          margin: '0 auto'
-                        }}
-                      >
-                        <div style={{
-                          width: '100%',
-                          maxWidth: '304px',
-                          height: '78px',
-                          border: '1px solid #d3d3d3',
-                          borderRadius: '3px',
-                          backgroundColor: '#f9f9f9',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '0 13px',
-                          margin: '0 auto'
-                        }}>
-                          <input type="checkbox" style={{ marginRight: '12px' }} />
-                          <label style={{
-                            flex: 1,
-                            fontSize: '14px',
-                            color: '#000',
-                            lineHeight: 'normal'
-                          }}>
-                            I'm not a robot
-                          </label>
-                          <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            fontSize: '10px',
-                            color: '#555',
-                            lineHeight: '10px'
-                          }}>
-                            <div style={{ marginBottom: '2px' }}>reCAPTCHA</div>
-                            <div style={{ fontSize: '8px' }}>
-                              <a href="#" style={{ color: '#555' }}>Privacy</a> -
-                              <a href="#" style={{ color: '#555' }}> Terms</a>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <ReCaptcha
+                    ref={recaptchaRef}
+                    onVerify={(token) => {
+                      setRecaptchaToken(token);
+                      setRecaptchaError('');
+                    }}
+                    onExpired={() => {
+                      setRecaptchaToken(null);
+                      setRecaptchaError('reCAPTCHA expired, please verify again');
+                    }}
+                    onError={() => {
+                      setRecaptchaToken(null);
+                      setRecaptchaError('reCAPTCHA error, please try again');
+                    }}
+                  />
+                  {recaptchaError && (
+                    <p style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                      {recaptchaError}
+                    </p>
+                  )}
                 </div>
               </div>
 

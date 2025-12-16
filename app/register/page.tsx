@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Camera } from 'lucide-react';
 import LoginModal from '@/components/LoginModal';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 import { nunito } from '@/lib/fonts';
 import { supabase } from '@/lib/supabase';
 
@@ -36,9 +37,12 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    recaptcha: '',
     form: '',
   });
   const [loading, setLoading] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     // Don't allow email change if it's locked
@@ -55,6 +59,7 @@ export default function RegisterPage() {
       email: '',
       password: '',
       confirmPassword: '',
+      recaptcha: '',
       form: '',
     };
     let isValid = true;
@@ -93,6 +98,11 @@ export default function RegisterPage() {
       isValid = false;
     }
 
+    if (!recaptchaToken) {
+      newErrors.recaptcha = 'Please complete the reCAPTCHA verification';
+      isValid = false;
+    }
+
     setErrors(newErrors);
     return isValid;
   };
@@ -108,41 +118,38 @@ export default function RegisterPage() {
     setErrors({ ...errors, form: '' });
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Call custom registration API with reCAPTCHA verification
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          userType: formData.userType,
+          recaptcha_token: recaptchaToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      // After successful registration, sign in the user
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('User creation failed');
-      }
-
-      const { error: profileError } = await (supabase
-        .from('users') as any)
-        .insert({
-          id: authData.user.id,
-          email: formData.email,
-          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-          user_type: formData.userType,
-        });
-
-      if (profileError) throw profileError;
-
-      // Send welcome email
-      try {
-        await fetch('/api/send-welcome-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            name: `${formData.firstName} ${formData.lastName}`.trim()
-          })
-        });
-      } catch (emailError) {
-        console.error('Failed to send welcome email:', emailError);
-        // Don't block registration if email fails
+      if (signInError) {
+        console.error('Sign in error after registration:', signInError);
+        // Registration was successful, but auto sign-in failed
+        // Redirect to login page
+        router.push('/');
+        return;
       }
 
       // Check if there's a redirect URL from the query parameters
@@ -379,29 +386,24 @@ export default function RegisterPage() {
               </div>
 
               <div className="mt-5 mb-5">
-                <div className="border border-gray-300 bg-gray-50 p-4 mx-auto" style={{ width: '100%', maxWidth: '304px' }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        className="w-6 h-6 accent-red-600 cursor-pointer"
-                        required
-                      />
-                      <span className="text-sm text-gray-700">I'm not a robot</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex flex-col items-end">
-                        <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" fill="#4285F4"/>
-                          <path d="M8 12l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <p className="text-xs text-gray-500 mt-1">
-                          reCAPTCHA
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ReCaptcha
+                  ref={recaptchaRef}
+                  onVerify={(token) => {
+                    setRecaptchaToken(token);
+                    setErrors({ ...errors, recaptcha: '' });
+                  }}
+                  onExpired={() => {
+                    setRecaptchaToken(null);
+                    setErrors({ ...errors, recaptcha: 'reCAPTCHA expired, please verify again' });
+                  }}
+                  onError={() => {
+                    setRecaptchaToken(null);
+                    setErrors({ ...errors, recaptcha: 'reCAPTCHA error, please try again' });
+                  }}
+                />
+                {errors.recaptcha && (
+                  <p className="text-red-600 text-sm mt-2 text-center">{errors.recaptcha}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-4">
