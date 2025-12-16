@@ -1002,9 +1002,9 @@ export default function ContentManagementPage() {
     }
   }
 
-  async function addQuestionOption(questionId: string, optionValue: string, optionLabel: string) {
-    if (!optionValue.trim() || !optionLabel.trim()) {
-      alert('Please enter both option value and label');
+  async function addQuestionOption(questionId: string, optionLabel: string) {
+    if (!optionLabel.trim()) {
+      alert('Please enter an option label');
       return;
     }
 
@@ -1012,6 +1012,9 @@ export default function ContentManagementPage() {
     try {
       const question = contactFormQuestions.find(q => q.id === questionId);
       const displayOrder = (question?.options?.length || 0) + 1;
+
+      // Auto-generate value from label
+      const optionValue = optionLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
       const { error } = await (supabase
         .from('contact_form_question_options') as any)
@@ -1032,12 +1035,18 @@ export default function ContentManagementPage() {
     }
   }
 
-  async function updateQuestionOption(optionId: string, updates: any) {
+  async function updateQuestionOption(optionId: string, optionLabel: string) {
     setSaving(true);
     try {
+      // Auto-generate value from label
+      const optionValue = optionLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
       const { error } = await (supabase
         .from('contact_form_question_options') as any)
-        .update(updates)
+        .update({
+          option_label: optionLabel,
+          option_value: optionValue
+        })
         .eq('id', optionId);
 
       if (error) throw error;
@@ -2940,21 +2949,13 @@ export default function ContentManagementPage() {
                               updated[qIndex].options[optIndex].option_label = e.target.value;
                               setContactFormQuestions(updated);
                             }}
-                            onBlur={() => updateQuestionOption(option.id, { option_label: option.option_label })}
-                            placeholder="Option label"
+                            onBlur={() => updateQuestionOption(option.id, option.option_label)}
+                            placeholder="Option text (e.g., Motion Picture)"
                             className="flex-1"
                           />
-                          <Input
-                            value={option.option_value}
-                            onChange={(e) => {
-                              const updated = [...contactFormQuestions];
-                              updated[qIndex].options[optIndex].option_value = e.target.value;
-                              setContactFormQuestions(updated);
-                            }}
-                            onBlur={() => updateQuestionOption(option.id, { option_value: option.option_value })}
-                            placeholder="Value"
-                            className="w-32"
-                          />
+                          <div className="text-xs text-gray-500 w-32 truncate" title={option.option_value}>
+                            {option.option_value}
+                          </div>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -2972,28 +2973,31 @@ export default function ContentManagementPage() {
                     <div className="flex gap-2 mt-2">
                       <Input
                         id={`new-option-label-${question.id}`}
-                        placeholder="New option label (e.g., Motion)"
+                        placeholder="New option (e.g., Motion Picture)"
                         className="flex-1"
-                      />
-                      <Input
-                        id={`new-option-value-${question.id}`}
-                        placeholder="Value (e.g., motion)"
-                        className="w-32"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const labelInput = e.currentTarget;
+                            if (labelInput.value.trim()) {
+                              addQuestionOption(question.id, labelInput.value);
+                              labelInput.value = '';
+                            }
+                          }
+                        }}
                       />
                       <Button
                         size="sm"
                         onClick={() => {
                           const labelInput = document.getElementById(`new-option-label-${question.id}`) as HTMLInputElement;
-                          const valueInput = document.getElementById(`new-option-value-${question.id}`) as HTMLInputElement;
-                          if (labelInput && valueInput) {
-                            addQuestionOption(question.id, valueInput.value, labelInput.value);
+                          if (labelInput && labelInput.value.trim()) {
+                            addQuestionOption(question.id, labelInput.value);
                             labelInput.value = '';
-                            valueInput.value = '';
                           }
                         }}
                       >
                         <Plus className="w-4 h-4 mr-1" />
-                        Add Option
+                        Add
                       </Button>
                     </div>
                   </div>
