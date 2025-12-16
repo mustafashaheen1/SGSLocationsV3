@@ -206,7 +206,8 @@ async function handleInquiriesFetch(request: NextRequest, supabase: any, user: a
           address,
           city,
           county,
-          primary_image
+          primary_image,
+          owner_id
         )
       `)
       .order('created_at', { ascending: false });

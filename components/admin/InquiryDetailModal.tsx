@@ -111,7 +111,7 @@ export default function InquiryDetailModal({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.open(`/property/${inquiry.property_id}`, '_blank');
+                    router.push(`/admin/properties/${inquiry.property_id}/edit`);
                   }}
                   className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
                 >

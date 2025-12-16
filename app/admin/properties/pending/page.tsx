@@ -21,10 +21,14 @@ export default function PendingPropertiesPage() {
   async function fetchProperties() {
     setLoading(true);
     try {
-      // Fetch pending properties - NO USER JOIN
+      // Fetch pending properties with category information
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select(`
+          *,
+          main_category:category_id(name),
+          sub_category:sub_category_id(name)
+        `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -266,7 +270,9 @@ export default function PendingPropertiesPage() {
                         <div className="text-sm text-gray-500">{property.images?.length || 0} images</div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm text-gray-900">{property.categories?.[0] || 'N/A'}</div>
+                        <div className="text-sm text-gray-900">
+                          {property.sub_category?.name || property.main_category?.name || 'N/A'}
+                        </div>
                         <div className="text-sm text-gray-500">{property.address}</div>
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-900">
