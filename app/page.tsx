@@ -219,17 +219,34 @@ export default function HomePage() {
         {heroVideo ? (
           <video
             key={heroVideo}
+            src={heroVideo}
             autoPlay
             loop
             muted
             playsInline
+            preload="auto"
+            crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-cover"
+            onLoadedData={() => {
+              console.log('✅ Video loaded successfully');
+            }}
             onError={(e) => {
-              console.error('Video failed to load:', heroVideo);
-              console.error('Video error:', e);
+              console.error('❌ Video failed to load:', heroVideo);
+              const videoElement = e.currentTarget as HTMLVideoElement;
+              if (videoElement.error) {
+                console.error('Video error code:', videoElement.error.code);
+                console.error('Video error message:', videoElement.error.message);
+              }
+              console.error('Video error details:', {
+                networkState: videoElement.networkState,
+                readyState: videoElement.readyState,
+              });
+            }}
+            onCanPlay={() => {
+              console.log('🎬 Video can play');
             }}
           >
-            <source src={heroVideo} type="video/mp4" />
+            Your browser does not support the video tag.
           </video>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-700" />
