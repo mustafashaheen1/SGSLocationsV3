@@ -68,7 +68,11 @@ export default function HomePage() {
 
         if (isMounted && settings) {
           settings.forEach((setting: any) => {
-            if (setting.key === 'hero_video') setHeroVideo(setting.value || '');
+            if (setting.key === 'hero_video') {
+              const videoUrl = setting.value || '';
+              console.log('🎥 Hero video URL:', videoUrl);
+              setHeroVideo(videoUrl);
+            }
             if (setting.key === 'hero_title') setHeroTitle(setting.value || '');
             if (setting.key === 'hero_subtitle') setHeroSubtitle(setting.value || '');
           });
@@ -212,15 +216,24 @@ export default function HomePage() {
   return (
     <main className="min-h-screen animate-fadeIn">
       <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src={heroVideo} type="video/mp4" />
-        </video>
+        {heroVideo ? (
+          <video
+            key={heroVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Video failed to load:', heroVideo);
+              console.error('Video error:', e);
+            }}
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-700" />
+        )}
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white">
