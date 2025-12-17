@@ -4,28 +4,48 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // ============================================
-// NUCLEAR CLEANUP - Runs ONCE per browser session
-// Clears ALL Supabase data to prevent corrupted sessions
-// User will need to login once after opening browser
+// ROBUST SESSION MANAGEMENT
+// Clears corrupted data AND validates before use
 // ============================================
 
-function nuclearCleanupOnce() {
+function isSessionDataValid(): boolean {
+  if (typeof window === 'undefined') return true;
+  
+  try {
+    const authKey = 'supabase.auth.token';
+    const stored = localStorage.getItem(authKey);
+    
+    if (!stored) return true; // No data is fine
+    
+    const parsed = JSON.parse(stored);
+    
+    // Check if it has required structure
+    if (!parsed || typeof parsed !== 'object') {
+      return false;
+    }
+    
+    // Check for expiry
+    const expiresAt = parsed?.expires_at || parsed?.currentSession?.expires_at;
+    if (expiresAt) {
+      const expiryTime = expiresAt * 1000;
+      if (Date.now() >= expiryTime) {
+        console.log('🧹 Session expired');
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (e) {
+    console.log('🧹 Session data corrupted');
+    return false;
+  }
+}
+
+function clearSupabaseStorage() {
   if (typeof window === 'undefined') return;
   
-  const cleanupKey = 'sgs_session_cleaned_v2';
-  
-  // Check if we've already cleaned in this browser session
-  if (sessionStorage.getItem(cleanupKey)) {
-    console.log('✅ Supabase storage already cleaned this session');
-    return;
-  }
-  
-  console.log('🔥 Running one-time Supabase cleanup...');
-  
-  let cleared = 0;
   const keysToRemove: string[] = [];
   
-  // Collect keys first (can't modify while iterating)
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key && (key.includes('supabase') || key.startsWith('sb-'))) {
@@ -33,39 +53,47 @@ function nuclearCleanupOnce() {
     }
   }
   
-  // Remove collected keys
   keysToRemove.forEach(key => {
-    console.log('🧹 Removing:', key);
+    console.log('🧹 Clearing:', key);
     localStorage.removeItem(key);
-    cleared++;
   });
   
-  if (cleared > 0) {
-    console.log(`🧹 Cleared ${cleared} Supabase items from localStorage`);
-  } else {
-    console.log('✅ No Supabase items to clear');
+  if (keysToRemove.length > 0) {
+    console.log(`🧹 Cleared ${keysToRemove.length} items`);
   }
-  
-  // Mark as cleaned for this browser session
-  // This flag persists until ALL browser windows are closed
-  sessionStorage.setItem(cleanupKey, Date.now().toString());
 }
 
-// Run nuclear cleanup on module load
+// Validate and clean on every page load
 if (typeof window !== 'undefined') {
-  nuclearCleanupOnce();
+  if (!isSessionDataValid()) {
+    clearSupabaseStorage();
+  }
 }
 
 // ============================================
-// SUPABASE CLIENT - Single instance with auth persistence
+// SUPABASE CLIENT
 // ============================================
 
 let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
+let _clientCreatedAt: number = 0;
+const MAX_CLIENT_AGE = 5 * 60 * 1000; // 5 minutes
 
 function getClient(): ReturnType<typeof createSupabaseClient> {
-  if (!_supabase) {
+  const now = Date.now();
+  
+  // Recreate client if it's too old or doesn't exist
+  if (!_supabase || (now - _clientCreatedAt > MAX_CLIENT_AGE)) {
+    if (_supabase) {
+      console.log('🔄 Recreating Supabase client (age limit)');
+    }
+    
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Missing Supabase environment variables');
+    }
+
+    // Validate session before creating client
+    if (typeof window !== 'undefined' && !isSessionDataValid()) {
+      clearSupabaseStorage();
     }
 
     console.log('✅ Creating Supabase client');
@@ -85,11 +113,18 @@ function getClient(): ReturnType<typeof createSupabaseClient> {
         },
       },
     });
+    
+    _clientCreatedAt = now;
 
-    // Auth state listener for debugging
+    // Listen for auth events
     if (typeof window !== 'undefined') {
       _supabase.auth.onAuthStateChange((event, session) => {
-        console.log('🔐 Auth event:', event, session ? '(has session)' : '(no session)');
+        console.log('🔐 Auth event:', event);
+        
+        if (event === 'SIGNED_OUT') {
+          clearSupabaseStorage();
+          _supabase = null;
+        }
       });
     }
   }
@@ -97,7 +132,7 @@ function getClient(): ReturnType<typeof createSupabaseClient> {
   return _supabase;
 }
 
-// Export proxy for all operations
+// Export proxy
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(target, prop) {
     const client = getClient();
@@ -109,12 +144,12 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   }
 });
 
-// Export createClient - returns the same singleton
+// Export createClient
 export function createClient() {
   return getClient();
 }
 
-// Admin client for server-side operations
+// Admin client
 export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -165,7 +200,7 @@ export async function getPropertyByAlbumKey(albumkey: string): Promise<Property 
 }
 
 // ============================================
-// INTERFACES
+// INTERFACES (unchanged)
 // ============================================
 
 export interface PropertyContact {
