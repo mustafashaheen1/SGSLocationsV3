@@ -225,7 +225,6 @@ export default function HomePage() {
             muted
             playsInline
             preload="auto"
-            crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-cover"
             onLoadedData={() => {
               console.log('✅ Video loaded successfully');
