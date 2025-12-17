@@ -71,7 +71,14 @@ export default function HomePage() {
             if (setting.key === 'hero_video') {
               const videoUrl = setting.value || '';
               console.log('🎥 Hero video URL:', videoUrl);
-              setHeroVideo(videoUrl);
+
+              // Use proxy for external videos to bypass hotlinking protection
+              const proxiedUrl = videoUrl.startsWith('http')
+                ? `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
+                : videoUrl;
+
+              console.log('🎥 Proxied video URL:', proxiedUrl);
+              setHeroVideo(proxiedUrl);
             }
             if (setting.key === 'hero_title') setHeroTitle(setting.value || '');
             if (setting.key === 'hero_subtitle') setHeroSubtitle(setting.value || '');
