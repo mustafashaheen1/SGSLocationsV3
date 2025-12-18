@@ -18,11 +18,11 @@ interface Document {
   document_type: string;
   uploaded_by: string | null;
   created_at: string;
-  property_projects: {
+  property_projects?: {
     id: string;
     name: string;
     property_id: string;
-    properties: {
+    properties?: {
       id: string;
       name: string;
       real_name: string | null;
@@ -142,13 +142,13 @@ export default function DocumentDirectoryPage() {
   const filteredDocuments = documents.filter(doc => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      doc.title.toLowerCase().includes(searchLower) ||
-      doc.property_projects.name.toLowerCase().includes(searchLower) ||
-      doc.property_projects.properties.name.toLowerCase().includes(searchLower) ||
-      (doc.property_projects.properties.real_name &&
+      doc.title?.toLowerCase().includes(searchLower) ||
+      doc.property_projects?.name?.toLowerCase().includes(searchLower) ||
+      doc.property_projects?.properties?.name?.toLowerCase().includes(searchLower) ||
+      (doc.property_projects?.properties?.real_name &&
         doc.property_projects.properties.real_name.toLowerCase().includes(searchLower)) ||
-      doc.property_projects.properties.city.toLowerCase().includes(searchLower) ||
-      doc.file_name.toLowerCase().includes(searchLower)
+      doc.property_projects?.properties?.city?.toLowerCase().includes(searchLower) ||
+      doc.file_name?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -223,16 +223,20 @@ export default function DocumentDirectoryPage() {
                           )}
                         </td>
                         <td className="py-4 px-4">
-                          <div className="font-medium text-gray-700">{doc.property_projects.name}</div>
+                          <div className="font-medium text-gray-700">{doc.property_projects?.name || 'N/A'}</div>
                         </td>
                         <td className="py-4 px-4">
-                          <Link
-                            href={`/admin/properties/${doc.property_projects.property_id}/edit`}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            <div className="font-medium">{doc.property_projects.properties.name}</div>
-                            <div className="text-xs text-gray-500">{doc.property_projects.properties.city}, {doc.property_projects.properties.county}</div>
-                          </Link>
+                          {doc.property_projects?.property_id && doc.property_projects?.properties ? (
+                            <Link
+                              href={`/admin/properties/${doc.property_projects.property_id}/edit`}
+                              className="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <div className="font-medium">{doc.property_projects.properties.name}</div>
+                              <div className="text-xs text-gray-500">{doc.property_projects.properties.city}, {doc.property_projects.properties.county}</div>
+                            </Link>
+                          ) : (
+                            <div className="text-gray-500">N/A</div>
+                          )}
                         </td>
                         <td className="py-4 px-4 text-sm text-gray-600">{doc.file_name}</td>
                         <td className="py-4 px-4 text-sm text-gray-600">

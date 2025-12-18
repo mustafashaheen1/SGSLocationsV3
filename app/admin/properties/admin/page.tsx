@@ -177,7 +177,6 @@ export default function AdminPropertiesPage() {
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Image</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Property</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Location</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Rate</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Featured</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
                   </tr>
@@ -198,9 +197,6 @@ export default function AdminPropertiesPage() {
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-900">
                         {property.city}, {property.county}
-                      </td>
-                      <td className="py-4 px-4 text-sm text-gray-900">
-                        ${property.daily_rate?.toLocaleString()}/day
                       </td>
                       <td className="py-4 px-4">
                         <button

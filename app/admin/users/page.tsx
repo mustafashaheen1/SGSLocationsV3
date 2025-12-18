@@ -30,17 +30,34 @@ export default function UsersPage() {
   async function fetchUsers() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.error('No session found');
+        setLoading(false);
+        return;
+      }
+
+      // Use directFetch with auth token to bypass RLS issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('users', {
+        select: 'id,email,full_name,phone,company_name,created_at,is_banned',
+        order: 'created_at',
+        authToken: session.access_token
+      });
 
       if (error) {
         console.error('Error fetching users:', error);
         return;
       }
 
-      setUsers(data || []);
+      // Sort by created_at descending
+      const sortedData = (data as User[])?.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setUsers(sortedData || []);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {

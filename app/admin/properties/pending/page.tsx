@@ -21,19 +21,68 @@ export default function PendingPropertiesPage() {
   async function fetchProperties() {
     setLoading(true);
     try {
-      // Fetch pending properties with category information
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Fetch pending properties
       const { data, error } = await supabase
         .from('properties')
-        .select(`
-          *,
-          main_category:category_id(name),
-          sub_category:sub_category_id(name)
-        `)
+        .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProperties(data || []);
+
+      // Get unique category IDs
+      const categoryIds = Array.from(new Set(
+        data?.filter((p: any) => p.category_id).map((p: any) => p.category_id) || []
+      ));
+      const subCategoryIds = Array.from(new Set(
+        data?.filter((p: any) => p.sub_category_id).map((p: any) => p.sub_category_id) || []
+      ));
+
+      // Fetch category information using directFetch with auth token
+      let categoriesMap: Record<string, any> = {};
+      if (categoryIds.length > 0 && session) {
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: categories } = await directFetch('categories', {
+          select: 'id,name',
+          in: { id: categoryIds },
+          authToken: session.access_token
+        });
+
+        if (categories) {
+          (categories as any[]).forEach((cat: any) => {
+            categoriesMap[cat.id] = cat;
+          });
+        }
+      }
+
+      // Fetch sub-category information
+      let subCategoriesMap: Record<string, any> = {};
+      if (subCategoryIds.length > 0 && session) {
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: subCategories } = await directFetch('categories', {
+          select: 'id,name',
+          in: { id: subCategoryIds },
+          authToken: session.access_token
+        });
+
+        if (subCategories) {
+          (subCategories as any[]).forEach((cat: any) => {
+            subCategoriesMap[cat.id] = cat;
+          });
+        }
+      }
+
+      // Transform the data to add category information
+      const transformedData = data?.map((property: any) => ({
+        ...property,
+        main_category: property.category_id ? categoriesMap[property.category_id] : null,
+        sub_category: property.sub_category_id ? subCategoriesMap[property.sub_category_id] : null,
+      })) || [];
+
+      setProperties(transformedData);
     } catch (error) {
       console.error('Error fetching properties:', error);
     } finally {

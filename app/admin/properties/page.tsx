@@ -72,16 +72,13 @@ export default function AdminPropertiesPage() {
     setLoading(true);
 
     try {
-      // Build query with left join to users table to get owner information
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Fetch properties
       let query = supabase
         .from('properties')
-        .select(`
-          *,
-          users:owner_id (
-            full_name,
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Apply status filter
@@ -94,17 +91,42 @@ export default function AdminPropertiesPage() {
       if (error) {
         console.error('Error fetching properties:', error);
         alert('Error loading properties: ' + error.message);
-      } else {
-        console.log('Fetched properties:', data);
-        // Transform the data to flatten the users object
-        const transformedData = data?.map((property: any) => ({
-          ...property,
-          owner_name: property.users?.full_name || null,
-          owner_email: property.users?.email || null,
-          users: undefined, // Remove the nested users object
-        })) || [];
-        setProperties(transformedData);
+        setLoading(false);
+        return;
       }
+
+      // Get unique owner IDs that are not null
+      const ownerIds = Array.from(new Set(
+        data?.filter((p: any) => p.owner_id).map((p: any) => p.owner_id) || []
+      ));
+
+      // Fetch owner information using directFetch with auth token
+      let ownersMap: Record<string, any> = {};
+      if (ownerIds.length > 0 && session) {
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: owners } = await directFetch('users', {
+          select: 'id,full_name,email',
+          in: { id: ownerIds },
+          authToken: session.access_token
+        });
+
+        // Create a map of owner_id to owner data
+        if (owners) {
+          (owners as any[]).forEach((owner: any) => {
+            ownersMap[owner.id] = owner;
+          });
+        }
+      }
+
+      // Transform the data to add owner information
+      const transformedData = data?.map((property: any) => ({
+        ...property,
+        owner_name: property.owner_id ? ownersMap[property.owner_id]?.full_name || null : null,
+        owner_email: property.owner_id ? ownersMap[property.owner_id]?.email || null : null,
+      })) || [];
+
+      console.log('Fetched properties with owners:', transformedData);
+      setProperties(transformedData);
     } catch (error: any) {
       console.error('Error:', error);
       alert('Failed to load properties');

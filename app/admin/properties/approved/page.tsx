@@ -21,7 +21,7 @@ export default function ApprovedPropertiesPage() {
   async function fetchProperties() {
     setLoading(true);
     try {
-      // Fetch approved properties - NO USER JOIN
+      // Fetch user-submitted approved properties (owner_id is not null)
       const { data, error } = await supabase
         .from('properties')
         .select('*')
@@ -29,7 +29,12 @@ export default function ApprovedPropertiesPage() {
         .not('owner_id', 'is', null)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching approved properties:', error);
+        throw error;
+      }
+
+      console.log('Approved properties fetched:', data?.length, data);
       setProperties(data || []);
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -133,7 +138,7 @@ export default function ApprovedPropertiesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Approved Properties</h1>
         <div className="text-sm text-gray-600">
-          {filteredProperties.length} user-submitted properties
+          {filteredProperties.length} user-submitted approved properties
         </div>
       </div>
 
