@@ -5,7 +5,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // ============================================
 // DIRECT REST API FETCH - Bypasses JS client entirely
-// This NEVER hangs because it's just a simple fetch()
 // ============================================
 
 export async function directFetch(
@@ -13,19 +12,32 @@ export async function directFetch(
   options?: {
     select?: string;
     eq?: Record<string, any>;
+    neq?: Record<string, any>;
     in?: Record<string, any[]>;
+    contains?: Record<string, any[]>;
     order?: string;
     limit?: number;
+    range?: [number, number];
     single?: boolean;
+    maybeSingle?: boolean;
   }
 ): Promise<{ data: any; error: any }> {
   try {
-    let url = `${supabaseUrl}/rest/v1/${table}?select=${options?.select || '*'}`;
+    let url = `${supabaseUrl}/rest/v1/${table}?select=${encodeURIComponent(options?.select || '*')}`;
     
     // Add eq filters
     if (options?.eq) {
       Object.entries(options.eq).forEach(([key, value]) => {
-        url += `&${key}=eq.${encodeURIComponent(String(value))}`;
+        if (value !== undefined && value !== null) {
+          url += `&${key}=eq.${encodeURIComponent(String(value))}`;
+        }
+      });
+    }
+
+    // Add neq filters
+    if (options?.neq) {
+      Object.entries(options.neq).forEach(([key, value]) => {
+        url += `&${key}=neq.${encodeURIComponent(String(value))}`;
       });
     }
     
@@ -33,6 +45,13 @@ export async function directFetch(
     if (options?.in) {
       Object.entries(options.in).forEach(([key, values]) => {
         url += `&${key}=in.(${values.map(v => encodeURIComponent(String(v))).join(',')})`;
+      });
+    }
+
+    // Add contains filters (for arrays)
+    if (options?.contains) {
+      Object.entries(options.contains).forEach(([key, values]) => {
+        url += `&${key}=cs.{${values.map(v => encodeURIComponent(String(v))).join(',')}}`;
       });
     }
     
@@ -46,6 +65,14 @@ export async function directFetch(
       url += `&limit=${options.limit}`;
     }
 
+    // Add range
+    if (options?.range) {
+      url += `&offset=${options.range[0]}&limit=${options.range[1] - options.range[0] + 1}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -53,28 +80,188 @@ export async function directFetch(
         'Authorization': `Bearer ${supabaseAnonKey}`,
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
-      return { data: null, error: errorText };
+      console.error(`API Error for ${table}:`, errorText);
+      return { data: null, error: { message: errorText } };
     }
 
     const data = await response.json();
     
-    if (options?.single && Array.isArray(data)) {
+    if ((options?.single || options?.maybeSingle) && Array.isArray(data)) {
       return { data: data[0] || null, error: null };
     }
     
     return { data, error: null };
   } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error(`Timeout fetching ${table}`);
+      return { data: null, error: { message: 'Request timeout' } };
+    }
     console.error(`Direct fetch error for ${table}:`, error);
-    return { data: null, error: error.message };
+    return { data: null, error: { message: error.message } };
   }
 }
 
 // ============================================
-// SUPABASE CLIENT - For auth only
+// QUERY BUILDER - Mimics Supabase's .from().select() API
+// but uses direct REST calls under the hood
+// ============================================
+
+class QueryBuilder {
+  private table: string;
+  private selectColumns: string = '*';
+  private filters: { type: string; column: string; value: any }[] = [];
+  private orderColumns: string[] = [];
+  private limitCount?: number;
+  private rangeStart?: number;
+  private rangeEnd?: number;
+  private isSingle: boolean = false;
+  private isMaybeSingle: boolean = false;
+
+  constructor(table: string) {
+    this.table = table;
+  }
+
+  select(columns: string = '*') {
+    this.selectColumns = columns;
+    return this;
+  }
+
+  eq(column: string, value: any) {
+    this.filters.push({ type: 'eq', column, value });
+    return this;
+  }
+
+  neq(column: string, value: any) {
+    this.filters.push({ type: 'neq', column, value });
+    return this;
+  }
+
+  in(column: string, values: any[]) {
+    this.filters.push({ type: 'in', column, value: values });
+    return this;
+  }
+
+  contains(column: string, value: any[]) {
+    this.filters.push({ type: 'cs', column, value });
+    return this;
+  }
+
+  is(column: string, value: any) {
+    this.filters.push({ type: 'is', column, value });
+    return this;
+  }
+
+  order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }) {
+    const direction = options?.ascending === false ? 'desc' : 'asc';
+    const nulls = options?.nullsFirst ? '.nullsfirst' : '';
+    this.orderColumns.push(`${column}.${direction}${nulls}`);
+    return this;
+  }
+
+  limit(count: number) {
+    this.limitCount = count;
+    return this;
+  }
+
+  range(from: number, to: number) {
+    this.rangeStart = from;
+    this.rangeEnd = to;
+    return this;
+  }
+
+  single() {
+    this.isSingle = true;
+    return this.execute();
+  }
+
+  maybeSingle() {
+    this.isMaybeSingle = true;
+    return this.execute();
+  }
+
+  then(resolve: (result: { data: any; error: any }) => void, reject?: (error: any) => void) {
+    return this.execute().then(resolve, reject);
+  }
+
+  private async execute(): Promise<{ data: any; error: any }> {
+    try {
+      let url = `${supabaseUrl}/rest/v1/${this.table}?select=${encodeURIComponent(this.selectColumns)}`;
+
+      // Add filters
+      for (const filter of this.filters) {
+        if (filter.type === 'eq') {
+          url += `&${filter.column}=eq.${encodeURIComponent(String(filter.value))}`;
+        } else if (filter.type === 'neq') {
+          url += `&${filter.column}=neq.${encodeURIComponent(String(filter.value))}`;
+        } else if (filter.type === 'in') {
+          url += `&${filter.column}=in.(${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')})`;
+        } else if (filter.type === 'cs') {
+          url += `&${filter.column}=cs.{${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')}}`;
+        } else if (filter.type === 'is') {
+          url += `&${filter.column}=is.${filter.value}`;
+        }
+      }
+
+      // Add order
+      if (this.orderColumns.length > 0) {
+        url += `&order=${this.orderColumns.join(',')}`;
+      }
+
+      // Add limit
+      if (this.limitCount) {
+        url += `&limit=${this.limitCount}`;
+      }
+
+      // Add range (pagination)
+      if (this.rangeStart !== undefined && this.rangeEnd !== undefined) {
+        url += `&offset=${this.rangeStart}&limit=${this.rangeEnd - this.rangeStart + 1}`;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: { message: errorText } };
+      }
+
+      let data = await response.json();
+
+      if ((this.isSingle || this.isMaybeSingle) && Array.isArray(data)) {
+        data = data[0] || null;
+      }
+
+      return { data, error: null };
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        return { data: null, error: { message: 'Request timeout' } };
+      }
+      return { data: null, error: { message: error.message } };
+    }
+  }
+}
+
+// ============================================
+// SUPABASE CLIENT - Real client for auth, QueryBuilder for data
 // ============================================
 
 let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
@@ -102,8 +289,15 @@ function getClient(): ReturnType<typeof createSupabaseClient> {
   return _supabase;
 }
 
+// Create a proxy that intercepts .from() calls and uses QueryBuilder instead
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(target, prop) {
+    // Intercept .from() to use our QueryBuilder (no hanging!)
+    if (prop === 'from') {
+      return (table: string) => new QueryBuilder(table);
+    }
+    
+    // Everything else (auth, etc.) uses the real client
     const client = getClient();
     const value = (client as any)[prop];
     if (typeof value === 'function') {
@@ -131,6 +325,9 @@ export function createAdminClient() {
     }
   });
 }
+
+// Keep all your existing interfaces below...
+// (PropertyContact, Property, User, Booking, etc.)
 
 // ============================================
 // INTERFACES (unchanged)
