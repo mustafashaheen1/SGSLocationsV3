@@ -53,7 +53,8 @@ export default function ProductionDashboard() {
 
   async function fetchUserData() {
     try {
-      const { data: { user, session }, error: authError } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (authError || !user || !session) {
         console.log('No authenticated user, redirecting to home');
