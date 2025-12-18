@@ -35,7 +35,6 @@ export default function ApprovedPropertiesPage() {
       const { data, error } = await directFetch('properties', {
         select: '*',
         eq: { status: 'active' },
-        not: { owner_id: null },
         order: 'created_at',
         authToken: session.access_token
       });
@@ -45,8 +44,9 @@ export default function ApprovedPropertiesPage() {
         throw error;
       }
 
-      // Sort by created_at descending
-      const sortedData = (data as any[])?.sort((a, b) =>
+      // Filter for user-submitted properties (owner_id is not null) and sort by created_at descending
+      const userProperties = (data as any[])?.filter(p => p.owner_id !== null) || [];
+      const sortedData = userProperties.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
