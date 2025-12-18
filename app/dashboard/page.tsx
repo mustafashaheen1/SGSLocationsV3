@@ -896,13 +896,15 @@ export default function ProductionDashboard() {
                                     <Eye className="w-4 h-4" />
                                   </button>
                                 )}
-                                <button
-                                  onClick={() => router.push(`/property/${property.id}/calendar`)}
-                                  className="text-purple-600 hover:text-purple-900 p-1"
-                                  title="View Calendar"
-                                >
-                                  <Calendar className="w-4 h-4" />
-                                </button>
+                                {property.status === 'active' && (
+                                  <button
+                                    onClick={() => router.push(`/property/${property.id}/calendar`)}
+                                    className="text-purple-600 hover:text-purple-900 p-1"
+                                    title="View Calendar"
+                                  >
+                                    <Calendar className="w-4 h-4" />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => router.push(`/edit-property/${property.id}`)}
                                   className="text-gray-600 hover:text-gray-900 p-1"
@@ -972,13 +974,15 @@ export default function ProductionDashboard() {
                               View
                             </button>
                           )}
-                          <button
-                            onClick={() => router.push(`/property/${property.id}/calendar`)}
-                            className="py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Calendar className="w-4 h-4" />
-                            Calendar
-                          </button>
+                          {property.status === 'active' && (
+                            <button
+                              onClick={() => router.push(`/property/${property.id}/calendar`)}
+                              className="py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                            >
+                              <Calendar className="w-4 h-4" />
+                              Calendar
+                            </button>
+                          )}
                           <button
                             onClick={() => router.push(`/edit-property/${property.id}`)}
                             className="py-2 px-3 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"

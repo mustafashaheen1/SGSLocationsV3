@@ -268,26 +268,29 @@ export default function ContentManagementPage() {
     try {
       // Test admin authentication first
       const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       console.log('Current user:', user?.email, 'User error:', userError);
 
-      if (!user) {
+      if (!user || !session) {
         console.error('No authenticated user found');
         alert('Please log in as an admin to access this page.');
         setLoading(false);
         return;
       }
 
-      // Check admin status
-      const { data: adminData, error: adminError} = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', user?.email || '')
-        .maybeSingle();
+      // Check admin status - use directFetch with auth token
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: adminData, error: adminError } = await directFetch('admins', {
+        select: '*',
+        eq: { email: user?.email || '' },
+        single: true,
+        authToken: session.access_token
+      });
 
       console.log('Admin status:', adminData, 'Admin error:', adminError);
 
-      if (!adminData) {
-        console.error('User is not an admin:', user.email);
+      if (adminError || !adminData) {
+        console.error('User is not an admin:', user.email, 'Error:', adminError);
         alert('Access denied. You must be an admin to view this page.');
         setLoading(false);
         return;
