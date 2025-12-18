@@ -354,17 +354,25 @@ export default function EditPropertyPage() {
 
       // Fetch owner information if property has an owner
       if (prop.owner_id) {
-        const { data: owner, error: ownerError } = await (supabase
-          .from('users') as any)
-          .select('email, full_name')
-          .eq('id', prop.owner_id)
-          .single();
+        // Get session for auth token
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (!ownerError && owner) {
-          setOwnerInfo({
-            email: owner.email,
-            name: owner.full_name || 'Property Owner'
+        if (session) {
+          // Use directFetch with auth token to bypass RLS issues
+          const { directFetch } = await import('@/lib/supabase');
+          const { data: owner, error: ownerError } = await directFetch('users', {
+            select: 'email,full_name',
+            eq: { id: prop.owner_id },
+            single: true,
+            authToken: session.access_token
           });
+
+          if (!ownerError && owner) {
+            setOwnerInfo({
+              email: (owner as any).email,
+              name: (owner as any).full_name || 'Property Owner'
+            });
+          }
         }
       }
 

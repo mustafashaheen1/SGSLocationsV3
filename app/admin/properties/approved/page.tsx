@@ -21,21 +21,37 @@ export default function ApprovedPropertiesPage() {
   async function fetchProperties() {
     setLoading(true);
     try {
-      // Fetch user-submitted approved properties (owner_id is not null)
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('status', 'active')
-        .not('owner_id', 'is', null)
-        .order('created_at', { ascending: false });
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.error('No session found');
+        setLoading(false);
+        return;
+      }
+
+      // Use directFetch with auth token to bypass RLS issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('properties', {
+        select: '*',
+        eq: { status: 'active' },
+        not: { owner_id: null },
+        order: 'created_at',
+        authToken: session.access_token
+      });
 
       if (error) {
         console.error('Error fetching approved properties:', error);
         throw error;
       }
 
-      console.log('Approved properties fetched:', data?.length, data);
-      setProperties(data || []);
+      // Sort by created_at descending
+      const sortedData = (data as any[])?.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      console.log('Approved properties fetched:', sortedData?.length, sortedData);
+      setProperties(sortedData || []);
     } catch (error) {
       console.error('Error fetching properties:', error);
     } finally {
