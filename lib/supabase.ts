@@ -1,99 +1,88 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // ============================================
-// ROBUST SESSION MANAGEMENT
-// Clears corrupted data AND validates before use
+// DIRECT REST API FETCH - Bypasses JS client entirely
+// This NEVER hangs because it's just a simple fetch()
 // ============================================
 
-function isSessionDataValid(): boolean {
-  if (typeof window === 'undefined') return true;
-  
+export async function directFetch(
+  table: string, 
+  options?: {
+    select?: string;
+    eq?: Record<string, any>;
+    in?: Record<string, any[]>;
+    order?: string;
+    limit?: number;
+    single?: boolean;
+  }
+): Promise<{ data: any; error: any }> {
   try {
-    const authKey = 'supabase.auth.token';
-    const stored = localStorage.getItem(authKey);
+    let url = `${supabaseUrl}/rest/v1/${table}?select=${options?.select || '*'}`;
     
-    if (!stored) return true; // No data is fine
-    
-    const parsed = JSON.parse(stored);
-    
-    // Check if it has required structure
-    if (!parsed || typeof parsed !== 'object') {
-      return false;
+    // Add eq filters
+    if (options?.eq) {
+      Object.entries(options.eq).forEach(([key, value]) => {
+        url += `&${key}=eq.${encodeURIComponent(String(value))}`;
+      });
     }
     
-    // Check for expiry
-    const expiresAt = parsed?.expires_at || parsed?.currentSession?.expires_at;
-    if (expiresAt) {
-      const expiryTime = expiresAt * 1000;
-      if (Date.now() >= expiryTime) {
-        console.log('🧹 Session expired');
-        return false;
-      }
+    // Add in filters
+    if (options?.in) {
+      Object.entries(options.in).forEach(([key, values]) => {
+        url += `&${key}=in.(${values.map(v => encodeURIComponent(String(v))).join(',')})`;
+      });
     }
     
-    return true;
-  } catch (e) {
-    console.log('🧹 Session data corrupted');
-    return false;
-  }
-}
+    // Add order
+    if (options?.order) {
+      url += `&order=${options.order}`;
+    }
+    
+    // Add limit
+    if (options?.limit) {
+      url += `&limit=${options.limit}`;
+    }
 
-function clearSupabaseStorage() {
-  if (typeof window === 'undefined') return;
-  
-  const keysToRemove: string[] = [];
-  
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && (key.includes('supabase') || key.startsWith('sb-'))) {
-      keysToRemove.push(key);
-    }
-  }
-  
-  keysToRemove.forEach(key => {
-    console.log('🧹 Clearing:', key);
-    localStorage.removeItem(key);
-  });
-  
-  if (keysToRemove.length > 0) {
-    console.log(`🧹 Cleared ${keysToRemove.length} items`);
-  }
-}
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-// Validate and clean on every page load
-if (typeof window !== 'undefined') {
-  if (!isSessionDataValid()) {
-    clearSupabaseStorage();
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { data: null, error: errorText };
+    }
+
+    const data = await response.json();
+    
+    if (options?.single && Array.isArray(data)) {
+      return { data: data[0] || null, error: null };
+    }
+    
+    return { data, error: null };
+  } catch (error: any) {
+    console.error(`Direct fetch error for ${table}:`, error);
+    return { data: null, error: error.message };
   }
 }
 
 // ============================================
-// SUPABASE CLIENT
+// SUPABASE CLIENT - For auth only
 // ============================================
 
 let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
-let _clientCreatedAt: number = 0;
-const MAX_CLIENT_AGE = 5 * 60 * 1000; // 5 minutes
 
 function getClient(): ReturnType<typeof createSupabaseClient> {
-  const now = Date.now();
-  
-  // Recreate client if it's too old or doesn't exist
-  if (!_supabase || (now - _clientCreatedAt > MAX_CLIENT_AGE)) {
-    if (_supabase) {
-      console.log('🔄 Recreating Supabase client (age limit)');
-    }
-    
+  if (!_supabase) {
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Missing Supabase environment variables');
-    }
-
-    // Validate session before creating client
-    if (typeof window !== 'undefined' && !isSessionDataValid()) {
-      clearSupabaseStorage();
     }
 
     console.log('✅ Creating Supabase client');
@@ -107,32 +96,12 @@ function getClient(): ReturnType<typeof createSupabaseClient> {
         storageKey: 'supabase.auth.token',
         flowType: 'pkce',
       },
-      global: {
-        headers: {
-          'x-application-name': 'sgs-locations',
-        },
-      },
     });
-    
-    _clientCreatedAt = now;
-
-    // Listen for auth events
-    if (typeof window !== 'undefined') {
-      _supabase.auth.onAuthStateChange((event, session) => {
-        console.log('🔐 Auth event:', event);
-        
-        if (event === 'SIGNED_OUT') {
-          clearSupabaseStorage();
-          _supabase = null;
-        }
-      });
-    }
   }
 
   return _supabase;
 }
 
-// Export proxy
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(target, prop) {
     const client = getClient();
@@ -144,12 +113,10 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   }
 });
 
-// Export createClient
 export function createClient() {
   return getClient();
 }
 
-// Admin client
 export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -163,40 +130,6 @@ export function createAdminClient() {
       persistSession: false
     }
   });
-}
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-export async function albumKeyExists(albumkey: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('properties')
-    .select('id')
-    .eq('albumkey', albumkey)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error checking albumkey:', error);
-    return false;
-  }
-
-  return data !== null;
-}
-
-export async function getPropertyByAlbumKey(albumkey: string): Promise<Property | null> {
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('albumkey', albumkey)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching property by albumkey:', error);
-    return null;
-  }
-
-  return data;
 }
 
 // ============================================
@@ -333,4 +266,21 @@ export interface PropertyCalendarEvent {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export async function albumKeyExists(albumkey: string): Promise<boolean> {
+  const { data } = await directFetch('properties', {
+    select: 'id',
+    eq: { albumkey },
+    single: true
+  });
+  return data !== null;
+}
+
+export async function getPropertyByAlbumKey(albumkey: string): Promise<Property | null> {
+  const { data } = await directFetch('properties', {
+    eq: { albumkey },
+    single: true
+  });
+  return data;
 }

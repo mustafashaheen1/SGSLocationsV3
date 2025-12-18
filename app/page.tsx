@@ -60,11 +60,13 @@ export default function HomePage() {
 
     async function fetchData() {
       try {
-        // Fetch hero section content
-        const { data: settings } = await supabase
-          .from('site_settings')
-          .select('*')
-          .in('key', ['hero_video', 'hero_title', 'hero_subtitle']);
+        // Use directFetch instead of supabase.from()
+        const { directFetch } = await import('@/lib/supabase');
+
+        // Fetch hero settings
+        const { data: settings } = await directFetch('site_settings', {
+          in: { key: ['hero_video', 'hero_title', 'hero_subtitle'] }
+        });
 
         if (isMounted && settings) {
           settings.forEach((setting: any) => {
@@ -86,64 +88,46 @@ export default function HomePage() {
         }
 
         // Fetch services
-        const { data: servicesData } = await supabase
-          .from('services')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
+        const { data: servicesData } = await directFetch('services', {
+          eq: { is_active: true },
+          order: 'display_order.asc'
+        });
 
         if (isMounted && servicesData) {
           setServices(servicesData);
         }
 
         // Fetch production logos
-        const { data: logosData } = await supabase
-          .from('production_logos')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
+        const { data: logosData } = await directFetch('production_logos', {
+          eq: { is_active: true },
+          order: 'display_order.asc'
+        });
 
         if (isMounted && logosData) {
           setProductionLogos(logosData);
         }
 
         // Fetch featured properties
-        const { data: featured } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('status', 'active')
-          .eq('is_featured', true)
-          .order('name')
-          .limit(6);
+        const { data: featured } = await directFetch('properties', {
+          eq: { status: 'active', is_featured: true },
+          order: 'name.asc',
+          limit: 6
+        });
 
         if (isMounted && featured) {
           setFeaturedProperties(featured);
         }
 
         // Fetch categories
-        const { data: categoriesData } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('is_active', true)
-          .not('parent_id', 'is', null)
-          .order('display_order');
+        const { data: categoriesData } = await directFetch('categories', {
+          eq: { is_active: true },
+          order: 'display_order.asc'
+        });
 
         if (isMounted && categoriesData) {
-          const categoriesWithCounts = await Promise.all(
-            categoriesData.map(async (cat: any) => {
-              const { count } = await supabase
-                .from('properties')
-                .select('*', { count: 'exact', head: true })
-                .eq('sub_category_id', cat.id)
-                .eq('status', 'active');
-
-              return { ...cat, count: count || 0 };
-            })
-          );
-
-          if (isMounted) {
-            setCategories(categoriesWithCounts);
-          }
+          // Filter for subcategories (has parent_id)
+          const subcategories = categoriesData.filter((cat: any) => cat.parent_id);
+          setCategories(subcategories);
         }
 
         if (isMounted) {
