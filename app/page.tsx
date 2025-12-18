@@ -74,6 +74,10 @@ export default function HomePage() {
               let videoUrl = setting.value || '';
               console.log('🎥 Hero video URL (raw):', videoUrl);
 
+              // Strip any surrounding quotes that may have been stored
+              videoUrl = videoUrl.trim().replace(/^["']|["']$/g, '');
+              console.log('🎥 After stripping quotes:', videoUrl);
+
               // Fix missing protocol (CloudFront URLs often stored without https://)
               if (videoUrl && !videoUrl.startsWith('http') && !videoUrl.startsWith('/')) {
                 videoUrl = `https://${videoUrl}`;
