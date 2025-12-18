@@ -62,16 +62,19 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
       if (authError) throw authError;
 
       // Step 2: Check if user exists in users table (NOT admins table)
-      // Use directFetch to avoid localStorage/session issues
+      // Use directFetch with auth token to avoid localStorage issues while maintaining RLS access
       const { directFetch } = await import('@/lib/supabase');
       const { data: userData, error: userError } = await directFetch('users', {
         select: 'id,email,user_type,is_banned',
         eq: { id: authData.user.id },
-        single: true
+        single: true,
+        authToken: authData.session.access_token
       });
 
       // If user doesn't exist in users table, sign them out
       if (userError || !userData) {
+        console.error('User lookup error:', userError);
+        console.log('User data:', userData);
         await supabase.auth.signOut();
         throw new Error('This account is not registered as a user. Please use the registration page or contact support.');
       }
