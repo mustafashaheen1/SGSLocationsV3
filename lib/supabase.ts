@@ -129,6 +129,9 @@ class QueryBuilder {
   private rangeEnd?: number;
   private isSingle: boolean = false;
   private isMaybeSingle: boolean = false;
+  private operation: 'select' | 'update' | 'insert' | 'delete' = 'select';
+  private updateData?: any;
+  private insertData?: any;
 
   constructor(table: string) {
     this.table = table;
@@ -161,6 +164,23 @@ class QueryBuilder {
 
   is(column: string, value: any) {
     this.filters.push({ type: 'is', column, value });
+    return this;
+  }
+
+  update(data: any) {
+    this.operation = 'update';
+    this.updateData = data;
+    return this;
+  }
+
+  insert(data: any) {
+    this.operation = 'insert';
+    this.insertData = data;
+    return this;
+  }
+
+  delete() {
+    this.operation = 'delete';
     return this;
   }
 
@@ -198,48 +218,91 @@ class QueryBuilder {
 
   private async execute(): Promise<{ data: any; error: any }> {
     try {
-      let url = `${supabaseUrl}/rest/v1/${this.table}?select=${encodeURIComponent(this.selectColumns)}`;
+      let url = `${supabaseUrl}/rest/v1/${this.table}`;
+      let method = 'GET';
+      let body: any = undefined;
 
-      // Add filters
-      for (const filter of this.filters) {
-        if (filter.type === 'eq') {
-          url += `&${filter.column}=eq.${encodeURIComponent(String(filter.value))}`;
-        } else if (filter.type === 'neq') {
-          url += `&${filter.column}=neq.${encodeURIComponent(String(filter.value))}`;
-        } else if (filter.type === 'in') {
-          url += `&${filter.column}=in.(${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')})`;
-        } else if (filter.type === 'cs') {
-          url += `&${filter.column}=cs.{${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')}}`;
-        } else if (filter.type === 'is') {
-          url += `&${filter.column}=is.${filter.value}`;
+      // Build URL and request based on operation type
+      if (this.operation === 'select') {
+        url += `?select=${encodeURIComponent(this.selectColumns)}`;
+
+        // Add filters
+        for (const filter of this.filters) {
+          if (filter.type === 'eq') {
+            url += `&${filter.column}=eq.${encodeURIComponent(String(filter.value))}`;
+          } else if (filter.type === 'neq') {
+            url += `&${filter.column}=neq.${encodeURIComponent(String(filter.value))}`;
+          } else if (filter.type === 'in') {
+            url += `&${filter.column}=in.(${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')})`;
+          } else if (filter.type === 'cs') {
+            url += `&${filter.column}=cs.{${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')}}`;
+          } else if (filter.type === 'is') {
+            url += `&${filter.column}=is.${filter.value}`;
+          }
         }
-      }
 
-      // Add order
-      if (this.orderColumns.length > 0) {
-        url += `&order=${this.orderColumns.join(',')}`;
-      }
+        // Add order
+        if (this.orderColumns.length > 0) {
+          url += `&order=${this.orderColumns.join(',')}`;
+        }
 
-      // Add limit
-      if (this.limitCount) {
-        url += `&limit=${this.limitCount}`;
-      }
+        // Add limit
+        if (this.limitCount) {
+          url += `&limit=${this.limitCount}`;
+        }
 
-      // Add range (pagination)
-      if (this.rangeStart !== undefined && this.rangeEnd !== undefined) {
-        url += `&offset=${this.rangeStart}&limit=${this.rangeEnd - this.rangeStart + 1}`;
+        // Add range (pagination)
+        if (this.rangeStart !== undefined && this.rangeEnd !== undefined) {
+          url += `&offset=${this.rangeStart}&limit=${this.rangeEnd - this.rangeStart + 1}`;
+        }
+      } else if (this.operation === 'update') {
+        method = 'PATCH';
+        body = JSON.stringify(this.updateData);
+
+        // Add filters for update
+        const filterParams = [];
+        for (const filter of this.filters) {
+          if (filter.type === 'eq') {
+            filterParams.push(`${filter.column}=eq.${encodeURIComponent(String(filter.value))}`);
+          } else if (filter.type === 'neq') {
+            filterParams.push(`${filter.column}=neq.${encodeURIComponent(String(filter.value))}`);
+          }
+        }
+        if (filterParams.length > 0) {
+          url += '?' + filterParams.join('&');
+        }
+      } else if (this.operation === 'insert') {
+        method = 'POST';
+        body = JSON.stringify(this.insertData);
+      } else if (this.operation === 'delete') {
+        method = 'DELETE';
+
+        // Add filters for delete
+        const filterParams = [];
+        for (const filter of this.filters) {
+          if (filter.type === 'eq') {
+            filterParams.push(`${filter.column}=eq.${encodeURIComponent(String(filter.value))}`);
+          } else if (filter.type === 'neq') {
+            filterParams.push(`${filter.column}=neq.${encodeURIComponent(String(filter.value))}`);
+          }
+        }
+        if (filterParams.length > 0) {
+          url += '?' + filterParams.join('&');
+        }
       }
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(url, {
-        method: 'GET',
+        method,
         headers: {
           'apikey': supabaseAnonKey,
           'Authorization': `Bearer ${supabaseAnonKey}`,
           'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
         },
+        body,
         signal: controller.signal,
       });
 
@@ -250,7 +313,12 @@ class QueryBuilder {
         return { data: null, error: { message: errorText } };
       }
 
-      let data = await response.json();
+      // For DELETE operations, response might be empty
+      const contentType = response.headers.get('content-type');
+      let data = null;
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      }
 
       if ((this.isSingle || this.isMaybeSingle) && Array.isArray(data)) {
         data = data[0] || null;

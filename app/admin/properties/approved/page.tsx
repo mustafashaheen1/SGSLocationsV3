@@ -44,9 +44,57 @@ export default function ApprovedPropertiesPage() {
         throw error;
       }
 
-      // Filter for user-submitted properties (owner_id is not null) and sort by created_at descending
+      // Filter for user-submitted properties (owner_id is not null)
       const userProperties = (data as any[])?.filter(p => p.owner_id !== null) || [];
-      const sortedData = userProperties.sort((a, b) =>
+
+      // Get unique category IDs
+      const categoryIds = Array.from(new Set(
+        userProperties?.filter((p: any) => p.category_id).map((p: any) => p.category_id) || []
+      ));
+      const subCategoryIds = Array.from(new Set(
+        userProperties?.filter((p: any) => p.sub_category_id).map((p: any) => p.sub_category_id) || []
+      ));
+
+      // Fetch category information using directFetch with auth token
+      let categoriesMap: Record<string, any> = {};
+      if (categoryIds.length > 0) {
+        const { data: categories } = await directFetch('categories', {
+          select: 'id,name',
+          in: { id: categoryIds },
+          authToken: session.access_token
+        });
+
+        if (categories) {
+          (categories as any[]).forEach((cat: any) => {
+            categoriesMap[cat.id] = cat;
+          });
+        }
+      }
+
+      // Fetch sub-category information
+      let subCategoriesMap: Record<string, any> = {};
+      if (subCategoryIds.length > 0) {
+        const { data: subCategories } = await directFetch('categories', {
+          select: 'id,name',
+          in: { id: subCategoryIds },
+          authToken: session.access_token
+        });
+
+        if (subCategories) {
+          (subCategories as any[]).forEach((cat: any) => {
+            subCategoriesMap[cat.id] = cat;
+          });
+        }
+      }
+
+      // Transform the data to add category information and sort by created_at descending
+      const transformedData = userProperties.map((property: any) => ({
+        ...property,
+        main_category: property.category_id ? categoriesMap[property.category_id] : null,
+        sub_category: property.sub_category_id ? subCategoriesMap[property.sub_category_id] : null,
+      }));
+
+      const sortedData = transformedData.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -212,8 +260,8 @@ export default function ApprovedPropertiesPage() {
                         <div className="text-sm text-gray-500">{property.images?.length || 0} images</div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm text-gray-900">{property.categories?.[0] || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{property.address}</div>
+                        <div className="text-sm text-gray-900">{property.main_category?.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{property.sub_category?.name || ''}</div>
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-900">
                         {property.city}, {property.county}
