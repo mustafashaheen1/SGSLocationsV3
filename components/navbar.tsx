@@ -32,7 +32,8 @@ export function Navbar() {
         const { data: userData } = await directFetch('users', {
           select: 'user_type',
           eq: { id: session.user.id },
-          single: true
+          single: true,
+          authToken: session.access_token
         });
 
         // Only show as authenticated if they're in the users table
@@ -86,7 +87,8 @@ export function Navbar() {
         const { data: userData } = await directFetch('users', {
           select: 'user_type',
           eq: { id: session.user.id },
-          single: true
+          single: true,
+          authToken: session.access_token
         });
 
         // Only show as authenticated if they're in the users table

@@ -53,9 +53,9 @@ export default function ProductionDashboard() {
 
   async function fetchUserData() {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { user, session }, error: authError } = await supabase.auth.getUser();
 
-      if (authError || !user) {
+      if (authError || !user || !session) {
         console.log('No authenticated user, redirecting to home');
         router.push('/');
         return;
@@ -63,11 +63,14 @@ export default function ProductionDashboard() {
 
       console.log('Authenticated user ID:', user.id);
 
-      const { data: userDetails, error: userError } = await supabase
-        .from('users')
-        .select('full_name, email, company_name, phone, user_type')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Use directFetch with auth token to avoid cache issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: userDetails, error: userError } = await directFetch('users', {
+        select: 'full_name,email,company_name,phone,user_type',
+        eq: { id: user.id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (userError) {
         console.error('Error fetching user details:', userError);
