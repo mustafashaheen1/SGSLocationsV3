@@ -26,11 +26,8 @@ export function Navbar() {
     fetchPortfolioVisibility();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setIsAuthenticated(!!session);
-      setUserEmail(session?.user?.email || null);
-
       if (session?.user) {
-        // Use directFetch to avoid localStorage issues
+        // Check if user exists in USERS table (not just auth)
         const { directFetch } = await import('@/lib/supabase');
         const { data: userData } = await directFetch('users', {
           select: 'user_type',
@@ -38,8 +35,20 @@ export function Navbar() {
           single: true
         });
 
-        setUserType(userData?.user_type || null);
+        // Only show as authenticated if they're in the users table
+        if (userData) {
+          setIsAuthenticated(true);
+          setUserEmail(session.user.email || null);
+          setUserType(userData.user_type || null);
+        } else {
+          // User is in auth but NOT in users table (admin-only account)
+          setIsAuthenticated(false);
+          setUserEmail(null);
+          setUserType(null);
+        }
       } else {
+        setIsAuthenticated(false);
+        setUserEmail(null);
         setUserType(null);
       }
     });
@@ -66,53 +75,39 @@ export function Navbar() {
     }
   }
 
-  useEffect(() => {
-    const checkAndLogoutAdmin = async () => {
-      if (pathname?.startsWith('/admin')) {
-        return;
-      }
 
+  async function checkAuth() {
+    try {
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (session) {
-        // Use directFetch to avoid localStorage issues
+      if (session?.user) {
+        // Check if user exists in USERS table
         const { directFetch } = await import('@/lib/supabase');
-        const { data: adminData } = await directFetch('admins', {
-          select: 'email',
-          eq: { email: session.user.email || '' },
+        const { data: userData } = await directFetch('users', {
+          select: 'user_type',
+          eq: { id: session.user.id },
           single: true
         });
 
-        if (adminData) {
-          console.log('Admin detected on main site - auto logout');
-          await supabase.auth.signOut();
+        // Only show as authenticated if they're in the users table
+        if (userData) {
+          setIsAuthenticated(true);
+          setUserEmail(session.user.email || null);
+          setUserType(userData.user_type || null);
+        } else {
+          // Admin-only account - don't show as logged in on main site
           setIsAuthenticated(false);
           setUserEmail(null);
-          router.refresh();
+          setUserType(null);
         }
+      } else {
+        setIsAuthenticated(false);
+        setUserEmail(null);
+        setUserType(null);
       }
-    };
-
-    checkAndLogoutAdmin();
-  }, [pathname, router]);
-
-  async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsAuthenticated(!!session);
-    setUserEmail(session?.user?.email || null);
-
-    if (session?.user) {
-      // Use directFetch to avoid localStorage issues
-      const { directFetch } = await import('@/lib/supabase');
-      const { data: userData } = await directFetch('users', {
-        select: 'user_type',
-        eq: { id: session.user.id },
-        single: true
-      });
-
-      setUserType(userData?.user_type || null);
-    } else {
-      setUserType(null);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      setIsAuthenticated(false);
     }
   }
 
