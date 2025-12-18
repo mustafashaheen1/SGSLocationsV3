@@ -23,20 +23,25 @@ export default function PropertyCalendarPage() {
   async function checkOwnershipAndFetchProperty() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!user || !session) {
         router.push('/dashboard');
         return;
       }
 
       // Check user type - only property owners can view calendars
-      const { data: userData } = await supabase
-        .from('users')
-        .select('user_type')
-        .eq('id', user.id)
-        .single();
+      // Use directFetch with auth token to avoid cache issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: userData, error: userError } = await directFetch('users', {
+        select: 'user_type',
+        eq: { id: user.id },
+        single: true,
+        authToken: session.access_token
+      });
 
-      if ((userData as any)?.user_type !== 'property_owner') {
+      if (userError || !userData || (userData as any)?.user_type !== 'property_owner') {
+        console.error('User type check failed:', userError);
         alert('Only property owners can view property calendars');
         router.push('/dashboard');
         return;

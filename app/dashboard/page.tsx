@@ -26,7 +26,7 @@ export default function ProductionDashboard() {
     confirmPassword: ''
   });
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [activeTab, setActiveTab] = useState('searches'); // Default to searches for all users
+  const [activeTab, setActiveTab] = useState('searches'); // Will be updated based on user type
   const [userProperties, setUserProperties] = useState<any[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
@@ -50,6 +50,13 @@ export default function ProductionDashboard() {
     fetchUserInquiries();
     handlePendingPropertySubmission();
   }, []);
+
+  // Set default tab based on user type
+  useEffect(() => {
+    if (userType === 'property_owner') {
+      setActiveTab('my-locations');
+    }
+  }, [userType]);
 
   async function fetchUserData() {
     try {
@@ -678,16 +685,6 @@ export default function ProductionDashboard() {
             )}
 
             {/* Master Calendar for Property Owners */}
-            {activeTab === 'my-locations' && userType === 'property_owner' && (
-              <div className="mb-8 bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Master Calendar</h3>
-                <p className="text-sm text-gray-600 mb-4">View all events across all your properties</p>
-                <div className="bg-white rounded-lg shadow">
-                  <MasterCalendar />
-                </div>
-              </div>
-            )}
-
             {activeTab === 'settings' && (
               <div className="max-w-4xl">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h2>
@@ -1002,6 +999,16 @@ export default function ProductionDashboard() {
                   </div>
                   </>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'my-locations' && userType === 'property_owner' && (
+              <div className="mt-8 bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Master Calendar</h3>
+                <p className="text-sm text-gray-600 mb-4">View all events across all your properties</p>
+                <div className="bg-white rounded-lg shadow">
+                  <MasterCalendar />
+                </div>
               </div>
             )}
 
