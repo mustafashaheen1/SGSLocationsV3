@@ -30,11 +30,13 @@ export function Navbar() {
       setUserEmail(session?.user?.email || null);
 
       if (session?.user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('user_type')
-          .eq('id', session.user.id)
-          .maybeSingle() as { data: { user_type: string } | null };
+        // Use directFetch to avoid localStorage issues
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: userData } = await directFetch('users', {
+          select: 'user_type',
+          eq: { id: session.user.id },
+          single: true
+        });
 
         setUserType(userData?.user_type || null);
       } else {
@@ -73,11 +75,13 @@ export function Navbar() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
-        const { data: adminData } = await (supabase
-          .from('admins') as any)
-          .select('email')
-          .eq('email', session.user.email || '')
-          .maybeSingle();
+        // Use directFetch to avoid localStorage issues
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: adminData } = await directFetch('admins', {
+          select: 'email',
+          eq: { email: session.user.email || '' },
+          single: true
+        });
 
         if (adminData) {
           console.log('Admin detected on main site - auto logout');
@@ -98,11 +102,13 @@ export function Navbar() {
     setUserEmail(session?.user?.email || null);
 
     if (session?.user) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('user_type')
-        .eq('id', session.user.id)
-        .maybeSingle() as { data: { user_type: string } | null };
+      // Use directFetch to avoid localStorage issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: userData } = await directFetch('users', {
+        select: 'user_type',
+        eq: { id: session.user.id },
+        single: true
+      });
 
       setUserType(userData?.user_type || null);
     } else {

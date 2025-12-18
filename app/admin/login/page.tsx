@@ -49,11 +49,13 @@ export default function AdminLoginPage() {
         return;
       }
 
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('id, email, role')
-        .eq('email', authData.user.email)
-        .maybeSingle();
+      // Use directFetch to avoid localStorage issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: adminData, error: adminError } = await directFetch('admins', {
+        select: 'id,email,role',
+        eq: { email: authData.user.email },
+        single: true
+      });
 
       if (adminError || !adminData) {
         console.log('[Admin Login] Not found in admins table');

@@ -53,11 +53,13 @@ export default function AdminPropertiesPage() {
       return;
     }
 
-    const { data: admin } = await (supabase
-      .from('admins') as any)
-      .select('*')
-      .eq('email', session.user.email || '')
-      .maybeSingle();
+    // Use directFetch to avoid localStorage issues
+    const { directFetch } = await import('@/lib/supabase');
+    const { data: admin } = await directFetch('admins', {
+      select: '*',
+      eq: { email: session.user.email || '' },
+      single: true
+    });
 
     if (!admin) {
       console.log('User not found in admins table');
