@@ -63,16 +63,23 @@ export default function SearchFiltersPage() {
 
       console.log('Filters fetched:', data);
 
+      // Fetch tag counts using directFetch with auth token
+      const { directFetch } = await import('@/lib/supabase');
       const filtersWithCounts = await Promise.all(
         (data || []).map(async (filter: any) => {
-          const { count } = await (supabase
-            .from('search_filter_tags') as any)
-            .select('*', { count: 'exact', head: true })
-            .eq('filter_id', filter.id);
+          const { data: tags, error: tagsError } = await directFetch('search_filter_tags', {
+            select: 'id',
+            eq: { filter_id: filter.id },
+            authToken: session.access_token
+          });
+
+          if (tagsError) {
+            console.error(`Error fetching tags for filter ${filter.id}:`, tagsError);
+          }
 
           return {
             ...filter,
-            tag_count: count || 0,
+            tag_count: tags ? (tags as any[]).length : 0,
           };
         })
       );

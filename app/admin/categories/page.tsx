@@ -103,6 +103,9 @@ export default function CategoriesPage() {
 
   async function fetchCategories() {
     try {
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -110,25 +113,43 @@ export default function CategoriesPage() {
 
       if (error) throw error;
 
-      // For each category, count properties
+      if (!session) {
+        console.error('No session found');
+        setCategories(data || []);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch property counts using directFetch with auth token
+      const { directFetch } = await import('@/lib/supabase');
       const categoriesWithCount = await Promise.all(
         (data || []).map(async (cat: any) => {
           let count = 0;
 
           // If it's a main category, count properties in all sub-categories
           if (!cat.parent_id) {
-            const { count: mainCount } = await (supabase
-              .from('properties') as any)
-              .select('*', { count: 'exact', head: true })
-              .eq('category_id', cat.id);
-            count = mainCount || 0;
+            const { data: properties, error: propsError } = await directFetch('properties', {
+              select: 'id',
+              eq: { category_id: cat.id },
+              authToken: session.access_token
+            });
+
+            if (propsError) {
+              console.error(`Error fetching properties for category ${cat.id}:`, propsError);
+            }
+            count = properties ? (properties as any[]).length : 0;
           } else {
             // If it's a sub-category, count directly
-            const { count: subCount } = await (supabase
-              .from('properties') as any)
-              .select('*', { count: 'exact', head: true })
-              .eq('sub_category_id', cat.id);
-            count = subCount || 0;
+            const { data: properties, error: propsError } = await directFetch('properties', {
+              select: 'id',
+              eq: { sub_category_id: cat.id },
+              authToken: session.access_token
+            });
+
+            if (propsError) {
+              console.error(`Error fetching properties for sub-category ${cat.id}:`, propsError);
+            }
+            count = properties ? (properties as any[]).length : 0;
           }
 
           return {
@@ -542,10 +563,11 @@ export default function CategoriesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Slug</label>
+                <label className="block text-sm font-medium mb-1">Slug (Auto-generated)</label>
                 <Input
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  disabled
+                  className="bg-gray-100"
                 />
               </div>
 

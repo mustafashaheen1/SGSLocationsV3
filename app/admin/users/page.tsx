@@ -136,8 +136,7 @@ export default function UsersPage() {
 
   const filteredUsers = users.filter(user =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {
@@ -177,7 +176,7 @@ export default function UsersPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search users by name, email, or company..."
+              placeholder="Search users by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921] transition-colors"
@@ -192,8 +191,6 @@ export default function UsersPage() {
               <tr>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Company</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Phone</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Joined</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
@@ -202,7 +199,7 @@ export default function UsersPage() {
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-gray-500">
+                  <td colSpan={5} className="text-center py-12 text-gray-500">
                     {searchTerm ? 'No users found matching your search' : 'No users registered yet'}
                   </td>
                 </tr>
@@ -215,8 +212,6 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="py-4 px-4 text-gray-600">{user.email}</td>
-                    <td className="py-4 px-4 text-gray-600">{user.company_name || 'N/A'}</td>
-                    <td className="py-4 px-4 text-gray-600">{user.phone || 'N/A'}</td>
                     <td className="py-4 px-4">
                       {user.is_banned ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">

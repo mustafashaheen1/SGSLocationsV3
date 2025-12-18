@@ -47,27 +47,84 @@ export default function DocumentDirectoryPage() {
   async function fetchDocuments() {
     setLoading(true);
     try {
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Fetch documents
       const { data, error } = await supabase
         .from('documents')
-        .select(`
-          *,
-          property_projects!inner(
-            id,
-            name,
-            property_id,
-            properties!inner(
-              id,
-              name,
-              real_name,
-              city,
-              county
-            )
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
+
+      if (!data || data.length === 0) {
+        setDocuments([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get unique project IDs
+      const projectIds = Array.from(new Set(
+        data.filter((d: any) => d.project_id).map((d: any) => d.project_id)
+      ));
+
+      // Fetch project information using directFetch with auth token
+      let projectsMap: Record<string, any> = {};
+      if (projectIds.length > 0 && session) {
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: projects } = await directFetch('property_projects', {
+          select: 'id,name,property_id',
+          in: { id: projectIds },
+          authToken: session.access_token
+        });
+
+        if (projects) {
+          (projects as any[]).forEach((project: any) => {
+            projectsMap[project.id] = project;
+          });
+        }
+      }
+
+      // Get unique property IDs from projects
+      const propertyIds = Array.from(new Set(
+        Object.values(projectsMap)
+          .filter((p: any) => p.property_id)
+          .map((p: any) => p.property_id)
+      ));
+
+      // Fetch property information
+      let propertiesMap: Record<string, any> = {};
+      if (propertyIds.length > 0 && session) {
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: properties } = await directFetch('properties', {
+          select: 'id,name,real_name,city,county',
+          in: { id: propertyIds },
+          authToken: session.access_token
+        });
+
+        if (properties) {
+          (properties as any[]).forEach((property: any) => {
+            propertiesMap[property.id] = property;
+          });
+        }
+      }
+
+      // Transform the data to add project and property information
+      const transformedData = data.map((doc: any) => {
+        const project = doc.project_id ? projectsMap[doc.project_id] : null;
+        const property = project?.property_id ? propertiesMap[project.property_id] : null;
+
+        return {
+          ...doc,
+          property_projects: project ? {
+            ...project,
+            properties: property
+          } : undefined
+        };
+      });
+
+      setDocuments(transformedData || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
     } finally {
@@ -244,9 +301,6 @@ export default function DocumentDirectoryPage() {
                         </td>
                         <td className="py-4 px-4 text-sm text-gray-600">
                           {new Date(doc.created_at).toLocaleDateString()}
-                          {doc.uploaded_by && (
-                            <div className="text-xs text-gray-500">by {doc.uploaded_by}</div>
-                          )}
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex justify-end gap-2">

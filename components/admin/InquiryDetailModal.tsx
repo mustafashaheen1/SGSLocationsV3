@@ -39,11 +39,23 @@ export default function InquiryDetailModal({
       if (inquiry.properties?.owner_id) {
         setLoadingOwner(true);
         try {
-          const { data: ownerData, error } = await (supabase
-            .from('users') as any)
-            .select('id, email, full_name, phone, company_name')
-            .eq('id', inquiry.properties.owner_id)
-            .maybeSingle();
+          // Get session for auth token
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (!session) {
+            console.error('No session found');
+            setLoadingOwner(false);
+            return;
+          }
+
+          // Use directFetch with auth token to bypass RLS issues
+          const { directFetch } = await import('@/lib/supabase');
+          const { data: ownerData, error } = await directFetch('users', {
+            select: 'id,email,full_name,phone,company_name',
+            eq: { id: inquiry.properties.owner_id },
+            single: true,
+            authToken: session.access_token
+          });
 
           if (error) {
             console.error('Error fetching property owner:', error);
@@ -51,7 +63,7 @@ export default function InquiryDetailModal({
           }
 
           if (ownerData) {
-            setPropertyOwner(ownerData);
+            setPropertyOwner(ownerData as PropertyOwner);
           }
         } catch (error) {
           console.error('Error loading property owner:', error);
