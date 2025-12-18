@@ -68,20 +68,39 @@ interface FormQuestion {
 }
 
 async function uploadVideoToS3(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('folder', 'videos');
-
   try {
-    const response = await fetch('/api/upload-video', {
+    // Step 1: Get presigned URL from your API
+    const presignedResponse = await fetch('/api/upload-video-presigned', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type,
+        folder: 'videos',
+      }),
     });
 
-    if (!response.ok) throw new Error('Upload failed');
+    if (!presignedResponse.ok) {
+      throw new Error('Failed to get upload URL');
+    }
 
-    const data = await response.json();
-    return data.url;
+    const { uploadUrl, publicUrl } = await presignedResponse.json();
+
+    // Step 2: Upload directly to S3 using presigned URL
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+      },
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error('Failed to upload to S3');
+    }
+
+    // Step 3: Return the public URL
+    return publicUrl;
   } catch (error) {
     console.error('Error uploading video:', error);
     throw error;
