@@ -74,11 +74,13 @@ export default function AdminLayout({
           return;
         }
 
-        const { data: adminData, error: adminError } = await supabase
-          .from('admins')
-          .select('id, email, role')
-          .eq('email', session.user.email)
-          .maybeSingle();
+        const { directFetch } = await import('@/lib/supabase');
+        const { data: adminData, error: adminError } = await directFetch('admins', {
+          select: 'id,email,role',
+          eq: { email: session.user.email || '' },
+          single: true,
+          authToken: session.access_token
+        });
 
         if (adminError || !adminData) {
           console.log('[Admin Layout] Not an admin');

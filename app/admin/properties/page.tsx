@@ -53,12 +53,13 @@ export default function AdminPropertiesPage() {
       return;
     }
 
-    // Use directFetch to avoid localStorage issues
+    // Use directFetch WITH authToken for RLS-protected admins table
     const { directFetch } = await import('@/lib/supabase');
     const { data: admin } = await directFetch('admins', {
       select: '*',
       eq: { email: session.user.email || '' },
-      single: true
+      single: true,
+      authToken: session.access_token
     });
 
     if (!admin) {
