@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import LoginModal from './LoginModal';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 
 interface ContactFormModalProps {
   isOpen: boolean;
@@ -39,9 +40,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [phoneError, setPhoneError] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaError, setRecaptchaError] = useState('');
   const pickerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -275,6 +279,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
       }
     }
 
+    // Validate reCAPTCHA
+    if (!recaptchaToken) {
+      setRecaptchaError('Please complete the reCAPTCHA verification');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -319,7 +329,8 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
           crew_size: formData.crewSize,
           locations: formData.locations,
           shooting_date: formData.shootingDate,
-          ...dynamicData
+          ...dynamicData,
+          recaptcha_token: recaptchaToken
         })
       });
 
@@ -330,6 +341,9 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
       }
 
       setSubmitSuccess(true);
+      // Reset reCAPTCHA
+      setRecaptchaToken(null);
+      recaptchaRef.current?.reset();
       setTimeout(() => {
         onClose();
         setSubmitSuccess(false);
@@ -685,6 +699,30 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                 Inquiry submitted successfully! We'll get back to you soon.
               </div>
             )}
+
+            {/* reCAPTCHA */}
+            <div className="mt-6 flex justify-center">
+              <ReCaptcha
+                ref={recaptchaRef}
+                onVerify={(token) => {
+                  setRecaptchaToken(token);
+                  setRecaptchaError('');
+                }}
+                onExpired={() => {
+                  setRecaptchaToken(null);
+                  setRecaptchaError('reCAPTCHA expired, please verify again');
+                }}
+                onError={() => {
+                  setRecaptchaToken(null);
+                  setRecaptchaError('reCAPTCHA error, please try again');
+                }}
+              />
+              {recaptchaError && (
+                <p className="text-red-500 text-sm mt-2 text-center">
+                  {recaptchaError}
+                </p>
+              )}
+            </div>
 
             {/* Submit Button */}
             <div className="mt-6 flex justify-end gap-3">

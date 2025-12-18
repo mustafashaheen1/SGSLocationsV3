@@ -40,9 +40,17 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate the final public URL
-    const publicUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL
-      ? `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${uniqueFileName}`
-      : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${uniqueFileName}`;
+    let publicUrl: string;
+    if (process.env.NEXT_PUBLIC_CLOUDFRONT_URL) {
+      const cloudFrontUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+      // Ensure CloudFront URL has https:// prefix
+      const baseUrl = cloudFrontUrl.startsWith('http')
+        ? cloudFrontUrl
+        : `https://${cloudFrontUrl}`;
+      publicUrl = `${baseUrl}/${uniqueFileName}`;
+    } else {
+      publicUrl = `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${uniqueFileName}`;
+    }
 
     return jsonResponseNoCache({
       uploadUrl,

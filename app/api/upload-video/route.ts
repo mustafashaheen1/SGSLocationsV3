@@ -35,9 +35,18 @@ export async function POST(request: NextRequest) {
 
     await s3Client.send(command);
 
-    const url = process.env.NEXT_PUBLIC_CLOUDFRONT_URL
-      ? `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${fileName}`
-      : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileName}`;
+    // Generate the final public URL
+    let url: string;
+    if (process.env.NEXT_PUBLIC_CLOUDFRONT_URL) {
+      const cloudFrontUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+      // Ensure CloudFront URL has https:// prefix
+      const baseUrl = cloudFrontUrl.startsWith('http')
+        ? cloudFrontUrl
+        : `https://${cloudFrontUrl}`;
+      url = `${baseUrl}/${fileName}`;
+    } else {
+      url = `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileName}`;
+    }
 
     return jsonResponseNoCache({ url });
   } catch (error) {

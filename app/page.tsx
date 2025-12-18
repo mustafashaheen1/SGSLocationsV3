@@ -71,8 +71,14 @@ export default function HomePage() {
         if (isMounted && settings) {
           settings.forEach((setting: any) => {
             if (setting.key === 'hero_video') {
-              const videoUrl = setting.value || '';
-              console.log('🎥 Hero video URL:', videoUrl);
+              let videoUrl = setting.value || '';
+              console.log('🎥 Hero video URL (raw):', videoUrl);
+
+              // Fix missing protocol (CloudFront URLs often stored without https://)
+              if (videoUrl && !videoUrl.startsWith('http') && !videoUrl.startsWith('/')) {
+                videoUrl = `https://${videoUrl}`;
+                console.log('🎥 Fixed video URL:', videoUrl);
+              }
 
               // Use proxy for external videos to bypass hotlinking protection
               const proxiedUrl = videoUrl.startsWith('http')
