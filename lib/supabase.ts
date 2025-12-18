@@ -8,7 +8,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 // ============================================
 
 export async function directFetch(
-  table: string, 
+  table: string,
   options?: {
     select?: string;
     eq?: Record<string, any>;
@@ -20,6 +20,7 @@ export async function directFetch(
     range?: [number, number];
     single?: boolean;
     maybeSingle?: boolean;
+    authToken?: string;
   }
 ): Promise<{ data: any; error: any }> {
   try {
@@ -73,11 +74,16 @@ export async function directFetch(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
+    // Use auth token if provided (for RLS-protected tables), otherwise use anon key
+    const authHeader = options?.authToken
+      ? `Bearer ${options.authToken}`
+      : `Bearer ${supabaseAnonKey}`;
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'apikey': supabaseAnonKey,
-        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
       signal: controller.signal,

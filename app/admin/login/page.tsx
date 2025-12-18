@@ -49,12 +49,13 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Use directFetch to avoid localStorage issues
+      // Use directFetch with auth token to avoid localStorage issues while maintaining RLS access
       const { directFetch } = await import('@/lib/supabase');
       const { data: adminData, error: adminError } = await directFetch('admins', {
         select: 'id,email,role',
         eq: { email: authData.user.email },
-        single: true
+        single: true,
+        authToken: authData.session.access_token
       });
 
       if (adminError || !adminData) {

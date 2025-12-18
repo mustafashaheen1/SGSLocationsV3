@@ -33,7 +33,9 @@
       "Bash(echo:*)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(node check-names.mjs:*)",
+      "Bash(node check-names-simple.mjs:*)"
     ],
     "deny": [],
     "ask": []
