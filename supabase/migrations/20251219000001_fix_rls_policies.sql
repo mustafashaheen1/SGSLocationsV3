@@ -20,6 +20,12 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       );
 
     CREATE POLICY "Admins can insert projects"
@@ -29,6 +35,12 @@ BEGIN
           SELECT 1 FROM users
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
+        )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
         )
       );
 
@@ -40,6 +52,12 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       );
 
     CREATE POLICY "Admins can delete projects"
@@ -49,6 +67,12 @@ BEGIN
           SELECT 1 FROM users
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
+        )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
         )
       );
   END IF;
@@ -73,6 +97,12 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       );
 
     CREATE POLICY "Admins can insert documents"
@@ -82,6 +112,12 @@ BEGIN
           SELECT 1 FROM users
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
+        )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
         )
       );
 
@@ -93,6 +129,12 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       );
 
     CREATE POLICY "Admins can delete documents"
@@ -102,6 +144,12 @@ BEGIN
           SELECT 1 FROM users
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
+        )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
         )
       );
   END IF;
@@ -117,7 +165,12 @@ BEGIN
     DROP POLICY IF EXISTS "Admins can insert calendar events" ON property_calendar_events;
     DROP POLICY IF EXISTS "Admins can update calendar events" ON property_calendar_events;
     DROP POLICY IF EXISTS "Admins can delete calendar events" ON property_calendar_events;
+    DROP POLICY IF EXISTS "Property owners can view their calendar events" ON property_calendar_events;
+    DROP POLICY IF EXISTS "Property owners can insert calendar events" ON property_calendar_events;
+    DROP POLICY IF EXISTS "Property owners can update calendar events" ON property_calendar_events;
+    DROP POLICY IF EXISTS "Property owners can delete calendar events" ON property_calendar_events;
 
+    -- Admins can view all calendar events (check both admins table and users.user_type)
     CREATE POLICY "Admins can view all calendar events"
       ON property_calendar_events FOR SELECT
       USING (
@@ -126,8 +179,15 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       );
 
+    -- Admins can insert calendar events (check both admins table and users.user_type)
     CREATE POLICY "Admins can insert calendar events"
       ON property_calendar_events FOR INSERT
       WITH CHECK (
@@ -136,8 +196,15 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       );
 
+    -- Admins can update calendar events (check both admins table and users.user_type)
     CREATE POLICY "Admins can update calendar events"
       ON property_calendar_events FOR UPDATE
       USING (
@@ -146,8 +213,15 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       );
 
+    -- Admins can delete calendar events (check both admins table and users.user_type)
     CREATE POLICY "Admins can delete calendar events"
       ON property_calendar_events FOR DELETE
       USING (
@@ -155,6 +229,59 @@ BEGIN
           SELECT 1 FROM users
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
+        )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
+      );
+
+    -- Property owners can view their own calendar events
+    CREATE POLICY "Property owners can view their calendar events"
+      ON property_calendar_events FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM properties
+          WHERE properties.id = property_calendar_events.property_id
+          AND properties.owner_id = auth.uid()
+        )
+      );
+
+    -- Property owners can insert calendar events on their approved properties
+    CREATE POLICY "Property owners can insert calendar events"
+      ON property_calendar_events FOR INSERT
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM properties
+          WHERE properties.id = property_calendar_events.property_id
+          AND properties.owner_id = auth.uid()
+          AND properties.status = 'active'
+        )
+      );
+
+    -- Property owners can update calendar events on their approved properties
+    CREATE POLICY "Property owners can update calendar events"
+      ON property_calendar_events FOR UPDATE
+      USING (
+        EXISTS (
+          SELECT 1 FROM properties
+          WHERE properties.id = property_calendar_events.property_id
+          AND properties.owner_id = auth.uid()
+          AND properties.status = 'active'
+        )
+      );
+
+    -- Property owners can delete calendar events on their approved properties
+    CREATE POLICY "Property owners can delete calendar events"
+      ON property_calendar_events FOR DELETE
+      USING (
+        EXISTS (
+          SELECT 1 FROM properties
+          WHERE properties.id = property_calendar_events.property_id
+          AND properties.owner_id = auth.uid()
+          AND properties.status = 'active'
         )
       );
   END IF;
@@ -178,7 +305,7 @@ BEGIN
       ON site_settings FOR SELECT
       USING (true);
 
-    -- Only admins can insert/update/delete site settings
+    -- Only admins can insert/update/delete site settings (check both admins table and users.user_type)
     CREATE POLICY "Admins can manage site settings"
       ON site_settings FOR ALL
       USING (
@@ -187,12 +314,24 @@ BEGIN
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
         )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
+        )
       )
       WITH CHECK (
         EXISTS (
           SELECT 1 FROM users
           WHERE users.id = auth.uid()
           AND users.user_type = 'admin'
+        )
+        OR
+        EXISTS (
+          SELECT 1 FROM admins
+          JOIN auth.users ON auth.users.email = admins.email
+          WHERE auth.users.id = auth.uid()
         )
       );
   END IF;

@@ -95,13 +95,20 @@ export async function POST(
     // Check if user is admin - check BOTH admins table and users.user_type
     const { directFetch } = await import('@/lib/supabase');
 
-    // Check admins table
-    const { data: adminData } = await directFetch('admins', {
-      select: 'id',
-      eq: { email: user.email || '' },
-      single: true,
-      authToken: token
-    });
+    // Check admins table (handle errors gracefully)
+    let adminData = null;
+    try {
+      const result = await directFetch('admins', {
+        select: 'id',
+        eq: { email: user.email || '' },
+        single: true,
+        authToken: token
+      });
+      adminData = result.data;
+    } catch (error) {
+      console.log('Error checking admins table:', error);
+      // Continue - we'll check users.user_type as fallback
+    }
 
     // Check users table
     const { data: userProfile } = await (supabase
