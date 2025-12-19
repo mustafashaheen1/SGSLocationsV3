@@ -60,17 +60,33 @@ export default function SettingsPage() {
 
   async function fetchEmailSettings() {
     try {
+      console.log('Fetching email settings...');
       const response = await fetch('/api/admin/settings');
-      if (response.ok) {
-        const { settings } = await response.json();
+      console.log('Response status:', response.status);
 
-        const propertyEmail = settings.find((s: any) => s.setting_key === 'property_inquiry_email');
-        const generalEmail = settings.find((s: any) => s.setting_key === 'general_inquiry_email');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Received data:', data);
+        const { settings } = data;
+
+        const propertyEmail = settings?.find((s: any) => s.setting_key === 'property_inquiry_email');
+        const generalEmail = settings?.find((s: any) => s.setting_key === 'general_inquiry_email');
+
+        console.log('Property email:', propertyEmail);
+        console.log('General email:', generalEmail);
 
         setEmailSettings({
           propertyInquiryEmail: propertyEmail?.setting_value || '',
           generalInquiryEmail: generalEmail?.setting_value || '',
         });
+
+        console.log('Email settings set:', {
+          propertyInquiryEmail: propertyEmail?.setting_value || '',
+          generalInquiryEmail: generalEmail?.setting_value || ''
+        });
+      } else {
+        const error = await response.json();
+        console.error('API error response:', error);
       }
     } catch (error) {
       console.error('Error fetching email settings:', error);

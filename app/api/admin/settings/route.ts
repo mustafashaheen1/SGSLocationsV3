@@ -31,11 +31,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch all settings
-    const { data: settings, error } = await supabase
+    // Fetch all settings using service role (we've already verified admin access)
+    console.log('Fetching app_settings for admin:', user.email);
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const serviceSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    const { data: settings, error } = await serviceSupabase
       .from('app_settings')
       .select('*')
       .order('setting_key');
+
+    console.log('Settings fetch result:', {
+      settingsCount: settings?.length || 0,
+      error: error,
+      settings: settings
+    });
 
     if (error) {
       console.error('Error fetching settings:', error);
@@ -92,9 +112,22 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Use service role for updates (we've already verified admin access)
+    const { createClient } = await import('@supabase/supabase-js');
+    const serviceSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
     // Update each setting
     const updatePromises = settings.map(async (setting: { setting_key: string; setting_value: string }) => {
-      const { error } = await supabase
+      const { error } = await serviceSupabase
         .from('app_settings')
         .update({
           setting_value: setting.setting_value,
