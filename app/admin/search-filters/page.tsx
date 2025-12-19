@@ -66,7 +66,6 @@ export default function SearchFiltersPage() {
       console.log('Filters fetched:', data);
 
       // Fetch tag counts using directFetch with auth token
-      const { directFetch } = await import('@/lib/supabase');
       const filtersWithCounts = await Promise.all(
         (data || []).map(async (filter: any) => {
           const { data: tags, error: tagsError } = await directFetch('search_filter_tags', {

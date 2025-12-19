@@ -123,7 +123,6 @@ export default function CategoriesPage() {
       if (error) throw error;
 
       // Fetch property counts using directFetch with auth token
-      const { directFetch } = await import('@/lib/supabase');
       const categoriesWithCount = await Promise.all(
         (data || []).map(async (cat: any) => {
           let count = 0;
