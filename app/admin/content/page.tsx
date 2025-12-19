@@ -1570,6 +1570,17 @@ export default function ContentManagementPage() {
   async function saveTermsAndConditions() {
     setSaving(true);
     try {
+      // Get the current max version number
+      const { data: maxVersionData } = await (supabase
+        .from('terms_and_conditions') as any)
+        .select('version')
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Increment version number (or start at 1 if no existing versions)
+      const newVersion = maxVersionData ? (maxVersionData.version + 1) : 1;
+
       // Deactivate old versions
       await (supabase
         .from('terms_and_conditions') as any)
@@ -1581,7 +1592,7 @@ export default function ContentManagementPage() {
         .from('terms_and_conditions') as any)
         .insert({
           content: termsContent,
-          version: new Date().getTime(),
+          version: newVersion,
           is_active: true,
           updated_at: new Date().toISOString()
         });
@@ -1589,7 +1600,8 @@ export default function ContentManagementPage() {
       if (error) throw error;
       alert('Terms and Conditions updated successfully!');
     } catch (error: any) {
-      alert('Error saving terms: ' + error.message);
+      console.error('Error saving terms:', error);
+      alert('Error saving terms: ' + (error.message || JSON.stringify(error)));
     } finally {
       setSaving(false);
     }
