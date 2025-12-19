@@ -13,6 +13,10 @@ export async function directFetch(
     select?: string;
     eq?: Record<string, any>;
     neq?: Record<string, any>;
+    gt?: Record<string, any>;
+    gte?: Record<string, any>;
+    lt?: Record<string, any>;
+    lte?: Record<string, any>;
     in?: Record<string, any[]>;
     contains?: Record<string, any[]>;
     is?: Record<string, null>;
@@ -43,7 +47,35 @@ export async function directFetch(
         url += `&${key}=neq.${encodeURIComponent(String(value))}`;
       });
     }
-    
+
+    // Add gt filters (greater than)
+    if (options?.gt) {
+      Object.entries(options.gt).forEach(([key, value]) => {
+        url += `&${key}=gt.${encodeURIComponent(String(value))}`;
+      });
+    }
+
+    // Add gte filters (greater than or equal)
+    if (options?.gte) {
+      Object.entries(options.gte).forEach(([key, value]) => {
+        url += `&${key}=gte.${encodeURIComponent(String(value))}`;
+      });
+    }
+
+    // Add lt filters (less than)
+    if (options?.lt) {
+      Object.entries(options.lt).forEach(([key, value]) => {
+        url += `&${key}=lt.${encodeURIComponent(String(value))}`;
+      });
+    }
+
+    // Add lte filters (less than or equal)
+    if (options?.lte) {
+      Object.entries(options.lte).forEach(([key, value]) => {
+        url += `&${key}=lte.${encodeURIComponent(String(value))}`;
+      });
+    }
+
     // Add in filters
     if (options?.in) {
       Object.entries(options.in).forEach(([key, values]) => {
