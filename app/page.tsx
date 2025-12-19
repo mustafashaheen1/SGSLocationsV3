@@ -60,13 +60,21 @@ export default function HomePage() {
 
     async function fetchData() {
       try {
+        console.log('🏠 Starting home page data fetch...');
         // Use directFetch instead of supabase.from()
         const { directFetch } = await import('@/lib/supabase');
 
         // Fetch hero settings
-        const { data: settings } = await directFetch('site_settings', {
+        console.log('📥 Fetching site settings...');
+        const { data: settings, error: settingsError } = await directFetch('site_settings', {
           in: { key: ['hero_video', 'hero_title', 'hero_subtitle'] }
         });
+
+        if (settingsError) {
+          console.error('❌ Error fetching site settings:', settingsError);
+        } else {
+          console.log('✅ Site settings fetched:', settings?.length || 0, 'items');
+        }
 
         if (isMounted && settings) {
           settings.forEach((setting: any) => {
@@ -98,54 +106,89 @@ export default function HomePage() {
         }
 
         // Fetch services
-        const { data: servicesData } = await directFetch('services', {
+        console.log('📥 Fetching services...');
+        const { data: servicesData, error: servicesError } = await directFetch('services', {
           eq: { is_active: true },
-          order: 'display_order.asc'
+          order: 'display_order',
+          ascending: true
         });
+
+        if (servicesError) {
+          console.error('❌ Error fetching services:', servicesError);
+        } else {
+          console.log('✅ Services fetched:', servicesData?.length || 0, 'items');
+        }
 
         if (isMounted && servicesData) {
           setServices(servicesData);
         }
 
         // Fetch production logos
-        const { data: logosData } = await directFetch('production_logos', {
+        console.log('📥 Fetching production logos...');
+        const { data: logosData, error: logosError } = await directFetch('production_logos', {
           eq: { is_active: true },
-          order: 'display_order.asc'
+          order: 'display_order',
+          ascending: true
         });
+
+        if (logosError) {
+          console.error('❌ Error fetching production logos:', logosError);
+        } else {
+          console.log('✅ Production logos fetched:', logosData?.length || 0, 'items');
+        }
 
         if (isMounted && logosData) {
           setProductionLogos(logosData);
         }
 
         // Fetch featured properties
-        const { data: featured } = await directFetch('properties', {
+        console.log('📥 Fetching featured properties...');
+        const { data: featured, error: featuredError } = await directFetch('properties', {
           eq: { status: 'active', is_featured: true },
-          order: 'name.asc',
+          order: 'name',
+          ascending: true,
           limit: 6
         });
+
+        if (featuredError) {
+          console.error('❌ Error fetching featured properties:', featuredError);
+        } else {
+          console.log('✅ Featured properties fetched:', featured?.length || 0, 'items');
+        }
 
         if (isMounted && featured) {
           setFeaturedProperties(featured);
         }
 
         // Fetch categories
-        const { data: categoriesData } = await directFetch('categories', {
+        console.log('📥 Fetching categories...');
+        const { data: categoriesData, error: categoriesError } = await directFetch('categories', {
           eq: { is_active: true },
-          order: 'display_order.asc'
+          order: 'display_order',
+          ascending: true
         });
+
+        if (categoriesError) {
+          console.error('❌ Error fetching categories:', categoriesError);
+        } else {
+          console.log('✅ Categories fetched:', categoriesData?.length || 0, 'items');
+        }
 
         if (isMounted && categoriesData) {
           // Filter for subcategories (has parent_id)
           const subcategories = categoriesData.filter((cat: any) => cat.parent_id);
+          console.log('📂 Subcategories filtered:', subcategories.length, 'items');
           setCategories(subcategories);
         }
 
         if (isMounted) {
+          console.log('✅ All data fetched successfully - loading page');
           setContentLoaded(true);
         }
       } catch (error) {
-        console.error('Error fetching homepage data:', error);
+        console.error('❌ Error fetching homepage data:', error);
         if (isMounted) {
+          console.log('⚠️ Loading page despite errors');
           setContentLoaded(true);
         }
       }
