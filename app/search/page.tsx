@@ -587,12 +587,21 @@ export default function SearchPage() {
   }
 
   const loadMoreProperties = async () => {
-    if (loading || !hasMore) return;
+    if (loading || !hasMore) {
+      console.log('Skipping load - loading:', loading, 'hasMore:', hasMore);
+      return;
+    }
 
     console.log('loadMoreProperties called with activeFilters:', activeFilters);
     console.log('Number of active filters:', activeFilters.length);
 
     setLoading(true);
+
+    // Add a timeout to prevent infinite loading
+    const loadTimeout = setTimeout(() => {
+      console.error('Load timeout - resetting loading state');
+      setLoading(false);
+    }, 30000); // 30 second timeout
 
     try {
       const from = (page - 1) * ITEMS_PER_PAGE;
@@ -891,17 +900,32 @@ export default function SearchPage() {
     } catch (error) {
       console.error('Error loading properties:', error);
     } finally {
+      clearTimeout(loadTimeout);
       setLoading(false);
     }
   };
 
+  // Use a ref to track the previous filter state to avoid unnecessary resets
+  const prevFiltersRef = useRef<string>('');
+
   useEffect(() => {
-    // Reset and reload when search params, filters, or categories change
-    console.log('Resetting search state due to filter/param change');
-    setProperties([]);
-    setPage(1);
-    setHasMore(true);
-    setLoading(false); // Reset loading state to allow new search
+    // Create a stable string representation of the current state
+    const currentFiltersString = JSON.stringify({
+      params: searchParams.toString(),
+      filters: activeFilters,
+      category: selectedCategory,
+      subCategory: selectedSubCategory
+    });
+
+    // Only reset if the filters have actually changed
+    if (prevFiltersRef.current !== currentFiltersString) {
+      console.log('Resetting search state due to filter/param change');
+      prevFiltersRef.current = currentFiltersString;
+      setProperties([]);
+      setPage(1);
+      setHasMore(true);
+      setLoading(false); // Reset loading state to allow new search
+    }
   }, [searchParams, activeFilters, selectedCategory, selectedSubCategory]);
 
   // Trigger search when needed
