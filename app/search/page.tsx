@@ -1048,19 +1048,35 @@ export default function SearchPage() {
     setSaveMessage('');
 
     try {
-      // Check if user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
+      // Check if user is logged in - use getSession for more reliable auth check
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+
+      console.log('Save search - Auth check:', { hasUser: !!user, skipAuthCheck });
 
       if (!user && !skipAuthCheck) {
+        // Save the search data to sessionStorage to be saved after login
+        sessionStorage.setItem('pendingSearchSave', JSON.stringify({
+          name: searchName.trim(),
+          searchInput,
+          activeFilters,
+          selectedCategory,
+          selectedSubCategory
+        }));
+
+        console.log('User not logged in - showing login prompt');
         setSaveMessage('Please Login or Register to save searches');
         setIsSaving(false);
         return;
       }
 
       if (!user) {
+        console.log('User not logged in but skipAuthCheck is true - aborting save');
         setIsSaving(false);
         return;
       }
+
+      console.log('User is logged in, proceeding with save:', user.email);
 
       // Calculate result count by running the search
       let resultCount = 0;
