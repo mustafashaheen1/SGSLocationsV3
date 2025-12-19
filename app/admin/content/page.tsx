@@ -1551,16 +1551,19 @@ export default function ContentManagementPage() {
 
   async function fetchTermsAndConditions() {
     try {
+      // For admin panel, show the latest version regardless of active status
       const { data } = await supabase
         .from('terms_and_conditions')
         .select('*')
-        .eq('is_active', true)
         .order('version', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (data) {
+        console.log('Loaded terms version:', (data as any).version, 'is_active:', (data as any).is_active);
         setTermsContent((data as any).content);
+      } else {
+        console.log('No terms found in database');
       }
     } catch (error) {
       console.error('Error fetching terms:', error);
