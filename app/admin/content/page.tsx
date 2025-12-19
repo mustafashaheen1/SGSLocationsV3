@@ -113,6 +113,7 @@ export default function ContentManagementPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoImageFile, setLogoImageFile] = useState<File | null>(null);
   const [logoImagePreview, setLogoImagePreview] = useState<string>('');
@@ -457,7 +458,7 @@ export default function ContentManagementPage() {
   async function handleHeroImageUpload() {
     if (!selectedHeroImageFile) return;
 
-    setUploading(true);
+    setUploadingHeroImage(true);
     try {
       const imageUrl = await uploadImageToS3(selectedHeroImageFile, 'hero');
       await saveSiteSetting('hero_image', imageUrl, 'home', 'hero');
@@ -469,7 +470,7 @@ export default function ContentManagementPage() {
       console.error('Error uploading hero image:', error);
       alert('Error uploading image');
     } finally {
-      setUploading(false);
+      setUploadingHeroImage(false);
     }
   }
 
@@ -1716,11 +1717,11 @@ export default function ContentManagementPage() {
                     <div className="flex items-center gap-4">
                       <Button
                         onClick={() => document.getElementById('heroImageUpload')?.click()}
-                        disabled={uploading}
+                        disabled={uploadingHeroImage}
                         variant="outline"
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        {uploading ? 'Uploading...' : 'Choose Image'}
+                        {uploadingHeroImage ? 'Uploading...' : 'Choose Image'}
                       </Button>
                       <input
                         id="heroImageUpload"
@@ -1737,8 +1738,8 @@ export default function ContentManagementPage() {
                       />
                       {selectedHeroImageFile && (
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={handleHeroImageUpload} disabled={uploading}>
-                            {uploading ? 'Uploading...' : 'Confirm Upload'}
+                          <Button size="sm" onClick={handleHeroImageUpload} disabled={uploadingHeroImage}>
+                            {uploadingHeroImage ? 'Uploading...' : 'Confirm Upload'}
                           </Button>
                           <Button
                             size="sm"
