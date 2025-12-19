@@ -90,25 +90,45 @@ export async function POST(
       return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
-    // Check if user is admin
+    console.log('Calendar POST - User ID:', user.id, 'Email:', user.email);
+
+    // Check if user is admin - check BOTH admins table and users.user_type
+    const { directFetch } = await import('@/lib/supabase');
+
+    // Check admins table
+    const { data: adminData } = await directFetch('admins', {
+      select: 'id',
+      eq: { email: user.email || '' },
+      single: true,
+      authToken: token
+    });
+
+    // Check users table
     const { data: userProfile } = await (supabase
       .from('users') as any)
       .select('user_type')
       .eq('id', user.id)
       .single();
 
-    const isAdmin = userProfile?.user_type === 'admin';
+    const isAdmin = !!adminData || userProfile?.user_type === 'admin';
+    console.log('Is admin (from admins table):', !!adminData);
+    console.log('Is admin (from users.user_type):', userProfile?.user_type === 'admin');
+    console.log('Is admin (final):', isAdmin);
 
     // Check if user owns this property
-    const { data: property } = await (supabase
+    const { data: property, error: propertyError } = await (supabase
       .from('properties') as any)
       .select('owner_id, status')
       .eq('id', propertyId)
       .single();
 
+    console.log('Property:', property, 'Error:', propertyError);
+
     const isOwner = property?.owner_id === user.id;
+    console.log('Is owner:', isOwner);
 
     if (!isAdmin && !isOwner) {
+      console.log('Access denied - not admin and not owner');
       return jsonResponseNoCache({ error: 'Forbidden' }, { status: 403 });
     }
 
