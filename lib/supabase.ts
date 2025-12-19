@@ -15,12 +15,14 @@ export async function directFetch(
     neq?: Record<string, any>;
     in?: Record<string, any[]>;
     contains?: Record<string, any[]>;
+    is?: Record<string, null>;
     order?: string;
     limit?: number;
     range?: [number, number];
     single?: boolean;
     maybeSingle?: boolean;
     authToken?: string;
+    ascending?: boolean;
   }
 ): Promise<{ data: any; error: any }> {
   try {
@@ -55,10 +57,20 @@ export async function directFetch(
         url += `&${key}=cs.{${values.map(v => encodeURIComponent(String(v))).join(',')}}`;
       });
     }
-    
+
+    // Add is filters (for null checks)
+    if (options?.is) {
+      Object.entries(options.is).forEach(([key, value]) => {
+        if (value === null) {
+          url += `&${key}=is.null`;
+        }
+      });
+    }
+
     // Add order
     if (options?.order) {
-      url += `&order=${options.order}`;
+      const direction = options.ascending === false ? '.desc' : '.asc';
+      url += `&order=${options.order}${direction}`;
     }
     
     // Add limit
