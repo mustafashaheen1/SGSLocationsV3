@@ -403,7 +403,14 @@ export default function ContentManagementPage() {
         throw new Error('Session expired. Please log in again.');
       }
 
-      const requestBody = {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const headers = {
+        'Content-Type': 'application/json',
+        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        'Authorization': `Bearer ${session.access_token}`,
+      };
+
+      const settingData = {
         key,
         value: JSON.stringify(value),
         page,
@@ -411,27 +418,54 @@ export default function ContentManagementPage() {
         updated_at: new Date().toISOString()
       };
 
-      console.log('Request body:', requestBody);
+      console.log('Setting data:', settingData);
 
-      // Use REST API for upsert
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/site_settings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Prefer': 'resolution=merge-duplicates,return=minimal'
-        },
-        body: JSON.stringify(requestBody)
-      });
+      // Try to update first
+      const updateResponse = await fetch(
+        `${supabaseUrl}/rest/v1/site_settings?key=eq.${encodeURIComponent(key)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...headers,
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({
+            value: settingData.value,
+            page: settingData.page,
+            section: settingData.section,
+            updated_at: settingData.updated_at
+          }),
+        }
+      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      if (updateResponse.ok) {
+        const result = await updateResponse.json();
+        if (result && result.length > 0) {
+          console.log(`Successfully updated ${key}`);
+          return;
+        }
+      }
+
+      // If update didn't affect any rows, insert new record
+      const insertResponse = await fetch(
+        `${supabaseUrl}/rest/v1/site_settings`,
+        {
+          method: 'POST',
+          headers: {
+            ...headers,
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(settingData),
+        }
+      );
+
+      if (!insertResponse.ok) {
+        const errorText = await insertResponse.text();
         console.error(`Failed to save ${key}:`, errorText);
         throw new Error(`Failed to save ${key}: ${errorText}`);
       }
 
-      console.log(`Successfully saved ${key}`);
+      console.log(`Successfully inserted ${key}`);
     } catch (error: any) {
       console.error(`Error in saveSiteSetting for ${key}:`, error);
       throw error;
