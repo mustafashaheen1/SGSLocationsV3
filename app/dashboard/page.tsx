@@ -227,13 +227,25 @@ export default function ProductionDashboard() {
     setLoadingSearches(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('No user found for saved searches fetch');
+        return;
+      }
+
+      console.log('Fetching saved searches for user:', user.id);
 
       const { data, error } = await supabase
         .from('saved_searches')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      console.log('Saved searches query result:', {
+        dataCount: data?.length || 0,
+        hasError: !!error,
+        error: error,
+        data: data
+      });
 
       if (error) {
         console.error('Error fetching saved searches:', error);
@@ -252,7 +264,12 @@ export default function ProductionDashboard() {
     setLoadingFavorites(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('No user found for favorites fetch');
+        return;
+      }
+
+      console.log('Fetching favorites for user:', user.id);
 
       const { data, error } = await (supabase
         .from('favorite_properties') as any)
@@ -270,6 +287,13 @@ export default function ProductionDashboard() {
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      console.log('Favorites query result:', {
+        dataCount: data?.length || 0,
+        hasError: !!error,
+        error: error,
+        data: data
+      });
 
       if (error) {
         console.error('Error fetching favorite properties:', error);
@@ -289,9 +313,12 @@ export default function ProductionDashboard() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log('No user found for inquiries fetch');
         setLoadingInquiries(false);
         return;
       }
+
+      console.log('Fetching inquiries for user:', user.id);
 
       const { data, error } = await supabase
         .from('inquiries')
@@ -306,6 +333,13 @@ export default function ProductionDashboard() {
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      console.log('Inquiries query result:', {
+        dataCount: data?.length || 0,
+        hasError: !!error,
+        error: error,
+        data: data
+      });
 
       if (error) {
         console.error('Error fetching inquiries:', error);

@@ -293,7 +293,14 @@ class QueryBuilder {
 
       // Build URL and request based on operation type
       if (this.operation === 'select') {
-        url += `?select=${encodeURIComponent(this.selectColumns)}`;
+        // For select, we need to preserve PostgREST syntax for nested selects (joins)
+        // Only encode if necessary, but preserve the structure
+        const encodedSelect = this.selectColumns
+          .replace(/\s+/g, '') // Remove whitespace/newlines
+          .replace(/\(/g, '(')  // Keep parentheses
+          .replace(/\)/g, ')')  // Keep parentheses
+          .replace(/,/g, ',');  // Keep commas
+        url += `?select=${encodedSelect}`;
 
         // Add filters
         for (const filter of this.filters) {
