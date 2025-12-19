@@ -24,14 +24,16 @@ export async function GET(
       return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: userProfile } = await (supabase
-      .from('users') as any)
-      .select('user_type')
-      .eq('id', user.id)
-      .single();
+    // Check if user is admin - admins exist ONLY in admins table
+    const { directFetch } = await import('@/lib/supabase');
+    const { data: adminData } = await directFetch('admins', {
+      select: 'id',
+      eq: { email: user.email || '' },
+      single: true,
+      authToken: token
+    });
 
-    const isAdmin = userProfile?.user_type === 'admin';
+    const isAdmin = !!adminData;
 
     // Check if user owns this property
     const { data: property } = await (supabase
@@ -92,35 +94,19 @@ export async function POST(
 
     console.log('Calendar POST - User ID:', user.id, 'Email:', user.email);
 
-    // Check if user is admin - check BOTH admins table and users.user_type
+    // Check if user is admin - admins exist ONLY in admins table
     const { directFetch } = await import('@/lib/supabase');
 
-    // Check admins table (handle errors gracefully)
-    let adminData = null;
-    try {
-      const result = await directFetch('admins', {
-        select: 'id',
-        eq: { email: user.email || '' },
-        single: true,
-        authToken: token
-      });
-      adminData = result.data;
-    } catch (error) {
-      console.log('Error checking admins table:', error);
-      // Continue - we'll check users.user_type as fallback
-    }
+    // Check admins table
+    const { data: adminData } = await directFetch('admins', {
+      select: 'id',
+      eq: { email: user.email || '' },
+      single: true,
+      authToken: token
+    });
 
-    // Check users table
-    const { data: userProfile } = await (supabase
-      .from('users') as any)
-      .select('user_type')
-      .eq('id', user.id)
-      .single();
-
-    const isAdmin = !!adminData || userProfile?.user_type === 'admin';
-    console.log('Is admin (from admins table):', !!adminData);
-    console.log('Is admin (from users.user_type):', userProfile?.user_type === 'admin');
-    console.log('Is admin (final):', isAdmin);
+    const isAdmin = !!adminData;
+    console.log('Is admin:', isAdmin);
 
     // Check if user owns this property
     const { data: property, error: propertyError } = await (supabase
@@ -289,14 +275,16 @@ export async function PUT(
       return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: userProfile } = await (supabase
-      .from('users') as any)
-      .select('user_type')
-      .eq('id', user.id)
-      .single();
+    // Check if user is admin - admins exist ONLY in admins table
+    const { directFetch } = await import('@/lib/supabase');
+    const { data: adminData } = await directFetch('admins', {
+      select: 'id',
+      eq: { email: user.email || '' },
+      single: true,
+      authToken: token
+    });
 
-    const isAdmin = userProfile?.user_type === 'admin';
+    const isAdmin = !!adminData;
 
     // Check if user owns this property
     const { data: property } = await (supabase
@@ -461,14 +449,16 @@ export async function DELETE(
       return jsonResponseNoCache({ error: 'Unauthorized - Invalid token' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: userProfile } = await (supabase
-      .from('users') as any)
-      .select('user_type')
-      .eq('id', user.id)
-      .single();
+    // Check if user is admin - admins exist ONLY in admins table
+    const { directFetch } = await import('@/lib/supabase');
+    const { data: adminData } = await directFetch('admins', {
+      select: 'id',
+      eq: { email: user.email || '' },
+      single: true,
+      authToken: token
+    });
 
-    const isAdmin = userProfile?.user_type === 'admin';
+    const isAdmin = !!adminData;
 
     // Check if user owns this property
     const { data: property } = await (supabase

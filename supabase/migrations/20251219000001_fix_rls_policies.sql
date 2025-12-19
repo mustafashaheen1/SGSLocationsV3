@@ -1,5 +1,5 @@
--- Fix RLS policies to use users.user_type instead of non-existent admins table
--- This affects multiple tables that incorrectly reference an admins table
+-- Fix RLS policies to check admins table
+-- Admins exist ONLY in the admins table, not in users table
 
 -- ============================================
 -- Fix property_projects table (if exists)
@@ -16,12 +16,6 @@ BEGIN
       ON property_projects FOR SELECT
       USING (
         EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
-        EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
           WHERE auth.users.id = auth.uid()
@@ -31,12 +25,6 @@ BEGIN
     CREATE POLICY "Admins can insert projects"
       ON property_projects FOR INSERT
       WITH CHECK (
-        EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
         EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
@@ -48,12 +36,6 @@ BEGIN
       ON property_projects FOR UPDATE
       USING (
         EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
-        EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
           WHERE auth.users.id = auth.uid()
@@ -63,12 +45,6 @@ BEGIN
     CREATE POLICY "Admins can delete projects"
       ON property_projects FOR DELETE
       USING (
-        EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
         EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
@@ -93,12 +69,6 @@ BEGIN
       ON documents FOR SELECT
       USING (
         EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
-        EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
           WHERE auth.users.id = auth.uid()
@@ -108,12 +78,6 @@ BEGIN
     CREATE POLICY "Admins can insert documents"
       ON documents FOR INSERT
       WITH CHECK (
-        EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
         EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
@@ -125,12 +89,6 @@ BEGIN
       ON documents FOR UPDATE
       USING (
         EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
-        EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
           WHERE auth.users.id = auth.uid()
@@ -140,12 +98,6 @@ BEGIN
     CREATE POLICY "Admins can delete documents"
       ON documents FOR DELETE
       USING (
-        EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
         EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
@@ -170,67 +122,43 @@ BEGIN
     DROP POLICY IF EXISTS "Property owners can update calendar events" ON property_calendar_events;
     DROP POLICY IF EXISTS "Property owners can delete calendar events" ON property_calendar_events;
 
-    -- Admins can view all calendar events (check both admins table and users.user_type)
+    -- Admins can view all calendar events
     CREATE POLICY "Admins can view all calendar events"
       ON property_calendar_events FOR SELECT
       USING (
         EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
-        EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
           WHERE auth.users.id = auth.uid()
         )
       );
 
-    -- Admins can insert calendar events (check both admins table and users.user_type)
+    -- Admins can insert calendar events
     CREATE POLICY "Admins can insert calendar events"
       ON property_calendar_events FOR INSERT
       WITH CHECK (
         EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
-        EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
           WHERE auth.users.id = auth.uid()
         )
       );
 
-    -- Admins can update calendar events (check both admins table and users.user_type)
+    -- Admins can update calendar events
     CREATE POLICY "Admins can update calendar events"
       ON property_calendar_events FOR UPDATE
       USING (
         EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
-        EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
           WHERE auth.users.id = auth.uid()
         )
       );
 
-    -- Admins can delete calendar events (check both admins table and users.user_type)
+    -- Admins can delete calendar events
     CREATE POLICY "Admins can delete calendar events"
       ON property_calendar_events FOR DELETE
       USING (
-        EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
         EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
@@ -305,16 +233,10 @@ BEGIN
       ON site_settings FOR SELECT
       USING (true);
 
-    -- Only admins can insert/update/delete site settings (check both admins table and users.user_type)
+    -- Only admins can insert/update/delete site settings
     CREATE POLICY "Admins can manage site settings"
       ON site_settings FOR ALL
       USING (
-        EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
         EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
@@ -322,12 +244,6 @@ BEGIN
         )
       )
       WITH CHECK (
-        EXISTS (
-          SELECT 1 FROM users
-          WHERE users.id = auth.uid()
-          AND users.user_type = 'admin'
-        )
-        OR
         EXISTS (
           SELECT 1 FROM admins
           JOIN auth.users ON auth.users.email = admins.email
