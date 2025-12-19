@@ -1553,13 +1553,24 @@ export default function ContentManagementPage() {
     try {
       console.log('🔄 Fetching terms and conditions...');
 
-      // For admin panel, show the latest version regardless of active status
-      const { data, error } = await supabase
-        .from('terms_and_conditions')
-        .select('*')
-        .order('version', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Get session to use authenticated request
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session exists:', !!session);
+
+      if (!session) {
+        console.error('❌ No session found - user not authenticated');
+        alert('Please log in to view terms');
+        return;
+      }
+
+      // Use directFetch with auth token to bypass RLS issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('terms_and_conditions', {
+        order: 'version',
+        ascending: false,
+        limit: 1,
+        authToken: session.access_token
+      });
 
       if (error) {
         console.error('❌ Error fetching terms:', error);
@@ -1567,10 +1578,13 @@ export default function ContentManagementPage() {
         return;
       }
 
-      if (data) {
-        console.log('✅ Loaded terms version:', (data as any).version, 'is_active:', (data as any).is_active);
-        console.log('📝 Content length:', (data as any).content?.length || 0, 'characters');
-        setTermsContent((data as any).content);
+      // directFetch returns an array, get the first item
+      const latestTerm = data && data.length > 0 ? data[0] : null;
+
+      if (latestTerm) {
+        console.log('✅ Loaded terms version:', latestTerm.version, 'is_active:', latestTerm.is_active);
+        console.log('📝 Content length:', latestTerm.content?.length || 0, 'characters');
+        setTermsContent(latestTerm.content);
       } else {
         console.log('⚠️ No terms found in database');
         setTermsContent('');
