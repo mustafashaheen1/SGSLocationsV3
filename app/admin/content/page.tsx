@@ -1551,15 +1551,11 @@ export default function ContentManagementPage() {
 
   async function fetchTermsAndConditions() {
     try {
-      console.log('🔄 Fetching terms and conditions...');
-
       // Get session to use authenticated request
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session exists:', !!session);
 
       if (!session) {
-        console.error('❌ No session found - user not authenticated');
-        alert('Please log in to view terms');
+        console.error('No session found - user not authenticated');
         return;
       }
 
@@ -1573,7 +1569,7 @@ export default function ContentManagementPage() {
       });
 
       if (error) {
-        console.error('❌ Error fetching terms:', error);
+        console.error('Error fetching terms:', error);
         alert('Error loading terms: ' + error.message);
         return;
       }
@@ -1582,15 +1578,12 @@ export default function ContentManagementPage() {
       const latestTerm = data && data.length > 0 ? data[0] : null;
 
       if (latestTerm) {
-        console.log('✅ Loaded terms version:', latestTerm.version, 'is_active:', latestTerm.is_active);
-        console.log('📝 Content length:', latestTerm.content?.length || 0, 'characters');
         setTermsContent(latestTerm.content);
       } else {
-        console.log('⚠️ No terms found in database');
         setTermsContent('');
       }
     } catch (error) {
-      console.error('❌ Exception fetching terms:', error);
+      console.error('Exception fetching terms:', error);
       alert('Exception loading terms: ' + error);
     }
   }

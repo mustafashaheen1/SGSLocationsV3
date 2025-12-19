@@ -213,21 +213,36 @@ export default function PropertyDetailPage() {
           // For nearby locations, use cascading fallback strategy
           if (propertyData.latitude && propertyData.longitude) {
             // PRIORITY 1: Property has coordinates - calculate distance to other properties with coordinates
-            const propertiesWithDistance = (allProperties as any[])
+            let nearbyLocations: any[] = (allProperties as any[])
               .filter((p: any) => p.latitude && p.longitude) // Only properties with coordinates
               .map((prop: any) => ({
                 ...prop,
                 distance: calculateDistance(
-                  propertyData.latitude!,
-                  propertyData.longitude!,
-                  prop.latitude!,
-                  prop.longitude!
+                  parseFloat(propertyData.latitude!),
+                  parseFloat(propertyData.longitude!),
+                  parseFloat(prop.latitude!),
+                  parseFloat(prop.longitude!)
                 )
               }))
-              .sort((a: any, b: any) => a.distance - b.distance)
-              .slice(0, 4); // Take exactly 4 nearest locations
+              .sort((a: any, b: any) => a.distance - b.distance);
 
-            setNearbyProperties(propertiesWithDistance as any);
+            // If we have fewer than 4 properties with coordinates, supplement with properties from same city
+            if (nearbyLocations.length < 4 && propertyData.city) {
+              const sameCityProperties = (allProperties as any[])
+                .filter((p: any) =>
+                  p.city === propertyData.city &&
+                  !nearbyLocations.find((nl: any) => nl.id === p.id) // Avoid duplicates
+                )
+                .map((prop: any) => ({
+                  ...prop,
+                  distance: null // No distance for properties without coordinates
+                }));
+
+              nearbyLocations = [...nearbyLocations, ...sameCityProperties];
+            }
+
+            // Take exactly 4 locations
+            setNearbyProperties(nearbyLocations.slice(0, 4) as any);
           } else if (propertyData.city || propertyData.county) {
             // PRIORITY 2: No coordinates - show properties from same city, then supplement with state
             let nearbyLocations: any[] = [];
@@ -235,7 +250,11 @@ export default function PropertyDetailPage() {
             // First, get properties from same city
             if (propertyData.city) {
               nearbyLocations = (allProperties as any[])
-                .filter((p: any) => p.city === propertyData.city);
+                .filter((p: any) => p.city === propertyData.city)
+                .map((prop: any) => ({
+                  ...prop,
+                  distance: null // No distance for properties without coordinates
+                }));
             }
 
             // If we don't have 4 yet, supplement with properties from same state/county
@@ -244,7 +263,11 @@ export default function PropertyDetailPage() {
                 .filter((p: any) =>
                   p.county === propertyData.county &&
                   !nearbyLocations.find((nl: any) => nl.id === p.id) // Avoid duplicates
-                );
+                )
+                .map((prop: any) => ({
+                  ...prop,
+                  distance: null // No distance for properties without coordinates
+                }));
 
               nearbyLocations = [...nearbyLocations, ...sameStateProperties];
             }

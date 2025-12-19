@@ -1175,13 +1175,12 @@ export default function EditPropertyPage() {
       const selectedMainCategory = categories.find(c => c.id === formData.category_id);
       const selectedSubCategory = categories.find(c => c.id === formData.sub_category_id);
 
-      // Regenerate obfuscated name from real_name
-      const obfuscatedName = generateObfuscatedName(formData.real_name);
-      console.log(`🔒 Regenerated obfuscated name: "${formData.real_name}" → "${obfuscatedName}"`);
+      // NOTE: Do NOT update the 'name' field when editing - it should remain as originally set
+      // The 'name' field is the public-facing obfuscated name and should not change after creation
 
       // Prepare property data
       const propertyData: any = {
-        name: obfuscatedName, // Public-facing obfuscated name
+        // name: DO NOT UPDATE - keeps the original obfuscated name
         real_name: formData.real_name, // Actual property name (admin only)
         description: formData.description || '',
         address: formData.address,

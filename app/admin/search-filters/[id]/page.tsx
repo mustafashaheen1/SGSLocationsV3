@@ -28,6 +28,8 @@ export default function FilterDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTagName, setNewTagName] = useState('');
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchFilterAndTags();
@@ -159,6 +161,78 @@ export default function FilterDetailPage() {
     }
   }
 
+  function toggleTagSelection(tagId: string) {
+    const newSelection = new Set(selectedTags);
+    if (newSelection.has(tagId)) {
+      newSelection.delete(tagId);
+    } else {
+      newSelection.add(tagId);
+    }
+    setSelectedTags(newSelection);
+  }
+
+  function selectAll() {
+    const allTagIds = new Set(tags.map(tag => tag.id));
+    setSelectedTags(allTagIds);
+  }
+
+  function deselectAll() {
+    setSelectedTags(new Set());
+  }
+
+  async function handleBulkDelete() {
+    if (selectedTags.size === 0) {
+      alert('Please select tags to delete');
+      return;
+    }
+
+    const selectedTagNames = tags
+      .filter(tag => selectedTags.has(tag.id))
+      .map(tag => tag.name)
+      .join(', ');
+
+    if (!confirm(`Delete ${selectedTags.size} selected tag(s)?\n\n${selectedTagNames}`)) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      // Delete all selected tags
+      const deletePromises = Array.from(selectedTags).map(tagId =>
+        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/search_filter_tags?id=eq.${tagId}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Prefer': 'return=minimal'
+          }
+        })
+      );
+
+      const responses = await Promise.all(deletePromises);
+
+      // Check if any failed
+      const failed = responses.filter(r => !r.ok);
+      if (failed.length > 0) {
+        throw new Error(`Failed to delete ${failed.length} tag(s)`);
+      }
+
+      setSelectedTags(new Set());
+      fetchFilterAndTags();
+    } catch (error: any) {
+      alert('Error deleting tags: ' + error.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (loading) {
     return <div className="p-6">Loading...</div>;
   }
@@ -183,10 +257,35 @@ export default function FilterDetailPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Tags</h2>
-          <Button onClick={() => setShowAddForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Tag
-          </Button>
+          <div className="flex gap-2">
+            {tags.length > 0 && (
+              <>
+                {selectedTags.size === tags.length ? (
+                  <Button variant="outline" onClick={deselectAll}>
+                    Deselect All
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={selectAll}>
+                    Select All
+                  </Button>
+                )}
+                {selectedTags.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    disabled={deleting}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Selected ({selectedTags.size})
+                  </Button>
+                )}
+              </>
+            )}
+            <Button onClick={() => setShowAddForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Tag
+            </Button>
+          </div>
         </div>
 
         {showAddForm && (
@@ -219,12 +318,23 @@ export default function FilterDetailPage() {
             {tags.map((tag) => (
               <div
                 key={tag.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className={`flex items-center gap-2 p-3 border rounded-lg transition-colors ${
+                  selectedTags.has(tag.id)
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
               >
-                <span className="text-sm font-medium">{tag.name}</span>
+                <input
+                  type="checkbox"
+                  checked={selectedTags.has(tag.id)}
+                  onChange={() => toggleTagSelection(tag.id)}
+                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                />
+                <span className="text-sm font-medium flex-1">{tag.name}</span>
                 <button
                   onClick={() => handleDeleteTag(tag.id, tag.name)}
                   className="text-red-600 hover:text-red-800"
+                  title="Delete this tag"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
