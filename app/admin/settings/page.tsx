@@ -60,8 +60,6 @@ export default function SettingsPage() {
 
   async function fetchEmailSettings() {
     try {
-      console.log('Fetching email settings...');
-
       // Get session token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
@@ -74,31 +72,21 @@ export default function SettingsPage() {
           'Authorization': `Bearer ${session.access_token}`
         }
       });
-      console.log('Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Received data:', data);
         const { settings } = data;
 
         const propertyEmail = settings?.find((s: any) => s.setting_key === 'property_inquiry_email');
         const generalEmail = settings?.find((s: any) => s.setting_key === 'general_inquiry_email');
 
-        console.log('Property email:', propertyEmail);
-        console.log('General email:', generalEmail);
-
         setEmailSettings({
           propertyInquiryEmail: propertyEmail?.setting_value || '',
           generalInquiryEmail: generalEmail?.setting_value || '',
         });
-
-        console.log('Email settings set:', {
-          propertyInquiryEmail: propertyEmail?.setting_value || '',
-          generalInquiryEmail: generalEmail?.setting_value || ''
-        });
       } else {
         const error = await response.json();
-        console.error('API error response:', error);
+        console.error('Failed to fetch email settings:', error);
       }
     } catch (error) {
       console.error('Error fetching email settings:', error);
@@ -308,12 +296,6 @@ export default function SettingsPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Email Notification Settings</h3>
         <p className="text-sm text-gray-600 mb-6">Configure where inquiry notifications are sent</p>
-
-        {/* Debug info */}
-        <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
-          <strong>Debug:</strong> Property Email: {emailSettings.propertyInquiryEmail || '(empty)'} |
-          General Email: {emailSettings.generalInquiryEmail || '(empty)'}
-        </div>
 
         <form onSubmit={handleEmailSettingsSubmit} className="space-y-4">
           <div>

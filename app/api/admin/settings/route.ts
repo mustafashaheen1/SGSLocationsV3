@@ -68,18 +68,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all settings
-    console.log('Fetching app_settings for admin:', user.email);
-
     const { data: settings, error } = await serviceSupabase
       .from('app_settings')
       .select('*')
       .order('setting_key');
-
-    console.log('Settings fetch result:', {
-      settingsCount: settings?.length || 0,
-      error: error,
-      settings: settings
-    });
 
     if (error) {
       console.error('Error fetching settings:', error);
