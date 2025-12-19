@@ -277,20 +277,18 @@ class QueryBuilder {
       let method = 'GET';
       let body: any = undefined;
 
-      // Get session token for authenticated operations (write operations)
+      // Get session token for authenticated operations (all operations including SELECT)
       let authToken = supabaseAnonKey;
-      if (this.operation !== 'select') {
-        try {
-          // Import dynamically to avoid circular dependencies
-          const { createClient } = await import('@/lib/supabase');
-          const client = createClient();
-          const { data: { session } } = await client.auth.getSession();
-          if (session?.access_token) {
-            authToken = session.access_token;
-          }
-        } catch (err) {
-          console.warn('Could not get session token, using anon key');
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { createClient } = await import('@/lib/supabase');
+        const client = createClient();
+        const { data: { session } } = await client.auth.getSession();
+        if (session?.access_token) {
+          authToken = session.access_token;
         }
+      } catch (err) {
+        console.warn('Could not get session token, using anon key');
       }
 
       // Build URL and request based on operation type
