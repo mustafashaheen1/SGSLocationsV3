@@ -10,12 +10,18 @@ export default function SettingsPage() {
   const [adminEmail, setAdminEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingEmails, setSavingEmails] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+  });
+
+  const [emailSettings, setEmailSettings] = useState({
+    propertyInquiryEmail: '',
+    generalInquiryEmail: '',
   });
 
   useEffect(() => {
@@ -45,7 +51,30 @@ export default function SettingsPage() {
     }
 
     setAdminEmail(session.user.email || '');
+
+    // Fetch email settings
+    await fetchEmailSettings();
+
     setLoading(false);
+  }
+
+  async function fetchEmailSettings() {
+    try {
+      const response = await fetch('/api/admin/settings');
+      if (response.ok) {
+        const { settings } = await response.json();
+
+        const propertyEmail = settings.find((s: any) => s.setting_key === 'property_inquiry_email');
+        const generalEmail = settings.find((s: any) => s.setting_key === 'general_inquiry_email');
+
+        setEmailSettings({
+          propertyInquiryEmail: propertyEmail?.setting_value || '',
+          generalInquiryEmail: generalEmail?.setting_value || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching email settings:', error);
+    }
   }
 
   const showMessage = (type: 'success' | 'error', text: string) => {
@@ -58,6 +87,57 @@ export default function SettingsPage() {
       ...passwordData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleEmailSettingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmailSettings({
+      ...emailSettings,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleEmailSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!emailSettings.propertyInquiryEmail || !emailSettings.generalInquiryEmail) {
+      showMessage('error', 'Please fill in all email fields');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailSettings.propertyInquiryEmail) || !emailRegex.test(emailSettings.generalInquiryEmail)) {
+      showMessage('error', 'Please enter valid email addresses');
+      return;
+    }
+
+    setSavingEmails(true);
+
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: [
+            { setting_key: 'property_inquiry_email', setting_value: emailSettings.propertyInquiryEmail },
+            { setting_key: 'general_inquiry_email', setting_value: emailSettings.generalInquiryEmail }
+          ]
+        })
+      });
+
+      if (response.ok) {
+        showMessage('success', 'Email settings updated successfully!');
+      } else {
+        const error = await response.json();
+        showMessage('error', error.error || 'Failed to update email settings');
+      }
+    } catch (error: any) {
+      console.error('Error updating email settings:', error);
+      showMessage('error', 'An error occurred: ' + error.message);
+    } finally {
+      setSavingEmails(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -183,6 +263,60 @@ export default function SettingsPage() {
             <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
           </div>
         </div>
+      </div>
+
+      {/* Email Notification Settings */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Email Notification Settings</h3>
+        <p className="text-sm text-gray-600 mb-6">Configure where inquiry notifications are sent</p>
+
+        <form onSubmit={handleEmailSettingsSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Property Inquiry Email *
+            </label>
+            <input
+              type="email"
+              name="propertyInquiryEmail"
+              value={emailSettings.propertyInquiryEmail}
+              onChange={handleEmailSettingChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              placeholder="email@example.com"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Email address to receive notifications for property-specific inquiries
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              General Inquiry Email *
+            </label>
+            <input
+              type="email"
+              name="generalInquiryEmail"
+              value={emailSettings.generalInquiryEmail}
+              onChange={handleEmailSettingChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              placeholder="email@example.com"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Email address to receive notifications for general contact form inquiries
+            </p>
+          </div>
+
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={savingEmails}
+              className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+            >
+              {savingEmails ? 'Saving...' : 'Save Email Settings'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Change Password */}

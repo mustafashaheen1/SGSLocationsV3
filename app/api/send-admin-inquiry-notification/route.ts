@@ -33,7 +33,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminEmail = 'phillip@sgsholdings.com';
+    // Fetch the appropriate admin email from settings
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Determine if this is a property inquiry or general inquiry
+    const isPropertyInquiry = !!propertyName;
+    const settingKey = isPropertyInquiry ? 'property_inquiry_email' : 'general_inquiry_email';
+
+    const { data: settingData, error: settingError } = await supabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', settingKey)
+      .single();
+
+    let adminEmail = 'phillip@sgsholdings.com'; // Fallback default
+    if (!settingError && settingData) {
+      adminEmail = settingData.setting_value;
+    }
 
     const msg = {
       to: adminEmail,
