@@ -1598,6 +1598,10 @@ export default function ContentManagementPage() {
         });
 
       if (error) throw error;
+
+      // Refresh the terms to show the updated content
+      await fetchTermsAndConditions();
+
       alert('Terms and Conditions updated successfully!');
     } catch (error: any) {
       console.error('Error saving terms:', error);
