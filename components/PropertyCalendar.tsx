@@ -48,9 +48,11 @@ const EVENT_TYPE_LABELS = {
 export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState({
     event_type: 'hold_days' as CalendarEventType,
     title: '',
@@ -189,6 +191,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
       return;
     }
 
+    setSaving(true);
     try {
       const headers = await getAuthHeaders();
 
@@ -214,6 +217,8 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
           alert(`Failed to update event: ${errorData.error || 'Unknown error'}`);
           return;
         }
+
+        setSuccessMessage('Event updated successfully');
       } else {
         // Create new event
         const response = await fetch(`/api/properties/${propertyId}/calendar`, {
@@ -227,14 +232,21 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
           alert(`Failed to create event: ${errorData.error || 'Unknown error'}`);
           return;
         }
+
+        setSuccessMessage('Event created successfully');
       }
 
       await fetchEvents();
       setShowEventModal(false);
       resetForm();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error saving event:', error);
       alert('Failed to save event. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -303,6 +315,13 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
 
   return (
     <div className="space-y-4">
+      {/* Success Message */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          {successMessage}
+        </div>
+      )}
+
       {/* Legend */}
       <div className="flex gap-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex items-center gap-2">
@@ -462,10 +481,20 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                 <button
                   type="button"
                   onClick={handleSaveEvent}
-                  className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {isEditing ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  {isEditing ? 'Update' : 'Create'}
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      {isEditing ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>
+                      {isEditing ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      {isEditing ? 'Update' : 'Create'}
+                    </>
+                  )}
                 </button>
               </div>
             </div>

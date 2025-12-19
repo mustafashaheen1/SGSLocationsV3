@@ -701,12 +701,18 @@ export default function SearchPage() {
         const allPropertyIds = new Set<string>();
 
         for (const tag of selectedTags) {
+          console.log('Searching for tag:', tag);
           const { data: tagImages, error: tagError } = await (supabase
             .from('property_images') as any)
             .select('property_id')
             .contains('tags', [tag]);
 
-          if (tagError) throw tagError;
+          if (tagError) {
+            console.error('Error querying property_images for tag:', tag, tagError);
+            throw tagError;
+          }
+
+          console.log(`Found ${tagImages?.length || 0} images for tag "${tag}"`);
 
           // Add all property IDs that have this tag to our set
           (tagImages as any[] || []).forEach((img: any) => {
@@ -733,8 +739,11 @@ export default function SearchPage() {
         });
 
         console.log('Found properties with ANY matching tags:', propertyIds.length);
+        console.log('Property IDs:', propertyIds);
 
         if (propertyIds.length === 0) {
+          console.log('No properties found with selected tags - showing empty results');
+          setProperties([]);
           setHasMore(false);
           setLoading(false);
           return;
@@ -746,6 +755,7 @@ export default function SearchPage() {
 
         if (query && query.trim()) {
           // Apply text search using RPC function, then filter by property IDs
+          console.log('Applying text search with query:', query.trim());
           const { data: searchData, error: searchError } = await (supabase as any)
             .rpc('search_properties', { search_query: query.trim() });
 
@@ -754,9 +764,11 @@ export default function SearchPage() {
           if (searchData) {
             // Filter to only include properties that also match the tag filters
             unsortedData = searchData.filter((prop: Property) => propertyIds.includes(prop.id));
+            console.log('After filtering by property IDs:', unsortedData?.length || 0);
           }
         } else {
           // No text search, just fetch properties by IDs
+          console.log('Fetching properties by IDs (no text search)');
           let query = supabase
             .from('properties')
             .select('*')
@@ -766,25 +778,37 @@ export default function SearchPage() {
           // Apply category filter if present
           if (categoryParam) {
             query = query.contains('categories', [categoryParam]);
+            console.log('Applying category filter:', categoryParam);
           }
 
           // Apply main category filter
           if (selectedCategory) {
             query = query.eq('category_id', selectedCategory);
+            console.log('Applying main category filter:', selectedCategory);
           }
 
           // Apply sub-category filter
           if (selectedSubCategory) {
             query = query.eq('sub_category_id', selectedSubCategory);
+            console.log('Applying sub-category filter:', selectedSubCategory);
           }
 
+          console.log('Executing properties query...');
           const { data, error: fetchError } = await query;
+
+          console.log('Properties query result:', data?.length || 0, 'properties');
+          if (fetchError) {
+            console.error('Error fetching properties:', fetchError);
+          }
 
           unsortedData = data;
           error = fetchError;
         }
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error in properties fetch:', error);
+          throw error;
+        }
 
         // Sort by exclusivity and name, then apply pagination
         if (unsortedData && unsortedData.length > 0) {
