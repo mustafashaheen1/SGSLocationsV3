@@ -22,12 +22,23 @@ export default function AdminPropertiesPage() {
   async function fetchProperties() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('status', 'active')
-        .is('owner_id', null)
-        .order('created_at', { ascending: false });
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.error('No session found');
+        setLoading(false);
+        return;
+      }
+
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('properties', {
+        select: '*',
+        eq: { status: 'active' },
+        is: { owner_id: null },
+        order: 'created_at',
+        ascending: false,
+        authToken: session.access_token
+      });
 
       if (error) throw error;
       setProperties(data || []);
@@ -45,12 +56,32 @@ export default function AdminPropertiesPage() {
 
   async function handleDeactivate(id: string) {
     try {
-      const { error } = await (supabase
-        .from('properties') as any)
-        .update({ status: 'inactive', updated_at: new Date().toISOString() })
-        .eq('id', id);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          status: 'inactive',
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
       showSuccess('Property deactivated');
       fetchProperties();
     } catch (error: any) {
@@ -64,12 +95,21 @@ export default function AdminPropertiesPage() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       // First, fetch the property to get all image URLs
-      const { data: property, error: fetchError } = await (supabase
-        .from('properties') as any)
-        .select('images, primary_image')
-        .eq('id', id)
-        .single();
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: property, error: fetchError } = await directFetch('properties', {
+        select: 'images, primary_image',
+        eq: { id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (fetchError) throw fetchError;
 
@@ -91,12 +131,19 @@ export default function AdminPropertiesPage() {
       }
 
       // Then delete the property from database
-      const { error } = await supabase
-        .from('properties')
-        .delete()
-        .eq('id', id);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
       showSuccess(`Property and ${allImages.length} images deleted successfully`);
       fetchProperties();
     } catch (error: any) {
@@ -106,12 +153,29 @@ export default function AdminPropertiesPage() {
 
   async function toggleFeatured(id: string, currentStatus: boolean) {
     try {
-      const { error } = await (supabase
-        .from('properties') as any)
-        .update({ is_featured: !currentStatus })
-        .eq('id', id);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_featured: !currentStatus })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
       showSuccess(`Property ${!currentStatus ? 'featured' : 'unfeatured'}`);
       fetchProperties();
     } catch (error: any) {

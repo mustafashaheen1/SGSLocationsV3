@@ -24,12 +24,15 @@ export default function PendingPropertiesPage() {
       // Get session for auth token
       const { data: { session } } = await supabase.auth.getSession();
 
-      // Fetch pending properties
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+      // Fetch pending properties using directFetch
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('properties', {
+        select: '*',
+        eq: { status: 'pending' },
+        order: 'created_at',
+        ascending: false,
+        authToken: session.access_token
+      });
 
       if (error) throw error;
 
@@ -44,7 +47,6 @@ export default function PendingPropertiesPage() {
       // Fetch category information using directFetch with auth token
       let categoriesMap: Record<string, any> = {};
       if (categoryIds.length > 0 && session) {
-        const { directFetch } = await import('@/lib/supabase');
         const { data: categories } = await directFetch('categories', {
           select: 'id,name',
           in: { id: categoryIds },
@@ -61,7 +63,6 @@ export default function PendingPropertiesPage() {
       // Fetch sub-category information
       let subCategoriesMap: Record<string, any> = {};
       if (subCategoryIds.length > 0 && session) {
-        const { directFetch } = await import('@/lib/supabase');
         const { data: subCategories } = await directFetch('categories', {
           select: 'id,name',
           in: { id: subCategoryIds },
@@ -97,31 +98,53 @@ export default function PendingPropertiesPage() {
 
   async function handleApprove(id: string) {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       // First, get the property details and owner information
-      const { data: property, error: fetchError } = await (supabase
-        .from('properties') as any)
-        .select('*, owner_id')
-        .eq('id', id)
-        .single();
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: property, error: fetchError } = await directFetch('properties', {
+        select: '*, owner_id',
+        eq: { id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (fetchError) throw fetchError;
 
       // Get owner details
-      const { data: owner, error: ownerError } = await (supabase
-        .from('users') as any)
-        .select('email, full_name')
-        .eq('id', property.owner_id)
-        .single();
+      const { data: owner, error: ownerError } = await directFetch('users', {
+        select: 'email, full_name',
+        eq: { id: property.owner_id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (ownerError) throw ownerError;
 
-      // Update property status
-      const { error } = await (supabase
-        .from('properties') as any)
-        .update({ status: 'active', updated_at: new Date().toISOString() })
-        .eq('id', id);
+      // Update property status using REST API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
 
       // Send approval email
       try {
@@ -151,31 +174,53 @@ export default function PendingPropertiesPage() {
     const rejectionReason = prompt('Optional: Enter a reason for rejection (this will be sent to the property owner):');
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       // First, get the property details and owner information
-      const { data: property, error: fetchError } = await (supabase
-        .from('properties') as any)
-        .select('*, owner_id')
-        .eq('id', id)
-        .single();
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: property, error: fetchError } = await directFetch('properties', {
+        select: '*, owner_id',
+        eq: { id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (fetchError) throw fetchError;
 
       // Get owner details
-      const { data: owner, error: ownerError } = await (supabase
-        .from('users') as any)
-        .select('email, full_name')
-        .eq('id', property.owner_id)
-        .single();
+      const { data: owner, error: ownerError } = await directFetch('users', {
+        select: 'email, full_name',
+        eq: { id: property.owner_id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (ownerError) throw ownerError;
 
-      // Update property status
-      const { error } = await (supabase
-        .from('properties') as any)
-        .update({ status: 'inactive', updated_at: new Date().toISOString() })
-        .eq('id', id);
+      // Update property status using REST API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          status: 'inactive',
+          updated_at: new Date().toISOString()
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
 
       // Send rejection email
       try {
@@ -207,12 +252,21 @@ export default function PendingPropertiesPage() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       // First, fetch the property to get all image URLs
-      const { data: property, error: fetchError } = await (supabase
-        .from('properties') as any)
-        .select('images, primary_image')
-        .eq('id', id)
-        .single();
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: property, error: fetchError } = await directFetch('properties', {
+        select: 'images, primary_image',
+        eq: { id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (fetchError) throw fetchError;
 
@@ -234,12 +288,19 @@ export default function PendingPropertiesPage() {
       }
 
       // Then delete the property from database
-      const { error } = await (supabase
-        .from('properties') as any)
-        .delete()
-        .eq('id', id);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
       showSuccess(`Property and ${allImages.length} images deleted successfully`);
       fetchProperties();
     } catch (error: any) {

@@ -222,6 +222,22 @@ class QueryBuilder {
       let method = 'GET';
       let body: any = undefined;
 
+      // Get session token for authenticated operations (write operations)
+      let authToken = supabaseAnonKey;
+      if (this.operation !== 'select') {
+        try {
+          // Import dynamically to avoid circular dependencies
+          const { createClient } = await import('@/lib/supabase');
+          const client = createClient();
+          const { data: { session } } = await client.auth.getSession();
+          if (session?.access_token) {
+            authToken = session.access_token;
+          }
+        } catch (err) {
+          console.warn('Could not get session token, using anon key');
+        }
+      }
+
       // Build URL and request based on operation type
       if (this.operation === 'select') {
         url += `?select=${encodeURIComponent(this.selectColumns)}`;
@@ -298,7 +314,7 @@ class QueryBuilder {
         method,
         headers: {
           'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
           'Prefer': 'return=representation',
         },
@@ -310,6 +326,7 @@ class QueryBuilder {
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`${method} ${this.table} failed:`, errorText);
         return { data: null, error: { message: errorText } };
       }
 
@@ -329,6 +346,7 @@ class QueryBuilder {
       if (error.name === 'AbortError') {
         return { data: null, error: { message: 'Request timeout' } };
       }
+      console.error(`QueryBuilder execute error:`, error);
       return { data: null, error: { message: error.message } };
     }
   }

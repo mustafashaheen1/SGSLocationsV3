@@ -30,11 +30,14 @@ export default function SettingsPage() {
       return;
     }
 
-    const { data: admin } = await (supabase
-      .from('admins') as any)
-      .select('*')
-      .eq('email', session.user.email || '')
-      .maybeSingle();
+    // Use directFetch WITH authToken for RLS-protected admins table
+    const { directFetch } = await import('@/lib/supabase');
+    const { data: admin } = await directFetch('admins', {
+      select: '*',
+      eq: { email: session.user.email || '' },
+      single: true,
+      authToken: session.access_token
+    });
 
     if (!admin) {
       router.push('/admin/login');

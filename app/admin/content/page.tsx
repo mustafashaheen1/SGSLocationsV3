@@ -388,19 +388,34 @@ export default function ContentManagementPage() {
 
   async function saveSiteSetting(key: string, value: string, page: string, section: string) {
     try {
-      const { error } = await (supabase
-        .from('site_settings') as any)
-        .upsert({
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      // Use REST API for upsert
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/site_settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({
           key,
           value: JSON.stringify(value),
           page,
           section,
           updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'key'
-        });
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
     } catch (error: any) {
       throw error;
     }
@@ -477,14 +492,32 @@ export default function ContentManagementPage() {
 
   async function addProductionLogo(logo: Partial<ProductionLogo>) {
     try {
-      const { error } = await (supabase
-        .from('production_logos') as any)
-        .insert([{
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/production_logos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
           ...logo,
           display_order: productionLogos.length + 1
-        }]);
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
       fetchAllContent();
       setNewLogoForm(false);
     } catch (error: any) {
@@ -494,12 +527,29 @@ export default function ContentManagementPage() {
 
   async function updateProductionLogo(id: string, updates: Partial<ProductionLogo>) {
     try {
-      const { error } = await (supabase
-        .from('production_logos') as any)
-        .update(updates)
-        .eq('id', id);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/production_logos?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
       fetchAllContent();
       setEditingLogo(null);
     } catch (error: any) {
@@ -511,12 +561,27 @@ export default function ContentManagementPage() {
     if (!confirm('Are you sure you want to delete this logo?')) return;
 
     try {
-      const { error } = await (supabase
-        .from('production_logos') as any)
-        .delete()
-        .eq('id', id);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/production_logos?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
       fetchAllContent();
     } catch (error: any) {
       alert('Error deleting logo: ' + error.message);
@@ -526,12 +591,32 @@ export default function ContentManagementPage() {
 
   async function updateSocialLink(id: string, url: string) {
     try {
-      const { error } = await (supabase
-        .from('social_links') as any)
-        .update({ url, is_active: url ? true : false })
-        .eq('id', id);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/social_links?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          url,
+          is_active: url ? true : false
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
       alert('Social link updated!');
     } catch (error: any) {
       alert('Error updating social link: ' + error.message);

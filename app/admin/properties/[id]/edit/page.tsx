@@ -405,14 +405,31 @@ export default function EditPropertyPage() {
 
   async function fetchProjects() {
     try {
-      const { data, error } = await supabase
-        .from('property_projects')
-        .select('*')
-        .eq('property_id', propertyId)
-        .order('created_at', { ascending: false });
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.error('No session found');
+        return;
+      }
+
+      // Use directFetch with auth token to bypass RLS issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('property_projects', {
+        select: '*',
+        eq: { property_id: propertyId },
+        order: 'created_at',
+        authToken: session.access_token
+      });
 
       if (error) throw error;
-      setProjects(data || []);
+
+      // Sort by created_at descending
+      const sortedData = (data as any[])?.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setProjects(sortedData || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
     }
@@ -420,14 +437,31 @@ export default function EditPropertyPage() {
 
   async function fetchDocuments(projectId: string) {
     try {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.error('No session found');
+        return;
+      }
+
+      // Use directFetch with auth token to bypass RLS issues
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('documents', {
+        select: '*',
+        eq: { project_id: projectId },
+        order: 'created_at',
+        authToken: session.access_token
+      });
 
       if (error) throw error;
-      setDocuments(data || []);
+
+      // Sort by created_at descending
+      const sortedData = (data as any[])?.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setDocuments(sortedData || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
     }
@@ -440,17 +474,38 @@ export default function EditPropertyPage() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { error } = await (supabase
-        .from('property_projects') as any)
-        .insert([{
-          property_id: propertyId,
-          name: newProjectName.trim(),
-          created_by: user?.id
-        }]);
+      if (!session) {
+        alert('No active session. Please log in again.');
+        return;
+      }
 
-      if (error) throw error;
+      // Use REST API directly with admin auth token
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/property_projects`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({
+            property_id: propertyId,
+            name: newProjectName.trim(),
+            created_by: user?.id
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
 
       setNewProjectName('');
       setShowNewProjectModal(false);

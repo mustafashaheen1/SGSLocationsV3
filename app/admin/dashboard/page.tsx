@@ -22,44 +22,65 @@ export default function AdminDashboard() {
 
   async function fetchDashboardData() {
     try {
-      const { count: propertiesCount } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
+      // Get admin session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
 
-      const { count: pendingCount } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+      if (!session) {
+        console.error('No active session');
+        setLoading(false);
+        return;
+      }
 
-      const { count: usersCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true });
+      const { directFetch } = await import('@/lib/supabase');
 
-      const { count: inquiriesCount } = await supabase
-        .from('inquiries')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'new');
+      // Fetch active properties count
+      const { data: activeProperties } = await directFetch('properties', {
+        select: 'id',
+        eq: { status: 'active' },
+        authToken: session.access_token
+      });
+
+      // Fetch pending properties count
+      const { data: pendingProperties } = await directFetch('properties', {
+        select: 'id',
+        eq: { status: 'pending' },
+        authToken: session.access_token
+      });
+
+      // Fetch users count
+      const { data: users } = await directFetch('users', {
+        select: 'id',
+        authToken: session.access_token
+      });
+
+      // Fetch new inquiries count
+      const { data: inquiries } = await directFetch('inquiries', {
+        select: 'id',
+        eq: { status: 'new' },
+        authToken: session.access_token
+      });
 
       // Calculate total views across all properties
-      const { data: viewsData } = await supabase
-        .from('properties')
-        .select('view_count');
+      const { data: viewsData } = await directFetch('properties', {
+        select: 'view_count',
+        authToken: session.access_token
+      });
 
       const totalViews = (viewsData as any[])?.reduce((sum: number, prop: any) => sum + (prop.view_count || 0), 0) || 0;
 
       // Count total image downloads
-      const { count: downloadsCount } = await supabase
-        .from('image_downloads')
-        .select('*', { count: 'exact', head: true });
+      const { data: downloads } = await directFetch('image_downloads', {
+        select: 'id',
+        authToken: session.access_token
+      });
 
       setStats({
-        totalProperties: propertiesCount || 0,
-        pendingProperties: pendingCount || 0,
-        totalUsers: usersCount || 0,
-        totalInquiries: inquiriesCount || 0,
+        totalProperties: (activeProperties as any[])?.length || 0,
+        pendingProperties: (pendingProperties as any[])?.length || 0,
+        totalUsers: (users as any[])?.length || 0,
+        totalInquiries: (inquiries as any[])?.length || 0,
         totalViews: totalViews,
-        totalDownloads: downloadsCount || 0,
+        totalDownloads: (downloads as any[])?.length || 0,
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

@@ -159,13 +159,11 @@ export default function PropertyDetailPage() {
       if (propertyData) {
         setProperty(propertyData);
 
-        // Increment view count
+        // Increment view count using API route
         try {
-          const newViewCount = (propertyData.view_count || 0) + 1;
-          await (supabase
-            .from('properties') as any)
-            .update({ view_count: newViewCount })
-            .eq('id', propertyData.id);
+          await fetch(`/api/properties/${propertyData.id}/track-view`, {
+            method: 'POST'
+          });
           console.log('✓ View tracked for property:', propertyData.id);
         } catch (error) {
           console.error('Failed to track view:', error);
@@ -502,32 +500,15 @@ export default function PropertyDetailPage() {
 
       console.log('✓ Images downloaded successfully');
 
-      // Track the download as a single event
+      // Track the download as a single event using API route
       try {
         console.log('Starting download tracking for property:', property.id);
 
-        // Get current user (if logged in)
-        let userId: string | null = null;
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          userId = user?.id || null;
-          console.log('User ID:', userId || 'anonymous');
-        } catch (userError) {
-          console.log('Not logged in, tracking as anonymous');
-        }
-
-        // Track as a single ZIP download event
-        const { error } = await (supabase.from('image_downloads') as any).insert({
-          property_id: property.id,
-          image_url: 'ZIP_DOWNLOAD',
-          user_id: userId
+        await fetch(`/api/properties/${property.id}/track-download`, {
+          method: 'POST'
         });
 
-        if (error) {
-          console.error('❌ Download tracking error:', error);
-        } else {
-          console.log('✓ Download tracked successfully (1 ZIP download)');
-        }
+        console.log('✓ Download tracked successfully (1 ZIP download)');
       } catch (trackError: any) {
         console.error('❌ Failed to track download:', trackError);
         // Don't show error to user, tracking failure shouldn't break download

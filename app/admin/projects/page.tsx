@@ -34,39 +34,67 @@ export default function AdminProjectsPage() {
   }, []);
 
   async function fetchProjects() {
-    const { data, error } = await (supabase
-      .from('projects') as any)
-      .select(`
-        *,
-        property:properties(*)
-      `)
-      .order('display_order', { ascending: true });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (error) {
-      console.error('Error fetching projects:', error);
-      return;
-    }
+      if (!session) {
+        console.error('No session found');
+        setLoading(false);
+        return;
+      }
 
-    if (data) {
-      setProjects(data);
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('projects', {
+        select: `
+          *,
+          property:properties(*)
+        `,
+        order: 'display_order',
+        authToken: session.access_token
+      });
+
+      if (error) {
+        console.error('Error fetching projects:', error);
+        return;
+      }
+
+      if (data) {
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error('Error in fetchProjects:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function fetchProperties() {
-    const { data, error } = await supabase
-      .from('properties')
-      .select('id, name, city')
-      .eq('status', 'active')
-      .order('name');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (error) {
-      console.error('Error fetching properties:', error);
-      return;
-    }
+      if (!session) {
+        console.error('No session found');
+        return;
+      }
 
-    if (data) {
-      setProperties(data);
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('properties', {
+        select: 'id, name, city',
+        eq: { status: 'active' },
+        order: 'name',
+        authToken: session.access_token
+      });
+
+      if (error) {
+        console.error('Error fetching properties:', error);
+        return;
+      }
+
+      if (data) {
+        setProperties(data);
+      }
+    } catch (error) {
+      console.error('Error in fetchProperties:', error);
     }
   }
 
@@ -120,40 +148,69 @@ export default function AdminProjectsPage() {
     }
 
     if (editingProject) {
-      // Update existing project
-      const { error } = await (supabase
-        .from('projects') as any)
-        .update({
+      // Update existing project using REST API
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects?id=eq.${editingProject.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
           name: formData.name,
           banner_image: formData.banner_image,
           property_id: formData.property_id,
           display_order: formData.display_order,
           status: formData.status
         })
-        .eq('id', editingProject.id);
+      });
 
-      if (error) {
+      if (!response.ok) {
+        const error = await response.text();
         console.error('Error updating project:', error);
-        alert('Error updating project: ' + error.message);
+        alert('Error updating project: ' + error);
         return;
       }
 
       alert('Project updated successfully!');
     } else {
-      // Create new project
-      const { error } = await (supabase
-        .from('projects') as any)
-        .insert([{
+      // Create new project using REST API
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
           name: formData.name,
           banner_image: formData.banner_image,
           property_id: formData.property_id,
           display_order: formData.display_order,
           status: formData.status
-        }]);
+        })
+      });
 
-      if (error) {
+      if (!response.ok) {
+        const error = await response.text();
         console.error('Error creating project:', error);
-        alert('Error creating project: ' + error.message);
+        alert('Error creating project: ' + error);
         return;
       }
 
@@ -178,12 +235,26 @@ export default function AdminProjectsPage() {
 
     try {
       setDeleteProgress('🗑️ Deleting project from database...');
-      const { error } = await (supabase
-        .from('projects') as any)
-        .delete()
-        .eq('id', id);
 
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
 
       setDeleteProgress('✓ Project deleted successfully!');
 

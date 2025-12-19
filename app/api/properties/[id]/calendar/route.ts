@@ -128,7 +128,7 @@ export async function POST(
     }
 
     // Validate event type
-    const validTypes = ['production', 'director_scout', 'blocked'];
+    const validTypes = ['hold_days', 'blackout_days', 'director_scout', 'tech_scout'];
     if (!validTypes.includes(event_type)) {
       return jsonResponseNoCache(
         { error: 'Invalid event type' },

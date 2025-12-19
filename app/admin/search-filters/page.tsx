@@ -51,10 +51,12 @@ export default function SearchFiltersPage() {
 
       console.log('Fetching filters...');
 
-      const { data, error } = await supabase
-        .from('search_filters')
-        .select('*')
-        .order('display_order');
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('search_filters', {
+        select: '*',
+        order: 'display_order',
+        authToken: session.access_token
+      });
 
       if (error) {
         console.error('Error fetching filters:', error);
@@ -110,42 +112,69 @@ export default function SearchFiltersPage() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       const slug = generateSlug(formData.name);
       const targetOrder = formData.display_order;
 
-      const { data: existingFilters, error: checkError } = await supabase
-        .from('search_filters')
-        .select('id, display_order')
-        .gte('display_order', targetOrder)
-        .order('display_order', { ascending: false });
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: existingFilters, error: checkError } = await directFetch('search_filters', {
+        select: 'id, display_order',
+        gte: { display_order: targetOrder },
+        order: 'display_order',
+        ascending: false,
+        authToken: session.access_token
+      });
 
       if (checkError) throw checkError;
 
       if (existingFilters && existingFilters.length > 0) {
         for (const filter of existingFilters as any[]) {
-          const { error: updateError } = await (supabase
-            .from('search_filters') as any)
-            .update({ display_order: (filter as any).display_order + 1 })
-            .eq('id', (filter as any).id);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/search_filters?id=eq.${filter.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ display_order: filter.display_order + 1 })
+          });
 
-          if (updateError) {
-            console.error('Error updating filter order:', updateError);
-            throw updateError;
+          if (!response.ok) {
+            const error = await response.text();
+            console.error('Error updating filter order:', error);
+            throw new Error(error);
           }
         }
       }
 
-      const { error: insertError } = await (supabase
-        .from('search_filters') as any)
-        .insert([{
+      const insertResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/search_filters`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
           name: formData.name,
           slug: slug,
           has_search: formData.has_search,
           display_order: targetOrder,
           is_active: true,
-        }]);
+        })
+      });
 
-      if (insertError) throw insertError;
+      if (!insertResponse.ok) {
+        const error = await insertResponse.text();
+        throw new Error(error);
+      }
 
       setShowAddForm(false);
       setFormData({ name: '', slug: '', has_search: false, display_order: 1 });
@@ -166,28 +195,49 @@ export default function SearchFiltersPage() {
         throw new Error('Filter not found');
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       const deletedOrder = filterToDelete.display_order;
 
-      const { error: deleteError } = await supabase
-        .from('search_filters')
-        .delete()
-        .eq('id', id);
+      const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/search_filters?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        }
+      });
 
-      if (deleteError) throw deleteError;
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.text();
+        throw new Error(error);
+      }
 
       const filtersToReorder = filters.filter(
         filter => filter.display_order > deletedOrder
       );
 
       for (const filter of filtersToReorder) {
-        const { error: updateError } = await (supabase
-          .from('search_filters') as any)
-          .update({ display_order: (filter as any).display_order - 1 })
-          .eq('id', (filter as any).id);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/search_filters?id=eq.${filter.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ display_order: filter.display_order - 1 })
+        });
 
-        if (updateError) {
-          console.error('Error reordering filter:', updateError);
-          throw updateError;
+        if (!response.ok) {
+          const error = await response.text();
+          console.error('Error reordering filter:', error);
+          throw new Error(error);
         }
       }
 

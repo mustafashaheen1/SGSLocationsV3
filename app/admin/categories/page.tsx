@@ -106,19 +106,21 @@ export default function CategoriesPage() {
       // Get session for auth token
       const { data: { session } } = await supabase.auth.getSession();
 
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('display_order');
-
-      if (error) throw error;
-
       if (!session) {
         console.error('No session found');
-        setCategories(data || []);
         setLoading(false);
         return;
       }
+
+      // Use directFetch with auth token
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('categories', {
+        select: '*',
+        order: 'display_order',
+        authToken: session.access_token
+      });
+
+      if (error) throw error;
 
       // Fetch property counts using directFetch with auth token
       const { directFetch } = await import('@/lib/supabase');
@@ -225,20 +227,44 @@ export default function CategoriesPage() {
         throw new Error('Invalid image URL returned from S3 upload: ' + imageUrl);
       }
 
-      const { error } = await (supabase
-        .from('categories') as any)
-        .insert([{
-          name: formData.name,
-          slug: formData.slug,
-          description: formData.description || null,
-          image: imageUrl,
-          display_order: formData.display_order,
-          is_active: true,
-          is_top: formData.is_top,
-          parent_id: formData.parent_id,
-        }]);
+      // Get admin session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('No active session. Please log in again.');
+        setUploading(false);
+        return;
+      }
+
+      // Use REST API directly with admin auth token
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/categories`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            slug: formData.slug,
+            description: formData.description || null,
+            image: imageUrl,
+            display_order: formData.display_order,
+            is_active: true,
+            is_top: formData.is_top,
+            parent_id: formData.parent_id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
 
       setShowAddForm(false);
       setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false, parent_id: null });
@@ -284,20 +310,45 @@ export default function CategoriesPage() {
         imageUrl = await uploadImageToS3(uploadedImage, 'categories');
       }
 
-      const { error } = await (supabase
-        .from('categories') as any)
-        .update({
-          name: formData.name,
-          slug: formData.slug,
-          description: formData.description || null,
-          image: imageUrl,
-          display_order: formData.display_order,
-          is_top: formData.is_top,
-          parent_id: formData.parent_id,
-        })
-        .eq('id', editingCategory.id);
+      // Get admin session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('No active session. Please log in again.');
+        setUploading(false);
+        return;
+      }
+
+      // Use REST API directly for update with admin auth token
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const updateData = {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description || null,
+        image: imageUrl,
+        display_order: formData.display_order,
+        is_top: formData.is_top,
+        parent_id: formData.parent_id,
+      };
+
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/categories?id=eq.${editingCategory.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
 
       setShowEditForm(false);
       setEditingCategory(null);
@@ -306,6 +357,7 @@ export default function CategoriesPage() {
       setImagePreview('');
       fetchCategories();
     } catch (error: any) {
+      console.error('Error updating category:', error);
       alert('Error updating category: ' + error.message);
     } finally {
       setUploading(false);
@@ -330,12 +382,34 @@ export default function CategoriesPage() {
     setDeleteProgress('Deleting category...');
 
     try {
-      const { error: deleteError } = await (supabase
-        .from('categories') as any)
-        .delete()
-        .eq('id', id);
+      // Get admin session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (deleteError) throw deleteError;
+      if (!session) {
+        alert('No active session. Please log in again.');
+        setDeletingCategoryId(null);
+        setDeleteProgress('');
+        return;
+      }
+
+      // Use REST API directly with admin auth token
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/categories?id=eq.${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
 
       setDeleteProgress('✓ Category deleted successfully!');
       await new Promise(resolve => setTimeout(resolve, 1000));

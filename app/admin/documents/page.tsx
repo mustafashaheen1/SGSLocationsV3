@@ -50,29 +50,41 @@ export default function DocumentDirectoryPage() {
       // Get session for auth token
       const { data: { session } } = await supabase.auth.getSession();
 
-      // Fetch documents
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .order('created_at', { ascending: false });
+      if (!session) {
+        console.error('No session found');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch documents using directFetch with auth token
+      const { directFetch } = await import('@/lib/supabase');
+      const { data, error } = await directFetch('documents', {
+        select: '*',
+        order: 'created_at',
+        authToken: session.access_token
+      });
 
       if (error) throw error;
 
-      if (!data || data.length === 0) {
+      if (!data || (data as any[]).length === 0) {
         setDocuments([]);
         setLoading(false);
         return;
       }
 
+      // Sort by created_at descending
+      const sortedData = (data as any[]).sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
       // Get unique project IDs
       const projectIds = Array.from(new Set(
-        data.filter((d: any) => d.project_id).map((d: any) => d.project_id)
+        sortedData.filter((d: any) => d.project_id).map((d: any) => d.project_id)
       ));
 
       // Fetch project information using directFetch with auth token
       let projectsMap: Record<string, any> = {};
-      if (projectIds.length > 0 && session) {
-        const { directFetch } = await import('@/lib/supabase');
+      if (projectIds.length > 0) {
         const { data: projects } = await directFetch('property_projects', {
           select: 'id,name,property_id',
           in: { id: projectIds },
@@ -95,8 +107,7 @@ export default function DocumentDirectoryPage() {
 
       // Fetch property information
       let propertiesMap: Record<string, any> = {};
-      if (propertyIds.length > 0 && session) {
-        const { directFetch } = await import('@/lib/supabase');
+      if (propertyIds.length > 0) {
         const { data: properties } = await directFetch('properties', {
           select: 'id,name,real_name,city,county',
           in: { id: propertyIds },
@@ -111,7 +122,7 @@ export default function DocumentDirectoryPage() {
       }
 
       // Transform the data to add project and property information
-      const transformedData = data.map((doc: any) => {
+      const transformedData = sortedData.map((doc: any) => {
         const project = doc.project_id ? projectsMap[doc.project_id] : null;
         const property = project?.property_id ? propertiesMap[project.property_id] : null;
 
@@ -165,14 +176,32 @@ export default function DocumentDirectoryPage() {
 
       // Delete from database
       setDeleteProgress('🗄️ Removing from database...');
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', doc.id);
 
-      if (error) {
-        console.error('Database deletion error:', error);
-        throw error;
+      // Get admin session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
+      }
+
+      // Use REST API directly with admin auth token
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/documents?id=eq.${doc.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Database deletion error:', errorText);
+        throw new Error(errorText);
       }
 
       console.log('✓ Document deleted from database successfully');

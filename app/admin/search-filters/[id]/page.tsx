@@ -35,20 +35,31 @@ export default function FilterDetailPage() {
 
   async function fetchFilterAndTags() {
     try {
-      const { data: filterData, error: filterError } = await supabase
-        .from('search_filters')
-        .select('*')
-        .eq('id', params.id)
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.error('No session found');
+        setLoading(false);
+        return;
+      }
+
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: filterData, error: filterError } = await directFetch('search_filters', {
+        select: '*',
+        eq: { id: params.id },
+        single: true,
+        authToken: session.access_token
+      });
 
       if (filterError) throw filterError;
       setFilter(filterData);
 
-      const { data: tagsData, error: tagsError } = await supabase
-        .from('search_filter_tags')
-        .select('*')
-        .eq('filter_id', params.id)
-        .order('display_order');
+      const { data: tagsData, error: tagsError } = await directFetch('search_filter_tags', {
+        select: '*',
+        eq: { filter_id: params.id },
+        order: 'display_order',
+        authToken: session.access_token
+      });
 
       if (tagsError) throw tagsError;
       setTags(tagsData || []);
@@ -75,20 +86,37 @@ export default function FilterDetailPage() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       const slug = generateSlug(newTagName);
       const nextOrder = tags.length > 0 ? Math.max(...tags.map(t => t.display_order)) + 1 : 1;
 
-      const { error } = await (supabase
-        .from('search_filter_tags') as any)
-        .insert([{
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/search_filter_tags`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
           filter_id: params.id,
           name: newTagName,
           slug: slug,
           display_order: nextOrder,
           is_active: true,
-        }]);
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
 
       setNewTagName('');
       setShowAddForm(false);
@@ -104,12 +132,27 @@ export default function FilterDetailPage() {
     }
 
     try {
-      const { error } = await supabase
-        .from('search_filter_tags')
-        .delete()
-        .eq('id', id);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) throw error;
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/search_filter_tags?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=minimal'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
       fetchFilterAndTags();
     } catch (error: any) {
       alert('Error deleting tag: ' + error.message);
