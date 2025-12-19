@@ -350,6 +350,30 @@ export default function CategoriesPage() {
         throw new Error(errorText);
       }
 
+      // If parent_id changed for a sub-category, update all properties with this sub_category_id
+      if (editingCategory.parent_id && formData.parent_id && editingCategory.parent_id !== formData.parent_id) {
+        const propertiesResponse = await fetch(
+          `${supabaseUrl}/rest/v1/properties?sub_category_id=eq.${editingCategory.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              category_id: formData.parent_id,
+            }),
+          }
+        );
+
+        if (!propertiesResponse.ok) {
+          const errorText = await propertiesResponse.text();
+          console.error('Error updating properties:', errorText);
+          alert('Category updated but failed to update associated properties. Some properties may need manual reassignment.');
+        }
+      }
+
       setShowEditForm(false);
       setEditingCategory(null);
       setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false, parent_id: null });

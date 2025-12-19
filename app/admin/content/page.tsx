@@ -120,9 +120,13 @@ export default function ContentManagementPage() {
   const [editLogoPreview, setEditLogoPreview] = useState<string>('');
 
   // Home Page Content States
+  const [heroMediaType, setHeroMediaType] = useState<'video' | 'photo'>('video');
   const [heroVideo, setHeroVideo] = useState('');
+  const [heroImage, setHeroImage] = useState('');
   const [heroTitle, setHeroTitle] = useState('');
   const [heroSubtitle, setHeroSubtitle] = useState('');
+  const [selectedHeroImageFile, setSelectedHeroImageFile] = useState<File | null>(null);
+  const [heroImagePreview, setHeroImagePreview] = useState('');
   const [productionLogos, setProductionLogos] = useState<ProductionLogo[]>([]);
   const [services, setServices] = useState<Service[]>([]);
 
@@ -321,7 +325,9 @@ export default function ContentManagementPage() {
           }
 
           switch(setting.key) {
+            case 'hero_media_type': setHeroMediaType(value as 'video' | 'photo'); break;
             case 'hero_video': setHeroVideo(value); break;
+            case 'hero_image': setHeroImage(value); break;
             case 'hero_title': setHeroTitle(value); break;
             case 'hero_subtitle': setHeroSubtitle(value); break;
             case 'footer_description': setFooterDescription(value); break;
@@ -388,11 +394,23 @@ export default function ContentManagementPage() {
 
   async function saveSiteSetting(key: string, value: string, page: string, section: string) {
     try {
+      console.log(`Saving site setting: ${key} = ${value} (page: ${page}, section: ${section})`);
+
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
         throw new Error('Session expired. Please log in again.');
       }
+
+      const requestBody = {
+        key,
+        value: JSON.stringify(value),
+        page,
+        section,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Request body:', requestBody);
 
       // Use REST API for upsert
       const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/site_settings`, {
@@ -403,20 +421,18 @@ export default function ContentManagementPage() {
           'Authorization': `Bearer ${session.access_token}`,
           'Prefer': 'resolution=merge-duplicates,return=minimal'
         },
-        body: JSON.stringify({
-          key,
-          value: JSON.stringify(value),
-          page,
-          section,
-          updated_at: new Date().toISOString()
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error);
+        const errorText = await response.text();
+        console.error(`Failed to save ${key}:`, errorText);
+        throw new Error(`Failed to save ${key}: ${errorText}`);
       }
+
+      console.log(`Successfully saved ${key}`);
     } catch (error: any) {
+      console.error(`Error in saveSiteSetting for ${key}:`, error);
       throw error;
     }
   }
@@ -438,12 +454,33 @@ export default function ContentManagementPage() {
     }
   }
 
+  async function handleHeroImageUpload() {
+    if (!selectedHeroImageFile) return;
+
+    setUploading(true);
+    try {
+      const imageUrl = await uploadImageToS3(selectedHeroImageFile, 'hero');
+      await saveSiteSetting('hero_image', imageUrl, 'home', 'hero');
+      setHeroImage(imageUrl);
+      setSelectedHeroImageFile(null);
+      setHeroImagePreview('');
+      alert('Hero image uploaded and saved successfully!');
+    } catch (error) {
+      console.error('Error uploading hero image:', error);
+      alert('Error uploading image');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function saveAllHomeContent() {
     setSaving(true);
     try {
       // Save all home page settings
       await Promise.all([
+        saveSiteSetting('hero_media_type', heroMediaType, 'home', 'hero'),
         saveSiteSetting('hero_video', heroVideo, 'home', 'hero'),
+        saveSiteSetting('hero_image', heroImage, 'home', 'hero'),
         saveSiteSetting('hero_title', heroTitle, 'home', 'hero'),
         saveSiteSetting('hero_subtitle', heroSubtitle, 'home', 'hero'),
       ]);
@@ -458,6 +495,7 @@ export default function ContentManagementPage() {
   async function saveFooterContent() {
     setSaving(true);
     try {
+      console.log('Saving footer content...');
       await Promise.all([
         saveSiteSetting('footer_description', footerDescription, 'global', 'footer'),
         saveSiteSetting('contact_phone', contactPhone, 'global', 'footer'),
@@ -466,8 +504,9 @@ export default function ContentManagementPage() {
         saveSiteSetting('office_hours', officeHours, 'global', 'footer'),
       ]);
       alert('Footer content saved successfully!');
-    } catch (error) {
-      alert('Error saving footer content');
+    } catch (error: any) {
+      console.error('Error saving footer content:', error);
+      alert(`Error saving footer content: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -1001,26 +1040,41 @@ export default function ContentManagementPage() {
 
   async function fetchContactFormQuestions() {
     try {
-      const { data: questions } = await (supabase
-        .from('contact_form_questions') as any)
-        .select(`
-          *,
-          contact_form_question_options (
-            id,
-            option_value,
-            option_label,
-            display_order
-          )
-        `)
-        .order('display_order');
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (questions) {
-        const formattedQuestions = questions.map((q: any) => ({
-          ...q,
-          options: (q.contact_form_question_options || [])
-            .sort((a: any, b: any) => a.display_order - b.display_order)
-        }));
-        setContactFormQuestions(formattedQuestions);
+      if (!session) {
+        console.error('No session found');
+        return;
+      }
+
+      // Use directFetch to get questions
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: questions } = await directFetch('contact_form_questions', {
+        select: '*',
+        order: 'display_order',
+        authToken: session.access_token
+      });
+
+      if (questions && Array.isArray(questions)) {
+        // Fetch options for each question
+        const questionsWithOptions = await Promise.all(
+          questions.map(async (q: any) => {
+            const { data: options } = await directFetch('contact_form_question_options', {
+              select: 'id,option_value,option_label,display_order',
+              eq: { question_id: q.id },
+              order: 'display_order',
+              authToken: session.access_token
+            });
+
+            return {
+              ...q,
+              options: options || []
+            };
+          })
+        );
+
+        setContactFormQuestions(questionsWithOptions);
       }
     } catch (error) {
       console.error('Error fetching contact form questions:', error);
@@ -1346,21 +1400,53 @@ export default function ContentManagementPage() {
 
   async function updateProject(id: string, updates: Partial<Project>) {
     try {
-      const { error } = await (supabase
-        .from('projects') as any)
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      console.log('Updating project:', id, 'with data:', updates);
 
-      if (error) throw error;
-      fetchProjects();
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('No active session. Please log in again.');
+        return;
+      }
+
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      // Use REST API directly with admin auth token
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/projects?id=eq.${id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Update failed:', errorText);
+        throw new Error(errorText);
+      }
+
+      const data = await response.json();
+      console.log('Update successful:', data);
+
+      await fetchProjects();
       setEditingProject(null);
       setProjectImageFile(null);
       setProjectImagePreview('');
       alert('Project updated successfully!');
     } catch (error: any) {
+      console.error('Error in updateProject:', error);
       alert('Error updating project: ' + error.message);
     }
   }
@@ -1534,50 +1620,142 @@ export default function ContentManagementPage() {
                 <CardTitle>Hero Section</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Media Type Selection */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Current Hero Video</label>
-                  <div className="flex items-center gap-4">
-                    <Input
-                      value={heroVideo}
-                      disabled
-                      className="flex-1 bg-gray-50"
-                      placeholder="No video uploaded"
-                    />
-                    <Button
-                      onClick={() => document.getElementById('videoUpload')?.click()}
-                      disabled={uploadingVideo}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {uploadingVideo ? 'Uploading...' : 'Upload New Video'}
-                    </Button>
-                    <input
-                      id="videoUpload"
-                      type="file"
-                      accept="video/mp4,video/webm"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setSelectedVideoFile(file);
-                        }
-                      }}
-                      className="hidden"
-                    />
+                  <label className="block text-sm font-medium mb-2">Hero Media Type</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="heroMediaType"
+                        value="video"
+                        checked={heroMediaType === 'video'}
+                        onChange={(e) => setHeroMediaType(e.target.value as 'video' | 'photo')}
+                        className="w-4 h-4 text-red-600 focus:ring-red-500"
+                      />
+                      <span className="ml-2 text-sm">Video</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="heroMediaType"
+                        value="photo"
+                        checked={heroMediaType === 'photo'}
+                        onChange={(e) => setHeroMediaType(e.target.value as 'video' | 'photo')}
+                        className="w-4 h-4 text-red-600 focus:ring-red-500"
+                      />
+                      <span className="ml-2 text-sm">Photo</span>
+                    </label>
                   </div>
-                  {selectedVideoFile && (
-                    <div className="mt-2 p-2 bg-blue-50 rounded flex items-center justify-between">
-                      <span className="text-sm">Selected: {selectedVideoFile.name}</span>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleVideoUpload} disabled={uploadingVideo}>
-                          {uploadingVideo ? 'Uploading...' : 'Confirm Upload'}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setSelectedVideoFile(null)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">MP4 or WebM format recommended</p>
                 </div>
+
+                {/* Video Upload Section */}
+                {heroMediaType === 'video' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Current Hero Video</label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        value={heroVideo}
+                        disabled
+                        className="flex-1 bg-gray-50"
+                        placeholder="No video uploaded"
+                      />
+                      <Button
+                        onClick={() => document.getElementById('videoUpload')?.click()}
+                        disabled={uploadingVideo}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploadingVideo ? 'Uploading...' : 'Upload New Video'}
+                      </Button>
+                      <input
+                        id="videoUpload"
+                        type="file"
+                        accept="video/mp4,video/webm"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSelectedVideoFile(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </div>
+                    {selectedVideoFile && (
+                      <div className="mt-2 p-2 bg-blue-50 rounded flex items-center justify-between">
+                        <span className="text-sm">Selected: {selectedVideoFile.name}</span>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleVideoUpload} disabled={uploadingVideo}>
+                            {uploadingVideo ? 'Uploading...' : 'Confirm Upload'}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setSelectedVideoFile(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">MP4 or WebM format recommended</p>
+                  </div>
+                )}
+
+                {/* Photo Upload Section */}
+                {heroMediaType === 'photo' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Hero Photo</label>
+                    {heroImage && !heroImagePreview && (
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-600 mb-2">Current Image:</p>
+                        <img src={heroImage} alt="Current hero" className="max-w-md h-48 object-cover rounded border" />
+                      </div>
+                    )}
+                    {heroImagePreview && (
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-600 mb-2">Preview:</p>
+                        <img src={heroImagePreview} alt="Preview" className="max-w-md h-48 object-cover rounded border" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4">
+                      <Button
+                        onClick={() => document.getElementById('heroImageUpload')?.click()}
+                        disabled={uploading}
+                        variant="outline"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploading ? 'Uploading...' : 'Choose Image'}
+                      </Button>
+                      <input
+                        id="heroImageUpload"
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSelectedHeroImageFile(file);
+                            setHeroImagePreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      {selectedHeroImageFile && (
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleHeroImageUpload} disabled={uploading}>
+                            {uploading ? 'Uploading...' : 'Confirm Upload'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedHeroImageFile(null);
+                              setHeroImagePreview('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">JPG, PNG, or WebP format. Recommended size: 1920x1080px or larger</p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Hero Title</label>

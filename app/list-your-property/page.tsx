@@ -267,34 +267,39 @@ export default function ListYourPropertyPage() {
 
   async function fetchTags() {
     try {
-      const { data: filters } = await supabase
-        .from('search_filters')
-        .select(`
-          id,
-          name,
-          search_filter_tags (
-            id,
-            name,
-            slug
-          )
-        `)
-        .eq('is_active', true)
-        .order('display_order');
+      // Use directFetch to get filters
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: filters } = await directFetch('search_filters', {
+        select: 'id,name,display_order',
+        eq: { is_active: true },
+        order: 'display_order'
+      });
 
-      if (filters) {
+      if (filters && Array.isArray(filters)) {
+        // Fetch tags for each filter
         const allTags: FilterTag[] = [];
-        (filters as any[]).forEach((filter: any) => {
-          const tags = filter.search_filter_tags as any[];
-          tags?.forEach((tag: any) => {
-            allTags.push({
-              id: tag.id,
-              filter_id: filter.id,
-              filter_name: filter.name,
-              name: tag.name,
-              slug: tag.slug,
+
+        await Promise.all(
+          filters.map(async (filter: any) => {
+            const { data: tags } = await directFetch('search_filter_tags', {
+              select: 'id,name,slug',
+              eq: { filter_id: filter.id }
             });
-          });
-        });
+
+            if (tags && Array.isArray(tags)) {
+              tags.forEach((tag: any) => {
+                allTags.push({
+                  id: tag.id,
+                  filter_id: filter.id,
+                  filter_name: filter.name,
+                  name: tag.name,
+                  slug: tag.slug,
+                });
+              });
+            }
+          })
+        );
+
         setAvailableTags(allTags);
       }
     } catch (error) {

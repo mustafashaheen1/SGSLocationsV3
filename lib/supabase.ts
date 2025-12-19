@@ -179,6 +179,12 @@ class QueryBuilder {
     return this;
   }
 
+  upsert(data: any) {
+    this.operation = 'insert';
+    this.insertData = data;
+    return this;
+  }
+
   delete() {
     this.operation = 'delete';
     return this;
@@ -310,13 +316,18 @@ class QueryBuilder {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+      // For upsert operations, use resolution=merge-duplicates
+      const preferHeader = this.operation === 'insert' && this.insertData
+        ? 'return=representation,resolution=merge-duplicates'
+        : 'return=representation';
+
       const response = await fetch(url, {
         method,
         headers: {
           'apikey': supabaseAnonKey,
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
+          'Prefer': preferHeader,
         },
         body,
         signal: controller.signal,

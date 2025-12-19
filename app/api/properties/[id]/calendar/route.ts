@@ -25,11 +25,13 @@ export async function GET(
     }
 
     // Check if user is admin
-    const { data: isAdmin } = await (supabase
-      .from('admins') as any)
-      .select('id')
-      .eq('email', user.email)
+    const { data: userProfile } = await (supabase
+      .from('users') as any)
+      .select('user_type')
+      .eq('id', user.id)
       .single();
+
+    const isAdmin = userProfile?.user_type === 'admin';
 
     // Check if user owns this property
     const { data: property } = await (supabase
@@ -89,11 +91,13 @@ export async function POST(
     }
 
     // Check if user is admin
-    const { data: isAdmin } = await (supabase
-      .from('admins') as any)
-      .select('id')
-      .eq('email', user.email)
+    const { data: userProfile } = await (supabase
+      .from('users') as any)
+      .select('user_type')
+      .eq('id', user.id)
       .single();
+
+    const isAdmin = userProfile?.user_type === 'admin';
 
     // Check if user owns this property
     const { data: property } = await (supabase
@@ -259,11 +263,13 @@ export async function PUT(
     }
 
     // Check if user is admin
-    const { data: isAdmin } = await (supabase
-      .from('admins') as any)
-      .select('id')
-      .eq('email', user.email)
+    const { data: userProfile } = await (supabase
+      .from('users') as any)
+      .select('user_type')
+      .eq('id', user.id)
       .single();
+
+    const isAdmin = userProfile?.user_type === 'admin';
 
     // Check if user owns this property
     const { data: property } = await (supabase
@@ -429,11 +435,13 @@ export async function DELETE(
     }
 
     // Check if user is admin
-    const { data: isAdmin } = await (supabase
-      .from('admins') as any)
-      .select('id')
-      .eq('email', user.email)
+    const { data: userProfile } = await (supabase
+      .from('users') as any)
+      .select('user_type')
+      .eq('id', user.id)
       .single();
+
+    const isAdmin = userProfile?.user_type === 'admin';
 
     // Check if user owns this property
     const { data: property } = await (supabase
