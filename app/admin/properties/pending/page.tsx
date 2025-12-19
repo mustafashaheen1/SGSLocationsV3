@@ -24,6 +24,12 @@ export default function PendingPropertiesPage() {
       // Get session for auth token
       const { data: { session } } = await supabase.auth.getSession();
 
+      if (!session) {
+        console.error('No session found');
+        setLoading(false);
+        return;
+      }
+
       // Fetch pending properties using directFetch
       const { directFetch } = await import('@/lib/supabase');
       const { data, error } = await directFetch('properties', {
