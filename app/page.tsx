@@ -317,7 +317,7 @@ export default function HomePage() {
             >
               Search Locations
             </Button>
-            {(!isAuthenticated || userType === 'property_owner') && (
+            {userType !== 'producer' && (
               <Button
                 onClick={() => router.push('/list-your-property')}
                 size="lg"
@@ -495,7 +495,7 @@ export default function HomePage() {
             <p className="mb-6 text-lg" style={{fontWeight: 300}}>
               Turn your property into a filming location
             </p>
-            {(!isAuthenticated || userType === 'property_owner') && (
+            {userType !== 'producer' && (
               <Button
                 onClick={() => router.push('/list-your-property')}
                 size="lg"

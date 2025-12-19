@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown, Phone, ClipboardList } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, Globe, Home, Search, FileText, Settings, Video, MapPin, FileCheck, Image as ImageIcon, Mail, Info, Eye, ChevronDown, Phone, ClipboardList, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -1551,22 +1551,33 @@ export default function ContentManagementPage() {
 
   async function fetchTermsAndConditions() {
     try {
+      console.log('🔄 Fetching terms and conditions...');
+
       // For admin panel, show the latest version regardless of active status
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('terms_and_conditions')
         .select('*')
         .order('version', { ascending: false })
         .limit(1)
         .maybeSingle();
 
+      if (error) {
+        console.error('❌ Error fetching terms:', error);
+        alert('Error loading terms: ' + error.message);
+        return;
+      }
+
       if (data) {
-        console.log('Loaded terms version:', (data as any).version, 'is_active:', (data as any).is_active);
+        console.log('✅ Loaded terms version:', (data as any).version, 'is_active:', (data as any).is_active);
+        console.log('📝 Content length:', (data as any).content?.length || 0, 'characters');
         setTermsContent((data as any).content);
       } else {
-        console.log('No terms found in database');
+        console.log('⚠️ No terms found in database');
+        setTermsContent('');
       }
     } catch (error) {
-      console.error('Error fetching terms:', error);
+      console.error('❌ Exception fetching terms:', error);
+      alert('Exception loading terms: ' + error);
     }
   }
 
@@ -3974,14 +3985,24 @@ export default function ContentManagementPage() {
                   <CardTitle>List Your Property - Terms & Conditions</CardTitle>
                   <p className="text-sm text-gray-600 mt-1">Edit the terms and conditions for property listings</p>
                 </div>
-                <Button
-                  onClick={saveTermsAndConditions}
-                  disabled={saving}
-                  size="lg"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Terms'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={fetchTermsAndConditions}
+                    variant="outline"
+                    size="lg"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                  <Button
+                    onClick={saveTermsAndConditions}
+                    disabled={saving}
+                    size="lg"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Terms'}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
