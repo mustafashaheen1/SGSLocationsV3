@@ -211,6 +211,11 @@ class QueryBuilder {
     return this;
   }
 
+  overlaps(column: string, values: any[]) {
+    this.filters.push({ type: 'ov', column, value: values });
+    return this;
+  }
+
   update(data: any) {
     this.operation = 'update';
     this.updateData = data;
@@ -304,6 +309,8 @@ class QueryBuilder {
             url += `&${filter.column}=cs.{${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')}}`;
           } else if (filter.type === 'is') {
             url += `&${filter.column}=is.${filter.value}`;
+          } else if (filter.type === 'ov') {
+            url += `&${filter.column}=ov.{${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')}}`;
           }
         }
 
