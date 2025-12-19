@@ -7,18 +7,49 @@ export const dynamic = 'force-dynamic';
 // GET - Fetch all settings
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSideClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Try to get user from Authorization header first
+    const authHeader = request.headers.get('authorization');
+    let user: any = null;
+    let supabase: any = null;
 
-    if (authError || !user) {
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const { createClient } = await import('@supabase/supabase-js');
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
+      if (!tokenError && tokenUser) {
+        user = tokenUser;
+      }
+    }
+
+    // Fallback to cookie-based auth
+    if (!user) {
+      supabase = await createServerSideClient();
+      const { data: { user: cookieUser }, error: authError } = await supabase.auth.getUser();
+      if (!authError && cookieUser) {
+        user = cookieUser;
+      }
+    }
+
+    if (!user) {
       return jsonResponseNoCache(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // Check if user is admin
-    const { data: adminData } = await supabase
+    // Check if user is admin using service role
+    const { createClient } = await import('@supabase/supabase-js');
+    const serviceSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: adminData } = await serviceSupabase
       .from('admins')
       .select('id')
       .eq('email', user.email)
@@ -78,18 +109,49 @@ export async function GET(request: NextRequest) {
 // PUT - Update settings
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createServerSideClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Try to get user from Authorization header first
+    const authHeader = request.headers.get('authorization');
+    let user: any = null;
+    let supabase: any = null;
 
-    if (authError || !user) {
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const { createClient } = await import('@supabase/supabase-js');
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
+      if (!tokenError && tokenUser) {
+        user = tokenUser;
+      }
+    }
+
+    // Fallback to cookie-based auth
+    if (!user) {
+      supabase = await createServerSideClient();
+      const { data: { user: cookieUser }, error: authError } = await supabase.auth.getUser();
+      if (!authError && cookieUser) {
+        user = cookieUser;
+      }
+    }
+
+    if (!user) {
       return jsonResponseNoCache(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // Check if user is admin
-    const { data: adminData } = await supabase
+    // Check if user is admin using service role
+    const { createClient } = await import('@supabase/supabase-js');
+    const serviceSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: adminData } = await serviceSupabase
       .from('admins')
       .select('id')
       .eq('email', user.email)

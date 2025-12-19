@@ -61,7 +61,19 @@ export default function SettingsPage() {
   async function fetchEmailSettings() {
     try {
       console.log('Fetching email settings...');
-      const response = await fetch('/api/admin/settings');
+
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('No session token available');
+        return;
+      }
+
+      const response = await fetch('/api/admin/settings', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
       console.log('Response status:', response.status);
 
       if (response.ok) {
@@ -131,9 +143,20 @@ export default function SettingsPage() {
     setSavingEmails(true);
 
     try {
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        showMessage('error', 'Authentication error. Please refresh and try again.');
+        setSavingEmails(false);
+        return;
+      }
+
       const response = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           settings: [
             { setting_key: 'property_inquiry_email', setting_value: emailSettings.propertyInquiryEmail },
@@ -285,6 +308,12 @@ export default function SettingsPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Email Notification Settings</h3>
         <p className="text-sm text-gray-600 mb-6">Configure where inquiry notifications are sent</p>
+
+        {/* Debug info */}
+        <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
+          <strong>Debug:</strong> Property Email: {emailSettings.propertyInquiryEmail || '(empty)'} |
+          General Email: {emailSettings.generalInquiryEmail || '(empty)'}
+        </div>
 
         <form onSubmit={handleEmailSettingsSubmit} className="space-y-4">
           <div>
