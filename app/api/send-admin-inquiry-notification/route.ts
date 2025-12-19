@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminEmail = 'info@sgslocations.com';
+    const adminEmail = 'phillip@sgsholdings.com';
 
     const msg = {
       to: adminEmail,

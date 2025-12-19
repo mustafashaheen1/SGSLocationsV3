@@ -638,7 +638,17 @@ export default function PropertyDetailPage() {
             property_id: property.id
           }]);
 
-        if (error) throw error;
+        if (error) {
+          // Check if it's a duplicate error (already favorited)
+          if (error.code === '23505') {
+            console.log('Property already in favorites, refreshing status');
+            // Refresh the favorite status from database
+            await checkFavoriteStatus();
+            return;
+          } else {
+            throw error;
+          }
+        }
 
         setIsFavorite(true);
       }
