@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServerSideClient } from '@/lib/supabase-server';
 import { jsonResponseNoCache } from '@/lib/api-helpers';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,17 +11,15 @@ export async function GET(request: NextRequest) {
     // Try to get user from Authorization header first
     const authHeader = request.headers.get('authorization');
     let user: any = null;
-    let supabase: any = null;
 
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const { createClient } = await import('@supabase/supabase-js');
-      supabase = createClient(
+      const serviceClient = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
+      const { data: { user: tokenUser }, error: tokenError } = await serviceClient.auth.getUser(token);
       if (!tokenError && tokenUser) {
         user = tokenUser;
       }
@@ -28,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Fallback to cookie-based auth
     if (!user) {
-      supabase = await createServerSideClient();
+      const supabase = await createServerSideClient();
       const { data: { user: cookieUser }, error: authError } = await supabase.auth.getUser();
       if (!authError && cookieUser) {
         user = cookieUser;
@@ -42,13 +41,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user is admin using service role
-    const { createClient } = await import('@supabase/supabase-js');
+    // Use service role for all database operations
     const serviceSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
 
+    // Check if user is admin
     const { data: adminData } = await serviceSupabase
       .from('admins')
       .select('id')
@@ -62,20 +67,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch all settings using service role (we've already verified admin access)
+    // Fetch all settings
     console.log('Fetching app_settings for admin:', user.email);
-
-    const { createClient } = await import('@supabase/supabase-js');
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
 
     const { data: settings, error } = await serviceSupabase
       .from('app_settings')
@@ -112,17 +105,15 @@ export async function PUT(request: NextRequest) {
     // Try to get user from Authorization header first
     const authHeader = request.headers.get('authorization');
     let user: any = null;
-    let supabase: any = null;
 
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const { createClient } = await import('@supabase/supabase-js');
-      supabase = createClient(
+      const serviceClient = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
+      const { data: { user: tokenUser }, error: tokenError } = await serviceClient.auth.getUser(token);
       if (!tokenError && tokenUser) {
         user = tokenUser;
       }
@@ -130,7 +121,7 @@ export async function PUT(request: NextRequest) {
 
     // Fallback to cookie-based auth
     if (!user) {
-      supabase = await createServerSideClient();
+      const supabase = await createServerSideClient();
       const { data: { user: cookieUser }, error: authError } = await supabase.auth.getUser();
       if (!authError && cookieUser) {
         user = cookieUser;
@@ -144,13 +135,19 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if user is admin using service role
-    const { createClient } = await import('@supabase/supabase-js');
+    // Use service role for all database operations
     const serviceSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
 
+    // Check if user is admin
     const { data: adminData } = await serviceSupabase
       .from('admins')
       .select('id')
@@ -173,19 +170,6 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Use service role for updates (we've already verified admin access)
-    const { createClient } = await import('@supabase/supabase-js');
-    const serviceSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
 
     // Update each setting
     const updatePromises = settings.map(async (setting: { setting_key: string; setting_value: string }) => {
