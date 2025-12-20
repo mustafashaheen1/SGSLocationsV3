@@ -294,9 +294,14 @@ export default function AboutPage() {
               <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                 {sections[4]?.title || "SGS Locations is a proud member of the Film Industry"}
               </h3>
-              <p className="text-gray-700">
+              <p className="mb-4 text-gray-700">
                 {sections[4]?.content || "We are committed to upholding the highest professional standards in the location services industry. Our membership demonstrates our dedication to excellence, ethical business practices, and collaboration with fellow industry professionals to support the growth of film and television production in Texas."}
               </p>
+              {sections[4]?.linkText && sections[4]?.linkUrl && (
+                <Link href={sections[4].linkUrl} target="_blank" rel="noopener noreferrer" className="text-[#dc2626] hover:underline font-medium">
+                  {sections[4].linkText}
+                </Link>
+              )}
             </div>
           </div>
           <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
@@ -326,9 +331,14 @@ export default function AboutPage() {
               <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                 {sections[5]?.title || "SGS Locations is in full compliance with the Texas Film Commission"}
               </h3>
-              <p className="text-gray-700">
+              <p className="mb-4 text-gray-700">
                 {sections[5]?.content || "As a licensed location service operating in Texas, we maintain full compliance with all Texas Film Commission regulations and requirements. This ensures that every production we support meets state standards and benefits from available film incentives and support programs."}
               </p>
+              {sections[5]?.linkText && sections[5]?.linkUrl && (
+                <Link href={sections[5].linkUrl} target="_blank" rel="noopener noreferrer" className="text-[#dc2626] hover:underline font-medium">
+                  {sections[5].linkText}
+                </Link>
+              )}
             </div>
           </div>
         </section>
