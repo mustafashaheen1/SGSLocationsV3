@@ -41,7 +41,55 @@ export default function AdminPropertiesPage() {
       });
 
       if (error) throw error;
-      setProperties(data || []);
+
+      // Get unique category IDs
+      const categoryIds = Array.from(new Set(
+        data?.filter((p: any) => p.category_id).map((p: any) => p.category_id) || []
+      ));
+      const subCategoryIds = Array.from(new Set(
+        data?.filter((p: any) => p.sub_category_id).map((p: any) => p.sub_category_id) || []
+      ));
+
+      // Fetch category information using directFetch with auth token
+      let categoriesMap: Record<string, any> = {};
+      if (categoryIds.length > 0) {
+        const { data: categories } = await directFetch('categories', {
+          select: 'id,name',
+          in: { id: categoryIds },
+          authToken: session.access_token
+        });
+
+        if (categories) {
+          (categories as any[]).forEach((cat: any) => {
+            categoriesMap[cat.id] = cat;
+          });
+        }
+      }
+
+      // Fetch sub-category information
+      let subCategoriesMap: Record<string, any> = {};
+      if (subCategoryIds.length > 0) {
+        const { data: subCategories } = await directFetch('categories', {
+          select: 'id,name',
+          in: { id: subCategoryIds },
+          authToken: session.access_token
+        });
+
+        if (subCategories) {
+          (subCategories as any[]).forEach((cat: any) => {
+            subCategoriesMap[cat.id] = cat;
+          });
+        }
+      }
+
+      // Transform the data to add category information
+      const transformedData = (data || []).map((property: any) => ({
+        ...property,
+        main_category: property.category_id ? categoriesMap[property.category_id] : null,
+        sub_category: property.sub_category_id ? subCategoriesMap[property.sub_category_id] : null,
+      }));
+
+      setProperties(transformedData);
     } catch (error) {
       console.error('Error fetching properties:', error);
     } finally {
@@ -187,7 +235,9 @@ export default function AdminPropertiesPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       property.name?.toLowerCase().includes(searchLower) ||
-      property.city?.toLowerCase().includes(searchLower)
+      (property.real_name || '')?.toLowerCase().includes(searchLower) ||
+      property.city?.toLowerCase().includes(searchLower) ||
+      (property.zipcode || '')?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -240,6 +290,7 @@ export default function AdminPropertiesPage() {
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Image</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Property</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Category</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Location</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Featured</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
@@ -256,8 +307,18 @@ export default function AdminPropertiesPage() {
                         />
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm font-medium text-gray-900">{property.name}</div>
-                        <div className="text-sm text-gray-500">{property.property_type}</div>
+                        <div
+                          className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
+                          title="View property details"
+                        >
+                          {property.name}
+                        </div>
+                        <div className="text-sm text-gray-500">{property.images?.length || 0} images</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm text-gray-900">{property.main_category?.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{property.sub_category?.name || ''}</div>
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-900">
                         {property.city}, {property.county}

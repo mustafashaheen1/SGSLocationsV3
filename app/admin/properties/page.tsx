@@ -313,7 +313,9 @@ export default function AdminPropertiesPage() {
   const filteredProperties = properties.filter(property => {
     const matchesSearch =
       property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.city.toLowerCase().includes(searchTerm.toLowerCase());
+      (property.real_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (property.zipcode || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     return matchesSearch;
   });

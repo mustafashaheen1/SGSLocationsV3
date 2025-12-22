@@ -186,8 +186,9 @@ export default function ExclusivePropertiesPage() {
     const searchLower = searchTerm.toLowerCase();
     return (
       property.name?.toLowerCase().includes(searchLower) ||
+      (property.real_name || '')?.toLowerCase().includes(searchLower) ||
       property.city?.toLowerCase().includes(searchLower) ||
-      property.address?.toLowerCase().includes(searchLower)
+      (property.zipcode || '')?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -250,7 +251,13 @@ export default function ExclusivePropertiesPage() {
                         />
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm font-medium text-gray-900">{property.name}</div>
+                        <div
+                          className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
+                          title="View property details"
+                        >
+                          {property.name}
+                        </div>
                         <div className="text-sm text-gray-500">{property.images?.length || 0} images</div>
                       </td>
                       <td className="py-4 px-4">
