@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import sgMail from '@sendgrid/mail';
 import { jsonResponseNoCache } from '@/lib/api-helpers';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
