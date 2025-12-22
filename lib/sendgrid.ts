@@ -1,9 +1,27 @@
 import sgMail from '@sendgrid/mail';
+import { createClient } from '@/lib/supabase/server';
 
 // Initialize SendGrid with API key
 const apiKey = process.env.SENDGRID_API_KEY;
 if (apiKey) {
   sgMail.setApiKey(apiKey);
+}
+
+// Helper function to fetch site logo
+async function getSiteLogo(): Promise<string> {
+  try {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'site_logo_url')
+      .maybeSingle();
+
+    return data?.setting_value || 'https://sgslocations.com/logo.png';
+  } catch (error) {
+    console.error('Error fetching logo for email:', error);
+    return 'https://sgslocations.com/logo.png'; // Fallback
+  }
 }
 
 export interface EmailOptions {
@@ -44,7 +62,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 // Welcome email template
-export function getWelcomeEmailTemplate(userName: string, userEmail: string): string {
+export function getWelcomeEmailTemplate(userName: string, userEmail: string, logoUrl: string = 'https://sgslocations.com/logo.png'): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -54,7 +72,10 @@ export function getWelcomeEmailTemplate(userName: string, userEmail: string): st
         <title>Welcome to SGS Locations</title>
       </head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background-color: #DC2626; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+        <div style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 2px solid #DC2626;">
+          <img src="${logoUrl}" alt="SGS Locations" style="height: 60px; max-width: 100%;" />
+        </div>
+        <div style="background-color: #DC2626; padding: 30px; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to SGS Locations</h1>
         </div>
 
@@ -109,7 +130,7 @@ export function getWelcomeEmailTemplate(userName: string, userEmail: string): st
 }
 
 // Password reset email template
-export function getPasswordResetEmailTemplate(userName: string, resetLink: string): string {
+export function getPasswordResetEmailTemplate(userName: string, resetLink: string, logoUrl: string = 'https://sgslocations.com/logo.png'): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -183,7 +204,7 @@ export function getPasswordResetEmailTemplate(userName: string, resetLink: strin
 }
 
 // Property submission confirmation email template
-export function getPropertySubmissionEmailTemplate(userName: string, propertyAddress: string): string {
+export function getPropertySubmissionEmailTemplate(userName: string, propertyAddress: string, logoUrl: string = 'https://sgslocations.com/logo.png'): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -260,7 +281,7 @@ export function getPropertySubmissionEmailTemplate(userName: string, propertyAdd
 }
 
 // Property approval email template
-export function getPropertyApprovalEmailTemplate(userName: string, propertyName: string, propertyId: string): string {
+export function getPropertyApprovalEmailTemplate(userName: string, propertyName: string, propertyId: string, logoUrl: string = 'https://sgslocations.com/logo.png'): string {
   const propertyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/property/${propertyId}`;
 
   return `
@@ -343,7 +364,7 @@ export function getPropertyApprovalEmailTemplate(userName: string, propertyName:
 }
 
 // Property rejection email template
-export function getPropertyRejectionEmailTemplate(userName: string, propertyName: string, rejectionReason?: string): string {
+export function getPropertyRejectionEmailTemplate(userName: string, propertyName: string, rejectionReason?: string, logoUrl: string = 'https://sgslocations.com/logo.png'): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -437,7 +458,8 @@ export function getPropertyTermsEmailTemplate(
   propertyName: string,
   termsType: 'text' | 'pdf',
   termsContent?: string,
-  termsPdfUrl?: string
+  termsPdfUrl?: string,
+  logoUrl: string = 'https://sgslocations.com/logo.png'
 ): string {
   return `
     <!DOCTYPE html>
@@ -528,10 +550,11 @@ export function getPropertyTermsEmailTemplate(
 
 // Helper functions for sending specific emails
 export async function sendWelcomeEmail(userEmail: string, userName: string): Promise<boolean> {
+  const logoUrl = await getSiteLogo();
   return sendEmail({
     to: userEmail,
     subject: 'Welcome to SGS Locations!',
-    html: getWelcomeEmailTemplate(userName, userEmail)
+    html: getWelcomeEmailTemplate(userName, userEmail, logoUrl)
   });
 }
 
@@ -540,10 +563,11 @@ export async function sendPasswordResetEmail(
   userName: string,
   resetLink: string
 ): Promise<boolean> {
+  const logoUrl = await getSiteLogo();
   return sendEmail({
     to: userEmail,
     subject: 'Reset Your SGS Locations Password',
-    html: getPasswordResetEmailTemplate(userName, resetLink)
+    html: getPasswordResetEmailTemplate(userName, resetLink, logoUrl)
   });
 }
 
@@ -552,10 +576,11 @@ export async function sendPropertySubmissionEmail(
   userName: string,
   propertyAddress: string
 ): Promise<boolean> {
+  const logoUrl = await getSiteLogo();
   return sendEmail({
     to: userEmail,
     subject: 'Property Submission Received - SGS Locations',
-    html: getPropertySubmissionEmailTemplate(userName, propertyAddress)
+    html: getPropertySubmissionEmailTemplate(userName, propertyAddress, logoUrl)
   });
 }
 
@@ -565,10 +590,11 @@ export async function sendPropertyApprovalEmail(
   propertyName: string,
   propertyId: string
 ): Promise<boolean> {
+  const logoUrl = await getSiteLogo();
   return sendEmail({
     to: userEmail,
     subject: 'Property Approved - SGS Locations',
-    html: getPropertyApprovalEmailTemplate(userName, propertyName, propertyId)
+    html: getPropertyApprovalEmailTemplate(userName, propertyName, propertyId, logoUrl)
   });
 }
 
@@ -578,10 +604,11 @@ export async function sendPropertyRejectionEmail(
   propertyName: string,
   rejectionReason?: string
 ): Promise<boolean> {
+  const logoUrl = await getSiteLogo();
   return sendEmail({
     to: userEmail,
     subject: 'Property Submission Update - SGS Locations',
-    html: getPropertyRejectionEmailTemplate(userName, propertyName, rejectionReason)
+    html: getPropertyRejectionEmailTemplate(userName, propertyName, rejectionReason, logoUrl)
   });
 }
 
@@ -593,9 +620,10 @@ export async function sendPropertyTermsEmail(
   termsContent?: string,
   termsPdfUrl?: string
 ): Promise<boolean> {
+  const logoUrl = await getSiteLogo();
   return sendEmail({
     to: userEmail,
     subject: 'Terms and Conditions - SGS Locations',
-    html: getPropertyTermsEmailTemplate(userName, propertyName, termsType, termsContent, termsPdfUrl)
+    html: getPropertyTermsEmailTemplate(userName, propertyName, termsType, termsContent, termsPdfUrl, logoUrl)
   });
 }

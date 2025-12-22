@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import sgMail from '@sendgrid/mail';
 import { jsonResponseNoCache } from '@/lib/api-helpers';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -17,6 +18,25 @@ export async function POST(request: NextRequest) {
         { error: 'Email and name are required' },
         { status: 400 }
       );
+    }
+
+    // Fetch site logo from app_settings
+    const supabase = createClient();
+    let logoUrl = 'https://sgslocations.com/logo.png'; // Default fallback
+
+    try {
+      const { data: logoData } = await supabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', 'site_logo_url')
+        .maybeSingle();
+
+      if (logoData?.setting_value) {
+        logoUrl = logoData.setting_value;
+      }
+    } catch (error) {
+      console.error('Error fetching logo:', error);
+      // Continue with default logo
     }
 
     const msg = {
@@ -87,7 +107,7 @@ export async function POST(request: NextRequest) {
                   <!-- Logo Header -->
                   <tr>
                     <td class="mobile-padding" style="padding: 40px 30px; text-align: center; background-color: #ffffff;">
-                      <img src="https://sgslocations.com/logo.png" alt="SGS Locations" class="mobile-logo" style="height: 60px; max-width: 100%;" />
+                      <img src="${logoUrl}" alt="SGS Locations" class="mobile-logo" style="height: 60px; max-width: 100%;" />
                     </td>
                   </tr>
 

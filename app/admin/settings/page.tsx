@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Lock } from 'lucide-react';
+import { uploadImageToS3 } from '@/lib/s3-upload';
+import { Lock, Upload, X } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -23,6 +24,13 @@ export default function SettingsPage() {
     propertyInquiryEmail: '',
     generalInquiryEmail: '',
   });
+
+  const [logoSettings, setLogoSettings] = useState({
+    logoUrl: '',
+  });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     checkAdminAndFetchEmail();
@@ -54,6 +62,9 @@ export default function SettingsPage() {
 
     // Fetch email settings
     await fetchEmailSettings();
+
+    // Fetch logo settings
+    await fetchLogoSettings();
 
     setLoading(false);
   }
@@ -93,6 +104,36 @@ export default function SettingsPage() {
     }
   }
 
+  async function fetchLogoSettings() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('No session token available');
+        return;
+      }
+
+      const response = await fetch('/api/admin/settings', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const { settings } = data;
+
+        const logo = settings?.find((s: any) => s.setting_key === 'site_logo_url');
+
+        setLogoSettings({
+          logoUrl: logo?.setting_value || '',
+        });
+        setLogoPreview(logo?.setting_value || '');
+      }
+    } catch (error) {
+      console.error('Error fetching logo settings:', error);
+    }
+  }
+
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
@@ -110,6 +151,101 @@ export default function SettingsPage() {
       ...emailSettings,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleLogoUpload = async () => {
+    if (!logoFile) {
+      showMessage('error', 'Please select a logo image');
+      return;
+    }
+
+    setUploadingLogo(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        showMessage('error', 'Authentication error. Please refresh and try again.');
+        setUploadingLogo(false);
+        return;
+      }
+
+      // Upload to S3
+      const logoUrl = await uploadImageToS3(logoFile, 'site-logo');
+
+      // Save to database
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          settings: [
+            { setting_key: 'site_logo_url', setting_value: logoUrl }
+          ]
+        })
+      });
+
+      if (response.ok) {
+        setLogoSettings({ logoUrl });
+        setLogoPreview(logoUrl);
+        setLogoFile(null);
+        showMessage('success', 'Logo uploaded successfully!');
+      } else {
+        const error = await response.json();
+        showMessage('error', error.error || 'Failed to upload logo');
+      }
+    } catch (error: any) {
+      console.error('Error uploading logo:', error);
+      showMessage('error', 'An error occurred: ' + error.message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!confirm('Are you sure you want to remove the site logo?')) {
+      return;
+    }
+
+    setUploadingLogo(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        showMessage('error', 'Authentication error. Please refresh and try again.');
+        setUploadingLogo(false);
+        return;
+      }
+
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          settings: [
+            { setting_key: 'site_logo_url', setting_value: '' }
+          ]
+        })
+      });
+
+      if (response.ok) {
+        setLogoSettings({ logoUrl: '' });
+        setLogoPreview('');
+        setLogoFile(null);
+        showMessage('success', 'Logo removed successfully!');
+      } else {
+        const error = await response.json();
+        showMessage('error', error.error || 'Failed to remove logo');
+      }
+    } catch (error: any) {
+      console.error('Error removing logo:', error);
+      showMessage('error', 'An error occurred: ' + error.message);
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   const handleEmailSettingsSubmit = async (e: React.FormEvent) => {
@@ -289,6 +425,102 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
           </div>
+        </div>
+      </div>
+
+      {/* Site Logo Settings */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Site Logo</h3>
+        <p className="text-sm text-gray-600 mb-6">Upload a custom logo to replace the default camera icon across the website and in emails</p>
+
+        <div className="space-y-4">
+          {/* Current Logo Preview */}
+          {logoPreview && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Current Logo
+              </label>
+              <div className="relative inline-block">
+                <img
+                  src={logoPreview}
+                  alt="Site Logo"
+                  className="h-16 max-w-xs object-contain border border-gray-300 rounded p-2 bg-white"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/200x60?text=Logo+Not+Found';
+                  }}
+                />
+                <button
+                  onClick={handleRemoveLogo}
+                  disabled={uploadingLogo}
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1"
+                  title="Remove logo"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Upload New Logo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {logoPreview ? 'Change Logo' : 'Upload Logo'}
+            </label>
+
+            {!logoFile ? (
+              <div
+                onClick={() => document.getElementById('logo-upload')?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-red-500 transition-colors"
+              >
+                <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600">Click to upload logo image</p>
+                <p className="text-xs text-gray-500 mt-1">PNG, JPG, SVG (recommended: transparent background)</p>
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setLogoFile(file);
+                      setLogoPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="relative inline-block">
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="h-16 max-w-xs object-contain border border-gray-300 rounded p-2 bg-white"
+                />
+                <button
+                  onClick={() => {
+                    setLogoFile(null);
+                    setLogoPreview(logoSettings.logoUrl || '');
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1"
+                  title="Cancel upload"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {logoFile && (
+            <div className="pt-2">
+              <button
+                onClick={handleLogoUpload}
+                disabled={uploadingLogo}
+                className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+              >
+                {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

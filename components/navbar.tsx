@@ -17,6 +17,7 @@ export function Navbar() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
   const [showPortfolio, setShowPortfolio] = useState(true);
+  const [siteLogo, setSiteLogo] = useState<string>('');
   const pathname = usePathname();
   const router = useRouter();
   const isHomepage = pathname === '/';
@@ -24,6 +25,7 @@ export function Navbar() {
   useEffect(() => {
     checkAuth();
     fetchPortfolioVisibility();
+    fetchSiteLogo();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -73,6 +75,22 @@ export function Navbar() {
       }
     } catch (error) {
       console.error('Error fetching portfolio visibility:', error);
+    }
+  }
+
+  async function fetchSiteLogo() {
+    try {
+      const { data } = await (supabase
+        .from('app_settings') as any)
+        .select('setting_value')
+        .eq('setting_key', 'site_logo_url')
+        .maybeSingle();
+
+      if (data && data.setting_value) {
+        setSiteLogo(data.setting_value);
+      }
+    } catch (error) {
+      console.error('Error fetching site logo:', error);
     }
   }
 
@@ -156,10 +174,24 @@ export function Navbar() {
       <div className="mx-auto px-4">
         <div className="flex items-center justify-between h-[60px]">
           <Link href="/" className="flex items-center gap-2">
-            <Camera className="w-8 h-8 text-[#e11921]" />
-            <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
-              SGS LOCATIONS<sup className="text-xs">®</sup>
-            </span>
+            {siteLogo ? (
+              <img
+                src={siteLogo}
+                alt="SGS Locations"
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  setSiteLogo('');
+                }}
+              />
+            ) : (
+              <>
+                <Camera className="w-8 h-8 text-[#e11921]" />
+                <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
+                  SGS LOCATIONS<sup className="text-xs">®</sup>
+                </span>
+              </>
+            )}
           </Link>
 
           <div className="hidden lg:flex items-center gap-3">
