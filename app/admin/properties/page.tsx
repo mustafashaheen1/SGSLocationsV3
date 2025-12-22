@@ -19,7 +19,9 @@ import {
 interface Property {
   id: string;
   name: string;
+  real_name?: string;
   city: string;
+  zipcode?: string;
   status: string;
   primary_image: string;
   images: string[];
