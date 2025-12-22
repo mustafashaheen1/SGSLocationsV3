@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     let logoUrl = 'https://sgslocations.com/logo.png'; // Default fallback
 
     try {
-      const { data: logoData } = await supabase
-        .from('app_settings')
+      const { data: logoData } = await (supabase
+        .from('app_settings') as any)
         .select('setting_value')
         .eq('setting_key', 'site_logo_url')
         .maybeSingle();

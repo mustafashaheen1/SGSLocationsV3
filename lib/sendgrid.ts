@@ -11,8 +11,8 @@ if (apiKey) {
 async function getSiteLogo(): Promise<string> {
   try {
     const supabase = createClient();
-    const { data } = await supabase
-      .from('app_settings')
+    const { data } = await (supabase
+      .from('app_settings') as any)
       .select('setting_value')
       .eq('setting_key', 'site_logo_url')
       .maybeSingle();
