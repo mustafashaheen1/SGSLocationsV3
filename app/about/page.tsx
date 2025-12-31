@@ -222,7 +222,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* SECTION 2: Video Section - Content Left, Image Right */}
+        {/* SECTION 2: Media Section - Content Left, Image/Video Right */}
         <section className="row">
           <div className="col-md-6 py-5 px-md-5 d-flex justify-content-center align-items-center flex-column m-order-1">
             <div className="w-100">
@@ -230,21 +230,41 @@ export default function AboutPage() {
                 {sections[1]?.title || "Discover Our Locations"}
               </h3>
               <p className="text-gray-700 mb-4">
-                {sections[1]?.content || "Whether you're looking for a sprawling ranch, modern architecture, historic properties, or urban settings, SGS Locations has the perfect backdrop for your production needs. Watch our overview video to see what we offer."}
+                {sections[1]?.content || "Whether you're looking for a sprawling ranch, modern architecture, historic properties, or urban settings, SGS Locations has the perfect backdrop for your production needs."}
               </p>
+              {sections[1]?.linkText && sections[1]?.linkUrl && (
+                <Link href={sections[1].linkUrl} className="text-[#dc2626] hover:underline font-medium">
+                  {sections[1].linkText}
+                </Link>
+              )}
             </div>
           </div>
           <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
-            <div className="w-100" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
-              <iframe
-                src={sections[1]?.videoUrl || "https://player.vimeo.com/video/616445043"}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                frameBorder="0"
-                allow="autoplay; fullscreen"
-                allowFullScreen
-                title="SGS Locations Overview"
+            {/* Show image if available, otherwise show video */}
+            {sections[1]?.image ? (
+              <Image
+                src={sections[1].image}
+                alt="Discover Our Locations"
+                width={800}
+                height={600}
+                className="w-100 h-auto"
               />
-            </div>
+            ) : sections[1]?.videoUrl ? (
+              <div className="w-100" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+                <iframe
+                  src={sections[1].videoUrl}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                  frameBorder="0"
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  title="SGS Locations Overview"
+                />
+              </div>
+            ) : (
+              <div className="w-100 d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+                <p className="text-gray-400">No media available</p>
+              </div>
+            )}
           </div>
         </section>
 
