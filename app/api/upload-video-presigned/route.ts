@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const fileExtension = fileName.split('.').pop();
     const uniqueFileName = `${folder}/${randomUUID()}.${fileExtension}`;
 
-    // Create presigned URL for upload (valid for 10 minutes)
+    // Create presigned URL for upload (valid for 30 minutes for large files)
     const command = new PutObjectCommand({
       Bucket: process.env.NEXT_PUBLIC_AWS_S3_BUCKET!,
       Key: uniqueFileName,

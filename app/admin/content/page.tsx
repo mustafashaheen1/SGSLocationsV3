@@ -833,16 +833,33 @@ export default function ContentManagementPage() {
     if (!confirmDelete) return;
 
     try {
-      // Delete from database immediately
+      // Step 1: Delete the section from database
       const sectionKey = `section_${indexToDelete + 1}`;
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('about_page_content')
         .delete()
         .eq('section', sectionKey);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
-      // Update local state
+      // Step 2: Renumber all subsequent sections
+      // Get all sections after the deleted one
+      const sectionsToRenumber = aboutSections.slice(indexToDelete + 1);
+
+      for (let i = 0; i < sectionsToRenumber.length; i++) {
+        const oldSectionKey = `section_${indexToDelete + i + 2}`; // Original section number
+        const newSectionKey = `section_${indexToDelete + i + 1}`; // New section number
+
+        // Update all rows for this section
+        const { error: updateError } = await supabase
+          .from('about_page_content')
+          .update({ section: newSectionKey })
+          .eq('section', oldSectionKey);
+
+        if (updateError) throw updateError;
+      }
+
+      // Step 3: Update local state
       const newSections = aboutSections.filter((_, index) => index !== indexToDelete);
       setAboutSections(newSections);
 
