@@ -841,6 +841,8 @@ export default function ContentManagementPage() {
       const newSections = [...aboutSections];
       if (!newSections[sectionIndex]) newSections[sectionIndex] = {};
       newSections[sectionIndex].videoUrl = videoUrl;
+      // Clear image when uploading video
+      delete newSections[sectionIndex].image;
       setAboutSections(newSections);
       alert('Video uploaded successfully!');
     } catch (error) {
@@ -862,6 +864,11 @@ export default function ContentManagementPage() {
       aboutSections.forEach((section, index) => {
         Object.keys(section).forEach(key => {
           if (section[key]) {
+            // Skip saving media that doesn't match the mediaType
+            if (key === 'image' && section.mediaType === 'video') return;
+            if (key === 'videoUrl' && section.mediaType === 'image') return;
+            if ((key === 'image' || key === 'videoUrl') && section.mediaType === 'none') return;
+
             promises.push(
               (async () => {
                 const { error } = await (supabase.from('about_page_content') as any).upsert({
@@ -3546,6 +3553,8 @@ export default function ContentManagementPage() {
                                 const newSections = [...aboutSections];
                                 if (!newSections[index]) newSections[index] = {};
                                 newSections[index].image = url;
+                                // Clear video when uploading image
+                                delete newSections[index].videoUrl;
                                 setAboutSections(newSections);
                               } catch (error) {
                                 alert('Error uploading image');
