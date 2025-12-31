@@ -725,6 +725,18 @@ export default function ContentManagementPage() {
             sectionData[item.key] = value;
           });
 
+          // Set mediaType based on what media is present if not already set
+          if (!sectionData.mediaType) {
+            if (sectionData.videoUrl) {
+              sectionData.mediaType = 'video';
+            } else if (sectionData.image) {
+              sectionData.mediaType = 'image';
+            } else {
+              // Default to 'none' (Text Only) if no media
+              sectionData.mediaType = 'none';
+            }
+          }
+
           sections.push(sectionData);
         }
 
@@ -3468,14 +3480,12 @@ export default function ContentManagementPage() {
                       <div className="flex gap-2">
                         <Button
                           type="button"
-                          variant={(!section.mediaType || section.mediaType === 'image') ? 'default' : 'outline'}
+                          variant={section.mediaType === 'image' ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => {
                             const newSections = [...aboutSections];
                             if (!newSections[index]) newSections[index] = {};
                             newSections[index].mediaType = 'image';
-                            // Clear video data when switching to image
-                            delete newSections[index].videoUrl;
                             setAboutSections(newSections);
                           }}
                         >
@@ -3490,8 +3500,6 @@ export default function ContentManagementPage() {
                             const newSections = [...aboutSections];
                             if (!newSections[index]) newSections[index] = {};
                             newSections[index].mediaType = 'video';
-                            // Clear image data when switching to video
-                            delete newSections[index].image;
                             setAboutSections(newSections);
                           }}
                         >
