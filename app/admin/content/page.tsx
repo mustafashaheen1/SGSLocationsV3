@@ -851,8 +851,8 @@ export default function ContentManagementPage() {
         const newSectionKey = `section_${indexToDelete + i + 1}`; // New section number
 
         // Update all rows for this section
-        const { error: updateError } = await supabase
-          .from('about_page_content')
+        const { error: updateError } = await (supabase
+          .from('about_page_content') as any)
           .update({ section: newSectionKey })
           .eq('section', oldSectionKey);
 
