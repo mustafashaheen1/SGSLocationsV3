@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToS3 } from '@/lib/s3-upload';
-import { Lock, Upload, X } from 'lucide-react';
+import { Lock, Upload, X, Info, Save } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -31,6 +31,10 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // AI Photo Analysis State
+  const [aiPhotoAnalysisEnabled, setAiPhotoAnalysisEnabled] = useState(false);
+  const [savingAiSetting, setSavingAiSetting] = useState(false);
 
   useEffect(() => {
     checkAdminAndFetchEmail();
@@ -65,6 +69,9 @@ export default function SettingsPage() {
 
     // Fetch logo settings
     await fetchLogoSettings();
+
+    // Fetch AI Photo Analysis setting
+    await fetchAiPhotoAnalysisSetting();
 
     setLoading(false);
   }
@@ -134,9 +141,51 @@ export default function SettingsPage() {
     }
   }
 
+  async function fetchAiPhotoAnalysisSetting() {
+    try {
+      const { data } = await (supabase
+        .from('site_settings') as any)
+        .select('*')
+        .eq('key', 'ai_photo_analysis_enabled')
+        .maybeSingle();
+
+      if (data && data.value !== null && data.value !== undefined) {
+        const value = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        setAiPhotoAnalysisEnabled(value === true || value === 'true');
+      }
+    } catch (error) {
+      console.error('Error fetching AI Photo Analysis setting:', error);
+    }
+  }
+
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+  };
+
+  const handleSaveAiPhotoAnalysis = async () => {
+    setSavingAiSetting(true);
+    try {
+      const { error } = await (supabase
+        .from('site_settings') as any)
+        .upsert({
+          key: 'ai_photo_analysis_enabled',
+          value: JSON.stringify(aiPhotoAnalysisEnabled),
+          page: 'admin',
+          section: 'settings',
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'key'
+        });
+
+      if (error) throw error;
+
+      showMessage('success', 'AI Photo Analysis setting updated successfully!');
+    } catch (error: any) {
+      showMessage('error', 'Error saving: ' + error.message);
+    } finally {
+      setSavingAiSetting(false);
+    }
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -576,6 +625,70 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* AI Photo Analysis Settings */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">AI Photo Analysis</h3>
+            <p className="text-sm text-gray-600 mt-1">Control whether AI analyzes photos uploaded by admins</p>
+          </div>
+          <button
+            onClick={handleSaveAiPhotoAnalysis}
+            disabled={savingAiSetting}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {savingAiSetting ? 'Saving...' : 'Save Setting'}
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-gray-900">Enable AI Photo Analysis</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                When enabled, AI will automatically analyze and tag photos uploaded through the admin panel.
+                When disabled, photos will be uploaded without AI analysis.
+              </p>
+              <p className="text-xs text-red-600 mt-2 font-medium">
+                Default: OFF (AI analysis disabled)
+              </p>
+            </div>
+            <button
+              onClick={() => setAiPhotoAnalysisEnabled(!aiPhotoAnalysisEnabled)}
+              className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ml-4 ${
+                aiPhotoAnalysisEnabled ? 'bg-red-600' : 'bg-gray-300'
+              }`}
+              role="switch"
+              aria-checked={aiPhotoAnalysisEnabled}
+            >
+              <span
+                className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  aiPhotoAnalysisEnabled ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <Info className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-blue-900">Current Status</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  AI Photo Analysis is currently <span className="font-bold">{aiPhotoAnalysisEnabled ? 'ENABLED' : 'DISABLED'}</span>
+                </p>
+                <p className="text-xs text-blue-600 mt-2">
+                  {aiPhotoAnalysisEnabled
+                    ? 'Photos uploaded through the admin panel will be analyzed by AI for automatic tagging and categorization.'
+                    : 'Photos uploaded through the admin panel will NOT be analyzed by AI. Manual tagging will be required.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Change Password */}
