@@ -3514,9 +3514,6 @@ export default function ContentManagementPage() {
                             const newSections = [...aboutSections];
                             if (!newSections[index]) newSections[index] = {};
                             newSections[index].mediaType = 'none';
-                            // Clear media data
-                            delete newSections[index].image;
-                            delete newSections[index].videoUrl;
                             setAboutSections(newSections);
                           }}
                         >
