@@ -828,12 +828,29 @@ export default function ContentManagementPage() {
     }
   }
 
-  function deleteAboutSection(indexToDelete: number) {
+  async function deleteAboutSection(indexToDelete: number) {
     const confirmDelete = window.confirm(`Are you sure you want to delete Section ${indexToDelete + 1}? This action cannot be undone.`);
     if (!confirmDelete) return;
 
-    const newSections = aboutSections.filter((_, index) => index !== indexToDelete);
-    setAboutSections(newSections);
+    try {
+      // Delete from database immediately
+      const sectionKey = `section_${indexToDelete + 1}`;
+      const { error } = await supabase
+        .from('about_page_content')
+        .delete()
+        .eq('section', sectionKey);
+
+      if (error) throw error;
+
+      // Update local state
+      const newSections = aboutSections.filter((_, index) => index !== indexToDelete);
+      setAboutSections(newSections);
+
+      alert('Section deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting section:', error);
+      alert('Error deleting section: ' + error.message);
+    }
   }
 
   function addAboutSection() {
@@ -3528,14 +3545,30 @@ export default function ContentManagementPage() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Image</label>
                         {section?.image && (
-                          <img
-                            src={section.image}
-                            alt={`Section ${index + 1}`}
-                            className="w-full max-w-md h-48 object-cover rounded mb-2"
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
-                            }}
-                          />
+                          <div className="relative w-full max-w-md mb-2">
+                            <img
+                              src={section.image}
+                              alt={`Section ${index + 1}`}
+                              className="w-full h-48 object-cover rounded"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                              onClick={() => {
+                                const newSections = [...aboutSections];
+                                if (!newSections[index]) newSections[index] = {};
+                                delete newSections[index].image;
+                                setAboutSections(newSections);
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
                         )}
                         <Button
                           size="sm"
