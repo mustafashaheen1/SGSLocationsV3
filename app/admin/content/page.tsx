@@ -708,37 +708,50 @@ export default function ContentManagementPage() {
       if (data && data.length > 0) {
         const sections = [];
 
-        for (let i = 1; i <= 11; i++) {
+        // Dynamically find the maximum section number
+        const maxSection = Math.max(
+          ...data.map((item: any) => {
+            const match = item.section.match(/section_(\d+)/);
+            return match ? parseInt(match[1]) : 0;
+          })
+        );
+
+        // Only load sections that exist in the database
+        for (let i = 1; i <= maxSection; i++) {
           const sectionData: any = {};
           const sectionKey = `section_${i}`;
 
           const sectionContent = (data as any[]).filter((item: any) => item.section === sectionKey);
-          sectionContent.forEach((item: any) => {
-            // Parse the value - it's stored as JSON string
-            let value = item.value;
-            if (typeof value === 'string' && value.startsWith('"')) {
-              try {
-                value = JSON.parse(value);
-              } catch (e) {
-                // If parse fails, use as is
+
+          // Only add section if it has content
+          if (sectionContent.length > 0) {
+            sectionContent.forEach((item: any) => {
+              // Parse the value - it's stored as JSON string
+              let value = item.value;
+              if (typeof value === 'string' && value.startsWith('"')) {
+                try {
+                  value = JSON.parse(value);
+                } catch (e) {
+                  // If parse fails, use as is
+                }
+              }
+              sectionData[item.key] = value;
+            });
+
+            // Set mediaType based on what media is present if not already set
+            if (!sectionData.mediaType) {
+              if (sectionData.videoUrl) {
+                sectionData.mediaType = 'video';
+              } else if (sectionData.image) {
+                sectionData.mediaType = 'image';
+              } else {
+                // Default to 'none' (Text Only) if no media
+                sectionData.mediaType = 'none';
               }
             }
-            sectionData[item.key] = value;
-          });
 
-          // Set mediaType based on what media is present if not already set
-          if (!sectionData.mediaType) {
-            if (sectionData.videoUrl) {
-              sectionData.mediaType = 'video';
-            } else if (sectionData.image) {
-              sectionData.mediaType = 'image';
-            } else {
-              // Default to 'none' (Text Only) if no media
-              sectionData.mediaType = 'none';
-            }
+            sections.push(sectionData);
           }
-
-          sections.push(sectionData);
         }
 
         setAboutSections(sections);
