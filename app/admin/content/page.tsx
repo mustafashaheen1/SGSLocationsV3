@@ -143,6 +143,7 @@ export default function ContentManagementPage() {
   // About Page Content States
   const [aboutSections, setAboutSections] = useState<any[]>([]);
   const [uploadingVideoForSection, setUploadingVideoForSection] = useState<number | null>(null);
+  const [uploadingImageForSection, setUploadingImageForSection] = useState<number | null>(null);
 
   // List Your Property Form Questions State
   const [formQuestions, setFormQuestions] = useState<FormQuestion[]>([]);
@@ -3591,9 +3592,19 @@ export default function ContentManagementPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => document.getElementById(`about-img-${index}`)?.click()}
+                          disabled={uploadingImageForSection === index}
                         >
-                          <Upload className="w-4 h-4 mr-2" />
-                          {section?.image ? 'Change Image' : 'Upload Image'}
+                          {uploadingImageForSection === index ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              {section?.image ? 'Change Image' : 'Upload Image'}
+                            </>
+                          )}
                         </Button>
                         <input
                           id={`about-img-${index}`}
@@ -3603,6 +3614,7 @@ export default function ContentManagementPage() {
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
+                              setUploadingImageForSection(index);
                               try {
                                 const url = await uploadImageToS3(file);
                                 const newSections = [...aboutSections];
@@ -3613,6 +3625,8 @@ export default function ContentManagementPage() {
                                 setAboutSections(newSections);
                               } catch (error) {
                                 alert('Error uploading image');
+                              } finally {
+                                setUploadingImageForSection(null);
                               }
                             }
                           }}
