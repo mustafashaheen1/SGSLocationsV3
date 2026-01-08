@@ -120,6 +120,7 @@ export default function ContentManagementPage() {
   const [logoImagePreview, setLogoImagePreview] = useState<string>('');
   const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
   const [editLogoPreview, setEditLogoPreview] = useState<string>('');
+  const aboutSectionsEndRef = useRef<HTMLDivElement>(null);
 
   // Home Page Content States
   const [heroMediaType, setHeroMediaType] = useState<'video' | 'photo'>('video');
@@ -895,6 +896,11 @@ export default function ContentManagementPage() {
       image: ''
     };
     setAboutSections([...aboutSections, newSection]);
+
+    // Scroll to the newly added section after state update
+    setTimeout(() => {
+      aboutSectionsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
   }
 
   async function handleAboutVideoUpload(file: File, sectionIndex: number) {
@@ -3966,6 +3972,8 @@ export default function ContentManagementPage() {
                   </div>
                 </div>
               ))}
+              {/* Scroll target for new sections */}
+              <div ref={aboutSectionsEndRef} />
             </CardContent>
           </Card>
         </TabsContent>

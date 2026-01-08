@@ -41,7 +41,7 @@ function DynamicSection({ section, index }: { section: any; index: number }) {
   };
 
   const ContentColumn = () => (
-    <div className={`col-md-6 ${isTextOnly ? 'offset-md-3 text-center' : ''} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${!isMediaLeft && !isTextOnly ? 'm-order-1' : ''}`}>
+    <div className={`${isTextOnly ? 'col-12 text-center' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${!isMediaLeft && !isTextOnly ? 'm-order-1' : ''}`}>
       <div className="w-100">
         {section.title && (
           <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
@@ -366,7 +366,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* SECTION 3: Media Left, Content Right */}
+        {/* SECTION 3: Media Left, Content Right OR Text Only Centered */}
         {(sections[2]?.title || sections[2]?.content) && (
           <section className="row">
             {sections[2]?.mediaType !== 'none' && (sections[2]?.image || sections[2]?.videoUrl) && (
@@ -390,8 +390,8 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
-            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
-              <div className="w-100">
+            <div className={`${sections[2]?.mediaType === 'none' || (!sections[2]?.image && !sections[2]?.videoUrl) ? 'col-12' : 'col-md-6'} d-flex justify-content-center align-items-center flex-column px-md-5 py-5`}>
+              <div className={`${sections[2]?.mediaType === 'none' || (!sections[2]?.image && !sections[2]?.videoUrl) ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[2]?.title || "Trusted by Major Productions"}
                 </h3>
