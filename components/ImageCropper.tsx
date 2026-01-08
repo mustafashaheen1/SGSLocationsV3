@@ -78,7 +78,7 @@ export default function ImageCropper({
             variant="outline"
             size="sm"
             disabled={processing}
-            className="text-white border-white hover:bg-white hover:text-black"
+            className="text-black bg-white border-white hover:bg-gray-200"
           >
             Cancel
           </Button>
