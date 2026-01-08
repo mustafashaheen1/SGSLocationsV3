@@ -366,31 +366,11 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* SECTION 3: Content Left, Media Right */}
+        {/* SECTION 3: Media Left, Content Right */}
         {(sections[2]?.title || sections[2]?.content) && (
           <section className="row">
-            <div className="col-md-6 py-5 px-md-5 d-flex justify-content-center align-items-center flex-column m-order-1">
-              <div className="w-100">
-                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
-                  {sections[2]?.title || "Trusted by Major Productions"}
-                </h3>
-                <p className="mb-4 text-gray-700">
-                  {sections[2]?.content || "SGS Locations provides exclusive filming locations to the entertainment industry for motion picture, television, commercial, and print projects across the Dallas-Fort Worth area."}
-                </p>
-                {sections[2]?.linkText && sections[2]?.linkUrl && (
-                  <Link
-                    href={sections[2].linkUrl}
-                    className="text-[#dc2626] hover:underline font-medium"
-                    target={sections[2].linkUrl.startsWith('http') ? '_blank' : undefined}
-                    rel={sections[2].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  >
-                    {sections[2].linkText}
-                  </Link>
-                )}
-              </div>
-            </div>
             {sections[2]?.mediaType !== 'none' && (sections[2]?.image || sections[2]?.videoUrl) && (
-              <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
+              <div className="d-flex col-md-6 justify-content-center align-items-center border">
                 {sections[2]?.image ? (
                   <Image
                     src={sections[2].image}
@@ -410,14 +390,54 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
+            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
+              <div className="w-100">
+                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
+                  {sections[2]?.title || "Trusted by Major Productions"}
+                </h3>
+                <p className="mb-4 text-gray-700">
+                  {sections[2]?.content || "SGS Locations provides exclusive filming locations to the entertainment industry for motion picture, television, commercial, and print projects across the Dallas-Fort Worth area."}
+                </p>
+                {sections[2]?.linkText && sections[2]?.linkUrl && (
+                  <Link
+                    href={sections[2].linkUrl}
+                    className="text-[#dc2626] hover:underline font-medium"
+                    target={sections[2].linkUrl.startsWith('http') ? '_blank' : undefined}
+                    rel={sections[2].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {sections[2].linkText}
+                  </Link>
+                )}
+              </div>
+            </div>
           </section>
         )}
 
-        {/* SECTION 4: Media Left, Content Right */}
+        {/* SECTION 4: Content Left, Media Right */}
         {(sections[3]?.title || sections[3]?.content) && (
           <section className="row">
+            <div className="col-md-6 py-5 px-md-5 d-flex justify-content-center align-items-center flex-column m-order-1">
+              <div className="w-100">
+                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
+                  {sections[3]?.title || "Dallas Business Journal | SGS Locations Brings Professional Location Services to DFW"}
+                </h3>
+                <p className="mb-4 text-gray-700">
+                  {sections[3]?.content || "SGS Locations has been featured in the Dallas Business Journal for its innovative approach to connecting property owners with production companies. The article highlights our commitment to excellence and our role in supporting the growing film industry in North Texas."}
+                </p>
+                {sections[3]?.linkText && sections[3]?.linkUrl && (
+                  <Link
+                    href={sections[3].linkUrl}
+                    className="text-[#dc2626] hover:underline font-medium"
+                    target={sections[3].linkUrl.startsWith('http') ? '_blank' : undefined}
+                    rel={sections[3].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {sections[3].linkText}
+                  </Link>
+                )}
+              </div>
+            </div>
             {sections[3]?.mediaType !== 'none' && (sections[3]?.image || sections[3]?.videoUrl) && (
-              <div className="d-flex col-md-6 justify-content-center align-items-center border">
+              <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
                 {sections[3]?.image ? (
                   <Image
                     src={sections[3].image}
@@ -437,44 +457,14 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
-            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
-              <div className="w-100">
-                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
-                  {sections[3]?.title || "Dallas Business Journal | SGS Locations Brings Professional Location Services to DFW"}
-                </h3>
-                <p className="mb-4 text-gray-700">
-                  {sections[3]?.content || "SGS Locations has been featured in the Dallas Business Journal for its innovative approach to connecting property owners with production companies. The article highlights our commitment to excellence and our role in supporting the growing film industry in North Texas."}
-                </p>
-                {sections[3]?.linkText && sections[3]?.linkUrl && (
-                  <Link href={sections[3].linkUrl} className="text-[#dc2626] hover:underline font-medium">
-                    {sections[3].linkText}
-                  </Link>
-                )}
-              </div>
-            </div>
           </section>
         )}
 
-        {/* SECTION 5: Content Left, Media Right */}
+        {/* SECTION 5: Media Left, Content Right */}
         {(sections[4]?.title || sections[4]?.content) && (
           <section className="row">
-            <div className="col-md-6 py-5 px-md-5 d-flex justify-content-center align-items-center flex-column m-order-1">
-              <div className="w-100">
-                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
-                  {sections[4]?.title || "SGS Locations is a proud member of the Film Industry"}
-                </h3>
-                <p className="mb-4 text-gray-700">
-                  {sections[4]?.content || "We are committed to upholding the highest professional standards in the location services industry. Our membership demonstrates our dedication to excellence, ethical business practices, and collaboration with fellow industry professionals to support the growth of film and television production in Texas."}
-                </p>
-                {sections[4]?.linkText && sections[4]?.linkUrl && (
-                  <Link href={sections[4].linkUrl} target="_blank" rel="noopener noreferrer" className="text-[#dc2626] hover:underline font-medium">
-                    {sections[4].linkText}
-                  </Link>
-                )}
-              </div>
-            </div>
             {sections[4]?.mediaType !== 'none' && (sections[4]?.image || sections[4]?.videoUrl) && (
-              <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
+              <div className="d-flex col-md-6 justify-content-center align-items-center border">
                 {sections[4]?.image ? (
                   <Image
                     src={sections[4].image}
@@ -494,14 +484,54 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
+            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
+              <div className="w-100">
+                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
+                  {sections[4]?.title || "SGS Locations is a proud member of the Film Industry"}
+                </h3>
+                <p className="mb-4 text-gray-700">
+                  {sections[4]?.content || "We are committed to upholding the highest professional standards in the location services industry. Our membership demonstrates our dedication to excellence, ethical business practices, and collaboration with fellow industry professionals to support the growth of film and television production in Texas."}
+                </p>
+                {sections[4]?.linkText && sections[4]?.linkUrl && (
+                  <Link
+                    href={sections[4].linkUrl}
+                    className="text-[#dc2626] hover:underline font-medium"
+                    target={sections[4].linkUrl.startsWith('http') ? '_blank' : undefined}
+                    rel={sections[4].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {sections[4].linkText}
+                  </Link>
+                )}
+              </div>
+            </div>
           </section>
         )}
 
-        {/* SECTION 6: Media Left, Content Right */}
+        {/* SECTION 6: Content Left, Media Right */}
         {(sections[5]?.title || sections[5]?.content) && (
           <section className="row">
+            <div className="col-md-6 py-5 px-md-5 d-flex justify-content-center align-items-center flex-column m-order-1">
+              <div className="w-100">
+                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
+                  {sections[5]?.title || "SGS Locations is in full compliance with the Texas Film Commission"}
+                </h3>
+                <p className="mb-4 text-gray-700">
+                  {sections[5]?.content || "As a licensed location service operating in Texas, we maintain full compliance with all Texas Film Commission regulations and requirements. This ensures that every production we support meets state standards and benefits from available film incentives and support programs."}
+                </p>
+                {sections[5]?.linkText && sections[5]?.linkUrl && (
+                  <Link
+                    href={sections[5].linkUrl}
+                    className="text-[#dc2626] hover:underline font-medium"
+                    target={sections[5].linkUrl.startsWith('http') ? '_blank' : undefined}
+                    rel={sections[5].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {sections[5].linkText}
+                  </Link>
+                )}
+              </div>
+            </div>
             {sections[5]?.mediaType !== 'none' && (sections[5]?.image || sections[5]?.videoUrl) && (
-              <div className="d-flex col-md-6 justify-content-center align-items-center border">
+              <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
                 {sections[5]?.image ? (
                   <Image
                     src={sections[5].image}
@@ -521,44 +551,14 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
-            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
-              <div className="w-100">
-                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
-                  {sections[5]?.title || "SGS Locations is in full compliance with the Texas Film Commission"}
-                </h3>
-                <p className="mb-4 text-gray-700">
-                  {sections[5]?.content || "As a licensed location service operating in Texas, we maintain full compliance with all Texas Film Commission regulations and requirements. This ensures that every production we support meets state standards and benefits from available film incentives and support programs."}
-                </p>
-                {sections[5]?.linkText && sections[5]?.linkUrl && (
-                  <Link href={sections[5].linkUrl} target="_blank" rel="noopener noreferrer" className="text-[#dc2626] hover:underline font-medium">
-                    {sections[5].linkText}
-                  </Link>
-                )}
-              </div>
-            </div>
           </section>
         )}
 
-        {/* SECTION 7: Content Left, Media Right */}
+        {/* SECTION 7: Media Left, Content Right */}
         {(sections[6]?.title || sections[6]?.content) && (
           <section className="row">
-            <div className="col-md-6 py-5 px-md-5 d-flex justify-content-center align-items-center flex-column m-order-1">
-              <div className="w-100">
-                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
-                  {sections[6]?.title || "SGS Locations partners with DFWFC"}
-                </h3>
-                <p className="mb-4 text-gray-700">
-                  {sections[6]?.content || "We proudly partner with the Dallas-Fort Worth Film Commission to promote the region as a premier destination for film and television production. Through this partnership, we help connect productions with local resources, talent, and support services."}
-                </p>
-                {sections[6]?.linkText && sections[6]?.linkUrl && (
-                  <Link href={sections[6].linkUrl} target="_blank" rel="noopener noreferrer" className="text-[#dc2626] hover:underline font-medium">
-                    {sections[6].linkText}
-                  </Link>
-                )}
-              </div>
-            </div>
             {sections[6]?.mediaType !== 'none' && (sections[6]?.image || sections[6]?.videoUrl) && (
-              <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
+              <div className="d-flex col-md-6 justify-content-center align-items-center border">
                 {sections[6]?.image ? (
                   <Image
                     src={sections[6].image}
@@ -578,6 +578,26 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
+            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
+              <div className="w-100">
+                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
+                  {sections[6]?.title || "SGS Locations partners with DFWFC"}
+                </h3>
+                <p className="mb-4 text-gray-700">
+                  {sections[6]?.content || "We proudly partner with the Dallas-Fort Worth Film Commission to promote the region as a premier destination for film and television production. Through this partnership, we help connect productions with local resources, talent, and support services."}
+                </p>
+                {sections[6]?.linkText && sections[6]?.linkUrl && (
+                  <Link
+                    href={sections[6].linkUrl}
+                    className="text-[#dc2626] hover:underline font-medium"
+                    target={sections[6].linkUrl.startsWith('http') ? '_blank' : undefined}
+                    rel={sections[6].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {sections[6].linkText}
+                  </Link>
+                )}
+              </div>
+            </div>
           </section>
         )}
 
