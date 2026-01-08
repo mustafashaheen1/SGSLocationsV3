@@ -176,7 +176,9 @@ export default function PortfolioPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleVisitLocation(item.property_id);
+                        if (item.property_id) {
+                          handleVisitLocation(item.property_id);
+                        }
                       }}
                       className="visit-btn bg-[#e11921] text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors"
                     >

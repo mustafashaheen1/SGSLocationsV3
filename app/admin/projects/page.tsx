@@ -20,7 +20,13 @@ export default function AdminProjectsPage() {
   const [uploadProgress, setUploadProgress] = useState('');
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    banner_image: string;
+    property_id: string;
+    display_order: number;
+    status: string;
+  }>({
     name: '',
     banner_image: '',
     property_id: '',
@@ -142,10 +148,13 @@ export default function AdminProjectsPage() {
       return;
     }
 
-    if (!formData.name || !formData.property_id) {
-      alert('Please fill in all required fields');
+    if (!formData.name) {
+      alert('Please fill in the project name');
       return;
     }
+
+    // Convert empty string to null for property_id
+    const propertyId = formData.property_id || null;
 
     if (editingProject) {
       // Update existing project using REST API
@@ -167,7 +176,7 @@ export default function AdminProjectsPage() {
         body: JSON.stringify({
           name: formData.name,
           banner_image: formData.banner_image,
-          property_id: formData.property_id,
+          property_id: propertyId,
           display_order: formData.display_order,
           status: formData.status
         })
@@ -201,7 +210,7 @@ export default function AdminProjectsPage() {
         body: JSON.stringify({
           name: formData.name,
           banner_image: formData.banner_image,
-          property_id: formData.property_id,
+          property_id: propertyId,
           display_order: formData.display_order,
           status: formData.status
         })
@@ -276,7 +285,7 @@ export default function AdminProjectsPage() {
     setFormData({
       name: project.name,
       banner_image: project.banner_image,
-      property_id: project.property_id,
+      property_id: project.property_id || '',
       display_order: project.display_order,
       status: project.status
     });
@@ -380,15 +389,14 @@ export default function AdminProjectsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Property/Location *
+                  Property/Location (Optional)
                 </label>
                 <select
-                  required
                   value={formData.property_id}
                   onChange={(e) => setFormData({ ...formData, property_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select a property...</option>
+                  <option value="">None - No property linked</option>
                   {properties.map((property) => (
                     <option key={property.id} value={property.id}>
                       {property.name} - {property.city}

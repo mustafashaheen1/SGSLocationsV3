@@ -51,7 +51,7 @@ interface Project {
   id: string;
   name: string;
   banner_image: string;
-  property_id: string;
+  property_id: string | null;
   display_order: number;
   status: string;
   created_at: string;
