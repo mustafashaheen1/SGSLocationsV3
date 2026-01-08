@@ -390,8 +390,8 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
-            <div className={`${sections[2]?.mediaType === 'none' || (!sections[2]?.image && !sections[2]?.videoUrl) ? 'col-12' : 'col-md-6'} d-flex justify-content-center align-items-center flex-column px-md-5 py-5`}>
-              <div className={`${sections[2]?.mediaType === 'none' || (!sections[2]?.image && !sections[2]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[2]?.image && !sections[2]?.videoUrl ? 'col-12' : 'col-md-6'} d-flex justify-content-center align-items-center flex-column px-md-5 py-5`}>
+              <div className={`${!sections[2]?.image && !sections[2]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[2]?.title || "Trusted by Major Productions"}
                 </h3>
@@ -416,8 +416,8 @@ export default function AboutPage() {
         {/* SECTION 4: Content Left, Media Right OR Text Only Centered */}
         {(sections[3]?.title || sections[3]?.content) && (
           <section className="row">
-            <div className={`${sections[3]?.mediaType === 'none' || (!sections[3]?.image && !sections[3]?.videoUrl) ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[3]?.mediaType !== 'none' && (sections[3]?.image || sections[3]?.videoUrl) ? 'm-order-1' : ''}`}>
-              <div className={`${sections[3]?.mediaType === 'none' || (!sections[3]?.image && !sections[3]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[3]?.image && !sections[3]?.videoUrl ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[3]?.image || sections[3]?.videoUrl ? 'm-order-1' : ''}`}>
+              <div className={`${!sections[3]?.image && !sections[3]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[3]?.title || "Dallas Business Journal | SGS Locations Brings Professional Location Services to DFW"}
                 </h3>
@@ -484,8 +484,8 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
-            <div className={`${sections[4]?.mediaType === 'none' || (!sections[4]?.image && !sections[4]?.videoUrl) ? 'col-12' : 'col-md-6'} d-flex justify-content-center align-items-center flex-column px-md-5 py-5`}>
-              <div className={`${sections[4]?.mediaType === 'none' || (!sections[4]?.image && !sections[4]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[4]?.image && !sections[4]?.videoUrl ? 'col-12' : 'col-md-6'} d-flex justify-content-center align-items-center flex-column px-md-5 py-5`}>
+              <div className={`${!sections[4]?.image && !sections[4]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[4]?.title || "SGS Locations is a proud member of the Film Industry"}
                 </h3>
@@ -510,8 +510,8 @@ export default function AboutPage() {
         {/* SECTION 6: Content Left, Media Right OR Text Only Centered */}
         {(sections[5]?.title || sections[5]?.content) && (
           <section className="row">
-            <div className={`${sections[5]?.mediaType === 'none' || (!sections[5]?.image && !sections[5]?.videoUrl) ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[5]?.mediaType !== 'none' && (sections[5]?.image || sections[5]?.videoUrl) ? 'm-order-1' : ''}`}>
-              <div className={`${sections[5]?.mediaType === 'none' || (!sections[5]?.image && !sections[5]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[5]?.image && !sections[5]?.videoUrl ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[5]?.image || sections[5]?.videoUrl ? 'm-order-1' : ''}`}>
+              <div className={`${!sections[5]?.image && !sections[5]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[5]?.title || "SGS Locations is in full compliance with the Texas Film Commission"}
                 </h3>
@@ -578,8 +578,8 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
-            <div className={`${sections[6]?.mediaType === 'none' || (!sections[6]?.image && !sections[6]?.videoUrl) ? 'col-12' : 'col-md-6'} d-flex justify-content-center align-items-center flex-column px-md-5 py-5`}>
-              <div className={`${sections[6]?.mediaType === 'none' || (!sections[6]?.image && !sections[6]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[6]?.image && !sections[6]?.videoUrl ? 'col-12' : 'col-md-6'} d-flex justify-content-center align-items-center flex-column px-md-5 py-5`}>
+              <div className={`${!sections[6]?.image && !sections[6]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[6]?.title || "SGS Locations partners with DFWFC"}
                 </h3>
@@ -604,8 +604,8 @@ export default function AboutPage() {
         {/* SECTION 8: Media Right, Content Left OR Text Only Centered */}
         {(sections[7]?.title || sections[7]?.content) && (
           <section className="row">
-            <div className={`${sections[7]?.mediaType === 'none' || (!sections[7]?.image && !sections[7]?.videoUrl) ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[7]?.mediaType !== 'none' && (sections[7]?.image || sections[7]?.videoUrl) ? 'm-order-1' : ''}`}>
-              <div className={`${sections[7]?.mediaType === 'none' || (!sections[7]?.image && !sections[7]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[7]?.image && !sections[7]?.videoUrl ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[7]?.image || sections[7]?.videoUrl ? 'm-order-1' : ''}`}>
+              <div className={`${!sections[7]?.image && !sections[7]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[7]?.title || "Featured in Local Media Coverage"}
                 </h3>
@@ -668,8 +668,8 @@ export default function AboutPage() {
                 ) : null}
               </div>
             )}
-            <div className={`${sections[8]?.mediaType === 'none' || (!sections[8]?.image && !sections[8]?.videoUrl) ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column`}>
-              <div className={`${sections[8]?.mediaType === 'none' || (!sections[8]?.image && !sections[8]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[8]?.image && !sections[8]?.videoUrl ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column`}>
+              <div className={`${!sections[8]?.image && !sections[8]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[8]?.title || "Check out recent recognition we received:"}
                 </h3>
@@ -689,8 +689,8 @@ export default function AboutPage() {
         {/* SECTION 10: Media Right, Content Left OR Text Only Centered */}
         {(sections[9]?.title || sections[9]?.content) && (
           <section className="row">
-            <div className={`${sections[9]?.mediaType === 'none' || (!sections[9]?.image && !sections[9]?.videoUrl) ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[9]?.mediaType !== 'none' && (sections[9]?.image || sections[9]?.videoUrl) ? 'm-order-1' : ''}`}>
-              <div className={`${sections[9]?.mediaType === 'none' || (!sections[9]?.image && !sections[9]?.videoUrl) ? 'text-center' : ''} w-100`}>
+            <div className={`${!sections[9]?.image && !sections[9]?.videoUrl ? 'col-12' : 'col-md-6'} py-5 px-md-5 d-flex justify-content-center align-items-center flex-column ${sections[9]?.image || sections[9]?.videoUrl ? 'm-order-1' : ''}`}>
+              <div className={`${!sections[9]?.image && !sections[9]?.videoUrl ? 'text-center' : ''} w-100`}>
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[9]?.title || "Licensed & Insured"}
                 </h3>
