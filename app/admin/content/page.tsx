@@ -1424,20 +1424,7 @@ export default function ContentManagementPage() {
   async function savePortfolioVisibility() {
     setSaving(true);
     try {
-      const { error } = await (supabase
-        .from('site_settings') as any)
-        .upsert({
-          key: 'portfolio_visible',
-          value: JSON.stringify(portfolioVisible),
-          page: 'portfolio',
-          section: 'visibility',
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'key'
-        });
-
-      if (error) throw error;
-
+      await saveSiteSetting('portfolio_visible', JSON.stringify(portfolioVisible), 'portfolio', 'visibility');
       alert('Portfolio visibility updated successfully!');
     } catch (error: any) {
       alert('Error saving: ' + error.message);

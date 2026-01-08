@@ -100,8 +100,18 @@ export default function HomePage() {
               console.log('🎥 Proxied video URL:', proxiedUrl);
               setHeroVideo(proxiedUrl);
             }
-            if (setting.key === 'hero_title') setHeroTitle(setting.value || '');
-            if (setting.key === 'hero_subtitle') setHeroSubtitle(setting.value || '');
+            if (setting.key === 'hero_title') {
+              let titleValue = setting.value || '';
+              // Strip any surrounding quotes that may have been stored
+              titleValue = titleValue.trim().replace(/^["']|["']$/g, '');
+              setHeroTitle(titleValue);
+            }
+            if (setting.key === 'hero_subtitle') {
+              let subtitleValue = setting.value || '';
+              // Strip any surrounding quotes that may have been stored
+              subtitleValue = subtitleValue.trim().replace(/^["']|["']$/g, '');
+              setHeroSubtitle(subtitleValue);
+            }
           });
         }
 
@@ -422,13 +432,13 @@ export default function HomePage() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
             {productionLogos.map((item) => (
-              <div key={item.id} className="flex items-center justify-center h-20 w-full">
+              <div key={item.id} className="flex items-center justify-center h-32 w-full">
                 <img
                   src={item.logo_url}
                   alt={item.name}
-                  className="max-h-16 max-w-[180px] w-auto object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                  className="max-h-24 max-w-[240px] w-auto object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
                   onError={(e) => {
-                    e.currentTarget.src = `https://via.placeholder.com/200x80/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`;
+                    e.currentTarget.src = `https://via.placeholder.com/240x96/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`;
                   }}
                 />
               </div>
