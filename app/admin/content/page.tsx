@@ -146,6 +146,7 @@ export default function ContentManagementPage() {
   const [aboutSections, setAboutSections] = useState<any[]>([]);
   const [uploadingVideoForSection, setUploadingVideoForSection] = useState<number | null>(null);
   const [uploadingImageForSection, setUploadingImageForSection] = useState<number | null>(null);
+  const [uploadingPdfForSection, setUploadingPdfForSection] = useState<number | null>(null);
 
   // List Your Property Form Questions State
   const [formQuestions, setFormQuestions] = useState<FormQuestion[]>([]);
@@ -3896,17 +3897,20 @@ export default function ContentManagementPage() {
                               setAboutSections(newSections);
                             }}
                             placeholder="e.g., /search or https://..."
+                            disabled={uploadingPdfForSection === index}
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-medium mb-1">Or Upload PDF</label>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 items-center">
                             <Input
                               type="file"
                               accept=".pdf"
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
+
+                                setUploadingPdfForSection(index);
 
                                 try {
                                   // Step 1: Get presigned URL
@@ -3957,15 +3961,28 @@ export default function ContentManagementPage() {
                                 } catch (error: any) {
                                   console.error('Error uploading PDF:', error);
                                   alert(`Failed to upload PDF: ${error.message}`);
+                                } finally {
+                                  setUploadingPdfForSection(null);
                                 }
 
                                 // Reset file input
                                 e.target.value = '';
                               }}
                               className="text-xs"
+                              disabled={uploadingPdfForSection === index}
                             />
+                            {uploadingPdfForSection === index && (
+                              <div className="flex items-center gap-2">
+                                <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+                                <span className="text-xs text-blue-600">Uploading...</span>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">Upload a PDF to automatically set it as the link URL</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {uploadingPdfForSection === index
+                              ? 'Please wait while the PDF is being uploaded...'
+                              : 'Upload a PDF to automatically set it as the link URL'}
+                          </p>
                         </div>
                       </div>
                     </div>
