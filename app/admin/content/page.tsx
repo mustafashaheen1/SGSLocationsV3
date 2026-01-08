@@ -1502,6 +1502,48 @@ export default function ContentManagementPage() {
         return;
       }
 
+      // Check if position changed - if so, use reorder API first
+      if (updates.display_order !== undefined) {
+        const currentProject = projects.find(p => p.id === id);
+        if (currentProject && updates.display_order !== currentProject.display_order) {
+          const reorderResponse = await fetch('/api/projects/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: id,
+              newPosition: updates.display_order
+            })
+          });
+
+          if (!reorderResponse.ok) {
+            const error = await reorderResponse.json();
+            throw new Error(`Failed to update position: ${error.error || 'Unknown error'}`);
+          }
+
+          const reorderResult = await reorderResponse.json();
+
+          // Remove display_order from updates since it's already handled
+          const { display_order, ...otherUpdates } = updates;
+
+          // If there are other updates, continue with them
+          if (Object.keys(otherUpdates).length > 0) {
+            updates = otherUpdates;
+          } else {
+            // Only position changed, we're done
+            await fetchProjects();
+            setEditingProject(null);
+            setProjectImageFile(null);
+            setProjectImagePreview('');
+            if (reorderResult.affectedCount > 0) {
+              alert(`Position updated! ${reorderResult.message}`);
+            } else {
+              alert('Project updated successfully!');
+            }
+            return;
+          }
+        }
+      }
+
       const updateData = {
         ...updates,
         updated_at: new Date().toISOString()
@@ -1547,14 +1589,29 @@ export default function ContentManagementPage() {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
     try {
-      const { error } = await (supabase
-        .from('projects') as any)
-        .delete()
-        .eq('id', id);
+      // Use delete API endpoint that handles position reordering
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete project');
+      }
+
+      const result = await response.json();
+
       fetchProjects();
-      alert('Project deleted successfully!');
+
+      // Show how many projects were repositioned
+      if (result.affectedCount > 0) {
+        alert(`Project deleted! ${result.affectedCount} project(s) repositioned.`);
+      } else {
+        alert('Project deleted successfully!');
+      }
     } catch (error: any) {
       alert('Error deleting project: ' + error.message);
     }
@@ -2616,6 +2673,9 @@ export default function ContentManagementPage() {
                             onChange={(e) => setEditingProject({...editingProject, display_order: parseInt(e.target.value) || 1})}
                             placeholder="Position (1, 2, 3...)"
                           />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Position in portfolio (1 = first). Changes will automatically shift other projects.
+                          </p>
                         </div>
                         <div className="relative" ref={editPropertyDropdownRef}>
                           <button

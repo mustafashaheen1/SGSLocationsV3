@@ -165,6 +165,32 @@ export default function AdminProjectsPage() {
         return;
       }
 
+      // Check if position changed - if so, use reorder API
+      if (formData.display_order !== editingProject.display_order) {
+        const reorderResponse = await fetch('/api/projects/reorder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            projectId: editingProject.id,
+            newPosition: formData.display_order
+          })
+        });
+
+        if (!reorderResponse.ok) {
+          const error = await reorderResponse.json();
+          alert(`Failed to update position: ${error.error || 'Unknown error'}`);
+          return;
+        }
+
+        const reorderResult = await reorderResponse.json();
+        if (reorderResult.affectedCount > 0) {
+          alert(`${reorderResult.message}`);
+        }
+      }
+
+      // Update other fields (name, banner, property, status)
       const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects?id=eq.${editingProject.id}`, {
         method: 'PATCH',
         headers: {
@@ -177,7 +203,6 @@ export default function AdminProjectsPage() {
           name: formData.name,
           banner_image: formData.banner_image,
           property_id: propertyId,
-          display_order: formData.display_order,
           status: formData.status
         })
       });
@@ -243,7 +268,7 @@ export default function AdminProjectsPage() {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-      setDeleteProgress('🗑️ Deleting project from database...');
+      setDeleteProgress('🗑️ Deleting project and adjusting positions...');
 
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -251,24 +276,30 @@ export default function AdminProjectsPage() {
         throw new Error('Session expired. Please log in again.');
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects?id=eq.${id}`, {
+      // Use delete API endpoint that handles position reordering
+      const response = await fetch(`/api/projects/${id}`, {
         method: 'DELETE',
         headers: {
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Prefer': 'return=minimal'
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error);
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete project');
       }
+
+      const result = await response.json();
 
       setDeleteProgress('✓ Project deleted successfully!');
 
+      // Show how many projects were repositioned
+      if (result.affectedCount > 0) {
+        setDeleteProgress(`✓ Project deleted! ${result.affectedCount} project(s) repositioned.`);
+      }
+
       // Short delay to show success message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       await fetchProjects();
     } catch (error: any) {
@@ -411,11 +442,15 @@ export default function AdminProjectsPage() {
                 </label>
                 <input
                   type="number"
+                  min="1"
                   value={formData.display_order}
-                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 1 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
+                  placeholder="1"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Position in portfolio (1 = first). Changes will automatically shift other projects.
+                </p>
               </div>
 
               <div>
