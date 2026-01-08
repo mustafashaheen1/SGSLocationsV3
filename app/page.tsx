@@ -432,13 +432,13 @@ export default function HomePage() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
             {productionLogos.map((item) => (
-              <div key={item.id} className="flex items-center justify-center h-32 w-full">
+              <div key={item.id} className="flex items-center justify-center h-64 w-full">
                 <img
                   src={item.logo_url}
                   alt={item.name}
-                  className="max-h-24 max-w-[240px] w-auto object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                  className="max-h-48 max-w-[480px] w-auto object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
                   onError={(e) => {
-                    e.currentTarget.src = `https://via.placeholder.com/240x96/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`;
+                    e.currentTarget.src = `https://via.placeholder.com/480x192/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`;
                   }}
                 />
               </div>
