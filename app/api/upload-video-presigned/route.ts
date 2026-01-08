@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       Bucket: process.env.NEXT_PUBLIC_AWS_S3_BUCKET!,
       Key: uniqueFileName,
       ContentType: fileType,
-      ACL: 'public-read',
+      // ACL removed - bucket should have public access configured at bucket level
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, {

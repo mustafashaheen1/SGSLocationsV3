@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       Key: fileName,
       Body: buffer,
       ContentType: file.type,
-      ACL: 'public-read',
+      // ACL removed - bucket should have public access configured at bucket level
     });
 
     await s3Client.send(command);
