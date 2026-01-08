@@ -121,6 +121,15 @@ export default function AboutPage() {
             section[item.key] = value;
           });
 
+          // Debug log for section 7
+          if (i === 7) {
+            console.log('Section 7 data:', section);
+            console.log('Has image?', !!section.image);
+            console.log('Has videoUrl?', !!section.videoUrl);
+            console.log('Image value:', section.image);
+            console.log('VideoUrl value:', section.videoUrl);
+          }
+
           sectionData.push(section);
         }
         setSections(sectionData);
