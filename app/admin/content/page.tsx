@@ -3892,6 +3892,52 @@ export default function ContentManagementPage() {
                             placeholder="e.g., /search or https://..."
                           />
                         </div>
+                        <div>
+                          <label className="block text-xs font-medium mb-1">Or Upload PDF</label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="file"
+                              accept=".pdf"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+
+                                try {
+                                  // Upload to S3
+                                  const formData = new FormData();
+                                  formData.append('file', file);
+
+                                  const uploadResponse = await fetch('/api/upload', {
+                                    method: 'POST',
+                                    body: formData,
+                                  });
+
+                                  if (!uploadResponse.ok) {
+                                    throw new Error('Upload failed');
+                                  }
+
+                                  const { url } = await uploadResponse.json();
+
+                                  // Set the uploaded PDF URL as link URL
+                                  const newSections = [...aboutSections];
+                                  if (!newSections[index]) newSections[index] = {};
+                                  newSections[index].linkUrl = url;
+                                  setAboutSections(newSections);
+
+                                  alert('PDF uploaded successfully!');
+                                } catch (error) {
+                                  console.error('Error uploading PDF:', error);
+                                  alert('Failed to upload PDF');
+                                }
+
+                                // Reset file input
+                                e.target.value = '';
+                              }}
+                              className="text-xs"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Upload a PDF to automatically set it as the link URL</p>
+                        </div>
                       </div>
                     </div>
                   </div>
