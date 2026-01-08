@@ -3903,25 +3903,40 @@ export default function ContentManagementPage() {
                                 if (!file) return;
 
                                 try {
-                                  // Upload to S3
-                                  const formData = new FormData();
-                                  formData.append('file', file);
-
-                                  const uploadResponse = await fetch('/api/upload', {
+                                  // Step 1: Get presigned URL
+                                  const presignedResponse = await fetch('/api/upload-video-presigned', {
                                     method: 'POST',
-                                    body: formData,
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      fileName: file.name,
+                                      fileType: file.type,
+                                      folder: 'pdfs',
+                                    }),
+                                  });
+
+                                  if (!presignedResponse.ok) {
+                                    throw new Error('Failed to get presigned URL');
+                                  }
+
+                                  const { uploadUrl, publicUrl } = await presignedResponse.json();
+
+                                  // Step 2: Upload directly to S3 using presigned URL
+                                  const uploadResponse = await fetch(uploadUrl, {
+                                    method: 'PUT',
+                                    body: file,
+                                    headers: {
+                                      'Content-Type': file.type,
+                                    },
                                   });
 
                                   if (!uploadResponse.ok) {
-                                    throw new Error('Upload failed');
+                                    throw new Error('Failed to upload to S3');
                                   }
 
-                                  const { url } = await uploadResponse.json();
-
-                                  // Set the uploaded PDF URL as link URL
+                                  // Step 3: Set the uploaded PDF URL as link URL
                                   const newSections = [...aboutSections];
                                   if (!newSections[index]) newSections[index] = {};
-                                  newSections[index].linkUrl = url;
+                                  newSections[index].linkUrl = publicUrl;
                                   setAboutSections(newSections);
 
                                   alert('PDF uploaded successfully!');
