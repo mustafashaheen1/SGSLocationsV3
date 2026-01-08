@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ImageCropper from '@/components/ImageCropper';
 
 interface SiteSetting {
   id: string;
@@ -187,6 +188,12 @@ export default function ContentManagementPage() {
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
   const [isPropertyDropdownOpen, setIsPropertyDropdownOpen] = useState(false);
   const [editPropertyDropdownOpen, setEditPropertyDropdownOpen] = useState(false);
+
+  // Image Cropper State
+  const [showCropper, setShowCropper] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>('');
+  const [originalFileName, setOriginalFileName] = useState<string>('');
+  const [isEditingImage, setIsEditingImage] = useState(false);
 
   // Refs for click-outside detection
   const addPropertyDropdownRef = useRef<HTMLDivElement>(null);
@@ -1553,6 +1560,41 @@ export default function ContentManagementPage() {
     }
   }
 
+  // Image Cropper Handlers
+  function handleImageSelect(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageToCrop(reader.result as string);
+      setOriginalFileName(file.name);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleCropComplete(croppedBlob: Blob) {
+    // Convert blob to File
+    const croppedFile = new File([croppedBlob], originalFileName, {
+      type: 'image/jpeg',
+    });
+
+    // Set the cropped image as the project image
+    setProjectImageFile(croppedFile);
+    setProjectImagePreview(URL.createObjectURL(croppedBlob));
+    setShowCropper(false);
+    setImageToCrop('');
+  }
+
+  function handleCropCancel() {
+    setShowCropper(false);
+    setImageToCrop('');
+    // If we're not editing an existing image, clear the preview
+    if (!isEditingImage) {
+      setProjectImageFile(null);
+      setProjectImagePreview('');
+    }
+    setIsEditingImage(false);
+  }
+
 
   async function fetchTermsAndConditions() {
     try {
@@ -2376,7 +2418,7 @@ export default function ContentManagementPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1">Property</label>
+                      <label className="block text-sm font-medium mb-1">Property (Optional)</label>
                       <div className="relative" ref={addPropertyDropdownRef}>
                         <button
                           type="button"
@@ -2461,30 +2503,47 @@ export default function ContentManagementPage() {
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setProjectImageFile(file);
-                                setProjectImagePreview(URL.createObjectURL(file));
+                                setIsEditingImage(false);
+                                handleImageSelect(file);
                               }
+                              e.target.value = '';
                             }}
                             className="hidden"
                           />
                         </div>
                       ) : (
-                        <div className="relative">
-                          <img
-                            src={projectImagePreview}
-                            alt="Preview"
-                            className="w-full h-40 object-cover border rounded"
-                          />
-                          <button
-                            type="button"
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <img
+                              src={projectImagePreview}
+                              alt="Preview"
+                              className="w-full h-40 object-cover border rounded"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProjectImageFile(null);
+                                setProjectImagePreview('');
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => {
-                              setProjectImageFile(null);
-                              setProjectImagePreview('');
+                              if (projectImageFile) {
+                                setIsEditingImage(true);
+                                handleImageSelect(projectImageFile);
+                              }
                             }}
-                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                            className="w-full"
                           >
-                            <X className="w-4 h-4" />
-                          </button>
+                            <Edit2 className="w-3 h-3 mr-1" />
+                            Adjust Image Position
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -2497,8 +2556,8 @@ export default function ContentManagementPage() {
                       onClick={async () => {
                         const name = (document.getElementById('new-project-name') as HTMLInputElement)?.value;
 
-                        if (!name || !selectedPropertyId || !projectImageFile) {
-                          alert('Please provide project name, property, and banner image');
+                        if (!name || !projectImageFile) {
+                          alert('Please provide project name and banner image');
                           return;
                         }
 
@@ -2507,7 +2566,7 @@ export default function ContentManagementPage() {
                           const bannerUrl = await uploadImageToS3(projectImageFile, 'projects');
                           await addProject({
                             name,
-                            property_id: selectedPropertyId,
+                            property_id: selectedPropertyId || null,
                             banner_image: bannerUrl
                           });
                           setSelectedPropertyId('');
@@ -2548,6 +2607,16 @@ export default function ContentManagementPage() {
                           onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
                           placeholder="Project Name"
                         />
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Display Position</label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={editingProject.display_order}
+                            onChange={(e) => setEditingProject({...editingProject, display_order: parseInt(e.target.value) || 1})}
+                            placeholder="Position (1, 2, 3...)"
+                          />
+                        </div>
                         <div className="relative" ref={editPropertyDropdownRef}>
                           <button
                             type="button"
@@ -2632,22 +2701,38 @@ export default function ContentManagementPage() {
                               </Button>
                             </>
                           ) : (
-                            <div className="relative">
-                              <img
-                                src={projectImagePreview}
-                                alt="New preview"
-                                className="w-full h-32 object-cover rounded"
-                              />
-                              <button
-                                type="button"
+                            <div className="space-y-1">
+                              <div className="relative">
+                                <img
+                                  src={projectImagePreview}
+                                  alt="New preview"
+                                  className="w-full h-32 object-cover rounded"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setProjectImageFile(null);
+                                    setProjectImagePreview('');
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => {
-                                  setProjectImageFile(null);
-                                  setProjectImagePreview('');
+                                  if (projectImageFile) {
+                                    setIsEditingImage(true);
+                                    handleImageSelect(projectImageFile);
+                                  }
                                 }}
-                                className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"
+                                className="w-full"
                               >
-                                <X className="w-3 h-3" />
-                              </button>
+                                <Edit2 className="w-3 h-3 mr-1" />
+                                Adjust Position
+                              </Button>
                             </div>
                           )}
                           <input
@@ -2657,9 +2742,10 @@ export default function ContentManagementPage() {
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setProjectImageFile(file);
-                                setProjectImagePreview(URL.createObjectURL(file));
+                                setIsEditingImage(false);
+                                handleImageSelect(file);
                               }
+                              e.target.value = '';
                             }}
                             className="hidden"
                           />
@@ -2678,7 +2764,8 @@ export default function ContentManagementPage() {
                                 await updateProject(project.id, {
                                   name: editingProject.name,
                                   property_id: editingProject.property_id,
-                                  banner_image: bannerUrl
+                                  banner_image: bannerUrl,
+                                  display_order: editingProject.display_order
                                 });
                               } catch (error: any) {
                                 alert('Error updating project: ' + error.message);
@@ -2796,8 +2883,11 @@ export default function ContentManagementPage() {
                           onClick={() => setViewingProject(project)}
                         />
                         <p className="text-sm font-medium mb-1">{project.name}</p>
-                        <p className="text-xs text-gray-500 mb-2">
+                        <p className="text-xs text-gray-500">
                           Property: {properties.find(p => p.id === project.property_id)?.name || 'Unknown'}
+                        </p>
+                        <p className="text-xs text-gray-500 mb-2">
+                          Position: {project.display_order}
                         </p>
                         <div className="flex space-x-1">
                           <Button
@@ -4059,6 +4149,16 @@ export default function ContentManagementPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Image Cropper Modal */}
+      {showCropper && imageToCrop && (
+        <ImageCropper
+          image={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={16 / 9}
+        />
+      )}
     </div>
   );
 }

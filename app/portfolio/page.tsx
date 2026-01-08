@@ -153,11 +153,11 @@ export default function PortfolioPage() {
             return (
               <div
                 key={item.id}
-                className="portfolio-item group cursor-pointer"
+                className={`portfolio-item group ${item.property_id ? 'cursor-pointer' : ''}`}
                 style={{
                   flexBasis: `${aspectRatio * 250}px`
                 }}
-                onClick={() => handleVisitLocation(item.property_id)}
+                onClick={() => item.property_id && handleVisitLocation(item.property_id)}
               >
                 <Image
                   src={image}
@@ -172,15 +172,17 @@ export default function PortfolioPage() {
                   <h3 className="overlay-title text-white text-xl mb-4 px-4 text-center">
                     {item.name}
                   </h3>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleVisitLocation(item.property_id);
-                    }}
-                    className="visit-btn bg-[#e11921] text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors"
-                  >
-                    VISIT LOCATION
-                  </button>
+                  {item.property_id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleVisitLocation(item.property_id);
+                      }}
+                      className="visit-btn bg-[#e11921] text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors"
+                    >
+                      VISIT LOCATION
+                    </button>
+                  )}
                 </div>
               </div>
             );
