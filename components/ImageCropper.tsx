@@ -100,7 +100,7 @@ export default function ImageCropper({
           crop={crop}
           zoom={zoom}
           aspect={aspectRatio}
-          restrictPosition={false}
+          restrictPosition={true}
           onCropChange={onCropChange}
           onZoomChange={onZoomChange}
           onCropComplete={onCropCompleteCallback}
@@ -122,7 +122,7 @@ export default function ImageCropper({
             />
           </div>
           <p className="text-xs text-gray-400">
-            Drag to reposition, zoom to adjust size. The cropped area will adapt to the portfolio grid layout.
+            Drag to reposition and resize the crop area. Zoom to adjust the image size. The image will automatically adapt to fit the portfolio grid layout.
           </p>
         </div>
       </div>

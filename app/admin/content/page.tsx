@@ -4223,7 +4223,6 @@ export default function ContentManagementPage() {
           image={imageToCrop}
           onCropComplete={handleCropComplete}
           onCancel={handleCropCancel}
-          aspectRatio={1.5}
         />
       )}
     </div>
