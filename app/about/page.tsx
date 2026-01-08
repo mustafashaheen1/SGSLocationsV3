@@ -366,17 +366,49 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* SECTION 3: Centered Content */}
+        {/* SECTION 3: Media Left, Content Right */}
         {(sections[2]?.title || sections[2]?.content) && (
-          <section className="row py-5">
-            <div className="offset-md-3 col-md-6 d-flex justify-content-center flex-column px-md-5 py-5 text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">{sections[2]?.title || "Trusted by Major Productions"}</h2>
-              <p className="mb-4 text-gray-700">
-                {sections[2]?.content || "SGS Locations provides exclusive filming locations to the entertainment industry for motion picture, television, commercial, and print projects across the Dallas-Fort Worth area."}
-              </p>
-              <Link href={sections[2]?.linkUrl || "/search"} className="text-[#dc2626] hover:underline font-medium">
-                {sections[2]?.linkText || "Learn More About Our Services →"}
-              </Link>
+          <section className="row">
+            {sections[2]?.mediaType !== 'none' && (sections[2]?.image || sections[2]?.videoUrl) && (
+              <div className="d-flex col-md-6 justify-content-center align-items-center border">
+                {sections[2]?.image ? (
+                  <Image
+                    src={sections[2].image}
+                    alt={sections[2]?.title || "Section 3"}
+                    width={800}
+                    height={600}
+                    className="w-100 h-auto"
+                  />
+                ) : sections[2]?.videoUrl ? (
+                  <div className="w-100" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+                    <video
+                      src={sections[2].videoUrl}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                      controls
+                    />
+                  </div>
+                ) : null}
+              </div>
+            )}
+            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
+              <div className="w-100">
+                <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
+                  {sections[2]?.title || "Trusted by Major Productions"}
+                </h3>
+                <p className="mb-4 text-gray-700">
+                  {sections[2]?.content || "SGS Locations provides exclusive filming locations to the entertainment industry for motion picture, television, commercial, and print projects across the Dallas-Fort Worth area."}
+                </p>
+                {sections[2]?.linkText && sections[2]?.linkUrl && (
+                  <Link
+                    href={sections[2].linkUrl}
+                    className="text-[#dc2626] hover:underline font-medium"
+                    target={sections[2].linkUrl.startsWith('http') ? '_blank' : undefined}
+                    rel={sections[2].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {sections[2].linkText}
+                  </Link>
+                )}
+              </div>
             </div>
           </section>
         )}
