@@ -27,8 +27,11 @@ export interface Project {
  */
 export async function updateProjectPosition(
   projectId: string,
-  newPosition: number
+  newPosition: number,
+  supabaseClient?: SupabaseClient
 ): Promise<PositionUpdateResult> {
+  const supabase = supabaseClient || defaultSupabase;
+
   try {
     const { data, error } = await (supabase as any).rpc('update_project_position', {
       project_id: projectId,
@@ -77,7 +80,11 @@ export async function updateProjectPosition(
  * Normalize all project positions to sequential numbering (1, 2, 3...)
  * Removes gaps and ensures consistent ordering
  */
-export async function normalizeAllPositions(): Promise<PositionUpdateResult> {
+export async function normalizeAllPositions(
+  supabaseClient?: SupabaseClient
+): Promise<PositionUpdateResult> {
+  const supabase = supabaseClient || defaultSupabase;
+
   try {
     const { data, error } = await (supabase as any).rpc('normalize_project_positions');
 
@@ -113,7 +120,11 @@ export async function normalizeAllPositions(): Promise<PositionUpdateResult> {
  * Get the next available position for a new project
  * Returns max position + 1
  */
-export async function getNextPosition(): Promise<number> {
+export async function getNextPosition(
+  supabaseClient?: SupabaseClient
+): Promise<number> {
+  const supabase = supabaseClient || defaultSupabase;
+
   try {
     const { data, error } = await (supabase as any).rpc('get_next_project_position');
 
@@ -196,7 +207,7 @@ export async function deleteProjectAndReorder(
     if (shiftError) {
       console.error('Error shifting positions after delete:', shiftError);
       // Project is deleted but positions may have gaps - attempt normalize
-      await normalizeAllPositions();
+      await normalizeAllPositions(supabase);
     }
 
     const affectedCount = shiftData || 0;
@@ -224,11 +235,14 @@ export async function deleteProjectAndReorder(
  */
 export async function insertProjectAtPosition(
   projectData: Omit<Project, 'id' | 'created_at' | 'updated_at'>,
-  position?: number
+  position?: number,
+  supabaseClient?: SupabaseClient
 ): Promise<{ success: boolean; projectId?: string; message: string }> {
+  const supabase = supabaseClient || defaultSupabase;
+
   try {
     // If no position specified, append to end
-    const targetPosition = position || (await getNextPosition());
+    const targetPosition = position || (await getNextPosition(supabase));
 
     // Validate position
     const { data: projectCount } = await (supabase as any)
@@ -293,12 +307,16 @@ export async function insertProjectAtPosition(
 /**
  * Verify that all positions are sequential with no gaps or duplicates
  */
-export async function verifyPositions(): Promise<{
+export async function verifyPositions(
+  supabaseClient?: SupabaseClient
+): Promise<{
   isValid: boolean;
   gaps: number[];
   duplicates: number[];
   message: string;
 }> {
+  const supabase = supabaseClient || defaultSupabase;
+
   try {
     const { data: projects, error } = await (supabase as any)
       .from('projects')

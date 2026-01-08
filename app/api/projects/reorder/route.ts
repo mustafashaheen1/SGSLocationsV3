@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
     // Handle normalize action
     if (action === 'normalize') {
-      const result = await normalizeAllPositions();
+      const result = await normalizeAllPositions(supabase as any);
       return NextResponse.json(result);
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     }
 
     // Update the project position
-    const result = await updateProjectPosition(projectId, position);
+    const result = await updateProjectPosition(projectId, position, supabase as any);
 
     if (!result.success) {
       return NextResponse.json(
