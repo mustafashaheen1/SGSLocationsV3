@@ -3920,6 +3920,10 @@ export default function ContentManagementPage() {
 
                                   const { uploadUrl, publicUrl } = await presignedResponse.json();
 
+                                  console.log('Presigned URL generated:', uploadUrl);
+                                  console.log('File type:', file.type);
+                                  console.log('File size:', file.size);
+
                                   // Step 2: Upload directly to S3 using presigned URL
                                   const uploadResponse = await fetch(uploadUrl, {
                                     method: 'PUT',
@@ -3929,8 +3933,12 @@ export default function ContentManagementPage() {
                                     },
                                   });
 
+                                  console.log('Upload response status:', uploadResponse.status);
+
                                   if (!uploadResponse.ok) {
-                                    throw new Error(`Upload failed with status ${uploadResponse.status}`);
+                                    const errorText = await uploadResponse.text();
+                                    console.error('Upload failed:', errorText);
+                                    throw new Error(`Upload failed with status ${uploadResponse.status}: ${errorText}`);
                                   }
 
                                   // Step 3: Set the uploaded PDF URL as link URL
