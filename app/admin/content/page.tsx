@@ -1586,8 +1586,6 @@ export default function ContentManagementPage() {
   }
 
   async function deleteProject(id: string) {
-    if (!confirm('Are you sure you want to delete this project?')) return;
-
     try {
       // Get session for auth token
       const { data: { session } } = await supabase.auth.getSession();
@@ -1613,7 +1611,7 @@ export default function ContentManagementPage() {
 
       const result = await response.json();
 
-      fetchProjects();
+      await fetchProjects();
 
       // Show how many projects were repositioned
       if (result.affectedCount > 0) {
