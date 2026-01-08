@@ -366,31 +366,10 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* SECTION 3: Media Left, Content Right */}
+        {/* SECTION 3: Content Left, Media Right */}
         {(sections[2]?.title || sections[2]?.content) && (
           <section className="row">
-            {sections[2]?.mediaType !== 'none' && (sections[2]?.image || sections[2]?.videoUrl) && (
-              <div className="d-flex col-md-6 justify-content-center align-items-center border">
-                {sections[2]?.image ? (
-                  <Image
-                    src={sections[2].image}
-                    alt={sections[2]?.title || "Section 3"}
-                    width={800}
-                    height={600}
-                    className="w-100 h-auto"
-                  />
-                ) : sections[2]?.videoUrl ? (
-                  <div className="w-100" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
-                    <video
-                      src={sections[2].videoUrl}
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                      controls
-                    />
-                  </div>
-                ) : null}
-              </div>
-            )}
-            <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
+            <div className="col-md-6 py-5 px-md-5 d-flex justify-content-center align-items-center flex-column m-order-1">
               <div className="w-100">
                 <h3 className="h3 text-2xl font-semibold text-gray-900 mb-4">
                   {sections[2]?.title || "Trusted by Major Productions"}
@@ -410,6 +389,27 @@ export default function AboutPage() {
                 )}
               </div>
             </div>
+            {sections[2]?.mediaType !== 'none' && (sections[2]?.image || sections[2]?.videoUrl) && (
+              <div className="d-flex col-md-6 justify-content-center align-items-center border m-order-0">
+                {sections[2]?.image ? (
+                  <Image
+                    src={sections[2].image}
+                    alt={sections[2]?.title || "Section 3"}
+                    width={800}
+                    height={600}
+                    className="w-100 h-auto"
+                  />
+                ) : sections[2]?.videoUrl ? (
+                  <div className="w-100" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+                    <video
+                      src={sections[2].videoUrl}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                      controls
+                    />
+                  </div>
+                ) : null}
+              </div>
+            )}
           </section>
         )}
 
