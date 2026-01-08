@@ -1589,11 +1589,20 @@ export default function ContentManagementPage() {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
     try {
+      // Get session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       // Use delete API endpoint that handles position reordering
       const response = await fetch(`/api/projects/${id}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 
@@ -4216,6 +4225,7 @@ export default function ContentManagementPage() {
           image={imageToCrop}
           onCropComplete={handleCropComplete}
           onCancel={handleCropCancel}
+          aspectRatio={1.5}
         />
       )}
     </div>
