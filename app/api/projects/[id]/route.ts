@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerSideClient } from '@/lib/supabase-server';
+import { createServerSideClient, createServerSideClientWithToken } from '@/lib/supabase-server';
 import { deleteProjectAndReorder } from '@/lib/project-position-manager';
 
 /**
@@ -11,7 +11,16 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerSideClient();
+    // Try to get token from Authorization header first
+    const authHeader = request.headers.get('authorization');
+    let supabase;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      supabase = createServerSideClientWithToken(token);
+    } else {
+      supabase = await createServerSideClient();
+    }
 
     // Verify authentication
     const {
