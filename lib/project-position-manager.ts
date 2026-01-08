@@ -5,7 +5,8 @@
  * Ensures positions are always sequential (1, 2, 3...) with no duplicates or gaps.
  */
 
-import { supabase } from './supabase';
+import { supabase as defaultSupabase } from './supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface PositionUpdateResult {
   success: boolean;
@@ -143,11 +144,14 @@ export async function getNextPosition(): Promise<number> {
  * Delete a project and renumber remaining projects to close the gap
  */
 export async function deleteProjectAndReorder(
-  projectId: string
+  projectId: string,
+  supabaseClient?: SupabaseClient
 ): Promise<PositionUpdateResult> {
+  const supabase = supabaseClient || defaultSupabase;
+
   try {
     // Get the project's current position before deleting
-    const { data: project, error: fetchError } = await (supabase as any)
+    const { data: project, error: fetchError} = await (supabase as any)
       .from('projects')
       .select('display_order')
       .eq('id', projectId)

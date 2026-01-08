@@ -58,7 +58,7 @@ export async function DELETE(
     }
 
     // Delete the project and reorder positions
-    const result = await deleteProjectAndReorder(projectId);
+    const result = await deleteProjectAndReorder(projectId, supabase as any);
 
     if (!result.success) {
       return NextResponse.json(
