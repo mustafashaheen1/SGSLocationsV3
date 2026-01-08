@@ -10,6 +10,7 @@ const s3Client = new S3Client({
     accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!,
   },
+  requestChecksumCalculation: 'WHEN_REQUIRED', // Only calculate checksums when required
 });
 
 export async function POST(request: NextRequest) {
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
       Key: uniqueFileName,
       ContentType: fileType,
       // ACL removed - bucket should have public access configured at bucket level
+      ChecksumAlgorithm: undefined, // Disable automatic checksums for browser uploads
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, {
