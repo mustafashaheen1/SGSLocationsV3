@@ -46,7 +46,7 @@ export async function uploadImageToS3(file: File, folder: string = 'properties')
       Key: fileName,
       Body: Buffer.from(buffer),
       ContentType: file.type,
-      ACL: 'public-read',
+      // ACL removed - bucket should have public access configured at bucket level
     });
 
     await s3Client.send(command);
@@ -110,7 +110,7 @@ export async function uploadDocumentToS3(file: File, subfolder: string = ''): Pr
       Key: fileName,
       Body: Buffer.from(buffer),
       ContentType: file.type,
-      ACL: 'public-read',
+      // ACL removed - bucket should have public access configured at bucket level
     });
 
     await s3Client.send(command);
