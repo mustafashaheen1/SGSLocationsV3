@@ -527,6 +527,7 @@ export interface Property {
   daily_rate: number;
   images: string[];
   primary_image: string | null;
+  public_url: string;
   status: string;
   owner_id: string | null;
   albumkey: string | null;

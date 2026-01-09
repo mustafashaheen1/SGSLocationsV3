@@ -9,7 +9,7 @@ declare global {
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2, MessageSquare, Send, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2, MessageSquare, Send, AlertCircle, CheckCircle, Sparkles, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1537,6 +1537,33 @@ export default function EditPropertyPage() {
                     className="bg-gray-100 cursor-not-allowed"
                     placeholder="Generated automatically from real name"
                   />
+                </div>
+
+                {/* Public URL - Read-only clickable link */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Public URL
+                    <span className="text-gray-500 text-xs ml-2">(Visible to visitors)</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      value={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://sgslocations.com'}${property?.public_url || `/property/${propertyId}`}`}
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed pr-10 text-gray-700"
+                    />
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://sgslocations.com'}${property?.public_url || `/property/${propertyId}`}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-800 transition-colors"
+                      title="Open public page in new tab"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    This is the public URL where visitors can view this property
+                  </p>
                 </div>
 
                 <div className="col-span-2">
