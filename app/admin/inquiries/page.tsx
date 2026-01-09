@@ -106,7 +106,7 @@ export default function InquiriesPage() {
       <div className="space-y-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
             <p className="mt-2 text-gray-600">Loading inquiries...</p>
           </div>
         </div>

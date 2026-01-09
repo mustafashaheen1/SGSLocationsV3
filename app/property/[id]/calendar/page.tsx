@@ -78,7 +78,7 @@ export default function PropertyCalendarPage() {
     return (
       <div className="min-h-screen flex items-center justify-center pt-16 md:pt-20 lg:pt-28">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
           <p className="mt-2 text-gray-600">Loading calendar...</p>
         </div>
       </div>

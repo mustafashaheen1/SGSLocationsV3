@@ -1385,7 +1385,7 @@ export default function SearchPage() {
         }
 
         .done-btn:hover {
-          background: #c41519;
+          background: #e65a00;
         }
 
         .clear-all-btn {
@@ -1402,7 +1402,7 @@ export default function SearchPage() {
         }
 
         .clear-all-btn:hover {
-          background: #c41519;
+          background: #e65a00;
         }
 
         .dropdown-header {
@@ -1546,7 +1546,7 @@ export default function SearchPage() {
         }
 
         .save-search-btn:hover {
-          background: #c41519;
+          background: #e65a00;
         }
 
         .save-modal-overlay {
@@ -1686,7 +1686,7 @@ export default function SearchPage() {
         }
 
         .save-btn:hover:not(:disabled) {
-          background: #c41519;
+          background: #e65a00;
         }
 
         .save-btn:disabled {
@@ -1742,7 +1742,7 @@ export default function SearchPage() {
 
         .filter-tag,
         .active-filter-tag {
-          background-color: #dc2626 !important;
+          background-color: #fe751f !important;
           color: white !important;
           padding: 6px 12px !important;
           border-radius: 20px !important;

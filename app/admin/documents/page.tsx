@@ -269,7 +269,7 @@ export default function DocumentDirectoryPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
             <p className="mt-2 text-gray-600">Loading documents...</p>
           </div>
         ) : (
@@ -342,7 +342,7 @@ export default function DocumentDirectoryPage() {
                             </button>
                             <button
                               onClick={() => handleDelete(doc)}
-                              className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                              className="p-2 bg-brand hover:bg-brand-hover text-white rounded transition-colors"
                               title="Delete"
                             >
                               <Trash2 size={16} />
@@ -366,7 +366,7 @@ export default function DocumentDirectoryPage() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
               <h3 className="text-lg font-semibold mb-2">Deleting Document</h3>
               <p className="text-sm text-gray-600 mb-4">

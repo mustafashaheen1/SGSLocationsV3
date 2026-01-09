@@ -233,7 +233,7 @@ export default function RegisterPage() {
         }
 
         .register-page button[type="submit"]:hover {
-          background-color: #bf151c;
+          background-color: #e65a00;
         }
 
         .register-page button[type="submit"]:disabled {
@@ -256,7 +256,7 @@ export default function RegisterPage() {
 
           <div className="bg-white shadow-md sm:rounded-lg p-8">
             {errors.form && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-brand text-sm">
                 {errors.form}
               </div>
             )}
@@ -278,7 +278,7 @@ export default function RegisterPage() {
                   placeholder="John"
                 />
                 {errors.firstName && (
-                  <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>
+                  <p className="text-brand text-sm mt-1">{errors.firstName}</p>
                 )}
               </div>
 
@@ -297,7 +297,7 @@ export default function RegisterPage() {
                   placeholder="Doe"
                 />
                 {errors.lastName && (
-                  <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>
+                  <p className="text-brand text-sm mt-1">{errors.lastName}</p>
                 )}
               </div>
 
@@ -323,7 +323,7 @@ export default function RegisterPage() {
                   </p>
                 )}
                 {errors.email && (
-                  <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                  <p className="text-brand text-sm mt-1">{errors.email}</p>
                 )}
               </div>
 
@@ -360,7 +360,7 @@ export default function RegisterPage() {
                   placeholder="Minimum 8 characters"
                 />
                 {errors.password && (
-                  <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+                  <p className="text-brand text-sm mt-1">{errors.password}</p>
                 )}
               </div>
 
@@ -379,7 +379,7 @@ export default function RegisterPage() {
                   placeholder="Re-enter your password"
                 />
                 {errors.confirmPassword && (
-                  <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>
+                  <p className="text-brand text-sm mt-1">{errors.confirmPassword}</p>
                 )}
               </div>
 
@@ -400,7 +400,7 @@ export default function RegisterPage() {
                   }}
                 />
                 {errors.recaptcha && (
-                  <p className="text-red-600 text-sm mt-2 text-center">{errors.recaptcha}</p>
+                  <p className="text-brand text-sm mt-2 text-center">{errors.recaptcha}</p>
                 )}
               </div>
 

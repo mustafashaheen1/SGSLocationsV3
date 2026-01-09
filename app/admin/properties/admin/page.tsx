@@ -250,7 +250,7 @@ export default function AdminPropertiesPage() {
         </div>
         <Button
           onClick={() => router.push('/admin/properties/add')}
-          className="bg-brand hover:bg-red-700"
+          className="bg-brand hover:bg-brand-hover"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Property
@@ -279,7 +279,7 @@ export default function AdminPropertiesPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
             <p className="mt-2 text-gray-600">Loading properties...</p>
           </div>
         ) : (
@@ -361,7 +361,7 @@ export default function AdminPropertiesPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(property.id)}
-                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                            className="p-2 bg-brand hover:bg-brand-hover text-white rounded transition-colors"
                             title="Delete"
                           >
                             <Trash2 size={16} />

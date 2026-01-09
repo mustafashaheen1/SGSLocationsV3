@@ -787,7 +787,7 @@ export default function CategoriesPage() {
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                      className="absolute top-2 right-2 bg-brand text-white rounded-full p-1 hover:bg-brand-hover"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -924,7 +924,7 @@ export default function CategoriesPage() {
                           e.stopPropagation();
                           setImagePreview('');
                         }}
-                        className="text-sm text-red-600 hover:text-red-700"
+                        className="text-sm text-brand hover:text-brand-hover"
                       >
                         Remove Image
                       </button>
@@ -1082,7 +1082,7 @@ export default function CategoriesPage() {
                       <button
                         type="button"
                         onClick={removeImage}
-                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                        className="absolute top-2 right-2 bg-brand text-white rounded-full p-1 hover:bg-brand-hover"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -1357,7 +1357,7 @@ export default function CategoriesPage() {
             <div className="flex gap-2 mt-6">
               <Button
                 onClick={handleReassignAndDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-brand hover:bg-brand-hover"
                 disabled={uploading}
               >
                 {uploading ? 'Processing...' : `Reassign & Delete ${deletingMainCategory.name}`}
@@ -1384,7 +1384,7 @@ export default function CategoriesPage() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
               <h3 className="text-lg font-semibold mb-2">Deleting Category</h3>
               <p className="text-sm text-gray-600">{deleteProgress}</p>

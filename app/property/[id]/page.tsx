@@ -1257,9 +1257,9 @@ export default function PropertyDetailPage() {
                       boxSizing: 'border-box'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#bf151c';
-                      e.currentTarget.style.backgroundColor = '#bf151c';
-                      e.currentTarget.style.borderColor = '#bf151c';
+                      e.currentTarget.style.background = '#e65a00';
+                      e.currentTarget.style.backgroundColor = '#e65a00';
+                      e.currentTarget.style.borderColor = '#e65a00';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'rgb(225, 25, 33)';
@@ -1360,8 +1360,8 @@ export default function PropertyDetailPage() {
                       }}
                       onMouseEnter={(e) => {
                         if (!isDisabled) {
-                          e.currentTarget.style.background = '#bf151c';
-                          e.currentTarget.style.borderColor = '#bf151c';
+                          e.currentTarget.style.background = '#e65a00';
+                          e.currentTarget.style.borderColor = '#e65a00';
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -1531,7 +1531,7 @@ export default function PropertyDetailPage() {
                     setCopySuccess(true);
                     setTimeout(() => setCopySuccess(false), 2000);
                   }}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-brand text-white rounded hover:bg-brand-hover transition-colors flex items-center gap-2"
                 >
                   <Copy className="w-4 h-4" />
                   {copySuccess ? 'Copied!' : 'Copy'}
@@ -1569,7 +1569,7 @@ function ActionButton({ icon, text, onClick }: { icon: React.ReactNode; text: st
         cursor: 'pointer',
         transition: 'background 0.2s'
       }}
-      onMouseEnter={(e) => e.currentTarget.style.background = '#bf151c'}
+      onMouseEnter={(e) => e.currentTarget.style.background = '#e65a00'}
       onMouseLeave={(e) => e.currentTarget.style.background = '#fe751f'}
     >
       {icon}

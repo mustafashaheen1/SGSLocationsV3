@@ -825,7 +825,7 @@ export default function ProductionDashboard() {
                     <Button
                       onClick={handleChangePassword}
                       disabled={saving}
-                      className="bg-brand text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#e65a00]"
                     >
                       {saving ? 'Changing...' : 'Change Password'}
                     </Button>
@@ -850,7 +850,7 @@ export default function ProductionDashboard() {
                     <p className="text-gray-500 mb-4">You haven't listed any properties yet.</p>
                     <Button
                       onClick={() => router.push('/list-your-property')}
-                      className="bg-brand text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#e65a00]"
                     >
                       List Your First Property
                     </Button>
@@ -948,7 +948,7 @@ export default function ProductionDashboard() {
                                 </button>
                                 <button
                                   onClick={() => handleDeleteProperty(property.id, property.name)}
-                                  className="text-red-600 hover:text-red-900 p-1"
+                                  className="text-brand hover:text-red-900 p-1"
                                   title="Delete Property"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1026,7 +1026,7 @@ export default function ProductionDashboard() {
                           </button>
                           <button
                             onClick={() => handleDeleteProperty(property.id, property.name)}
-                            className="py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                            className="py-2 px-3 bg-brand hover:bg-brand-hover text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
                           >
                             <Trash2 className="w-4 h-4" />
                             Delete
@@ -1070,7 +1070,7 @@ export default function ProductionDashboard() {
                     </p>
                     <Button
                       onClick={() => router.push('/search')}
-                      className="bg-brand text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#e65a00]"
                     >
                       Go to Search
                     </Button>
@@ -1092,7 +1092,7 @@ export default function ProductionDashboard() {
                             </div>
                             <button
                               onClick={() => handleDeleteSearch(search.id, search.name)}
-                              className="text-gray-400 hover:text-red-600 p-1"
+                              className="text-gray-400 hover:text-brand p-1"
                               title="Delete search"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1116,7 +1116,7 @@ export default function ProductionDashboard() {
                                   {search.tags.slice(0, 5).map((tag: string, idx: number) => (
                                     <span
                                       key={idx}
-                                      className="inline-block px-2 py-1 bg-red-50 text-red-700 text-xs rounded-full border border-red-200"
+                                      className="inline-block px-2 py-1 bg-red-50 text-brand-hover text-xs rounded-full border border-red-200"
                                     >
                                       {tag}
                                     </span>
@@ -1141,7 +1141,7 @@ export default function ProductionDashboard() {
 
                           <Button
                             onClick={() => handleGoToSearch(search)}
-                            className="w-full bg-brand text-white hover:bg-[#bf151c] text-sm py-2"
+                            className="w-full bg-brand text-white hover:bg-[#e65a00] text-sm py-2"
                           >
                             View Results
                           </Button>
@@ -1173,7 +1173,7 @@ export default function ProductionDashboard() {
                     </p>
                     <Button
                       onClick={() => router.push('/search')}
-                      className="bg-brand text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#e65a00]"
                     >
                       Browse Properties
                     </Button>
@@ -1256,7 +1256,7 @@ export default function ProductionDashboard() {
                     </p>
                     <Button
                       onClick={() => router.push('/search')}
-                      className="bg-brand text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#e65a00]"
                     >
                       Browse Properties
                     </Button>
@@ -1303,14 +1303,14 @@ export default function ProductionDashboard() {
                             <div className="flex gap-2">
                               <Button
                                 onClick={() => router.push(`/property/${property.id}`)}
-                                className="flex-1 bg-brand text-white hover:bg-[#bf151c] text-sm py-2"
+                                className="flex-1 bg-brand text-white hover:bg-[#e65a00] text-sm py-2"
                               >
                                 <Eye className="w-4 h-4 mr-1" />
                                 View Property
                               </Button>
                               <button
                                 onClick={() => handleDeleteFavorite(favorite.id, property.name)}
-                                className="px-3 py-2 border border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded transition-colors"
+                                className="px-3 py-2 border border-gray-300 text-gray-700 hover:bg-red-50 hover:text-brand hover:border-red-300 rounded transition-colors"
                                 title="Remove from favorites"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1334,7 +1334,7 @@ export default function ProductionDashboard() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
               <h3 className="text-lg font-semibold mb-2">
                 {deletingItemType === 'search' ? 'Deleting Saved Search' : 'Deleting Property'}

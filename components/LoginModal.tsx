@@ -145,7 +145,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
                   ? `/register?redirect=${encodeURIComponent(redirectAfterLogin)}`
                   : '/register'
             }
-            className="text-red-600 hover:text-red-700 font-medium"
+            className="text-brand hover:text-brand-hover font-medium"
             onClick={onClose}
           >
             create an account
@@ -153,7 +153,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
         </p>
 
         {errors.form && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-brand rounded text-sm">
             {errors.form}
           </div>
         )}
@@ -172,7 +172,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
                   setErrors({ ...errors, email: '' });
                 }
               }}
-              className={`w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 ${
+              className={`w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand ${
                 isEmailLocked ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
               placeholder="your@email.com"
@@ -185,7 +185,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
               </p>
             )}
             {errors.email && (
-              <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+              <p className="text-brand text-sm mt-1">{errors.email}</p>
             )}
           </div>
 
@@ -200,12 +200,12 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
                 setPassword(e.target.value);
                 setErrors({ ...errors, password: '' });
               }}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
               placeholder="Enter your password"
               disabled={loading}
             />
             {errors.password && (
-              <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+              <p className="text-brand text-sm mt-1">{errors.password}</p>
             )}
           </div>
 
@@ -216,7 +216,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
             </label>
             <a
               href="/forgot-password"
-              className="text-sm text-red-600 hover:text-red-700"
+              className="text-sm text-brand hover:text-brand-hover"
               onClick={onClose}
             >
               Forgot password?
@@ -226,7 +226,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Signing in...' : 'Login'}
           </button>
@@ -243,7 +243,7 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
                     ? `/register?redirect=${encodeURIComponent(redirectAfterLogin)}`
                     : '/register'
               }
-              className="text-red-600 hover:text-red-700 font-medium"
+              className="text-brand hover:text-brand-hover font-medium"
               onClick={onClose}
             >
               Register here

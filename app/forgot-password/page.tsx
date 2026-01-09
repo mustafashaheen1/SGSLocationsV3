@@ -93,7 +93,7 @@ export default function ForgotPasswordPage() {
         }
 
         .forgot-password-page button[type="submit"]:hover {
-          background-color: #bf151c;
+          background-color: #e65a00;
         }
 
         .forgot-password-page button[type="submit"]:disabled {
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
                 <div className="flex items-center justify-end mt-4">
                   <Link
                     href="/"
-                    className="inline-flex items-center px-4 py-2 bg-brand border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#bf151c] transition ease-in-out duration-150"
+                    className="inline-flex items-center px-4 py-2 bg-brand border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#e65a00] transition ease-in-out duration-150"
                   >
                     Back to Home
                   </Link>
@@ -136,7 +136,7 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {errors.form && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-brand text-sm">
                     {errors.form}
                   </div>
                 )}
@@ -157,7 +157,7 @@ export default function ForgotPasswordPage() {
                       autoFocus
                     />
                     {errors.email && (
-                      <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                      <p className="text-brand text-sm mt-1">{errors.email}</p>
                     )}
                   </div>
 

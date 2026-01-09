@@ -1821,7 +1821,7 @@ export default function ContentManagementPage() {
                         value="video"
                         checked={heroMediaType === 'video'}
                         onChange={(e) => setHeroMediaType(e.target.value as 'video' | 'photo')}
-                        className="w-4 h-4 text-red-600 focus:ring-red-500"
+                        className="w-4 h-4 text-brand focus:ring-red-500"
                       />
                       <span className="ml-2 text-sm">Video</span>
                     </label>
@@ -1832,7 +1832,7 @@ export default function ContentManagementPage() {
                         value="photo"
                         checked={heroMediaType === 'photo'}
                         onChange={(e) => setHeroMediaType(e.target.value as 'video' | 'photo')}
-                        className="w-4 h-4 text-red-600 focus:ring-red-500"
+                        className="w-4 h-4 text-brand focus:ring-red-500"
                       />
                       <span className="ml-2 text-sm">Photo</span>
                     </label>
@@ -2041,7 +2041,7 @@ export default function ContentManagementPage() {
                                 setLogoImageFile(null);
                                 setLogoImagePreview('');
                               }}
-                              className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                              className="absolute -top-2 -right-2 bg-brand text-white rounded-full p-1 hover:bg-brand-hover"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -2151,7 +2151,7 @@ export default function ContentManagementPage() {
                                     setEditLogoFile(null);
                                     setEditLogoPreview('');
                                   }}
-                                  className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"
+                                  className="absolute -top-1 -right-1 bg-brand text-white rounded-full p-0.5"
                                 >
                                   <X className="w-3 h-3" />
                                 </button>
@@ -2596,7 +2596,7 @@ export default function ContentManagementPage() {
                                 setProjectImageFile(null);
                                 setProjectImagePreview('');
                               }}
-                              className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                              className="absolute -top-2 -right-2 bg-brand text-white rounded-full p-1"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -2788,7 +2788,7 @@ export default function ContentManagementPage() {
                                     setProjectImageFile(null);
                                     setProjectImagePreview('');
                                   }}
-                                  className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"
+                                  className="absolute -top-1 -right-1 bg-brand text-white rounded-full p-0.5"
                                 >
                                   <X className="w-3 h-3" />
                                 </button>
@@ -3381,7 +3381,7 @@ export default function ContentManagementPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="w-full mt-2 text-red-600 hover:bg-red-50"
+                          className="w-full mt-2 text-brand hover:bg-red-50"
                           onClick={() => {
                             if (confirm('Clear this slot?')) {
                               const newGrid = [...contactGrid];
@@ -4101,7 +4101,7 @@ export default function ContentManagementPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <h4 className="font-medium">Question {index + 1}</h4>
-                            {question.is_required && <span className="text-red-600">*</span>}
+                            {question.is_required && <span className="text-brand">*</span>}
                             <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                               {question.question_type}
                             </span>

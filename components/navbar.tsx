@@ -203,7 +203,7 @@ export function Navbar() {
               <Button
                 type="submit"
                 size="sm"
-                className="ml-2 bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
+                className="ml-2 bg-brand hover:bg-[#e65a00] rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
               >
                 <Search className="w-4 h-4" />
               </Button>
@@ -272,7 +272,7 @@ export function Navbar() {
               />
               <Button
                 type="submit"
-                className="bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
+                className="bg-brand hover:bg-[#e65a00] rounded" style={{fontWeight: 300}}
               >
                 <Search className="w-4 h-4" />
               </Button>

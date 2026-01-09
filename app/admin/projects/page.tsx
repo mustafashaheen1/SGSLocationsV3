@@ -521,7 +521,7 @@ export default function AdminProjectsPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(project.id)}
-                        className="px-3 py-1 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                        className="px-3 py-1 text-sm bg-red-50 text-brand rounded hover:bg-red-100 transition-colors"
                       >
                         Delete
                       </button>
@@ -546,7 +546,7 @@ export default function AdminProjectsPage() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
               <h3 className="text-lg font-semibold mb-2">Deleting Project</h3>
               <p className="text-sm text-gray-600 mb-4">

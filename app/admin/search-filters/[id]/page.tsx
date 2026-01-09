@@ -333,7 +333,7 @@ export default function FilterDetailPage() {
                 <span className="text-sm font-medium flex-1">{tag.name}</span>
                 <button
                   onClick={() => handleDeleteTag(tag.id, tag.name)}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-brand hover:text-red-800"
                   title="Delete this tag"
                 >
                   <Trash2 className="w-4 h-4" />

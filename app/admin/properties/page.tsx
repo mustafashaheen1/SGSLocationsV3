@@ -549,7 +549,7 @@ export default function AdminPropertiesPage() {
           </Button>
           <Button
             onClick={() => router.push('/admin/properties/add')}
-            className="bg-brand hover:bg-red-700"
+            className="bg-brand hover:bg-brand-hover"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Property
@@ -691,7 +691,7 @@ export default function AdminPropertiesPage() {
                         className={`p-2 rounded ${
                           deletingPropertyId === property.id
                             ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                            : 'text-red-600 hover:bg-red-50'
+                            : 'text-brand hover:bg-red-50'
                         }`}
                         title="Delete"
                       >
@@ -719,7 +719,7 @@ export default function AdminPropertiesPage() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
               <h3 className="text-lg font-semibold mb-2">Deleting Property</h3>
               <p className="text-sm text-gray-600 mb-4">
@@ -768,7 +768,7 @@ export default function AdminPropertiesPage() {
                         <div className="text-xs text-gray-600">Success</div>
                       </div>
                       <div>
-                        <div className="font-semibold text-red-600">{bulkStats.failed}</div>
+                        <div className="font-semibold text-brand">{bulkStats.failed}</div>
                         <div className="text-xs text-gray-600">Failed</div>
                       </div>
                       <div>

@@ -252,15 +252,15 @@ export default function HomePage() {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-flex items-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-red-600 rounded flex items-center justify-center">
+            <div className="w-10 h-10 bg-brand rounded flex items-center justify-center">
               <span className="text-white font-bold text-xl">S</span>
             </div>
             <span className="text-2xl font-bold text-white">SGS LOCATIONS®</span>
           </div>
           <div className="flex space-x-2 justify-center">
-            <div className="w-3 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-3 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-3 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div className="w-3 h-3 bg-brand rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-3 h-3 bg-brand rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-3 h-3 bg-brand rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
           </div>
         </div>
       </div>
@@ -323,7 +323,7 @@ export default function HomePage() {
             <Button
               onClick={() => router.push('/search')}
               size="lg"
-              className="bg-brand hover:bg-[#bf151c] text-lg rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
+              className="bg-brand hover:bg-[#e65a00] text-lg rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
             >
               Search Locations
             </Button>
@@ -351,7 +351,7 @@ export default function HomePage() {
               <Button
                 type="submit"
                 size="lg"
-                className="bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
+                className="bg-brand hover:bg-[#e65a00] rounded" style={{fontWeight: 300}}
               >
                 <Search className="w-5 h-5 mr-2" />
                 Search
@@ -484,7 +484,7 @@ export default function HomePage() {
             <Button
               onClick={() => router.push('/search')}
               size="lg"
-              className="bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
+              className="bg-brand hover:bg-[#e65a00] rounded" style={{fontWeight: 300}}
             >
               Start Searching
             </Button>

@@ -238,7 +238,7 @@ export default function CategoryMigrationPage() {
         )}
 
         {message && (
-          <div className={`p-4 rounded-lg ${message.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+          <div className={`p-4 rounded-lg ${message.includes('Error') ? 'bg-red-50 text-brand-hover' : 'bg-green-50 text-green-700'}`}>
             {message}
           </div>
         )}

@@ -432,7 +432,7 @@ export default function SettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
           <p className="mt-2 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -451,7 +451,7 @@ export default function SettingsPage() {
           className={`px-4 py-3 rounded-lg border ${
             message.type === 'success'
               ? 'bg-green-50 border-green-200 text-green-700'
-              : 'bg-red-50 border-red-200 text-red-700'
+              : 'bg-red-50 border-red-200 text-brand-hover'
           }`}
         >
           {message.text}
@@ -501,7 +501,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleRemoveLogo}
                   disabled={uploadingLogo}
-                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1"
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-brand text-white rounded-full p-1"
                   title="Remove logo"
                 >
                   <X className="w-4 h-4" />
@@ -550,7 +550,7 @@ export default function SettingsPage() {
                     setLogoFile(null);
                     setLogoPreview(logoSettings.logoUrl || '');
                   }}
-                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1"
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-brand text-white rounded-full p-1"
                   title="Cancel upload"
                 >
                   <X className="w-4 h-4" />
@@ -564,7 +564,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleLogoUpload}
                 disabled={uploadingLogo}
-                className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+                className="w-full md:w-auto px-6 py-2 bg-brand hover:bg-brand-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
               >
                 {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
               </button>
@@ -619,7 +619,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={savingEmails}
-              className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+              className="w-full md:w-auto px-6 py-2 bg-brand hover:bg-brand-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
             >
               {savingEmails ? 'Saving...' : 'Save Email Settings'}
             </button>
@@ -637,7 +637,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSaveAiPhotoAnalysis}
             disabled={savingAiSetting}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-brand hover:bg-brand-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {savingAiSetting ? 'Saving...' : 'Save Setting'}
@@ -652,14 +652,14 @@ export default function SettingsPage() {
                 When enabled, AI will automatically analyze and tag photos uploaded through the admin panel.
                 When disabled, photos will be uploaded without AI analysis.
               </p>
-              <p className="text-xs text-red-600 mt-2 font-medium">
+              <p className="text-xs text-brand mt-2 font-medium">
                 Default: OFF (AI analysis disabled)
               </p>
             </div>
             <button
               onClick={() => setAiPhotoAnalysisEnabled(!aiPhotoAnalysisEnabled)}
               className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ml-4 ${
-                aiPhotoAnalysisEnabled ? 'bg-red-600' : 'bg-gray-300'
+                aiPhotoAnalysisEnabled ? 'bg-brand' : 'bg-gray-300'
               }`}
               role="switch"
               aria-checked={aiPhotoAnalysisEnabled}
@@ -748,7 +748,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full md:w-auto px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+              className="w-full md:w-auto px-6 py-2 bg-brand hover:bg-brand-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
             >
               {saving ? 'Updating Password...' : 'Update Password'}
             </button>

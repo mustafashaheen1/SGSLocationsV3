@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto"></div>
           <p className="mt-4 text-gray-600">Verifying reset link...</p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function ResetPasswordPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-red-600 rounded flex items-center justify-center">
+            <div className="w-16 h-16 bg-brand rounded flex items-center justify-center">
               <span className="text-white font-bold text-2xl">S</span>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function ResetPasswordPage() {
           <div>
             <Button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700"
+              className="w-full bg-brand hover:bg-brand-hover"
               disabled={isLoading}
             >
               {isLoading ? 'Resetting password...' : 'Reset password'}
@@ -172,7 +172,7 @@ export default function ResetPasswordPage() {
         <div className="text-center">
           <a
             href="/admin/login"
-            className="text-sm text-red-600 hover:text-red-500"
+            className="text-sm text-brand hover:text-red-500"
           >
             Back to login
           </a>

@@ -1354,7 +1354,7 @@ export default function EditPropertyPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
           <p className="mt-2 text-gray-600">Loading property...</p>
         </div>
       </div>
@@ -1776,7 +1776,7 @@ export default function EditPropertyPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-brand hover:bg-red-700"
+                  className="bg-brand hover:bg-brand-hover"
                 >
                   {saving ? 'Saving Changes...' : 'Save Changes'}
                 </Button>
@@ -1801,7 +1801,7 @@ export default function EditPropertyPage() {
                     multiple
                     accept="image/*"
                     onChange={handleImageSelect}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-brand-hover hover:file:bg-red-100"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {images.length} images uploaded
@@ -1830,7 +1830,7 @@ export default function EditPropertyPage() {
                           setImages([]);
                           setSelectedImageIndex(null);
                         }}
-                        className="text-sm text-red-600 hover:text-red-700"
+                        className="text-sm text-brand hover:text-brand-hover"
                       >
                         Clear All
                       </button>
@@ -1983,7 +1983,7 @@ export default function EditPropertyPage() {
                                                 type="checkbox"
                                                 checked={images[selectedImageIndex].tags.includes(tag.name)}
                                                 onChange={() => toggleImageTag(selectedImageIndex, tag.name)}
-                                                className="rounded text-red-600 focus:ring-red-500"
+                                                className="rounded text-brand focus:ring-red-500"
                                               />
                                               <span className="text-sm">{tag.name}</span>
                                             </label>
@@ -2030,7 +2030,7 @@ export default function EditPropertyPage() {
                         <button
                           type="button"
                           onClick={() => setPropertyTags([])}
-                          className="text-xs text-brand hover:text-red-700 font-medium"
+                          className="text-xs text-brand hover:text-brand-hover font-medium"
                         >
                           Clear all
                         </button>
@@ -2050,7 +2050,7 @@ export default function EditPropertyPage() {
                               <button
                                 type="button"
                                 onClick={() => setPropertyTags(prev => prev.filter(t => t !== tagName))}
-                                className="hover:bg-red-700 rounded-full p-0.5 transition-colors"
+                                className="hover:bg-brand-hover rounded-full p-0.5 transition-colors"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -2129,7 +2129,7 @@ export default function EditPropertyPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-brand hover:bg-red-700"
+                  className="bg-brand hover:bg-brand-hover"
                 >
                   {saving ? 'Saving Changes...' : 'Save Changes'}
                 </Button>
@@ -2162,7 +2162,7 @@ export default function EditPropertyPage() {
                           <button
                             type="button"
                             onClick={() => removeContact(index)}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-brand hover:text-red-800"
                           >
                             <X className="w-5 h-5" />
                           </button>
@@ -2258,7 +2258,7 @@ export default function EditPropertyPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-brand hover:bg-red-700"
+                  className="bg-brand hover:bg-brand-hover"
                 >
                   {saving ? 'Saving Changes...' : 'Save Changes'}
                 </Button>
@@ -2285,7 +2285,7 @@ export default function EditPropertyPage() {
                     <button
                       type="button"
                       onClick={() => setShowNewProjectModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-red-700 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                       New Project
@@ -2302,7 +2302,7 @@ export default function EditPropertyPage() {
                       <button
                         type="button"
                         onClick={() => setShowNewProjectModal(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-red-700 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
                       >
                         <Plus className="w-4 h-4" />
                         Create First Project
@@ -2324,7 +2324,7 @@ export default function EditPropertyPage() {
                                 e.stopPropagation();
                                 handleDeleteProject(project);
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-red-600 hover:bg-red-50 rounded transition-all"
+                              className="opacity-0 group-hover:opacity-100 p-1 text-brand hover:bg-red-50 rounded transition-all"
                               title="Delete Project"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -2384,7 +2384,7 @@ export default function EditPropertyPage() {
                     <div className="text-center">
                       <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                       <label htmlFor="document-upload" className="cursor-pointer">
-                        <span className="text-sm font-medium text-brand hover:text-red-700">
+                        <span className="text-sm font-medium text-brand hover:text-brand-hover">
                           Click to upload documents
                         </span>
                         <span className="text-sm text-gray-600"> or drag and drop</span>
@@ -2440,7 +2440,7 @@ export default function EditPropertyPage() {
                             </button>
                             <button
                               onClick={() => handleDeleteDocument(doc)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                              className="p-2 text-brand hover:bg-red-50 rounded transition-colors"
                               title="Delete"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -2664,7 +2664,7 @@ export default function EditPropertyPage() {
                           <button
                             type="button"
                             onClick={() => setTermsPdfFile(null)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-2 text-brand hover:bg-red-50 rounded transition-colors"
                           >
                             <X className="h-5 w-5" />
                           </button>
@@ -2682,7 +2682,7 @@ export default function EditPropertyPage() {
                       type="button"
                       onClick={handleSendTerms}
                       disabled={sendingTerms || (termsType === 'text' && !termsContent.trim()) || (termsType === 'pdf' && !termsPdfFile)}
-                      className="bg-brand hover:bg-red-700 flex items-center gap-2"
+                      className="bg-brand hover:bg-brand-hover flex items-center gap-2"
                     >
                       {sendingTerms ? (
                         <>
@@ -2745,7 +2745,7 @@ export default function EditPropertyPage() {
                         <div className="text-green-600">✓</div>
                       )}
                       {file.status === 'error' && (
-                        <div className="text-red-600">✗</div>
+                        <div className="text-brand">✗</div>
                       )}
                       <span className="text-sm font-medium text-gray-700">
                         {file.progress}%
@@ -2760,7 +2760,7 @@ export default function EditPropertyPage() {
                         file.status === 'completed'
                           ? 'bg-green-600'
                           : file.status === 'error'
-                          ? 'bg-red-600'
+                          ? 'bg-brand'
                           : 'bg-brand'
                       }`}
                       style={{ width: `${file.progress}%` }}
@@ -2769,7 +2769,7 @@ export default function EditPropertyPage() {
 
                   {/* Error Message */}
                   {file.error && (
-                    <p className="text-xs text-red-600 mt-2">{file.error}</p>
+                    <p className="text-xs text-brand mt-2">{file.error}</p>
                   )}
 
                   {/* Status Text */}
@@ -2825,7 +2825,7 @@ export default function EditPropertyPage() {
                 type="button"
                 onClick={handleCreateProject}
                 disabled={!newProjectName.trim()}
-                className="flex-1 px-4 py-2 bg-brand text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Create Project
               </button>

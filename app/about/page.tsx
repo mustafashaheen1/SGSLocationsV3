@@ -55,7 +55,7 @@ function DynamicSection({ section, index }: { section: any; index: number }) {
         {section.linkText && section.linkUrl && (
           <Link
             href={section.linkUrl}
-            className="text-[#dc2626] hover:underline font-medium"
+            className="text-[#fe751f] hover:underline font-medium"
             target={section.linkUrl.startsWith('http') ? '_blank' : undefined}
             rel={section.linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
           >
@@ -338,7 +338,7 @@ export default function AboutPage() {
                 {sections[1]?.content || "Whether you're looking for a sprawling ranch, modern architecture, historic properties, or urban settings, SGS Locations has the perfect backdrop for your production needs."}
               </p>
               {sections[1]?.linkText && sections[1]?.linkUrl && (
-                <Link href={sections[1].linkUrl} className="text-[#dc2626] hover:underline font-medium">
+                <Link href={sections[1].linkUrl} className="text-[#fe751f] hover:underline font-medium">
                   {sections[1].linkText}
                 </Link>
               )}
@@ -408,7 +408,7 @@ export default function AboutPage() {
                 {sections[2]?.linkText && sections[2]?.linkUrl && (
                   <Link
                     href={sections[2].linkUrl}
-                    className="text-[#dc2626] hover:underline font-medium"
+                    className="text-[#fe751f] hover:underline font-medium"
                     target={sections[2].linkUrl.startsWith('http') ? '_blank' : undefined}
                     rel={sections[2].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
                   >
@@ -434,7 +434,7 @@ export default function AboutPage() {
                 {sections[3]?.linkText && sections[3]?.linkUrl && (
                   <Link
                     href={sections[3].linkUrl}
-                    className="text-[#dc2626] hover:underline font-medium"
+                    className="text-[#fe751f] hover:underline font-medium"
                     target={sections[3].linkUrl.startsWith('http') ? '_blank' : undefined}
                     rel={sections[3].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
                   >
@@ -502,7 +502,7 @@ export default function AboutPage() {
                 {sections[4]?.linkText && sections[4]?.linkUrl && (
                   <Link
                     href={sections[4].linkUrl}
-                    className="text-[#dc2626] hover:underline font-medium"
+                    className="text-[#fe751f] hover:underline font-medium"
                     target={sections[4].linkUrl.startsWith('http') ? '_blank' : undefined}
                     rel={sections[4].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
                   >
@@ -528,7 +528,7 @@ export default function AboutPage() {
                 {sections[5]?.linkText && sections[5]?.linkUrl && (
                   <Link
                     href={sections[5].linkUrl}
-                    className="text-[#dc2626] hover:underline font-medium"
+                    className="text-[#fe751f] hover:underline font-medium"
                     target={sections[5].linkUrl.startsWith('http') ? '_blank' : undefined}
                     rel={sections[5].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
                   >
@@ -596,7 +596,7 @@ export default function AboutPage() {
                 {sections[6]?.linkText && sections[6]?.linkUrl && (
                   <Link
                     href={sections[6].linkUrl}
-                    className="text-[#dc2626] hover:underline font-medium"
+                    className="text-[#fe751f] hover:underline font-medium"
                     target={sections[6].linkUrl.startsWith('http') ? '_blank' : undefined}
                     rel={sections[6].linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
                   >
@@ -620,7 +620,7 @@ export default function AboutPage() {
                   {sections[7]?.content || "SGS Locations has been featured in numerous local media outlets for our role in bringing major productions to the Dallas-Fort Worth area. From supporting blockbuster TV series to facilitating commercial shoots, our work continues to put North Texas on the map as a filming destination."}
                 </p>
                 {sections[7]?.linkText && sections[7]?.linkUrl && (
-                  <Link href={sections[7].linkUrl} className="text-[#dc2626] hover:underline font-medium">
+                  <Link href={sections[7].linkUrl} className="text-[#fe751f] hover:underline font-medium">
                     {sections[7].linkText}
                   </Link>
                 )}
@@ -684,7 +684,7 @@ export default function AboutPage() {
                   {sections[8]?.content || "SGS Locations has been recognized by the Dallas business community for excellence in location services and contribution to the local economy. Our work supporting major productions has helped generate significant economic impact for the region."}
                 </p>
                 {sections[8]?.linkText && sections[8]?.linkUrl && (
-                  <Link href={sections[8].linkUrl} className="text-[#dc2626] hover:underline font-medium">
+                  <Link href={sections[8].linkUrl} className="text-[#fe751f] hover:underline font-medium">
                     {sections[8].linkText}
                   </Link>
                 )}
@@ -738,7 +738,7 @@ export default function AboutPage() {
                 {sections[10]?.title || "Professional Filmmakers Code of Conduct"}
               </h6>
               {sections[10]?.linkText && sections[10]?.linkUrl && (
-                <a href={sections[10].linkUrl} target="_blank" className="text-[#dc2626] hover:underline font-medium text-lg">
+                <a href={sections[10].linkUrl} target="_blank" className="text-[#fe751f] hover:underline font-medium text-lg">
                   {sections[10].linkText}
                 </a>
               )}

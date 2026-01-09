@@ -88,7 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_properties_sub_category_id ON properties(sub_cate
           <Button
             onClick={runMigration}
             disabled={migrating}
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className="bg-brand hover:bg-brand-hover text-white"
             size="lg"
           >
             {migrating ? (
@@ -105,11 +105,11 @@ CREATE INDEX IF NOT EXISTS idx_properties_sub_category_id ON properties(sub_cate
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+              <AlertCircle className="w-6 h-6 text-brand flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-red-900 mb-2">Migration Failed</h3>
                 <p className="text-red-800">{error}</p>
-                <p className="text-sm text-red-700 mt-2">
+                <p className="text-sm text-brand-hover mt-2">
                   If you see an error about missing columns, run the SQL commands above in Supabase SQL Editor.
                 </p>
               </div>
@@ -137,7 +137,7 @@ CREATE INDEX IF NOT EXISTS idx_properties_sub_category_id ON properties(sub_cate
                 <div className="text-sm text-gray-600">Sub-Categories Created</div>
               </div>
               <div className="bg-white rounded-lg p-4 border border-green-200">
-                <div className="text-2xl font-bold text-red-700">{result.stats?.errors || 0}</div>
+                <div className="text-2xl font-bold text-brand-hover">{result.stats?.errors || 0}</div>
                 <div className="text-sm text-gray-600">Errors</div>
               </div>
             </div>

@@ -119,7 +119,7 @@ export default function LocationLibraryPage() {
       onClick={() => handleCategoryChange(category.id)}
       className={`w-full text-left py-3 px-4 text-sm font-light uppercase transition-colors ${
         activeCategory === category.id
-          ? 'bg-[#dc2626] text-white'
+          ? 'bg-[#fe751f] text-white'
           : 'bg-white text-gray-900 hover:bg-gray-50'
       }`}
     >
@@ -248,7 +248,7 @@ export default function LocationLibraryPage() {
         }
 
         .property-title:hover {
-          color: #dc2626;
+          color: #fe751f;
         }
 
         /* Mobile responsive */

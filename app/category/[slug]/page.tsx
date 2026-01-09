@@ -178,7 +178,7 @@ export default function CategoryPage() {
           }
 
           .property-title:hover {
-            color: #dc2626;
+            color: #fe751f;
           }
         `}</style>
 
@@ -354,7 +354,7 @@ export default function CategoryPage() {
         }
 
         .property-title:hover {
-          color: #dc2626;
+          color: #fe751f;
         }
 
         .category-banner {

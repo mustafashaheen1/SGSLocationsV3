@@ -708,7 +708,7 @@ export default function ListYourPropertyPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -733,7 +733,7 @@ export default function ListYourPropertyPage() {
       <main className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto px-6 pt-3 pb-8">
         <div className="mb-6">
-          <h1 className="text-4xl font-bold text-red-600 mb-2 mt-0">List Your Property</h1>
+          <h1 className="text-4xl font-bold text-brand mb-2 mt-0">List Your Property</h1>
           <p className="text-lg text-gray-600">
             Be a part of the largest location database in the Dallas-Fort Worth area
           </p>
@@ -751,7 +751,7 @@ export default function ListYourPropertyPage() {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label htmlFor="firstName" className="block font-medium text-gray-700 text-sm mb-1">
-                      First Name <span className="text-red-600">*</span>
+                      First Name <span className="text-brand">*</span>
                       {isUserLoggedIn && <span className="text-xs text-gray-500 ml-2">(from your account)</span>}
                     </label>
                     <input
@@ -762,16 +762,16 @@ export default function ListYourPropertyPage() {
                       onChange={handleInputChange}
                       readOnly={isUserLoggedIn}
                       disabled={isUserLoggedIn}
-                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                        errors.firstName ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                        errors.firstName ? 'border-brand' : 'border-gray-300'
                       } ${isUserLoggedIn ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     />
-                    {errors.firstName && <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>}
+                    {errors.firstName && <p className="text-brand text-sm mt-1">{errors.firstName}</p>}
                   </div>
 
                   <div>
                     <label htmlFor="lastName" className="block font-medium text-gray-700 text-sm mb-1">
-                      Last Name <span className="text-red-600">*</span>
+                      Last Name <span className="text-brand">*</span>
                       {isUserLoggedIn && <span className="text-xs text-gray-500 ml-2">(from your account)</span>}
                     </label>
                     <input
@@ -782,17 +782,17 @@ export default function ListYourPropertyPage() {
                       onChange={handleInputChange}
                       readOnly={isUserLoggedIn}
                       disabled={isUserLoggedIn}
-                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                        errors.lastName ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                        errors.lastName ? 'border-brand' : 'border-gray-300'
                       } ${isUserLoggedIn ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     />
-                    {errors.lastName && <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>}
+                    {errors.lastName && <p className="text-brand text-sm mt-1">{errors.lastName}</p>}
                   </div>
                 </div>
 
                 <div className="mb-4">
                   <label htmlFor="email" className="block font-medium text-gray-700 text-sm mb-1">
-                    Email <span className="text-red-600">*</span>
+                    Email <span className="text-brand">*</span>
                     {isUserLoggedIn && <span className="text-xs text-gray-500 ml-2">(from your account)</span>}
                   </label>
                   <input
@@ -803,8 +803,8 @@ export default function ListYourPropertyPage() {
                     onChange={handleInputChange}
                     readOnly={isUserLoggedIn}
                     disabled={isUserLoggedIn}
-                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                      errors.email ? 'border-brand' : 'border-gray-300'
                     } ${isUserLoggedIn ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   />
                   {isUserLoggedIn && (
@@ -812,12 +812,12 @@ export default function ListYourPropertyPage() {
                       These fields are auto-filled from your account and cannot be changed here.
                     </p>
                   )}
-                  {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+                  {errors.email && <p className="text-brand text-sm mt-1">{errors.email}</p>}
                 </div>
 
                 <div className="mb-4">
                   <label htmlFor="phoneNumber" className="block font-medium text-gray-700 text-sm mb-1">
-                    Phone Number <span className="text-red-600">*</span>
+                    Phone Number <span className="text-brand">*</span>
                   </label>
                   <input
                     type="tel"
@@ -827,11 +827,11 @@ export default function ListYourPropertyPage() {
                     onChange={handlePhoneChange}
                     placeholder="(555) 555-5555"
                     maxLength={14}
-                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                      errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                      errors.phoneNumber ? 'border-brand' : 'border-gray-300'
                     }`}
                   />
-                  {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
+                  {errors.phoneNumber && <p className="text-brand text-sm mt-1">{errors.phoneNumber}</p>}
                 </div>
 
                 <div>
@@ -844,7 +844,7 @@ export default function ListYourPropertyPage() {
                     name="internationalPhone"
                     value={formData.internationalPhone}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none"
                   />
                 </div>
               </section>
@@ -855,7 +855,7 @@ export default function ListYourPropertyPage() {
 
                 <div className="mb-4">
                   <label htmlFor="streetAddress" className="block font-medium text-gray-700 text-sm mb-1">
-                    Street Address <span className="text-red-600">*</span>
+                    Street Address <span className="text-brand">*</span>
                   </label>
                   <input
                     ref={addressInputRef}
@@ -864,18 +864,18 @@ export default function ListYourPropertyPage() {
                     name="streetAddress"
                     value={formData.streetAddress}
                     onChange={handleInputChange}
-                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                      errors.streetAddress ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                      errors.streetAddress ? 'border-brand' : 'border-gray-300'
                     }`}
                     placeholder="Start typing to search..."
                   />
-                  {errors.streetAddress && <p className="text-red-600 text-sm mt-1">{errors.streetAddress}</p>}
+                  {errors.streetAddress && <p className="text-brand text-sm mt-1">{errors.streetAddress}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label htmlFor="city" className="block font-medium text-gray-700 text-sm mb-1">
-                      City <span className="text-red-600">*</span>
+                      City <span className="text-brand">*</span>
                     </label>
                     <input
                       type="text"
@@ -883,16 +883,16 @@ export default function ListYourPropertyPage() {
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
-                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                        errors.city ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                        errors.city ? 'border-brand' : 'border-gray-300'
                       }`}
                     />
-                    {errors.city && <p className="text-red-600 text-sm mt-1">{errors.city}</p>}
+                    {errors.city && <p className="text-brand text-sm mt-1">{errors.city}</p>}
                   </div>
 
                   <div>
                     <label htmlFor="zipCode" className="block font-medium text-gray-700 text-sm mb-1">
-                      ZIP Code <span className="text-red-600">*</span>
+                      ZIP Code <span className="text-brand">*</span>
                     </label>
                     <input
                       type="number"
@@ -901,25 +901,25 @@ export default function ListYourPropertyPage() {
                       value={formData.zipCode}
                       onChange={handleInputChange}
                       maxLength={10}
-                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                        errors.zipCode ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                        errors.zipCode ? 'border-brand' : 'border-gray-300'
                       }`}
                     />
-                    {errors.zipCode && <p className="text-red-600 text-sm mt-1">{errors.zipCode}</p>}
+                    {errors.zipCode && <p className="text-brand text-sm mt-1">{errors.zipCode}</p>}
                   </div>
                 </div>
 
                 <div>
                   <label htmlFor="state" className="block font-medium text-gray-700 text-sm mb-1">
-                    State <span className="text-red-600">*</span>
+                    State <span className="text-brand">*</span>
                   </label>
                   <select
                     id="state"
                     name="state"
                     value={formData.state}
                     onChange={handleInputChange}
-                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                      errors.state ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                      errors.state ? 'border-brand' : 'border-gray-300'
                     }`}
                   >
                     <option value="">Select State</option>
@@ -927,7 +927,7 @@ export default function ListYourPropertyPage() {
                       <option key={state} value={state}>{state}</option>
                     ))}
                   </select>
-                  {errors.state && <p className="text-red-600 text-sm mt-1">{errors.state}</p>}
+                  {errors.state && <p className="text-brand text-sm mt-1">{errors.state}</p>}
                 </div>
               </section>
 
@@ -936,7 +936,7 @@ export default function ListYourPropertyPage() {
                 {dynamicQuestions.map((question) => (
                   <div key={question.id} className="mb-6">
                     <label className="block font-medium text-gray-700 text-sm mb-3">
-                      {question.question_text} {question.is_required && <span className="text-red-600">*</span>}
+                      {question.question_text} {question.is_required && <span className="text-brand">*</span>}
                     </label>
 
                     {question.question_type === 'radio' && (
@@ -949,7 +949,7 @@ export default function ListYourPropertyPage() {
                               value={option}
                               checked={dynamicAnswers[question.id] === option}
                               onChange={(e) => setDynamicAnswers({...dynamicAnswers, [question.id]: e.target.value})}
-                              className="w-4 h-4 accent-red-600 focus:ring-red-500"
+                              className="w-4 h-4 accent-brand focus:ring-brand"
                             />
                             <span className="ml-2 text-sm">{option}</span>
                           </label>
@@ -972,7 +972,7 @@ export default function ListYourPropertyPage() {
                                   : currentAnswers.filter((a: string) => a !== option);
                                 setDynamicAnswers({...dynamicAnswers, [question.id]: newAnswers});
                               }}
-                              className="w-4 h-4 accent-red-600 focus:ring-red-500 rounded"
+                              className="w-4 h-4 accent-brand focus:ring-brand rounded"
                             />
                             <span className="ml-2 text-sm">{option}</span>
                           </label>
@@ -985,7 +985,7 @@ export default function ListYourPropertyPage() {
                         type="text"
                         value={dynamicAnswers[question.id] || ''}
                         onChange={(e) => setDynamicAnswers({...dynamicAnswers, [question.id]: e.target.value})}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none"
                       />
                     )}
 
@@ -994,11 +994,11 @@ export default function ListYourPropertyPage() {
                         value={dynamicAnswers[question.id] || ''}
                         onChange={(e) => setDynamicAnswers({...dynamicAnswers, [question.id]: e.target.value})}
                         rows={4}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none"
                       />
                     )}
 
-                    {errors[question.id] && <p className="text-red-600 text-sm mt-1">{errors[question.id]}</p>}
+                    {errors[question.id] && <p className="text-brand text-sm mt-1">{errors[question.id]}</p>}
                   </div>
                 ))}
               </section>
@@ -1006,7 +1006,7 @@ export default function ListYourPropertyPage() {
               {/* CATEGORY SELECTION */}
               <section className="mb-6">
                 <label htmlFor="category" className="block font-medium text-gray-700 text-sm mb-1">
-                  Property Category <span className="text-red-600">*</span>
+                  Property Category <span className="text-brand">*</span>
                 </label>
                 <select
                   id="category"
@@ -1023,8 +1023,8 @@ export default function ListYourPropertyPage() {
                       setErrors(prev => ({ ...prev, category: '' }));
                     }
                   }}
-                  className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                    errors.category ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                    errors.category ? 'border-brand' : 'border-gray-300'
                   }`}
                 >
                   <option value="">-- Select a category --</option>
@@ -1034,14 +1034,14 @@ export default function ListYourPropertyPage() {
                     </option>
                   ))}
                 </select>
-                {errors.category && <p className="text-red-600 text-sm mt-1">{errors.category}</p>}
+                {errors.category && <p className="text-brand text-sm mt-1">{errors.category}</p>}
               </section>
 
               {/* SUB-CATEGORY SELECTION */}
               {selectedCategoryId && subCategories.length > 0 && (
                 <section className="mb-6">
                   <label htmlFor="subCategory" className="block font-medium text-gray-700 text-sm mb-1">
-                    Property Sub-Category <span className="text-red-600">*</span>
+                    Property Sub-Category <span className="text-brand">*</span>
                   </label>
                   <select
                     id="subCategory"
@@ -1052,8 +1052,8 @@ export default function ListYourPropertyPage() {
                         setErrors(prev => ({ ...prev, subCategory: '' }));
                       }
                     }}
-                    className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none ${
-                      errors.subCategory ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none ${
+                      errors.subCategory ? 'border-brand' : 'border-gray-300'
                     }`}
                   >
                     <option value="">-- Select a sub-category --</option>
@@ -1063,7 +1063,7 @@ export default function ListYourPropertyPage() {
                       </option>
                     ))}
                   </select>
-                  {errors.subCategory && <p className="text-red-600 text-sm mt-1">{errors.subCategory}</p>}
+                  {errors.subCategory && <p className="text-brand text-sm mt-1">{errors.subCategory}</p>}
                 </section>
               )}
 
@@ -1083,7 +1083,7 @@ export default function ListYourPropertyPage() {
                       <button
                         type="button"
                         onClick={() => setPropertyTags([])}
-                        className="text-xs text-red-600 hover:text-red-700"
+                        className="text-xs text-brand hover:text-brand-hover"
                       >
                         Clear all
                       </button>
@@ -1092,13 +1092,13 @@ export default function ListYourPropertyPage() {
                       {propertyTags.map(tagName => (
                         <span
                           key={tagName}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-600 text-white text-xs rounded-full"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand text-white text-xs rounded-full"
                         >
                           {tagName}
                           <button
                             type="button"
                             onClick={() => setPropertyTags(prev => prev.filter(t => t !== tagName))}
-                            className="hover:bg-red-700 rounded-full"
+                            className="hover:bg-brand-hover rounded-full"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -1145,8 +1145,8 @@ export default function ListYourPropertyPage() {
                                 }}
                                 className={`px-2 py-1 text-xs rounded-full border transition-colors ${
                                   propertyTags.includes(tag.name)
-                                    ? 'bg-red-600 text-white border-red-600'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:border-red-600'
+                                    ? 'bg-brand text-white border-brand'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:border-brand'
                                 }`}
                               >
                                 {tag.name}
@@ -1176,7 +1176,7 @@ export default function ListYourPropertyPage() {
                   onDrop={handleDrop}
                   onClick={() => document.getElementById('fileInput')?.click()}
                   className={`border-2 border-dashed rounded bg-gray-50 min-h-[350px] flex flex-col items-center justify-center p-8 cursor-pointer transition-colors ${
-                    isDragging ? 'border-blue-500 bg-blue-50' : errors.files ? 'border-red-500' : 'border-gray-300'
+                    isDragging ? 'border-blue-500 bg-blue-50' : errors.files ? 'border-brand' : 'border-gray-300'
                   }`}
                 >
                   <Upload className="w-12 h-12 text-gray-400 mb-4" />
@@ -1193,7 +1193,7 @@ export default function ListYourPropertyPage() {
                     <p className="mt-2 text-sm text-gray-600">{uploadedFiles.length} image(s) uploaded</p>
                   )}
                 </div>
-                {errors.files && <p className="text-red-600 text-sm mt-1">{errors.files}</p>}
+                {errors.files && <p className="text-brand text-sm mt-1">{errors.files}</p>}
 
                 {/* Image Preview Grid */}
                 {uploadedFiles.length > 0 && (
@@ -1223,13 +1223,13 @@ export default function ListYourPropertyPage() {
                           onClick={() => {
                             setUploadedFiles(prev => prev.filter((_, i) => i !== index));
                           }}
-                          className="absolute top-1.5 right-1.5 bg-red-600 text-white p-0.5 rounded-full hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1.5 right-1.5 bg-brand text-white p-0.5 rounded-full hover:bg-brand-hover opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="w-3 h-3" />
                         </button>
 
                         {img.tags.length > 0 && (
-                          <div className="absolute top-1.5 left-1.5 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
+                          <div className="absolute top-1.5 left-1.5 bg-brand text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
                             {img.tags.length}
                           </div>
                         )}
@@ -1250,7 +1250,7 @@ export default function ListYourPropertyPage() {
                   value={formData.additionalNotes}
                   onChange={handleInputChange}
                   rows={8}
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none"
                 />
               </section>
 
@@ -1274,21 +1274,21 @@ export default function ListYourPropertyPage() {
                         setErrors(prev => ({ ...prev, agreeToTerms: '' }));
                       }
                     }}
-                    className={`w-4 h-4 accent-red-600 focus:ring-red-500 rounded mt-1 ${
-                      errors.agreeToTerms ? 'border-red-500' : ''
+                    className={`w-4 h-4 accent-brand focus:ring-brand rounded mt-1 ${
+                      errors.agreeToTerms ? 'border-brand' : ''
                     }`}
                   />
                   <span className="ml-2 text-sm text-gray-700">
-                    I agree to the foregoing terms <span className="text-red-600">*</span>
+                    I agree to the foregoing terms <span className="text-brand">*</span>
                   </span>
                 </label>
-                {errors.agreeToTerms && <p className="text-red-600 text-sm mt-1">{errors.agreeToTerms}</p>}
+                {errors.agreeToTerms && <p className="text-brand text-sm mt-1">{errors.agreeToTerms}</p>}
               </section>
 
               {/* Please Note */}
               <section className="text-sm text-gray-600 mt-4">
                 <p className="font-bold text-gray-900 mb-1">PLEASE NOTE</p>
-                <p className="mb-1"><span className="text-red-600">*</span> Indicates required fields</p>
+                <p className="mb-1"><span className="text-brand">*</span> Indicates required fields</p>
                 <p>All submissions are subject to review & approval by SGS Locations</p>
               </section>
             </div>
@@ -1302,7 +1302,7 @@ export default function ListYourPropertyPage() {
               className={`${
                 isSubmitting
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'
+                  : 'bg-brand hover:bg-brand-hover'
               } text-white font-semibold py-3 px-12 rounded text-lg transition-colors flex items-center gap-2`}
             >
               {isSubmitting ? (
@@ -1372,7 +1372,7 @@ export default function ListYourPropertyPage() {
                           {uploadedFiles[selectedImageIndex].tags.map(tagName => (
                             <span
                               key={tagName}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded-full"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-brand text-white text-xs rounded-full"
                             >
                               {tagName}
                               <button
@@ -1384,7 +1384,7 @@ export default function ListYourPropertyPage() {
                                       : img
                                   ));
                                 }}
-                                className="hover:bg-red-700 rounded-full"
+                                className="hover:bg-brand-hover rounded-full"
                               >
                                 <X className="w-3 h-3" />
                               </button>
@@ -1443,8 +1443,8 @@ export default function ListYourPropertyPage() {
                                       }}
                                       className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
                                         isSelected
-                                          ? 'bg-red-600 text-white'
-                                          : 'bg-white border border-gray-300 text-gray-700 hover:border-red-600'
+                                          ? 'bg-brand text-white'
+                                          : 'bg-white border border-gray-300 text-gray-700 hover:border-brand'
                                       }`}
                                     >
                                       {tag.name}

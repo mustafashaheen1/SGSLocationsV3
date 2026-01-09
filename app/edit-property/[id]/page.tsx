@@ -581,10 +581,10 @@ export default function EditPropertyPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-xl text-red-600 mb-4">{message.text || 'Property not found'}</p>
+          <p className="text-xl text-brand mb-4">{message.text || 'Property not found'}</p>
           <button
             onClick={() => router.push('/dashboard')}
-            className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+            className="bg-brand text-white px-6 py-2 rounded hover:bg-brand-hover"
           >
             Back to Dashboard
           </button>
@@ -618,7 +618,7 @@ export default function EditPropertyPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </button>
-            <h1 className="text-4xl font-bold text-red-600 mb-2 mt-0">Edit Your Property</h1>
+            <h1 className="text-4xl font-bold text-brand mb-2 mt-0">Edit Your Property</h1>
             <p className="text-lg text-gray-600">
               Update your property information
             </p>
@@ -644,7 +644,7 @@ export default function EditPropertyPage() {
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <label htmlFor="firstName" className="block font-medium text-gray-700 text-sm mb-1">
-                        First Name <span className="text-red-600">*</span>
+                        First Name <span className="text-brand">*</span>
                       </label>
                       <input
                         type="text"
@@ -656,12 +656,12 @@ export default function EditPropertyPage() {
                           errors.firstName ? 'border-red-500' : 'border-gray-300'
                         }`}
                       />
-                      {errors.firstName && <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>}
+                      {errors.firstName && <p className="text-brand text-sm mt-1">{errors.firstName}</p>}
                     </div>
 
                     <div>
                       <label htmlFor="lastName" className="block font-medium text-gray-700 text-sm mb-1">
-                        Last Name <span className="text-red-600">*</span>
+                        Last Name <span className="text-brand">*</span>
                       </label>
                       <input
                         type="text"
@@ -673,13 +673,13 @@ export default function EditPropertyPage() {
                           errors.lastName ? 'border-red-500' : 'border-gray-300'
                         }`}
                       />
-                      {errors.lastName && <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>}
+                      {errors.lastName && <p className="text-brand text-sm mt-1">{errors.lastName}</p>}
                     </div>
                   </div>
 
                   <div className="mb-4">
                     <label htmlFor="email" className="block font-medium text-gray-700 text-sm mb-1">
-                      Email <span className="text-red-600">*</span>
+                      Email <span className="text-brand">*</span>
                     </label>
                     <input
                       type="email"
@@ -691,12 +691,12 @@ export default function EditPropertyPage() {
                         errors.email ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
-                    {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+                    {errors.email && <p className="text-brand text-sm mt-1">{errors.email}</p>}
                   </div>
 
                   <div className="mb-4">
                     <label htmlFor="phoneNumber" className="block font-medium text-gray-700 text-sm mb-1">
-                      Phone Number <span className="text-red-600">*</span>
+                      Phone Number <span className="text-brand">*</span>
                     </label>
                     <input
                       type="tel"
@@ -710,7 +710,7 @@ export default function EditPropertyPage() {
                         errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
-                    {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
+                    {errors.phoneNumber && <p className="text-brand text-sm mt-1">{errors.phoneNumber}</p>}
                   </div>
 
                   <div>
@@ -734,7 +734,7 @@ export default function EditPropertyPage() {
 
                   <div className="mb-4">
                     <label htmlFor="streetAddress" className="block font-medium text-gray-700 text-sm mb-1">
-                      Street Address <span className="text-red-600">*</span>
+                      Street Address <span className="text-brand">*</span>
                     </label>
                     <input
                       ref={addressInputRef}
@@ -748,13 +748,13 @@ export default function EditPropertyPage() {
                       }`}
                       placeholder="Start typing to search..."
                     />
-                    {errors.streetAddress && <p className="text-red-600 text-sm mt-1">{errors.streetAddress}</p>}
+                    {errors.streetAddress && <p className="text-brand text-sm mt-1">{errors.streetAddress}</p>}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <label htmlFor="city" className="block font-medium text-gray-700 text-sm mb-1">
-                        City <span className="text-red-600">*</span>
+                        City <span className="text-brand">*</span>
                       </label>
                       <input
                         type="text"
@@ -766,12 +766,12 @@ export default function EditPropertyPage() {
                           errors.city ? 'border-red-500' : 'border-gray-300'
                         }`}
                       />
-                      {errors.city && <p className="text-red-600 text-sm mt-1">{errors.city}</p>}
+                      {errors.city && <p className="text-brand text-sm mt-1">{errors.city}</p>}
                     </div>
 
                     <div>
                       <label htmlFor="zipCode" className="block font-medium text-gray-700 text-sm mb-1">
-                        ZIP Code <span className="text-red-600">*</span>
+                        ZIP Code <span className="text-brand">*</span>
                       </label>
                       <input
                         type="number"
@@ -784,13 +784,13 @@ export default function EditPropertyPage() {
                           errors.zipCode ? 'border-red-500' : 'border-gray-300'
                         }`}
                       />
-                      {errors.zipCode && <p className="text-red-600 text-sm mt-1">{errors.zipCode}</p>}
+                      {errors.zipCode && <p className="text-brand text-sm mt-1">{errors.zipCode}</p>}
                     </div>
                   </div>
 
                   <div>
                     <label htmlFor="state" className="block font-medium text-gray-700 text-sm mb-1">
-                      State <span className="text-red-600">*</span>
+                      State <span className="text-brand">*</span>
                     </label>
                     <select
                       id="state"
@@ -806,14 +806,14 @@ export default function EditPropertyPage() {
                         <option key={state} value={state}>{state}</option>
                       ))}
                     </select>
-                    {errors.state && <p className="text-red-600 text-sm mt-1">{errors.state}</p>}
+                    {errors.state && <p className="text-brand text-sm mt-1">{errors.state}</p>}
                   </div>
                 </section>
 
                 {/* CATEGORY SELECTION */}
                 <section className="mb-6">
                   <label htmlFor="category" className="block font-medium text-gray-700 text-sm mb-1">
-                    Property Category <span className="text-red-600">*</span>
+                    Property Category <span className="text-brand">*</span>
                   </label>
                   <select
                     id="category"
@@ -841,14 +841,14 @@ export default function EditPropertyPage() {
                       </option>
                     ))}
                   </select>
-                  {errors.category && <p className="text-red-600 text-sm mt-1">{errors.category}</p>}
+                  {errors.category && <p className="text-brand text-sm mt-1">{errors.category}</p>}
                 </section>
 
                 {/* SUB-CATEGORY SELECTION */}
                 {selectedCategoryId && subCategories.length > 0 && (
                   <section className="mb-6">
                     <label htmlFor="subCategory" className="block font-medium text-gray-700 text-sm mb-1">
-                      Property Sub-Category <span className="text-red-600">*</span>
+                      Property Sub-Category <span className="text-brand">*</span>
                     </label>
                     <select
                       id="subCategory"
@@ -870,7 +870,7 @@ export default function EditPropertyPage() {
                         </option>
                       ))}
                     </select>
-                    {errors.subCategory && <p className="text-red-600 text-sm mt-1">{errors.subCategory}</p>}
+                    {errors.subCategory && <p className="text-brand text-sm mt-1">{errors.subCategory}</p>}
                   </section>
                 )}
 
@@ -890,7 +890,7 @@ export default function EditPropertyPage() {
                         <button
                           type="button"
                           onClick={() => setPropertyTags([])}
-                          className="text-xs text-red-600 hover:text-red-700"
+                          className="text-xs text-brand hover:text-brand-hover"
                         >
                           Clear all
                         </button>
@@ -899,13 +899,13 @@ export default function EditPropertyPage() {
                         {propertyTags.map(tagName => (
                           <span
                             key={tagName}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-600 text-white text-xs rounded-full"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand text-white text-xs rounded-full"
                           >
                             {tagName}
                             <button
                               type="button"
                               onClick={() => setPropertyTags(prev => prev.filter(t => t !== tagName))}
-                              className="hover:bg-red-700 rounded-full"
+                              className="hover:bg-brand-hover rounded-full"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -952,8 +952,8 @@ export default function EditPropertyPage() {
                                   }}
                                   className={`px-2 py-1 text-xs rounded-full border transition-colors ${
                                     propertyTags.includes(tag.name)
-                                      ? 'bg-red-600 text-white border-red-600'
-                                      : 'bg-white text-gray-700 border-gray-300 hover:border-red-600'
+                                      ? 'bg-brand text-white border-brand'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:border-brand'
                                   }`}
                                 >
                                   {tag.name}
@@ -1000,7 +1000,7 @@ export default function EditPropertyPage() {
                       <p className="mt-2 text-sm text-gray-600">{uploadedFiles.length} image(s) uploaded</p>
                     )}
                   </div>
-                  {errors.files && <p className="text-red-600 text-sm mt-1">{errors.files}</p>}
+                  {errors.files && <p className="text-brand text-sm mt-1">{errors.files}</p>}
 
                   {/* Image Preview Grid */}
                   {uploadedFiles.length > 0 && (
@@ -1030,13 +1030,13 @@ export default function EditPropertyPage() {
                             onClick={() => {
                               setUploadedFiles(prev => prev.filter((_, i) => i !== index));
                             }}
-                            className="absolute top-1.5 right-1.5 bg-red-600 text-white p-0.5 rounded-full hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1.5 right-1.5 bg-brand text-white p-0.5 rounded-full hover:bg-brand-hover opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="w-3 h-3" />
                           </button>
 
                           {img.tags.length > 0 && (
-                            <div className="absolute top-1.5 left-1.5 bg-red-600 text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
+                            <div className="absolute top-1.5 left-1.5 bg-brand text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
                               {img.tags.length}
                             </div>
                           )}
@@ -1064,7 +1064,7 @@ export default function EditPropertyPage() {
                 {/* Please Note */}
                 <section className="text-sm text-gray-600 mt-4">
                   <p className="font-bold text-gray-900 mb-1">PLEASE NOTE</p>
-                  <p className="mb-1"><span className="text-red-600">*</span> Indicates required fields</p>
+                  <p className="mb-1"><span className="text-brand">*</span> Indicates required fields</p>
                   <p>All changes are subject to review & approval by SGS Locations</p>
                 </section>
               </div>
@@ -1085,7 +1085,7 @@ export default function EditPropertyPage() {
                 className={`${
                   isSubmitting
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700'
+                    : 'bg-brand hover:bg-brand-hover'
                 } text-white font-semibold py-3 px-12 rounded text-lg transition-colors flex items-center gap-2`}
               >
                 {isSubmitting ? (
@@ -1155,7 +1155,7 @@ export default function EditPropertyPage() {
                             {uploadedFiles[selectedImageIndex].tags.map(tagName => (
                               <span
                                 key={tagName}
-                                className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded-full"
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-brand text-white text-xs rounded-full"
                               >
                                 {tagName}
                                 <button
@@ -1167,7 +1167,7 @@ export default function EditPropertyPage() {
                                         : img
                                     ));
                                   }}
-                                  className="hover:bg-red-700 rounded-full"
+                                  className="hover:bg-brand-hover rounded-full"
                                 >
                                   <X className="w-3 h-3" />
                                 </button>
@@ -1226,8 +1226,8 @@ export default function EditPropertyPage() {
                                         }}
                                         className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
                                           isSelected
-                                            ? 'bg-red-600 text-white'
-                                            : 'bg-white border border-gray-300 text-gray-700 hover:border-red-600'
+                                            ? 'bg-brand text-white'
+                                            : 'bg-white border border-gray-300 text-gray-700 hover:border-brand'
                                         }`}
                                       >
                                         {tag.name}

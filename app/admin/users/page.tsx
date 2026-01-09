@@ -241,7 +241,7 @@ export default function UsersPage() {
                         <button
                           onClick={() => handleDelete(user.id, user.email)}
                           disabled={actionLoading || deletingUserId === user.id}
-                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50"
+                          className="p-2 bg-brand hover:bg-brand-hover text-white rounded transition-colors disabled:opacity-50"
                           title="Delete User"
                         >
                           <Trash2 size={16} />
@@ -271,7 +271,7 @@ export default function UsersPage() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
               <h3 className="text-lg font-semibold mb-2">Deleting User</h3>
               <p className="text-sm text-gray-600 mb-4">

@@ -198,7 +198,7 @@ export function Footer() {
           <div>
             <Link href="/" className="inline-block mb-4">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-brand rounded flex items-center justify-center">
                   <span className="text-white font-bold">S</span>
                 </div>
                 <span className="text-xl font-bold">SGS LOCATIONS®</span>
