@@ -1547,12 +1547,12 @@ export default function EditPropertyPage() {
                   </label>
                   <div className="relative">
                     <Input
-                      value={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://sgslocations.com'}${property?.public_url || `/property/${propertyId}`}`}
+                      value={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://sgslocations.com'}/property/${propertyId}`}
                       disabled
                       className="bg-gray-50 cursor-not-allowed pr-10 text-gray-700"
                     />
                     <a
-                      href={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://sgslocations.com'}${property?.public_url || `/property/${propertyId}`}`}
+                      href={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://sgslocations.com'}/property/${propertyId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-800 transition-colors"
