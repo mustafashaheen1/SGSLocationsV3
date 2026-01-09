@@ -262,7 +262,7 @@ export default function CategoriesPage() {
       return;
     }
 
-    if (!imagePreview) {
+    if (!imagePreview && !uploadedImage) {
       alert('Please upload a category image');
       return;
     }
@@ -276,8 +276,18 @@ export default function CategoriesPage() {
     try {
       setUploading(true);
 
-      // Image is already uploaded to S3, use the preview URL
-      const imageUrl = imagePreview;
+      let imageUrl: string;
+
+      // Check if image needs to be uploaded to S3 (sub-category form) or is already uploaded (main category form)
+      if (uploadedImage) {
+        // Sub-category form: upload the file to S3
+        imageUrl = await uploadImageToS3(uploadedImage, 'categories');
+      } else if (imagePreview && imagePreview.startsWith('http')) {
+        // Main category form: image already uploaded during drag-and-drop
+        imageUrl = imagePreview;
+      } else {
+        throw new Error('Invalid image state: no valid image file or URL');
+      }
 
       if (!imageUrl.startsWith('http')) {
         throw new Error('Invalid image URL returned from S3 upload: ' + imageUrl);
