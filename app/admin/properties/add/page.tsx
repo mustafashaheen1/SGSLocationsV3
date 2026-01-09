@@ -88,6 +88,8 @@ export default function AddPropertyPage() {
   const [currentImportIndex, setCurrentImportIndex] = useState(0);
   const [loadingQueueImages, setLoadingQueueImages] = useState(false);
   const [extractingAddress, setExtractingAddress] = useState(false);
+  const [aiGenerateContent, setAiGenerateContent] = useState(false);
+  const [generatingContent, setGeneratingContent] = useState(false);
   const [formData, setFormData] = useState({
     real_name: '', // The actual property name (admin only)
     sub_heading: '', // Custom sub-heading for the property
@@ -1005,10 +1007,12 @@ export default function AddPropertyPage() {
       return;
     }
 
-    // Validate sub-heading
-    if (!formData.sub_heading || !formData.sub_heading.trim()) {
-      alert('Please provide a sub-heading for this property');
-      return;
+    // Validate sub-heading (only if NOT using AI generation)
+    if (!aiGenerateContent) {
+      if (!formData.sub_heading || !formData.sub_heading.trim()) {
+        alert('Please provide a sub-heading for this property');
+        return;
+      }
     }
 
     if (images.length < 6) {
@@ -1076,12 +1080,68 @@ export default function AddPropertyPage() {
       const propertyName = nameResult;
       console.log(`🔒 Generated property name: "${formData.real_name}" → "${propertyName}"`);
 
+      // Generate AI content if enabled
+      let finalSubHeading = formData.sub_heading;
+      let finalDescription = formData.description;
+
+      if (aiGenerateContent) {
+        console.log('🤖 Generating AI content...');
+        setGeneratingContent(true);
+
+        try {
+          // Get selected category name
+          const selectedCategory = categories.find(c => c.id === formData.category_id);
+
+          // Prepare grid image URLs (first 6 images)
+          const gridImages = gridIndices.slice(0, 6).map(i => images[i]);
+          const gridImageUrls = gridImages.map(img => img.url).filter(Boolean);
+
+          const response = await fetch('/api/generate-property-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              propertyName: formData.real_name,
+              categoryName: selectedCategory?.name || '',
+              subCategoryName: '', // Sub-category not used in add form yet
+              city: formData.city,
+              address: formData.address,
+              propertyTags: propertyTags,
+              gridImageUrls: gridImageUrls,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to generate AI content');
+          }
+
+          const data = await response.json();
+
+          if (data.success) {
+            finalSubHeading = data.sub_heading;
+            finalDescription = data.description;
+            console.log('✓ AI content generated');
+            console.log('Tokens used:', data.tokensUsed);
+          } else {
+            throw new Error(data.error || 'AI generation failed');
+          }
+
+        } catch (error: any) {
+          console.error('AI content generation error:', error);
+          alert(`Failed to generate AI content: ${error.message}\n\nPlease disable AI generation and enter content manually.`);
+          setGeneratingContent(false);
+          setLoading(false);
+          return;
+        } finally {
+          setGeneratingContent(false);
+        }
+      }
+
       // Prepare property data with CORRECT schema
       const propertyData: any = {
         name: propertyName, // Category-based sequential name (e.g., COM-0001)
         real_name: formData.real_name, // Actual property name (admin only)
-        sub_heading: formData.sub_heading, // Custom sub-heading
-        description: formData.description || '',
+        sub_heading: finalSubHeading, // Use AI-generated or manual
+        description: finalDescription || '', // Use AI-generated or manual
         address: formData.address,
         city: formData.city,
         county: formData.state, // Map state to county field
@@ -1283,32 +1343,75 @@ export default function AddPropertyPage() {
             />
           </div>
 
+          <div className="col-span-2 mb-4">
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div>
+                <h3 className="font-medium text-blue-900">AI Content Generation</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Let AI generate sub-heading and description based on property details and images
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aiGenerateContent}
+                  onChange={(e) => setAiGenerateContent(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
+
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">
               Sub-heading <span className="text-red-500">*</span>
+              {aiGenerateContent && (
+                <span className="ml-2 text-sm text-blue-600 font-normal">
+                  (AI will generate)
+                </span>
+              )}
             </label>
             <Input
               name="sub_heading"
               value={formData.sub_heading}
               onChange={handleInputChange}
-              placeholder="e.g., A Modern Architectural Marvel in Fort Worth"
+              placeholder={aiGenerateContent ? "AI will generate sub-heading..." : "e.g., A Modern Architectural Marvel in Fort Worth"}
               maxLength={200}
-              required
+              required={!aiGenerateContent}
+              disabled={aiGenerateContent}
+              className={aiGenerateContent ? "bg-gray-100 cursor-not-allowed" : ""}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Custom sub-heading displayed on the property detail page.
+              {aiGenerateContent
+                ? "AI will analyze property details and images to create an engaging sub-heading"
+                : "Custom sub-heading displayed on the property detail page"}
             </p>
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium mb-2">Description</label>
+            <label className="block text-sm font-medium mb-2">
+              Description
+              {aiGenerateContent && (
+                <span className="ml-2 text-sm text-blue-600 font-normal">
+                  (AI will generate)
+                </span>
+              )}
+            </label>
             <Textarea
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Detailed property description..."
+              placeholder={aiGenerateContent ? "AI will generate detailed description..." : "Detailed property description..."}
               rows={4}
+              disabled={aiGenerateContent}
+              className={aiGenerateContent ? "bg-gray-100 cursor-not-allowed" : ""}
             />
+            {aiGenerateContent && (
+              <p className="text-xs text-blue-600 mt-1">
+                AI will create a detailed, engaging description based on all property information
+              </p>
+            )}
           </div>
 
           <div className="col-span-2">
@@ -1983,6 +2086,23 @@ export default function AddPropertyPage() {
           </Button>
         </div>
       </form>
+
+      {/* AI Content Generation Modal */}
+      {generatingContent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex items-center space-x-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e11921]"></div>
+              <div>
+                <h3 className="text-lg font-semibold">Generating AI Content...</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Analyzing property details and images to create compelling content
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Analysis Progress Modal */}
       {analyzingImages && (

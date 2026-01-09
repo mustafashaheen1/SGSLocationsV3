@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, Edit, Trash2, Eye, Star, Upload, Plus } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Star, Upload, Plus, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { deleteImageFromS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,10 @@ export default function AdminPropertiesPage() {
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [bulkStats, setBulkStats] = useState({ success: 0, failed: 0, skipped: 0 });
+  const [bulkErrors, setBulkErrors] = useState<Array<{ property: string, error: string }>>([]);
 
   useEffect(() => {
     checkAdminAccess();
@@ -312,6 +316,182 @@ export default function AdminPropertiesPage() {
     }
   }
 
+  async function handleBulkAIUpdate() {
+    // Step 1: Confirmation dialog
+    const confirmed = confirm(
+      'This will regenerate AI content (sub-heading and description) for ALL properties in the database.\n\n' +
+      'This operation may take several minutes and will consume OpenAI API credits.\n\n' +
+      'Continue?'
+    );
+
+    if (!confirmed) return;
+
+    setBulkUpdating(true);
+    setBulkStats({ success: 0, failed: 0, skipped: 0 });
+    setBulkErrors([]);
+
+    try {
+      // Step 2: Fetch all properties with complete data
+      console.log('🔄 Fetching all properties...');
+
+      const { directFetch } = await import('@/lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        alert('Session expired. Please login again.');
+        router.push('/admin/login');
+        return;
+      }
+
+      const { data: properties, error: fetchError } = await directFetch('properties', {
+        select: `
+          id,
+          name,
+          real_name,
+          city,
+          address,
+          category_id,
+          sub_category_id,
+          property_tags,
+          images,
+          sub_heading
+        `,
+        order: 'created_at',
+        ascending: true,
+        authToken: session.access_token,
+      });
+
+      if (fetchError || !properties) {
+        alert('Failed to fetch properties: ' + (fetchError?.message || 'Unknown error'));
+        return;
+      }
+
+      console.log(`📊 Found ${properties.length} properties to process`);
+      setBulkProgress({ current: 0, total: properties.length });
+
+      // Step 3: Fetch all categories for lookups
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('id, name, parent_id');
+
+      const categoryMap = new Map((categories || []).map((c: any) => [c.id, c]));
+
+      // Step 4: Process each property
+      let successCount = 0;
+      let failedCount = 0;
+      let skippedCount = 0;
+      const errors: Array<{ property: string, error: string }> = [];
+
+      for (let i = 0; i < properties.length; i++) {
+        const property = properties[i];
+
+        setBulkProgress({ current: i + 1, total: properties.length });
+
+        try {
+          // Skip if no images
+          if (!property.images || property.images.length < 1) {
+            console.log(`⏭️  Skipping ${property.real_name || property.name} - no images`);
+            skippedCount++;
+            setBulkStats({ success: successCount, failed: failedCount, skipped: skippedCount });
+            continue;
+          }
+
+          // Get category names
+          const mainCategory = categoryMap.get(property.category_id);
+          const subCategory = categoryMap.get(property.sub_category_id);
+
+          // Prepare grid images (first 6)
+          const gridImageUrls = property.images.slice(0, 6);
+
+          console.log(`🤖 Generating AI content for: ${property.real_name || property.name}`);
+
+          // Call AI generation API
+          const response = await fetch('/api/generate-property-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              propertyName: property.real_name || property.name,
+              categoryName: mainCategory?.name || '',
+              subCategoryName: subCategory?.name || '',
+              city: property.city,
+              address: property.address || '',
+              propertyTags: property.property_tags || [],
+              gridImageUrls: gridImageUrls,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API returned ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!data.success) {
+            throw new Error(data.error || 'AI generation failed');
+          }
+
+          // Update property in database
+          const updateResult = await supabase
+            .from('properties')
+            // @ts-expect-error - Supabase type inference issue with update
+            .update({
+              sub_heading: data.sub_heading,
+              description: data.description,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', property.id);
+
+          const updateError = updateResult.error;
+
+          if (updateError) {
+            throw new Error(`Database update failed: ${updateError.message}`);
+          }
+
+          console.log(`✅ Updated: ${property.real_name || property.name}`);
+          successCount++;
+
+          // Update stats
+          setBulkStats({ success: successCount, failed: failedCount, skipped: skippedCount });
+
+          // Rate limiting: wait 1 second between API calls to avoid rate limits
+          if (i < properties.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+
+        } catch (error: any) {
+          console.error(`❌ Failed to update ${property.real_name || property.name}:`, error);
+          failedCount++;
+          errors.push({
+            property: property.real_name || property.name,
+            error: error.message,
+          });
+          setBulkStats({ success: successCount, failed: failedCount, skipped: skippedCount });
+          // Continue processing other properties
+        }
+      }
+
+      // Step 5: Show completion summary
+      setBulkErrors(errors);
+      alert(
+        `Bulk AI Update Complete!\n\n` +
+        `✅ Successful: ${successCount}\n` +
+        `❌ Failed: ${failedCount}\n` +
+        `⏭️  Skipped: ${skippedCount}\n\n` +
+        (errors.length > 0 ? 'Check console for error details.' : 'All properties processed successfully!')
+      );
+
+      // Refresh properties list
+      await fetchProperties();
+
+    } catch (error: any) {
+      console.error('Bulk update error:', error);
+      alert('Bulk update failed: ' + error.message);
+    } finally {
+      setBulkUpdating(false);
+      setBulkProgress({ current: 0, total: 0 });
+    }
+  }
+
   const filteredProperties = properties.filter(property => {
     const matchesSearch =
       property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -330,6 +510,24 @@ export default function AdminPropertiesPage() {
           <p className="text-gray-600 mt-1">{filteredProperties.length} total properties</p>
         </div>
         <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={handleBulkAIUpdate}
+            disabled={bulkUpdating || loading}
+            className="border-purple-600 text-purple-600 hover:bg-purple-50"
+          >
+            {bulkUpdating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+                Updating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Bulk AI Update
+              </>
+            )}
+          </Button>
           <Button
             variant="outline"
             onClick={handleBulkImportProperties}
@@ -531,6 +729,59 @@ export default function AdminPropertiesPage() {
                   {deleteProgress}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk AI Update Progress Modal */}
+      {bulkUpdating && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              </div>
+
+              <h3 className="text-lg font-semibold mb-2">Bulk AI Update in Progress</h3>
+
+              {bulkProgress.total > 0 && (
+                <>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Processing property {bulkProgress.current} of {bulkProgress.total}
+                  </p>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                    />
+                  </div>
+
+                  {/* Stats */}
+                  <div className="bg-gray-50 rounded p-3 text-sm">
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="font-semibold text-green-600">{bulkStats.success}</div>
+                        <div className="text-xs text-gray-600">Success</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-red-600">{bulkStats.failed}</div>
+                        <div className="text-xs text-gray-600">Failed</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-600">{bulkStats.skipped}</div>
+                        <div className="text-xs text-gray-600">Skipped</div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <p className="text-xs text-gray-500 mt-4">
+                Please do not close this page. This may take several minutes.
+              </p>
             </div>
           </div>
         </div>
