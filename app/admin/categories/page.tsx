@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, ChevronRight, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash2, X, ChevronRight, ChevronDown, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ interface Category {
   is_top: boolean;
   parent_id: string | null;
   property_count: number;
+  prefix: string | null;
 }
 
 interface Property {
@@ -38,6 +39,7 @@ export default function CategoriesPage() {
   const [subCategoryProperties, setSubCategoryProperties] = useState<Property[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddMainCategoryForm, setShowAddMainCategoryForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
@@ -55,6 +57,8 @@ export default function CategoriesPage() {
   const [uploading, setUploading] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
+  const [generatedPrefix, setGeneratedPrefix] = useState<string>('');
+  const [prefixLoading, setPrefixLoading] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -66,6 +70,19 @@ export default function CategoriesPage() {
     }
   }, [formData.name]);
 
+  // Generate prefix when adding main category
+  useEffect(() => {
+    if (formData.name && showAddMainCategoryForm) {
+      const timer = setTimeout(async () => {
+        await generatePrefix(formData.name);
+      }, 500); // Debounce for 500ms
+      return () => clearTimeout(timer);
+    } else if (!showAddMainCategoryForm) {
+      setGeneratedPrefix('');
+      setPrefixLoading(false);
+    }
+  }, [formData.name, showAddMainCategoryForm]);
+
   function generateSlug(name: string): string {
     return name
       .toLowerCase()
@@ -73,6 +90,34 @@ export default function CategoriesPage() {
       .replace(/[^\w\s-]/g, '')
       .replace(/[\s_-]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  }
+
+  async function generatePrefix(categoryName: string) {
+    if (!categoryName || categoryName.trim().length === 0) {
+      setGeneratedPrefix('');
+      return;
+    }
+
+    setPrefixLoading(true);
+    try {
+      const response = await fetch('/api/categories/generate-prefix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: categoryName.trim() })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate prefix');
+      }
+
+      const data = await response.json();
+      setGeneratedPrefix(data.prefix || '');
+    } catch (error: any) {
+      console.error('Error generating prefix:', error);
+      setGeneratedPrefix('ERR');
+    } finally {
+      setPrefixLoading(false);
+    }
   }
 
   function handleImageDrop(e: React.DragEvent) {
@@ -207,6 +252,8 @@ export default function CategoriesPage() {
   }
 
   async function handleAdd() {
+    const isMainCategory = showAddMainCategoryForm;
+
     if (!formData.name) {
       alert('Please fill in category name');
       return;
@@ -214,6 +261,12 @@ export default function CategoriesPage() {
 
     if (!uploadedImage) {
       alert('Please upload a category image');
+      return;
+    }
+
+    // For main categories, ensure prefix was generated
+    if (isMainCategory && !generatedPrefix) {
+      alert('Please wait for the prefix to be generated');
       return;
     }
 
@@ -235,6 +288,23 @@ export default function CategoriesPage() {
         return;
       }
 
+      // Prepare data based on category type
+      const categoryData: any = {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description || null,
+        image: imageUrl,
+        display_order: formData.display_order,
+        is_active: true,
+        is_top: isMainCategory,
+        parent_id: isMainCategory ? null : formData.parent_id,
+      };
+
+      // Add prefix for main categories
+      if (isMainCategory) {
+        categoryData.prefix = generatedPrefix;
+      }
+
       // Use REST API directly with admin auth token
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const response = await fetch(
@@ -247,16 +317,7 @@ export default function CategoriesPage() {
             'Content-Type': 'application/json',
             'Prefer': 'return=representation',
           },
-          body: JSON.stringify({
-            name: formData.name,
-            slug: formData.slug,
-            description: formData.description || null,
-            image: imageUrl,
-            display_order: formData.display_order,
-            is_active: true,
-            is_top: formData.is_top,
-            parent_id: formData.parent_id,
-          }),
+          body: JSON.stringify(categoryData),
         }
       );
 
@@ -265,10 +326,18 @@ export default function CategoriesPage() {
         throw new Error(errorText);
       }
 
-      setShowAddForm(false);
+      // Close the appropriate form
+      if (isMainCategory) {
+        setShowAddMainCategoryForm(false);
+      } else {
+        setShowAddForm(false);
+      }
+
+      // Reset form data
       setFormData({ name: '', slug: '', description: '', image: '', display_order: 1, is_top: false, parent_id: null });
       setUploadedImage(null);
       setImagePreview('');
+      setGeneratedPrefix('');
       fetchCategories();
     } catch (error: any) {
       console.error('Error adding category:', error);
@@ -471,28 +540,53 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Categories Management</h1>
-        <Button onClick={() => {
-          const nextOrder = categories.length > 0
-            ? Math.max(...categories.map(c => c.display_order)) + 1
-            : 1;
+        <div className="flex gap-2">
+          <Button onClick={() => {
+            const nextOrder = categories.length > 0
+              ? Math.max(...categories.map(c => c.display_order)) + 1
+              : 1;
 
-          setFormData({
-            name: '',
-            slug: '',
-            description: '',
-            image: '',
-            display_order: nextOrder,
-            is_top: false,
-            parent_id: null,
-          });
-          setEditingCategory(null);
-          setUploadedImage(null);
-          setImagePreview('');
-          setShowAddForm(true);
-        }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Sub-Category
-        </Button>
+            setFormData({
+              name: '',
+              slug: '',
+              description: '',
+              image: '',
+              display_order: nextOrder,
+              is_top: true,
+              parent_id: null,
+            });
+            setEditingCategory(null);
+            setUploadedImage(null);
+            setImagePreview('');
+            setGeneratedPrefix('');
+            setShowAddMainCategoryForm(true);
+          }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Main Category
+          </Button>
+          <Button onClick={() => {
+            const nextOrder = categories.length > 0
+              ? Math.max(...categories.map(c => c.display_order)) + 1
+              : 1;
+
+            setFormData({
+              name: '',
+              slug: '',
+              description: '',
+              image: '',
+              display_order: nextOrder,
+              is_top: false,
+              parent_id: null,
+            });
+            setEditingCategory(null);
+            setUploadedImage(null);
+            setImagePreview('');
+            setShowAddForm(true);
+          }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Sub-Category
+          </Button>
+        </div>
       </div>
 
       {/* ADD FORM MODAL */}
@@ -620,6 +714,177 @@ export default function CategoriesPage() {
         </div>
       )}
 
+      {/* ADD MAIN CATEGORY FORM MODAL */}
+      {showAddMainCategoryForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Add New Main Category</h2>
+              <button onClick={() => {
+                setShowAddMainCategoryForm(false);
+                setFormData({
+                  name: '',
+                  slug: '',
+                  parent_id: null,
+                  description: '',
+                  image: '',
+                  display_order: 0,
+                  is_top: false,
+                });
+                setImagePreview('');
+                setGeneratedPrefix('');
+              }} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="grid gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Category Name *</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Agriculture, Healthcare, Education"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Slug (Auto-generated)</label>
+                <Input
+                  value={formData.slug}
+                  readOnly
+                  className="bg-gray-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Prefix (Auto-generated)</label>
+                <div className="relative">
+                  <Input
+                    value={generatedPrefix || ''}
+                    readOnly
+                    className="bg-gray-100 pr-10"
+                    placeholder="Will auto-generate..."
+                  />
+                  {prefixLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  This 3-letter prefix will be used for property naming (e.g., {generatedPrefix || 'XXX'}-0001)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Image</label>
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const files = Array.from(e.dataTransfer.files);
+                    if (files.length > 0 && files[0].type.startsWith('image/')) {
+                      setUploading(true);
+                      const url = await uploadImageToS3(files[0]);
+                      setImagePreview(url);
+                      setUploading(false);
+                    }
+                  }}
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
+                >
+                  {uploading ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+                      <p className="text-sm text-gray-600">Uploading...</p>
+                    </div>
+                  ) : imagePreview ? (
+                    <div className="flex flex-col items-center">
+                      <img src={imagePreview} alt="Preview" className="max-h-32 mb-2 rounded" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setImagePreview('');
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700"
+                      >
+                        Remove Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">
+                        Drag & drop an image here, or{' '}
+                        <label className="text-blue-600 hover:text-blue-700 cursor-pointer">
+                          browse
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setUploading(true);
+                                const url = await uploadImageToS3(file);
+                                setImagePreview(url);
+                                setUploading(false);
+                              }
+                            }}
+                          />
+                        </label>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Display Order</label>
+                <Input
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <Button onClick={handleAdd} className="flex-1">
+                Add Main Category
+              </Button>
+              <Button variant="outline" onClick={() => {
+                setShowAddMainCategoryForm(false);
+                setFormData({
+                  name: '',
+                  slug: '',
+                  parent_id: null,
+                  description: '',
+                  image: '',
+                  display_order: 0,
+                  is_top: false,
+                });
+                setImagePreview('');
+                setGeneratedPrefix('');
+              }}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* EDIT FORM MODAL - Similar structure, omitted for brevity */}
       {showEditForm && editingCategory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -633,6 +898,26 @@ export default function CategoriesPage() {
                 <X className="w-6 h-6" />
               </button>
             </div>
+
+            {/* Locked Prefix Warning */}
+            {!editingCategory.parent_id && editingCategory.prefix && ['RES', 'COM', 'IND'].includes(editingCategory.prefix) && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-800">Protected Category</p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      This is a system category with a locked prefix ({editingCategory.prefix}).
+                      The name cannot be changed to preserve property naming integrity.
+                      You can still update the image, description, and display order.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-4">
               {editingCategory.parent_id && (
                 <div>
@@ -656,7 +941,12 @@ export default function CategoriesPage() {
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  disabled={!!(!editingCategory.parent_id && editingCategory.prefix && ['RES', 'COM', 'IND'].includes(editingCategory.prefix))}
+                  className={!editingCategory.parent_id && editingCategory.prefix && ['RES', 'COM', 'IND'].includes(editingCategory.prefix) ? 'bg-gray-100 cursor-not-allowed' : ''}
                 />
+                {!editingCategory.parent_id && editingCategory.prefix && ['RES', 'COM', 'IND'].includes(editingCategory.prefix) && (
+                  <p className="text-xs text-gray-500 mt-1">Name is locked for system categories</p>
+                )}
               </div>
 
               <div>
