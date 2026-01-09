@@ -259,7 +259,7 @@ export default function CategoriesPage() {
       return;
     }
 
-    if (!uploadedImage) {
+    if (!imagePreview) {
       alert('Please upload a category image');
       return;
     }
@@ -273,7 +273,8 @@ export default function CategoriesPage() {
     try {
       setUploading(true);
 
-      const imageUrl = await uploadImageToS3(uploadedImage, 'categories');
+      // Image is already uploaded to S3, use the preview URL
+      const imageUrl = imagePreview;
 
       if (!imageUrl.startsWith('http')) {
         throw new Error('Invalid image URL returned from S3 upload: ' + imageUrl);
