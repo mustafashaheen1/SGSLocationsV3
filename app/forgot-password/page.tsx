@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Camera } from 'lucide-react';
 import { nunito } from '@/lib/fonts';
 
 export default function ForgotPasswordPage() {
@@ -107,7 +106,6 @@ export default function ForgotPasswordPage() {
         <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
           <Link href="/" className="w-full" style={{ maxWidth: '500px' }}>
             <div className="flex items-center justify-center gap-2">
-              <Camera className="w-10 h-10 text-[#e11921]" />
               <span className="text-2xl font-bold tracking-tight text-gray-900">
                 SGS LOCATIONS<sup className="text-xs">®</sup>
               </span>

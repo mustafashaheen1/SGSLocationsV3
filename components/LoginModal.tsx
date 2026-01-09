@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface LoginModalProps {
@@ -127,7 +127,6 @@ export default function LoginModal({ isOpen, onClose, preFilledEmail = '', isEma
 
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-2">
-            <Camera className="w-8 h-8 text-red-600" />
             <span className="text-xl font-bold tracking-tight text-gray-900">
               SGS LOCATIONS<sup className="text-xs">®</sup>
             </span>

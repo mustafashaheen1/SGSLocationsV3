@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Camera, Menu, X, User } from 'lucide-react';
+import { Search, Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
@@ -185,12 +185,9 @@ export function Navbar() {
                 }}
               />
             ) : (
-              <>
-                <Camera className="w-8 h-8 text-[#e11921]" />
-                <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
-                  SGS LOCATIONS<sup className="text-xs">®</sup>
-                </span>
-              </>
+              <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
+                SGS LOCATIONS<sup className="text-xs">®</sup>
+              </span>
             )}
           </Link>
 

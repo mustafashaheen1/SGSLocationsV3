@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Camera } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 // Dynamic Section Renderer Component
@@ -313,7 +312,6 @@ export default function AboutPage() {
           <div className="col-md-6 d-flex justify-content-center align-items-center flex-column px-md-5 py-5">
             <div className="w-100">
               <div className="d-flex align-items-center mb-4" style={{ gap: '0.75rem' }}>
-                <Camera className="text-[#dc2626]" style={{ width: '2.5rem', height: '2.5rem' }} />
                 <span className="text-2xl font-bold text-gray-900">
                   SGS LOCATIONS<sup className="text-sm">®</sup>
                 </span>

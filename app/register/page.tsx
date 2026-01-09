@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Camera } from 'lucide-react';
 import LoginModal from '@/components/LoginModal';
 import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 import { nunito } from '@/lib/fonts';
@@ -248,7 +247,6 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-6">
             <Link href="/" className="block w-full" style={{ maxWidth: '500px' }}>
               <div className="flex items-center justify-center gap-2">
-                <Camera className="w-10 h-10 text-[#e11921]" />
                 <span className="text-2xl font-bold tracking-tight text-gray-900">
                   SGS LOCATIONS<sup className="text-xs">®</sup>
                 </span>
