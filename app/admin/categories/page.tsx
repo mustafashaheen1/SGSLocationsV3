@@ -59,6 +59,9 @@ export default function CategoriesPage() {
   const [deleteProgress, setDeleteProgress] = useState<string>('');
   const [generatedPrefix, setGeneratedPrefix] = useState<string>('');
   const [prefixLoading, setPrefixLoading] = useState(false);
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [deletingMainCategory, setDeletingMainCategory] = useState<Category | null>(null);
+  const [subCategoryReassignments, setSubCategoryReassignments] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchCategories();
@@ -457,21 +460,9 @@ export default function CategoriesPage() {
     }
   }
 
-  async function handleDelete(id: string, propertyCount: number, categoryName: string) {
-    if (propertyCount > 0) {
-      alert(
-        `Cannot delete "${categoryName}"!\n\n` +
-        `This category has ${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'} associated with it.\n\n` +
-        `Please reassign these properties first.`
-      );
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete "${categoryName}"?`)) {
-      return;
-    }
-
-    setDeletingCategoryId(id);
+  // Helper function for actual deletion API call
+  async function performDeletion(categoryId: string, categoryName: string) {
+    setDeletingCategoryId(categoryId);
     setDeleteProgress('Deleting category...');
 
     try {
@@ -480,15 +471,13 @@ export default function CategoriesPage() {
 
       if (!session) {
         alert('No active session. Please log in again.');
-        setDeletingCategoryId(null);
-        setDeleteProgress('');
         return;
       }
 
       // Use REST API directly with admin auth token
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const response = await fetch(
-        `${supabaseUrl}/rest/v1/categories?id=eq.${id}`,
+        `${supabaseUrl}/rest/v1/categories?id=eq.${categoryId}`,
         {
           method: 'DELETE',
           headers: {
@@ -512,6 +501,121 @@ export default function CategoriesPage() {
       alert('Error deleting category: ' + error.message);
     } finally {
       setDeletingCategoryId(null);
+      setDeleteProgress('');
+    }
+  }
+
+  // Delete handler for sub-categories
+  async function handleDelete(id: string, propertyCount: number, categoryName: string) {
+    if (propertyCount > 0) {
+      alert(
+        `Cannot delete "${categoryName}"!\n\n` +
+        `This category has ${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'} associated with it.\n\n` +
+        `Please reassign these properties first.`
+      );
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete "${categoryName}"?`)) {
+      return;
+    }
+
+    await performDeletion(id, categoryName);
+  }
+
+  // Delete handler for main categories
+  async function handleMainCategoryDelete(category: Category) {
+    // Step 1: Property check
+    if (category.property_count > 0) {
+      alert(
+        `Cannot delete "${category.name}"!\n\n` +
+        `This category has ${category.property_count} ${category.property_count === 1 ? 'property' : 'properties'} associated with it.\n\n` +
+        `Please reassign these properties first.`
+      );
+      return;
+    }
+
+    // Step 2: Sub-category check
+    const subCategories = categories.filter(c => c.parent_id === category.id);
+
+    if (subCategories.length > 0) {
+      // Check if there are other main categories to reassign to
+      const otherMainCategories = categories.filter(c =>
+        c.parent_id === null && c.id !== category.id
+      );
+
+      if (otherMainCategories.length === 0) {
+        alert(
+          `Cannot delete "${category.name}"!\n\n` +
+          `This is the only main category and it has ${subCategories.length} ${subCategories.length === 1 ? 'sub-category' : 'sub-categories'}.\n\n` +
+          `Create another main category first before deleting this one.`
+        );
+        return;
+      }
+
+      // Show reassignment modal
+      setDeletingMainCategory(category);
+
+      // Initialize reassignment state with first available main category
+      const initialAssignments: Record<string, string> = {};
+      subCategories.forEach(sub => {
+        initialAssignments[sub.id] = otherMainCategories[0]?.id || '';
+      });
+
+      setSubCategoryReassignments(initialAssignments);
+      setShowReassignModal(true);
+      return;
+    }
+
+    // Step 3: No sub-categories - direct deletion
+    if (!confirm(`Are you sure you want to delete "${category.name}"?\n\nThis cannot be undone.`)) {
+      return;
+    }
+
+    await performDeletion(category.id, category.name);
+  }
+
+  // Reassignment and deletion handler for main categories with sub-categories
+  async function handleReassignAndDelete() {
+    if (!deletingMainCategory) return;
+
+    // Validation: ensure all sub-categories have new parents assigned
+    const unassigned = Object.entries(subCategoryReassignments)
+      .filter(([_, newParentId]) => !newParentId);
+
+    if (unassigned.length > 0) {
+      alert('Please assign a new main category for all sub-categories before proceeding.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setDeleteProgress('Reassigning sub-categories...');
+
+      // Step 1: Update each sub-category's parent_id
+      for (const [subCatId, newParentId] of Object.entries(subCategoryReassignments)) {
+        const { error } = await (supabase
+          .from('categories') as any)
+          .update({ parent_id: newParentId })
+          .eq('id', subCatId);
+
+        if (error) throw error;
+      }
+
+      // Step 2: Delete the main category
+      setDeleteProgress('Deleting main category...');
+      await performDeletion(deletingMainCategory.id, deletingMainCategory.name);
+
+      // Step 3: Clean up state
+      setShowReassignModal(false);
+      setDeletingMainCategory(null);
+      setSubCategoryReassignments({});
+
+    } catch (error: any) {
+      console.error('Reassignment error:', error);
+      alert('Failed to reassign sub-categories: ' + error.message);
+    } finally {
+      setUploading(false);
       setDeleteProgress('');
     }
   }
@@ -1064,6 +1168,13 @@ export default function CategoriesPage() {
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleMainCategoryDelete(mainCat)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
 
@@ -1167,6 +1278,95 @@ export default function CategoriesPage() {
           </div>
         </div>
       </div>
+
+      {/* Reassignment Modal */}
+      {showReassignModal && deletingMainCategory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Reassign Sub-Categories</h2>
+              <button onClick={() => {
+                setShowReassignModal(false);
+                setDeletingMainCategory(null);
+                setSubCategoryReassignments({});
+              }} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> This main category has{' '}
+                {categories.filter(c => c.parent_id === deletingMainCategory.id).length} sub-categories
+                that must be reassigned to another main category before deletion.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {categories
+                .filter(c => c.parent_id === deletingMainCategory.id)
+                .map(subCat => {
+                  const otherMainCategories = categories.filter(c =>
+                    c.parent_id === null && c.id !== deletingMainCategory.id
+                  );
+
+                  return (
+                    <div key={subCat.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <img
+                        src={subCat.image}
+                        alt={subCat.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium">{subCat.name}</p>
+                        <p className="text-sm text-gray-500">{subCat.property_count} properties</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">→</span>
+                        <select
+                          value={subCategoryReassignments[subCat.id] || ''}
+                          onChange={(e) => setSubCategoryReassignments({
+                            ...subCategoryReassignments,
+                            [subCat.id]: e.target.value
+                          })}
+                          className="px-3 py-2 border border-gray-300 rounded-md min-w-[200px]"
+                        >
+                          <option value="">Select main category...</option>
+                          {otherMainCategories.map(mainCat => (
+                            <option key={mainCat.id} value={mainCat.id}>
+                              {mainCat.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <Button
+                onClick={handleReassignAndDelete}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                disabled={uploading}
+              >
+                {uploading ? 'Processing...' : `Reassign & Delete ${deletingMainCategory.name}`}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowReassignModal(false);
+                  setDeletingMainCategory(null);
+                  setSubCategoryReassignments({});
+                }}
+                disabled={uploading}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Deletion Progress Modal */}
       {deletingCategoryId && (
