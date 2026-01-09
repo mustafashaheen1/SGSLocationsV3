@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MapPin, Award, Users, Briefcase, FileCheck, Image as ImageIcon } from 'lucide-react';
+import { Search, MapPin, Award, Users, Briefcase, FileCheck, Image as ImageIcon, Camera } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase, Property } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -477,6 +477,7 @@ export default function HomePage() {
           />
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-10 text-center text-white">
+            <Camera className="w-16 h-16 mx-auto mb-6" />
             <h3 className="text-3xl mb-4" style={{fontWeight: 100}}>For Production Professionals</h3>
             <p className="mb-6 text-lg" style={{fontWeight: 300}}>
               Find the perfect location for your next project
