@@ -14,7 +14,6 @@ import {
   FileText,
   Search,
   Phone,
-  Camera,
   Plus,
   X,
   Heart
@@ -1559,7 +1558,7 @@ function ActionButton({ icon, text, onClick }: { icon: React.ReactNode; text: st
         alignItems: 'center',
         justifyContent: 'center',
         gap: '0.5rem',
-        background: '#e11921',
+        background: '#fe751f',
         color: '#fff',
         border: 'none',
         padding: '0.75rem 1.5rem',
@@ -1571,7 +1570,7 @@ function ActionButton({ icon, text, onClick }: { icon: React.ReactNode; text: st
         transition: 'background 0.2s'
       }}
       onMouseEnter={(e) => e.currentTarget.style.background = '#bf151c'}
-      onMouseLeave={(e) => e.currentTarget.style.background = '#e11921'}
+      onMouseLeave={(e) => e.currentTarget.style.background = '#fe751f'}
     >
       {icon}
       {text}
@@ -1660,17 +1659,6 @@ function Footer({ phone, partnerText, license, companyName }: { phone: string; p
     <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 0', textAlign: 'center' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            background: '#e11921',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Camera style={{ width: '24px', height: '24px', color: '#fff' }} />
-          </div>
           <span style={{ fontSize: '1.5rem', fontWeight: 300, color: '#212529' }}>SGS LOCATIONS</span>
         </div>
 

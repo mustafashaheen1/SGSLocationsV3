@@ -60,6 +60,10 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        brand: {
+          DEFAULT: '#fe751f',
+          hover: '#e65a00',
+        },
       },
       keyframes: {
         'accordion-down': {

@@ -533,11 +533,11 @@ export default function AdminPropertiesPage() {
             variant="outline"
             onClick={handleBulkImportProperties}
             disabled={bulkImportLoading}
-            className="border-[#e11921] text-[#e11921] hover:bg-red-50"
+            className="border-brand text-brand hover:bg-red-50"
           >
             {bulkImportLoading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#e11921] mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand mr-2"></div>
                 Loading Albums...
               </>
             ) : (
@@ -549,7 +549,7 @@ export default function AdminPropertiesPage() {
           </Button>
           <Button
             onClick={() => router.push('/admin/properties/add')}
-            className="bg-[#e11921] hover:bg-red-700"
+            className="bg-brand hover:bg-red-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Property

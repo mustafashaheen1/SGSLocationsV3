@@ -248,7 +248,7 @@ export default function CategoryPage() {
                 display: 'inline-block',
                 marginTop: '2rem',
                 padding: '0.75rem 1.5rem',
-                background: '#e11921',
+                background: '#fe751f',
                 color: 'white',
                 borderRadius: '0.375rem',
                 textDecoration: 'none',

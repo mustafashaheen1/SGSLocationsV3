@@ -264,7 +264,7 @@ export default function InquiryDetailModal({
                 value={status}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 disabled={updating}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#e11921] focus:border-[#e11921] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand focus:border-brand disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="new">New</option>
                 <option value="responded">Responded</option>

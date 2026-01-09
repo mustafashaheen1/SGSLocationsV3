@@ -610,7 +610,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('details')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'details'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -621,7 +621,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('images')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'images'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -632,7 +632,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('documents')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'documents'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -643,7 +643,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('inquiries')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'inquiries'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -690,7 +690,7 @@ export default function EditPropertyPage() {
               placeholder="Start typing address..."
               required
               autoComplete="off"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
             />
             <p className="text-xs text-gray-500 mt-1">
               Start typing and select from the dropdown suggestions
@@ -714,7 +714,7 @@ export default function EditPropertyPage() {
               name="state"
               value={formData.state}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
               required
             >
               {US_STATES.map(state => (
@@ -739,7 +739,7 @@ export default function EditPropertyPage() {
               name="category_id"
               value={formData.category_id}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
               required
             >
               <option value="">Select a category</option>
@@ -759,7 +759,7 @@ export default function EditPropertyPage() {
                   name="is_featured"
                   checked={formData.is_featured}
                   onChange={handleInputChange}
-                  className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                  className="w-5 h-5 text-brand border-gray-300 rounded focus:ring-brand"
                 />
                 <div>
                   <span className="text-sm font-semibold text-gray-900 block">Featured Property</span>
@@ -775,7 +775,7 @@ export default function EditPropertyPage() {
                   name="is_exclusive"
                   checked={formData.is_exclusive}
                   onChange={handleInputChange}
-                  className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                  className="w-5 h-5 text-brand border-gray-300 rounded focus:ring-brand"
                 />
                 <div>
                   <span className="text-sm font-semibold text-gray-900 block">Exclusive Property</span>
@@ -799,7 +799,7 @@ export default function EditPropertyPage() {
                   </p>
                 </div>
                 {propertyTags.length > 0 && (
-                  <span className="px-3 py-1 bg-[#e11921] text-white text-sm font-medium rounded-full">
+                  <span className="px-3 py-1 bg-brand text-white text-sm font-medium rounded-full">
                     {propertyTags.length} selected
                   </span>
                 )}
@@ -812,7 +812,7 @@ export default function EditPropertyPage() {
                     <button
                       type="button"
                       onClick={() => setPropertyTags([])}
-                      className="text-xs text-[#e11921] hover:text-red-700 font-medium"
+                      className="text-xs text-brand hover:text-red-700 font-medium"
                     >
                       Clear all
                     </button>
@@ -823,7 +823,7 @@ export default function EditPropertyPage() {
                       return (
                         <span
                           key={tagName}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#e11921] text-white text-sm rounded-full"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand text-white text-sm rounded-full"
                         >
                           {tag?.filter_name && (
                             <span className="opacity-75 text-xs">{tag.filter_name}:</span>
@@ -861,7 +861,7 @@ export default function EditPropertyPage() {
                           />
                           <span className="font-medium text-sm text-gray-900">{filterName}</span>
                           {selectedInFilter > 0 && (
-                            <span className="px-2 py-0.5 bg-[#e11921] text-white text-xs font-medium rounded-full">
+                            <span className="px-2 py-0.5 bg-brand text-white text-xs font-medium rounded-full">
                               {selectedInFilter}
                             </span>
                           )}
@@ -889,8 +889,8 @@ export default function EditPropertyPage() {
                                   }}
                                   className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-all ${
                                     isSelected
-                                      ? 'bg-[#e11921] text-white border-[#e11921] shadow-sm'
-                                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#e11921] hover:text-[#e11921]'
+                                      ? 'bg-brand text-white border-brand shadow-sm'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:border-brand hover:text-brand'
                                   }`}
                                 >
                                   {tag.name}
@@ -1159,7 +1159,7 @@ export default function EditPropertyPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="bg-[#e11921] hover:bg-red-700"
+            className="bg-brand hover:bg-red-700"
           >
             {saving ? 'Saving...' : 'Update Property'}
           </Button>
@@ -1176,7 +1176,7 @@ export default function EditPropertyPage() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#e11921]"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
 
               <h3 className="text-lg font-semibold mb-4">Processing Images</h3>
@@ -1204,7 +1204,7 @@ export default function EditPropertyPage() {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-[#e11921] h-2 rounded-full transition-all duration-300"
+                      className="bg-brand h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(analysisProgress.current / analysisProgress.total) * 100}%` }}
                     />
                   </div>

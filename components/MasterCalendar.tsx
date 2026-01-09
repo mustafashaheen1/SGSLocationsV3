@@ -145,7 +145,7 @@ export default function MasterCalendar() {
           <select
             value={filterEventType}
             onChange={(e) => setFilterEventType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="all">All Events</option>
             <option value="hold_days">Hold Days Only</option>
@@ -257,7 +257,7 @@ export default function MasterCalendar() {
               {/* Property Info */}
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-[#e11921] mt-0.5" />
+                  <MapPin className="w-5 h-5 text-brand mt-0.5" />
                   <div>
                     <p className="font-semibold text-gray-900">{selectedEvent.property_name}</p>
                     <p className="text-sm text-gray-600">
@@ -265,7 +265,7 @@ export default function MasterCalendar() {
                     </p>
                     <a
                       href={`/admin/properties/${selectedEvent.property_id}/edit`}
-                      className="text-sm text-[#e11921] hover:underline mt-1 inline-block"
+                      className="text-sm text-brand hover:underline mt-1 inline-block"
                     >
                       View property →
                     </a>
@@ -331,7 +331,7 @@ export default function MasterCalendar() {
               <div className="flex gap-2 pt-4 border-t">
                 <a
                   href={`/admin/properties/${selectedEvent.property_id}/edit?tab=calendar`}
-                  className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-md hover:bg-red-700 text-center"
+                  className="flex-1 px-4 py-2 bg-brand text-white rounded-md hover:bg-red-700 text-center"
                 >
                   Edit in Property Calendar
                 </a>

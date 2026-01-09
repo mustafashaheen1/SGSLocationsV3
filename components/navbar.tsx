@@ -203,7 +203,7 @@ export function Navbar() {
               <Button
                 type="submit"
                 size="sm"
-                className="ml-2 bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
+                className="ml-2 bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
               >
                 <Search className="w-4 h-4" />
               </Button>
@@ -272,7 +272,7 @@ export function Navbar() {
               />
               <Button
                 type="submit"
-                className="bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
+                className="bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
               >
                 <Search className="w-4 h-4" />
               </Button>
@@ -287,7 +287,7 @@ export function Navbar() {
                     setMobileMenuOpen(false);
                     setIsLoginModalOpen(true);
                   }}
-                  className="text-white text-base tracking-widest hover:text-[#e11921] transition-colors py-3 w-full text-left" style={{fontWeight: 300}}
+                  className="text-white text-base tracking-widest hover:text-brand transition-colors py-3 w-full text-left" style={{fontWeight: 300}}
                 >
                   {item.label}
                 </button>
@@ -296,7 +296,7 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-white text-base tracking-widest hover:text-[#e11921] transition-colors py-3 block w-full" style={{fontWeight: 300}}
+                  className="text-white text-base tracking-widest hover:text-brand transition-colors py-3 block w-full" style={{fontWeight: 300}}
                 >
                   {item.label}
                 </Link>

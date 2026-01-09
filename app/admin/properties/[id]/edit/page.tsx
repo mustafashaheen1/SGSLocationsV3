@@ -1424,7 +1424,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('details')}
               className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
                 activeTab === 'details'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -1436,7 +1436,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('images')}
               className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
                 activeTab === 'images'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -1448,7 +1448,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('calendar')}
               className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
                 activeTab === 'calendar'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -1460,7 +1460,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('contacts')}
               className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
                 activeTab === 'contacts'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -1472,7 +1472,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('documents')}
               className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
                 activeTab === 'documents'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -1484,7 +1484,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('inquiries')}
               className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
                 activeTab === 'inquiries'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -1496,7 +1496,7 @@ export default function EditPropertyPage() {
               onClick={() => setActiveTab('terms')}
               className={`px-6 py-4 text-sm font-medium border-b-2 flex items-center gap-2 transition-colors ${
                 activeTab === 'terms'
-                  ? 'border-[#e11921] text-[#e11921]'
+                  ? 'border-brand text-brand'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -1648,7 +1648,7 @@ export default function EditPropertyPage() {
                     placeholder="Start typing address..."
                     required
                     autoComplete="off"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Start typing and select from the dropdown suggestions
@@ -1672,7 +1672,7 @@ export default function EditPropertyPage() {
                     name="state"
                     value={formData.state}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
                     required
                   >
                     {US_STATES.map(state => (
@@ -1701,7 +1701,7 @@ export default function EditPropertyPage() {
                       // Reset sub-category when main category changes
                       setFormData(prev => ({ ...prev, sub_category_id: '' }));
                     }}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
                     required
                   >
                     <option value="">Select a main category</option>
@@ -1719,7 +1719,7 @@ export default function EditPropertyPage() {
                     name="sub_category_id"
                     value={formData.sub_category_id}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921]"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
                     required
                     disabled={!formData.category_id}
                   >
@@ -1745,7 +1745,7 @@ export default function EditPropertyPage() {
                         name="is_featured"
                         checked={formData.is_featured}
                         onChange={handleInputChange}
-                        className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                        className="w-5 h-5 text-brand border-gray-300 rounded focus:ring-brand"
                       />
                       <div>
                         <span className="text-sm font-semibold text-gray-900 block">Featured Property</span>
@@ -1761,7 +1761,7 @@ export default function EditPropertyPage() {
                         name="is_exclusive"
                         checked={formData.is_exclusive}
                         onChange={handleInputChange}
-                        className="w-5 h-5 text-[#e11921] border-gray-300 rounded focus:ring-[#e11921]"
+                        className="w-5 h-5 text-brand border-gray-300 rounded focus:ring-brand"
                       />
                       <div>
                         <span className="text-sm font-semibold text-gray-900 block">Exclusive Property</span>
@@ -1776,7 +1776,7 @@ export default function EditPropertyPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#e11921] hover:bg-red-700"
+                  className="bg-brand hover:bg-red-700"
                 >
                   {saving ? 'Saving Changes...' : 'Save Changes'}
                 </Button>
@@ -2017,7 +2017,7 @@ export default function EditPropertyPage() {
                       </p>
                     </div>
                     {propertyTags.length > 0 && (
-                      <span className="px-3 py-1 bg-[#e11921] text-white text-sm font-medium rounded-full">
+                      <span className="px-3 py-1 bg-brand text-white text-sm font-medium rounded-full">
                         {propertyTags.length} selected
                       </span>
                     )}
@@ -2030,7 +2030,7 @@ export default function EditPropertyPage() {
                         <button
                           type="button"
                           onClick={() => setPropertyTags([])}
-                          className="text-xs text-[#e11921] hover:text-red-700 font-medium"
+                          className="text-xs text-brand hover:text-red-700 font-medium"
                         >
                           Clear all
                         </button>
@@ -2041,7 +2041,7 @@ export default function EditPropertyPage() {
                           return (
                             <span
                               key={tagName}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#e11921] text-white text-sm rounded-full"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand text-white text-sm rounded-full"
                             >
                               {tag?.filter_name && (
                                 <span className="opacity-75 text-xs">{tag.filter_name}:</span>
@@ -2079,7 +2079,7 @@ export default function EditPropertyPage() {
                               />
                               <span className="font-medium text-sm text-gray-900">{filterName}</span>
                               {selectedInFilter > 0 && (
-                                <span className="px-2 py-0.5 bg-[#e11921] text-white text-xs font-medium rounded-full">
+                                <span className="px-2 py-0.5 bg-brand text-white text-xs font-medium rounded-full">
                                   {selectedInFilter}
                                 </span>
                               )}
@@ -2107,8 +2107,8 @@ export default function EditPropertyPage() {
                                       }}
                                       className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-all ${
                                         isSelected
-                                          ? 'bg-[#e11921] text-white border-[#e11921] shadow-sm'
-                                          : 'bg-white text-gray-700 border-gray-300 hover:border-[#e11921] hover:text-[#e11921]'
+                                          ? 'bg-brand text-white border-brand shadow-sm'
+                                          : 'bg-white text-gray-700 border-gray-300 hover:border-brand hover:text-brand'
                                       }`}
                                     >
                                       {tag.name}
@@ -2129,7 +2129,7 @@ export default function EditPropertyPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#e11921] hover:bg-red-700"
+                  className="bg-brand hover:bg-red-700"
                 >
                   {saving ? 'Saving Changes...' : 'Save Changes'}
                 </Button>
@@ -2258,7 +2258,7 @@ export default function EditPropertyPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#e11921] hover:bg-red-700"
+                  className="bg-brand hover:bg-red-700"
                 >
                   {saving ? 'Saving Changes...' : 'Save Changes'}
                 </Button>
@@ -2285,7 +2285,7 @@ export default function EditPropertyPage() {
                     <button
                       type="button"
                       onClick={() => setShowNewProjectModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                       New Project
@@ -2302,7 +2302,7 @@ export default function EditPropertyPage() {
                       <button
                         type="button"
                         onClick={() => setShowNewProjectModal(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-red-700 transition-colors"
                       >
                         <Plus className="w-4 h-4" />
                         Create First Project
@@ -2313,7 +2313,7 @@ export default function EditPropertyPage() {
                       {projects.map((project) => (
                         <div
                           key={project.id}
-                          className="group relative bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-[#e11921] hover:shadow-lg transition-all cursor-pointer"
+                          className="group relative bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-brand hover:shadow-lg transition-all cursor-pointer"
                           onClick={() => handleSelectProject(project)}
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -2330,7 +2330,7 @@ export default function EditPropertyPage() {
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
-                          <h4 className="font-semibold text-gray-900 mb-2 group-hover:text-[#e11921] transition-colors">
+                          <h4 className="font-semibold text-gray-900 mb-2 group-hover:text-brand transition-colors">
                             {project.name}
                           </h4>
                           <p className="text-xs text-gray-500">
@@ -2377,14 +2377,14 @@ export default function EditPropertyPage() {
                     onDragLeave={handleDocumentDragLeave}
                     className={`border-2 border-dashed rounded-lg p-8 mb-6 transition-colors ${
                       isDraggingDoc
-                        ? 'border-[#e11921] bg-red-50'
+                        ? 'border-brand bg-red-50'
                         : 'border-gray-300 bg-gray-50'
                     }`}
                   >
                     <div className="text-center">
                       <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                       <label htmlFor="document-upload" className="cursor-pointer">
-                        <span className="text-sm font-medium text-[#e11921] hover:text-red-700">
+                        <span className="text-sm font-medium text-brand hover:text-red-700">
                           Click to upload documents
                         </span>
                         <span className="text-sm text-gray-600"> or drag and drop</span>
@@ -2553,16 +2553,16 @@ export default function EditPropertyPage() {
                         onClick={() => setTermsType('text')}
                         className={`p-4 border-2 rounded-lg transition-all ${
                           termsType === 'text'
-                            ? 'border-[#e11921] bg-red-50'
+                            ? 'border-brand bg-red-50'
                             : 'border-gray-300 hover:border-gray-400'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            termsType === 'text' ? 'border-[#e11921]' : 'border-gray-300'
+                            termsType === 'text' ? 'border-brand' : 'border-gray-300'
                           }`}>
                             {termsType === 'text' && (
-                              <div className="w-3 h-3 rounded-full bg-[#e11921]"></div>
+                              <div className="w-3 h-3 rounded-full bg-brand"></div>
                             )}
                           </div>
                           <div className="text-left">
@@ -2577,16 +2577,16 @@ export default function EditPropertyPage() {
                         onClick={() => setTermsType('pdf')}
                         className={`p-4 border-2 rounded-lg transition-all ${
                           termsType === 'pdf'
-                            ? 'border-[#e11921] bg-red-50'
+                            ? 'border-brand bg-red-50'
                             : 'border-gray-300 hover:border-gray-400'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            termsType === 'pdf' ? 'border-[#e11921]' : 'border-gray-300'
+                            termsType === 'pdf' ? 'border-brand' : 'border-gray-300'
                           }`}>
                             {termsType === 'pdf' && (
-                              <div className="w-3 h-3 rounded-full bg-[#e11921]"></div>
+                              <div className="w-3 h-3 rounded-full bg-brand"></div>
                             )}
                           </div>
                           <div className="text-left">
@@ -2682,7 +2682,7 @@ export default function EditPropertyPage() {
                       type="button"
                       onClick={handleSendTerms}
                       disabled={sendingTerms || (termsType === 'text' && !termsContent.trim()) || (termsType === 'pdf' && !termsPdfFile)}
-                      className="bg-[#e11921] hover:bg-red-700 flex items-center gap-2"
+                      className="bg-brand hover:bg-red-700 flex items-center gap-2"
                     >
                       {sendingTerms ? (
                         <>
@@ -2739,7 +2739,7 @@ export default function EditPropertyPage() {
                     </div>
                     <div className="flex items-center gap-2 ml-4">
                       {file.status === 'uploading' && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#e11921]"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
                       )}
                       {file.status === 'completed' && (
                         <div className="text-green-600">✓</div>
@@ -2761,7 +2761,7 @@ export default function EditPropertyPage() {
                           ? 'bg-green-600'
                           : file.status === 'error'
                           ? 'bg-red-600'
-                          : 'bg-[#e11921]'
+                          : 'bg-brand'
                       }`}
                       style={{ width: `${file.progress}%` }}
                     ></div>
@@ -2812,7 +2812,7 @@ export default function EditPropertyPage() {
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               placeholder="e.g., Summer 2024 Production"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e11921] focus:border-transparent outline-none mb-6"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent outline-none mb-6"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newProjectName.trim()) {
@@ -2825,7 +2825,7 @@ export default function EditPropertyPage() {
                 type="button"
                 onClick={handleCreateProject}
                 disabled={!newProjectName.trim()}
-                className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-brand text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Create Project
               </button>
@@ -2849,7 +2849,7 @@ export default function EditPropertyPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
             <div className="flex items-center space-x-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e11921]"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               <div>
                 <h3 className="text-lg font-semibold">Generating AI Content...</h3>
                 <p className="text-sm text-gray-600 mt-1">
@@ -2867,7 +2867,7 @@ export default function EditPropertyPage() {
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="mb-4">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#e11921]"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
               </div>
 
               <h3 className="text-lg font-semibold mb-4">Processing Images</h3>
@@ -2895,7 +2895,7 @@ export default function EditPropertyPage() {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-[#e11921] h-2 rounded-full transition-all duration-300"
+                      className="bg-brand h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(analysisProgress.current / analysisProgress.total) * 100}%` }}
                     />
                   </div>

@@ -250,7 +250,7 @@ export default function AdminPropertiesPage() {
         </div>
         <Button
           onClick={() => router.push('/admin/properties/add')}
-          className="bg-[#e11921] hover:bg-red-700"
+          className="bg-brand hover:bg-red-700"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Property

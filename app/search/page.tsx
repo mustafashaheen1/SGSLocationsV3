@@ -1291,9 +1291,9 @@ export default function SearchPage() {
         }
 
         .dropdown-toggle.has-active {
-          background: #e11921;
+          background: #fe751f;
           color: white;
-          border-color: #e11921;
+          border-color: #fe751f;
         }
 
         .dropdown-menu {
@@ -1379,8 +1379,8 @@ export default function SearchPage() {
         }
 
         .done-btn {
-          background: #e11921;
-          border: 1px solid #e11921;
+          background: #fe751f;
+          border: 1px solid #fe751f;
           color: white;
         }
 
@@ -1390,8 +1390,8 @@ export default function SearchPage() {
 
         .clear-all-btn {
           padding: 6px 12px;
-          background: #e11921;
-          border: 1px solid #e11921;
+          background: #fe751f;
+          border: 1px solid #fe751f;
           color: white;
           border-radius: 3px;
           font-size: 14px;
@@ -1443,7 +1443,7 @@ export default function SearchPage() {
         }
 
         .toggle-switch.active {
-          background-color: #e11921;
+          background-color: #fe751f;
         }
 
         .toggle-switch::after {
@@ -1519,7 +1519,7 @@ export default function SearchPage() {
           align-items: center;
           gap: 8px;
           padding: 12px;
-          background: #e11921;
+          background: #fe751f;
           color: white;
           border: none;
           border-radius: 3px;
@@ -1627,7 +1627,7 @@ export default function SearchPage() {
 
         .save-modal-body input:focus {
           outline: none;
-          border-color: #e11921;
+          border-color: #fe751f;
           box-shadow: 0 0 0 3px rgba(225, 25, 33, 0.1);
         }
 
@@ -1680,8 +1680,8 @@ export default function SearchPage() {
         }
 
         .save-btn {
-          background: #e11921;
-          border: 1px solid #e11921;
+          background: #fe751f;
+          border: 1px solid #fe751f;
           color: white;
         }
 
@@ -1733,7 +1733,7 @@ export default function SearchPage() {
         .filter-remove {
           background: none;
           border: none;
-          color: #e11921;
+          color: #fe751f;
           cursor: pointer;
           padding: 0;
           display: flex;
@@ -1910,7 +1910,7 @@ export default function SearchPage() {
           width: 40px;
           height: 40px;
           border: 3px solid #f3f4f6;
-          border-top: 3px solid #e11921;
+          border-top: 3px solid #fe751f;
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }
@@ -1990,7 +1990,7 @@ export default function SearchPage() {
               className="category-select"
               style={{
                 padding: '8px 12px',
-                background: selectedCategory ? '#e11921' : 'white',
+                background: selectedCategory ? '#fe751f' : 'white',
                 border: '1px solid #ced4da',
                 borderRadius: '3px',
                 cursor: 'pointer',
@@ -2021,7 +2021,7 @@ export default function SearchPage() {
               disabled={!selectedCategory}
               style={{
                 padding: '8px 12px',
-                background: selectedSubCategory ? '#e11921' : 'white',
+                background: selectedSubCategory ? '#fe751f' : 'white',
                 border: '1px solid #ced4da',
                 borderRadius: '3px',
                 cursor: selectedCategory ? 'pointer' : 'not-allowed',
@@ -2229,7 +2229,7 @@ export default function SearchPage() {
                           }}
                           style={{
                             padding: '0.5rem 1rem',
-                            background: '#e11921',
+                            background: '#fe751f',
                             color: 'white',
                             border: 'none',
                             borderRadius: '3px',
@@ -2257,8 +2257,8 @@ export default function SearchPage() {
                           style={{
                             padding: '0.5rem 1rem',
                             background: 'white',
-                            color: '#e11921',
-                            border: '2px solid #e11921',
+                            color: '#fe751f',
+                            border: '2px solid #fe751f',
                             borderRadius: '3px',
                             cursor: 'pointer',
                             fontSize: '14px',

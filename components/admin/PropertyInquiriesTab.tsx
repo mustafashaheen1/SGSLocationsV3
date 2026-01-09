@@ -116,7 +116,7 @@ export default function PropertyInquiriesTab({ propertyId }: PropertyInquiriesTa
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e11921] focus:border-[#e11921] outline-none"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand outline-none"
         >
           <option value="all">All Status</option>
           <option value="new">New</option>

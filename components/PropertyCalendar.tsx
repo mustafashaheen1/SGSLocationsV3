@@ -399,7 +399,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                 <select
                   value={formData.event_type}
                   onChange={(e) => setFormData({ ...formData, event_type: e.target.value as CalendarEventType })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="hold_days">Hold Days</option>
                   <option value="blackout_days">Blackout Days</option>
@@ -417,7 +417,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   placeholder="Enter event title"
                 />
               </div>
@@ -431,7 +431,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   placeholder="Enter event description"
                 />
               </div>
@@ -445,7 +445,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   type="date"
                   value={formData.start_date ? new Date(formData.start_date).toISOString().slice(0, 10) : ''}
                   onChange={(e) => setFormData({ ...formData, start_date: new Date(e.target.value + 'T00:00:00').toISOString() })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
@@ -458,7 +458,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   type="date"
                   value={formData.end_date ? new Date(formData.end_date).toISOString().slice(0, 10) : ''}
                   onChange={(e) => setFormData({ ...formData, end_date: new Date(e.target.value + 'T23:59:59').toISOString() })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e11921]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
@@ -482,7 +482,7 @@ export default function PropertyCalendar({ propertyId }: PropertyCalendarProps) 
                   type="button"
                   onClick={handleSaveEvent}
                   disabled={saving}
-                  className="flex-1 px-4 py-2 bg-[#e11921] text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-brand text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {saving ? (
                     <>

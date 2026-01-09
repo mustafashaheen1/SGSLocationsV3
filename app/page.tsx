@@ -323,7 +323,7 @@ export default function HomePage() {
             <Button
               onClick={() => router.push('/search')}
               size="lg"
-              className="bg-[#e11921] hover:bg-[#bf151c] text-lg rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
+              className="bg-brand hover:bg-[#bf151c] text-lg rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
             >
               Search Locations
             </Button>
@@ -351,7 +351,7 @@ export default function HomePage() {
               <Button
                 type="submit"
                 size="lg"
-                className="bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
+                className="bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
               >
                 <Search className="w-5 h-5 mr-2" />
                 Search
@@ -455,7 +455,7 @@ export default function HomePage() {
               const Icon = iconMap[service.icon] || MapPin;
               return (
                 <div key={service.id} className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-[#e11921] rounded-full mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-brand rounded-full mb-6">
                     <Icon className="w-8 h-8" />
                   </div>
                   <h3 className="text-2xl mb-4" style={{fontWeight: 300}}>{service.title}</h3>
@@ -484,7 +484,7 @@ export default function HomePage() {
             <Button
               onClick={() => router.push('/search')}
               size="lg"
-              className="bg-[#e11921] hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
+              className="bg-brand hover:bg-[#bf151c] rounded" style={{fontWeight: 300}}
             >
               Start Searching
             </Button>

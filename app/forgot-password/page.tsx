@@ -83,7 +83,7 @@ export default function ForgotPasswordPage() {
         }
 
         .forgot-password-page button[type="submit"] {
-          background-color: #e11921;
+          background-color: #fe751f;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.1em;
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
                 <div className="flex items-center justify-end mt-4">
                   <Link
                     href="/"
-                    className="inline-flex items-center px-4 py-2 bg-[#e11921] border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#bf151c] transition ease-in-out duration-150"
+                    className="inline-flex items-center px-4 py-2 bg-brand border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#bf151c] transition ease-in-out duration-150"
                   >
                     Back to Home
                   </Link>

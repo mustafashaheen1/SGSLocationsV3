@@ -2308,7 +2308,7 @@ export default function ContentManagementPage() {
                           {editingService?.id === service.id ? (
                             <div className="space-y-3">
                               <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2 bg-[#e11921] rounded-full text-white">
+                                <div className="p-2 bg-brand rounded-full text-white">
                                   {iconMap[service.icon]}
                                 </div>
                                 <span className="text-sm text-gray-500">Service {index + 1}</span>
@@ -2371,7 +2371,7 @@ export default function ContentManagementPage() {
                           ) : (
                             <div className="flex justify-between items-start">
                               <div className="flex gap-3 flex-1">
-                                <div className="p-2 bg-[#e11921] rounded-full text-white flex-shrink-0">
+                                <div className="p-2 bg-brand rounded-full text-white flex-shrink-0">
                                   {iconMap[service.icon]}
                                 </div>
                                 <div className="flex-1">

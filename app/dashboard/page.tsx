@@ -655,7 +655,7 @@ export default function ProductionDashboard() {
                   onClick={() => setActiveTab('my-locations')}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'my-locations'
-                      ? 'border-[#e11921] text-[#e11921]'
+                      ? 'border-brand text-brand'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -668,7 +668,7 @@ export default function ProductionDashboard() {
                     onClick={() => setActiveTab('inquiries')}
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === 'inquiries'
-                        ? 'border-[#e11921] text-[#e11921]'
+                        ? 'border-brand text-brand'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -678,7 +678,7 @@ export default function ProductionDashboard() {
                     onClick={() => setActiveTab('searches')}
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === 'searches'
-                        ? 'border-[#e11921] text-[#e11921]'
+                        ? 'border-brand text-brand'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -688,7 +688,7 @@ export default function ProductionDashboard() {
                     onClick={() => setActiveTab('favorites')}
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === 'favorites'
-                        ? 'border-[#e11921] text-[#e11921]'
+                        ? 'border-brand text-brand'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -700,7 +700,7 @@ export default function ProductionDashboard() {
                 onClick={() => setActiveTab('settings')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'settings'
-                    ? 'border-[#e11921] text-[#e11921]'
+                    ? 'border-brand text-brand'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -825,7 +825,7 @@ export default function ProductionDashboard() {
                     <Button
                       onClick={handleChangePassword}
                       disabled={saving}
-                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#bf151c]"
                     >
                       {saving ? 'Changing...' : 'Change Password'}
                     </Button>
@@ -850,7 +850,7 @@ export default function ProductionDashboard() {
                     <p className="text-gray-500 mb-4">You haven't listed any properties yet.</p>
                     <Button
                       onClick={() => router.push('/list-your-property')}
-                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#bf151c]"
                     >
                       List Your First Property
                     </Button>
@@ -1070,7 +1070,7 @@ export default function ProductionDashboard() {
                     </p>
                     <Button
                       onClick={() => router.push('/search')}
-                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#bf151c]"
                     >
                       Go to Search
                     </Button>
@@ -1133,7 +1133,7 @@ export default function ProductionDashboard() {
                             {/* Result Count */}
                             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                               <span className="text-sm text-gray-500">Results:</span>
-                              <span className="text-lg font-semibold text-[#e11921]">
+                              <span className="text-lg font-semibold text-brand">
                                 {search.result_count || 0}
                               </span>
                             </div>
@@ -1141,7 +1141,7 @@ export default function ProductionDashboard() {
 
                           <Button
                             onClick={() => handleGoToSearch(search)}
-                            className="w-full bg-[#e11921] text-white hover:bg-[#bf151c] text-sm py-2"
+                            className="w-full bg-brand text-white hover:bg-[#bf151c] text-sm py-2"
                           >
                             View Results
                           </Button>
@@ -1173,7 +1173,7 @@ export default function ProductionDashboard() {
                     </p>
                     <Button
                       onClick={() => router.push('/search')}
-                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#bf151c]"
                     >
                       Browse Properties
                     </Button>
@@ -1256,7 +1256,7 @@ export default function ProductionDashboard() {
                     </p>
                     <Button
                       onClick={() => router.push('/search')}
-                      className="bg-[#e11921] text-white hover:bg-[#bf151c]"
+                      className="bg-brand text-white hover:bg-[#bf151c]"
                     >
                       Browse Properties
                     </Button>
@@ -1303,7 +1303,7 @@ export default function ProductionDashboard() {
                             <div className="flex gap-2">
                               <Button
                                 onClick={() => router.push(`/property/${property.id}`)}
-                                className="flex-1 bg-[#e11921] text-white hover:bg-[#bf151c] text-sm py-2"
+                                className="flex-1 bg-brand text-white hover:bg-[#bf151c] text-sm py-2"
                               >
                                 <Eye className="w-4 h-4 mr-1" />
                                 View Property

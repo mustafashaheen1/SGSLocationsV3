@@ -180,7 +180,7 @@ export default function PortfolioPage() {
                           handleVisitLocation(item.property_id);
                         }
                       }}
-                      className="visit-btn bg-[#e11921] text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors"
+                      className="visit-btn bg-brand text-white px-6 py-2 text-sm hover:bg-[#bf151c] transition-colors"
                     >
                       VISIT LOCATION
                     </button>

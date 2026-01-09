@@ -175,7 +175,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#e11921] mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
           <p className="mt-2 text-gray-600">Loading admin panel...</p>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function AdminLayout({
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-bold text-[#e11921]" style={{ fontFamily: 'acumin-pro-wide' }}>
+            <h1 className="text-xl font-bold text-brand" style={{ fontFamily: 'acumin-pro-wide' }}>
               SGS Locations Admin
             </h1>
           </div>
@@ -241,7 +241,7 @@ export default function AdminLayout({
                           href={subItem.href}
                           className={`block px-4 py-2 rounded-lg text-sm transition-colors ${
                             pathname === subItem.href
-                              ? 'bg-red-50 text-[#e11921] font-medium'
+                              ? 'bg-red-50 text-brand font-medium'
                               : 'text-gray-600 hover:bg-gray-50'
                           }`}
                           style={{ fontFamily: 'acumin-pro-wide' }}
@@ -263,7 +263,7 @@ export default function AdminLayout({
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-red-50 text-[#e11921] font-medium'
+                      ? 'bg-red-50 text-brand font-medium'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                   style={{ fontFamily: 'acumin-pro-wide' }}
