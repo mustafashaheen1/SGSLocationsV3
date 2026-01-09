@@ -90,6 +90,7 @@ export default function AddPropertyPage() {
   const [extractingAddress, setExtractingAddress] = useState(false);
   const [formData, setFormData] = useState({
     real_name: '', // The actual property name (admin only)
+    sub_heading: '', // Custom sub-heading for the property
     description: '',
     address: '',
     city: '',
@@ -1004,6 +1005,12 @@ export default function AddPropertyPage() {
       return;
     }
 
+    // Validate sub-heading
+    if (!formData.sub_heading || !formData.sub_heading.trim()) {
+      alert('Please provide a sub-heading for this property');
+      return;
+    }
+
     if (images.length < 6) {
       alert('Please upload at least 6 images for the property grid display');
       return;
@@ -1073,6 +1080,7 @@ export default function AddPropertyPage() {
       const propertyData: any = {
         name: propertyName, // Category-based sequential name (e.g., COM-0001)
         real_name: formData.real_name, // Actual property name (admin only)
+        sub_heading: formData.sub_heading, // Custom sub-heading
         description: formData.description || '',
         address: formData.address,
         city: formData.city,
@@ -1273,6 +1281,23 @@ export default function AddPropertyPage() {
               placeholder="e.g., 4608 Alta Dr. or Dallas Medical Center"
               required
             />
+          </div>
+
+          <div className="col-span-2">
+            <label className="block text-sm font-medium mb-2">
+              Sub-heading <span className="text-red-500">*</span>
+            </label>
+            <Input
+              name="sub_heading"
+              value={formData.sub_heading}
+              onChange={handleInputChange}
+              placeholder="e.g., A Modern Architectural Marvel in Fort Worth"
+              maxLength={200}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Custom sub-heading displayed on the property detail page.
+            </p>
           </div>
 
           <div className="col-span-2">

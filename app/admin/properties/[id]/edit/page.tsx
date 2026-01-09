@@ -91,6 +91,7 @@ export default function EditPropertyPage() {
   const [formData, setFormData] = useState({
     name: '', // Obfuscated public name (readonly in edit mode)
     real_name: '', // Actual property name (editable)
+    sub_heading: '', // Custom sub-heading for the property
     description: '',
     address: '',
     city: '',
@@ -272,6 +273,7 @@ export default function EditPropertyPage() {
       setFormData({
         name: prop.name || '',
         real_name: prop.real_name || prop.name || '', // Fallback to name if real_name doesn't exist yet
+        sub_heading: prop.sub_heading || '',
         description: prop.description || '',
         address: prop.address || '',
         city: prop.city || '',
@@ -1147,6 +1149,12 @@ export default function EditPropertyPage() {
       return;
     }
 
+    // Validate sub-heading
+    if (!formData.sub_heading || !formData.sub_heading.trim()) {
+      alert('Please provide a sub-heading for this property');
+      return;
+    }
+
     // Validate contacts
     if (contacts.length < 2) {
       alert('At least 2 contacts are required');
@@ -1182,6 +1190,7 @@ export default function EditPropertyPage() {
       const propertyData: any = {
         // name: DO NOT UPDATE - keeps the original obfuscated name
         real_name: formData.real_name, // Actual property name (admin only)
+        sub_heading: formData.sub_heading, // Custom sub-heading
         description: formData.description || '',
         address: formData.address,
         city: formData.city,
@@ -1460,6 +1469,23 @@ export default function EditPropertyPage() {
                     className="bg-gray-100 cursor-not-allowed"
                     placeholder="Generated automatically from real name"
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Sub-heading <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    name="sub_heading"
+                    value={formData.sub_heading}
+                    onChange={handleInputChange}
+                    placeholder="e.g., A Modern Architectural Marvel in Fort Worth"
+                    maxLength={200}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Custom sub-heading displayed on the property detail page.
+                  </p>
                 </div>
 
                 {/* Only show albumkey field for admin-owned properties */}

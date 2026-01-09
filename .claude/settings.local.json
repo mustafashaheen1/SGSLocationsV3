@@ -37,7 +37,8 @@
       "Bash(node check-names.mjs:*)",
       "Bash(node check-names-simple.mjs:*)",
       "Bash(supabase db push:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []

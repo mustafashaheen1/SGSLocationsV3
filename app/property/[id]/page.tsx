@@ -1219,7 +1219,7 @@ export default function PropertyDetailPage() {
                   marginBottom: '0.5rem',
                   fontFamily: 'acumin-pro-wide, sans-serif'
                 }}>
-                  {property.name}: An Architectural Marvel in {property.city} for Filmmakers and Photographers
+                  {property.sub_heading || `${property.name}: An Architectural Marvel in ${property.city} for Filmmakers and Photographers`}
                 </h2>
                 <p>
                   {property.description || 'Nestled in the vibrant city, this location stands as a testament to innovative design and modern architecture. A unique blend of functional space and striking visual appeal, this building offers an exciting backdrop for filming, photography, and various production activities.'}
