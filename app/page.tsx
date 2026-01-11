@@ -38,6 +38,7 @@ export default function HomePage() {
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [heroVideo, setHeroVideo] = useState('');
+  const [heroPoster, setHeroPoster] = useState('');
   const [heroTitle, setHeroTitle] = useState('');
   const [heroSubtitle, setHeroSubtitle] = useState('');
   const [services, setServices] = useState<Service[]>([]);
@@ -67,7 +68,7 @@ export default function HomePage() {
         // Fetch hero settings
         console.log('📥 Fetching site settings...');
         const { data: settings, error: settingsError } = await directFetch('site_settings', {
-          in: { key: ['hero_video', 'hero_title', 'hero_subtitle'] }
+          in: { key: ['hero_video', 'hero_video_poster', 'hero_title', 'hero_subtitle'] }
         });
 
         if (settingsError) {
@@ -99,6 +100,17 @@ export default function HomePage() {
 
               console.log('🎥 Proxied video URL:', proxiedUrl);
               setHeroVideo(proxiedUrl);
+            }
+            if (setting.key === 'hero_video_poster') {
+              let posterUrl = setting.value || '';
+              // Strip any surrounding quotes
+              posterUrl = posterUrl.trim().replace(/^["']|["']$/g, '');
+              // Fix missing protocol
+              if (posterUrl && !posterUrl.startsWith('http') && !posterUrl.startsWith('/')) {
+                posterUrl = `https://${posterUrl}`;
+              }
+              console.log('🖼️ Hero poster URL:', posterUrl);
+              setHeroPoster(posterUrl);
             }
             if (setting.key === 'hero_title') {
               let titleValue = setting.value || '';
@@ -274,12 +286,14 @@ export default function HomePage() {
           <video
             key={heroVideo}
             src={heroVideo}
+            poster={heroPoster}
             autoPlay
             loop
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectFit: 'cover' }}
             onLoadedData={() => {
               console.log('✅ Video loaded successfully');
             }}

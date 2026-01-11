@@ -216,6 +216,26 @@ class QueryBuilder {
     return this;
   }
 
+  gt(column: string, value: string | number): this {
+    this.filters.push({ type: 'gt', column, value });
+    return this;
+  }
+
+  gte(column: string, value: string | number): this {
+    this.filters.push({ type: 'gte', column, value });
+    return this;
+  }
+
+  lt(column: string, value: string | number): this {
+    this.filters.push({ type: 'lt', column, value });
+    return this;
+  }
+
+  lte(column: string, value: string | number): this {
+    this.filters.push({ type: 'lte', column, value });
+    return this;
+  }
+
   update(data: any) {
     this.operation = 'update';
     this.updateData = data;
@@ -316,6 +336,14 @@ class QueryBuilder {
             url += `&${filter.column}=is.${filter.value}`;
           } else if (filter.type === 'ov') {
             url += `&${filter.column}=ov.{${filter.value.map((v: any) => encodeURIComponent(String(v))).join(',')}}`;
+          } else if (filter.type === 'gt') {
+            url += `&${filter.column}=gt.${encodeURIComponent(String(filter.value))}`;
+          } else if (filter.type === 'gte') {
+            url += `&${filter.column}=gte.${encodeURIComponent(String(filter.value))}`;
+          } else if (filter.type === 'lt') {
+            url += `&${filter.column}=lt.${encodeURIComponent(String(filter.value))}`;
+          } else if (filter.type === 'lte') {
+            url += `&${filter.column}=lte.${encodeURIComponent(String(filter.value))}`;
           }
         }
 

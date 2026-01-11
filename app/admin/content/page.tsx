@@ -125,9 +125,11 @@ export default function ContentManagementPage() {
   // Home Page Content States
   const [heroMediaType, setHeroMediaType] = useState<'video' | 'photo'>('video');
   const [heroVideo, setHeroVideo] = useState('');
+  const [heroVideoPoster, setHeroVideoPoster] = useState('');
   const [heroImage, setHeroImage] = useState('');
   const [heroTitle, setHeroTitle] = useState('');
   const [heroSubtitle, setHeroSubtitle] = useState('');
+  const [uploadingPoster, setUploadingPoster] = useState(false);
   const [selectedHeroImageFile, setSelectedHeroImageFile] = useState<File | null>(null);
   const [heroImagePreview, setHeroImagePreview] = useState('');
   const [productionLogos, setProductionLogos] = useState<ProductionLogo[]>([]);
@@ -334,6 +336,7 @@ export default function ContentManagementPage() {
           switch(setting.key) {
             case 'hero_media_type': setHeroMediaType(value as 'video' | 'photo'); break;
             case 'hero_video': setHeroVideo(value); break;
+            case 'hero_video_poster': setHeroVideoPoster(value); break;
             case 'hero_image': setHeroImage(value); break;
             case 'hero_title': setHeroTitle(value); break;
             case 'hero_subtitle': setHeroSubtitle(value); break;
@@ -492,6 +495,25 @@ export default function ContentManagementPage() {
       alert('Error uploading video');
     } finally {
       setUploadingVideo(false);
+    }
+  }
+
+  async function handlePosterUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPoster(true);
+    try {
+      const { uploadImageToS3 } = await import('@/lib/s3-upload');
+      const imageUrl = await uploadImageToS3(file, 'videos');
+      await saveSiteSetting('hero_video_poster', imageUrl, 'home', 'hero');
+      setHeroVideoPoster(imageUrl);
+      alert('Poster uploaded and saved successfully!');
+    } catch (error: any) {
+      console.error('Error uploading poster:', error);
+      alert('Error uploading poster: ' + error.message);
+    } finally {
+      setUploadingPoster(false);
     }
   }
 
@@ -1862,6 +1884,53 @@ export default function ContentManagementPage() {
                       </div>
                     )}
                     <p className="text-xs text-gray-500 mt-1">MP4 or WebM format recommended</p>
+
+                    {/* Video Poster Upload */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium mb-2">
+                        Video Poster/Thumbnail (Recommended)
+                      </label>
+                      <p className="text-xs text-gray-500 mb-2">
+                        Upload a poster image shown while video loads. Recommended: 1920x1080 JPG/WebP
+                      </p>
+                      {heroVideoPoster && (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-2">Current Poster:</p>
+                          <img
+                            src={heroVideoPoster}
+                            alt="Video Poster"
+                            className="w-64 h-36 object-cover rounded border border-gray-300"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-4">
+                        <Button
+                          onClick={() => document.getElementById('posterUpload')?.click()}
+                          disabled={uploadingPoster}
+                          variant="outline"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          {uploadingPoster ? 'Uploading...' : 'Upload Poster'}
+                        </Button>
+                        {heroVideoPoster && (
+                          <Button
+                            onClick={() => setHeroVideoPoster('')}
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Remove Poster
+                          </Button>
+                        )}
+                        <input
+                          id="posterUpload"
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/webp,image/png"
+                          onChange={handlePosterUpload}
+                          className="hidden"
+                        />
+                      </div>
+                      {uploadingPoster && <p className="text-sm text-blue-600 mt-2">Uploading poster...</p>}
+                    </div>
                   </div>
                 )}
 
