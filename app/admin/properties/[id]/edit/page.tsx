@@ -9,16 +9,17 @@ declare global {
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2, MessageSquare, Send, AlertCircle, CheckCircle, Sparkles, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Upload, X, Camera, Tag, ChevronDown, ChevronLeft, Eye, Download, Calendar as CalendarIcon, User, Image as ImageIcon, FileText, Trash2, Folder, FolderOpen, Plus, Edit2, MessageSquare, Send, AlertCircle, CheckCircle, Sparkles, ExternalLink, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
-import { uploadMultipleImages, deleteImageFromS3, uploadDocumentToS3, deleteDocumentFromS3 } from '@/lib/s3-upload';
+import { uploadImageToS3, uploadMultipleImages, deleteImageFromS3, uploadDocumentToS3, deleteDocumentFromS3 } from '@/lib/s3-upload';
 import { GridPreview } from '@/components/admin/GridPreview';
 import { generateObfuscatedName } from '@/lib/name-obfuscator';
 import PropertyCalendar from '@/components/PropertyCalendar';
 import PropertyInquiriesTab from '@/components/admin/PropertyInquiriesTab';
+import ImageEditorModal from '@/components/admin/ImageEditorModal';
 
 const US_STATES = [
   'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -39,6 +40,7 @@ interface Category {
 
 interface ImageWithTags {
   url: string;
+  originalUrl?: string;  // Original URL before editing
   file?: File;
   tags: string[];
   isSmugmug: boolean;
@@ -78,6 +80,7 @@ export default function EditPropertyPage() {
   const [images, setImages] = useState<ImageWithTags[]>([]);
   const [gridIndices, setGridIndices] = useState<number[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -1860,6 +1863,19 @@ export default function EditPropertyPage() {
                                   className="w-full h-full object-cover"
                                 />
                               </div>
+                              {/* Edit Button */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingImageIndex(index);
+                                }}
+                                className="absolute top-1 right-10 bg-blue-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600"
+                                title="Edit Image"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              {/* Delete Button */}
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -2912,6 +2928,75 @@ export default function EditPropertyPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Image Editor Modal */}
+      {editingImageIndex !== null && (
+        <ImageEditorModal
+          imageUrl={images[editingImageIndex].url}
+          originalImageUrl={images[editingImageIndex].originalUrl}
+          imageTags={images[editingImageIndex].tags}
+          onSave={async (editedBlob) => {
+            try {
+              const file = new File([editedBlob], `edited-${Date.now()}.jpg`, { type: 'image/jpeg' });
+              const uploadedUrl = await uploadImageToS3(file, 'properties');
+
+              setImages(prev => {
+                const updated = [...prev];
+                const currentImage = updated[editingImageIndex];
+
+                // Store original URL if this is first edit
+                if (!currentImage.originalUrl) {
+                  updated[editingImageIndex] = {
+                    ...currentImage,
+                    url: uploadedUrl,
+                    originalUrl: currentImage.url,  // Save original
+                    file
+                  };
+                } else {
+                  // Already has original, just update URL
+                  updated[editingImageIndex] = {
+                    ...currentImage,
+                    url: uploadedUrl,
+                    file
+                  };
+                }
+
+                return updated;
+              });
+
+              setEditingImageIndex(null);
+              alert('Image edited and uploaded successfully!');
+            } catch (error) {
+              console.error('Error uploading edited image:', error);
+              alert('Failed to upload edited image. Please try again.');
+            }
+          }}
+          onRestore={images[editingImageIndex].originalUrl ? async () => {
+            try {
+              // Restore original URL
+              setImages(prev => {
+                const updated = [...prev];
+                const currentImage = updated[editingImageIndex];
+
+                updated[editingImageIndex] = {
+                  ...currentImage,
+                  url: currentImage.originalUrl!,
+                  originalUrl: undefined  // Clear original marker
+                };
+
+                return updated;
+              });
+
+              setEditingImageIndex(null);
+              alert('Image restored to original successfully!');
+            } catch (error) {
+              console.error('Error restoring image:', error);
+              alert('Failed to restore image. Please try again.');
+            }
+          } : undefined}
+          onCancel={() => setEditingImageIndex(null)}
+        />
       )}
     </div>
     </>

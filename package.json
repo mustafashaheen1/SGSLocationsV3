@@ -58,6 +58,7 @@
     "embla-carousel-react": "^8.3.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
+    "fabric": "^6.9.1",
     "input-otp": "^1.2.4",
     "jspdf": "^3.0.3",
     "jszip": "^3.10.1",
@@ -87,6 +88,7 @@
   },
   "devDependencies": {
     "@types/archiver": "^7.0.0",
+    "@types/fabric": "^5.3.11",
     "@types/jszip": "^3.4.0",
     "@types/react-big-calendar": "^1.16.3"
   }
