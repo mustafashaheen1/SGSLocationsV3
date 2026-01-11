@@ -345,9 +345,9 @@ export default function ContactPage() {
         .form-control:focus {
           color: #495057;
           background-color: #fff;
-          border-color: #80bdff;
+          border-color: #fe751f;
           outline: 0;
-          box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+          box-shadow: 0 0 0 0.2rem rgba(254, 117, 31, 0.25);
         }
 
         .form-control::placeholder {
@@ -475,13 +475,13 @@ export default function ContactPage() {
 
         .day-item.is-start-date,
         .day-item.is-end-date {
-          background-color: #007bff;
+          background-color: #fe751f;
           color: white;
           border-radius: 3px;
         }
 
         .day-item.is-in-range {
-          background-color: rgba(0, 123, 255, 0.15);
+          background-color: rgba(254, 117, 31, 0.15);
           border-radius: 0;
         }
 
@@ -503,8 +503,8 @@ export default function ContactPage() {
 
         .btn-primary {
           color: #fff;
-          background-color: #dc3545;
-          border-color: #dc3545;
+          background-color: #fe751f;
+          border-color: #fe751f;
           padding: 0.75rem 2rem;
           font-size: 1.25rem;
           line-height: 1.5;
@@ -514,8 +514,8 @@ export default function ContactPage() {
         }
 
         .btn-primary:hover {
-          background-color: #c82333;
-          border-color: #bd2130;
+          background-color: #e65a00;
+          border-color: #e65a00;
         }
 
         .sr-only {
@@ -680,7 +680,7 @@ export default function ContactPage() {
         }
 
         .bg-primary {
-          background-color: #dc3545 !important;
+          background-color: #fe751f !important;
         }
 
         .h6 {
@@ -806,7 +806,7 @@ export default function ContactPage() {
         }
 
         .il-profile-info-overlay a {
-          color: #dc3545;
+          color: #fe751f;
           font-size: 13px;
           text-decoration: none;
         }
@@ -989,10 +989,10 @@ export default function ContactPage() {
                     placeholder="Phone (e.g., (555) 123-4567)"
                     value={formData.phone}
                     onChange={handleChange}
-                    style={phoneError ? { borderColor: '#dc3545' } : {}}
+                    style={phoneError ? { borderColor: '#fe751f' } : {}}
                   />
                   {phoneError && (
-                    <p style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    <p style={{ color: '#fe751f', fontSize: '0.875rem', marginTop: '0.25rem' }}>
                       {phoneError}
                     </p>
                   )}
@@ -1203,7 +1203,7 @@ export default function ContactPage() {
                 ))}
 
                 <div className="mt-4">
-                  <h6 className="text-xl mb-2" style={{ color: '#dc3545', fontWeight: 500 }}>
+                  <h6 className="text-xl mb-2" style={{ color: '#fe751f', fontWeight: 500 }}>
                     General Contact:
                   </h6>
                   <p style={{ lineHeight: 1.5, fontSize: '14px' }}>
@@ -1238,7 +1238,7 @@ export default function ContactPage() {
                     }}
                   />
                   {recaptchaError && (
-                    <p style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                    <p style={{ color: '#fe751f', fontSize: '0.875rem', marginTop: '0.5rem' }}>
                       {recaptchaError}
                     </p>
                   )}
@@ -1252,8 +1252,8 @@ export default function ContactPage() {
                   disabled={isSubmitting}
                   className="btn btn-primary btn-lg il-submit-btn w-100 mb-4"
                   style={{
-                    backgroundColor: '#dc3545',
-                    borderColor: '#dc3545',
+                    backgroundColor: '#fe751f',
+                    borderColor: '#fe751f',
                     fontSize: '1.25rem',
                     padding: '0.75rem',
                     fontWeight: 400,
