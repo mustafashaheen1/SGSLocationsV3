@@ -1704,7 +1704,7 @@ export default function ContentManagementPage() {
       }
 
       if (data) {
-        setTermsContent(data.content);
+        setTermsContent((data as any).content);
       } else {
         setTermsContent('');
       }
@@ -1728,13 +1728,13 @@ export default function ContentManagementPage() {
       }
 
       // Update the existing record
-      const { error } = await supabase
-        .from('terms_and_conditions')
+      const { error } = await (supabase
+        .from('terms_and_conditions') as any)
         .update({
           content: termsContent,
           updated_at: new Date().toISOString()
         })
-        .eq('id', existingRecord.id);
+        .eq('id', (existingRecord as any).id);
 
       if (error) throw error;
 
