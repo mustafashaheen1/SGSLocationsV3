@@ -131,13 +131,15 @@ export default function ListYourPropertyPage() {
 
   useEffect(() => {
     async function fetchTerms() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('terms_and_conditions')
         .select('content')
-        .eq('is_active', true)
-        .order('version', { ascending: false })
-        .limit(1)
         .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching terms:', error);
+        return;
+      }
 
       if (data) {
         setTermsContent((data as any).content);

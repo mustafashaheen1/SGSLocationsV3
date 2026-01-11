@@ -1669,22 +1669,11 @@ export default function ContentManagementPage() {
 
   async function fetchTermsAndConditions() {
     try {
-      // Get session to use authenticated request
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        console.error('No session found - user not authenticated');
-        return;
-      }
-
-      // Use directFetch with auth token to bypass RLS issues
-      const { directFetch } = await import('@/lib/supabase');
-      const { data, error } = await directFetch('terms_and_conditions', {
-        order: 'version',
-        ascending: false,
-        limit: 1,
-        authToken: session.access_token
-      });
+      // Simply fetch the single record (no version ordering needed)
+      const { data, error } = await supabase
+        .from('terms_and_conditions')
+        .select('content')
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching terms:', error);
@@ -1692,11 +1681,8 @@ export default function ContentManagementPage() {
         return;
       }
 
-      // directFetch returns an array, get the first item
-      const latestTerm = data && data.length > 0 ? data[0] : null;
-
-      if (latestTerm) {
-        setTermsContent(latestTerm.content);
+      if (data) {
+        setTermsContent(data.content);
       } else {
         setTermsContent('');
       }
@@ -1709,32 +1695,24 @@ export default function ContentManagementPage() {
   async function saveTermsAndConditions() {
     setSaving(true);
     try {
-      // Get the current max version number
-      const { data: maxVersionData } = await (supabase
-        .from('terms_and_conditions') as any)
-        .select('version')
-        .order('version', { ascending: false })
-        .limit(1)
+      // Get the ID of the single record
+      const { data: existingRecord } = await supabase
+        .from('terms_and_conditions')
+        .select('id')
         .maybeSingle();
 
-      // Increment version number (or start at 1 if no existing versions)
-      const newVersion = maxVersionData ? (maxVersionData.version + 1) : 1;
+      if (!existingRecord) {
+        throw new Error('No terms and conditions record found');
+      }
 
-      // Deactivate old versions
-      await (supabase
-        .from('terms_and_conditions') as any)
-        .update({ is_active: false })
-        .eq('is_active', true);
-
-      // Insert new version
-      const { error } = await (supabase
-        .from('terms_and_conditions') as any)
-        .insert({
+      // Update the existing record
+      const { error } = await supabase
+        .from('terms_and_conditions')
+        .update({
           content: termsContent,
-          version: newVersion,
-          is_active: true,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', existingRecord.id);
 
       if (error) throw error;
 

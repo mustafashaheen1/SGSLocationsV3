@@ -400,9 +400,8 @@ export default function ImageEditorModal({
           <Button
             onClick={undo}
             disabled={historyStep === 0}
-            variant="outline"
             size="sm"
-            className="text-white border-gray-600 hover:bg-gray-800"
+            className="bg-gray-700 text-white border border-gray-600 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Undo2 className="w-4 h-4 mr-1" />
             Undo
@@ -410,9 +409,8 @@ export default function ImageEditorModal({
           <Button
             onClick={redo}
             disabled={historyStep >= history.length - 1}
-            variant="outline"
             size="sm"
-            className="text-white border-gray-600 hover:bg-gray-800"
+            className="bg-gray-700 text-white border border-gray-600 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Redo2 className="w-4 h-4 mr-1" />
             Redo
@@ -425,9 +423,8 @@ export default function ImageEditorModal({
             <>
               <Button
                 onClick={onRestore}
-                variant="outline"
                 size="sm"
-                className="text-yellow-500 border-yellow-500 hover:bg-yellow-500 hover:text-white"
+                className="bg-yellow-600 text-white border border-yellow-500 hover:bg-yellow-500"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Restore Original
@@ -438,10 +435,9 @@ export default function ImageEditorModal({
 
           <Button
             onClick={onCancel}
-            variant="outline"
             size="sm"
             disabled={saving}
-            className="text-white border-gray-600 hover:bg-gray-800"
+            className="bg-gray-700 text-white border border-gray-600 hover:bg-gray-600"
           >
             Cancel
           </Button>
