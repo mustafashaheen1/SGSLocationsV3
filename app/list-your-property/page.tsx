@@ -639,6 +639,7 @@ export default function ListYourPropertyPage() {
         .insert([{
           name: propertyName, // Use category-based sequential name (e.g., RES-0001, COM-0002)
           real_name: `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
+          sub_heading: `${propertyName}: An Architectural Marvel in ${formData.city} for Filmmakers and Photographers`,
           description: `Submitted by ${formData.firstName} ${formData.lastName} (${formData.email})`,
           address: formData.streetAddress,
           city: formData.city,
