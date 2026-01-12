@@ -419,6 +419,11 @@ export default function HomePage() {
                   src={category.image}
                   alt={category.name}
                   fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  priority={true}
+                  loading="eager"
+                  quality={75}
+                  placeholder="empty"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
