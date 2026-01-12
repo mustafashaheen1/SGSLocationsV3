@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { imageDataRGBA } from 'stackblur-canvas';
 
 interface ImageEditorModalProps {
   imageUrl: string;
@@ -168,8 +169,8 @@ export default function ImageEditorModal({
         top: startY,
         width: 0,
         height: 0,
-        fill: 'rgba(0, 0, 0, 0.6)',
-        stroke: '#ff0000',
+        fill: 'rgba(255, 165, 0, 0.2)',
+        stroke: '#fe751f',
         strokeWidth: 2,
         strokeDashArray: [5, 5],
         //@ts-ignore
@@ -336,6 +337,97 @@ export default function ImageEditorModal({
     }
   }, [selectedTool, canvas, enableBlurMode, enableDrawingMode]);
 
+  // Process blur regions and export final image
+  const processBlurAndExport = async (
+    blurRegions: Array<{ left: number; top: number; width: number; height: number; intensity: number }>,
+    otherObjects: fabric.Object[]
+  ) => {
+    if (!canvas) return;
+
+    // Create temporary canvas for processing
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    if (!tempCtx) return;
+
+    // Set dimensions to match the main canvas
+    tempCanvas.width = canvas.width || 800;
+    tempCanvas.height = canvas.height || 600;
+
+    // Draw the background image first
+    const bgImage = canvas.backgroundImage;
+    if (bgImage && bgImage instanceof fabric.FabricImage) {
+      const img = bgImage.getElement() as HTMLImageElement;
+      tempCtx.drawImage(
+        img,
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height
+      );
+    }
+
+    // Apply blur to each region
+    for (const region of blurRegions) {
+      // Ensure region boundaries are within canvas
+      const left = Math.max(0, Math.floor(region.left));
+      const top = Math.max(0, Math.floor(region.top));
+      const width = Math.min(tempCanvas.width - left, Math.ceil(region.width));
+      const height = Math.min(tempCanvas.height - top, Math.ceil(region.height));
+
+      if (width <= 0 || height <= 0) continue;
+
+      // Extract the region to blur
+      const imageData = tempCtx.getImageData(left, top, width, height);
+
+      // Apply Gaussian blur using stackblur
+      imageDataRGBA(
+        imageData,
+        0,
+        0,
+        width,
+        height,
+        region.intensity
+      );
+
+      // Put the blurred region back
+      tempCtx.putImageData(imageData, left, top);
+    }
+
+    // Now draw other objects (text, shapes, etc.) on top
+    // Create a temporary Fabric canvas for this
+    const fabricTempCanvas = new fabric.Canvas(tempCanvas);
+    fabricTempCanvas.setDimensions({
+      width: tempCanvas.width,
+      height: tempCanvas.height
+    });
+
+    // Add the blurred image as background
+    const tempDataUrl = tempCanvas.toDataURL();
+    const blurredImage = await fabric.FabricImage.fromURL(tempDataUrl);
+    fabricTempCanvas.backgroundImage = blurredImage;
+
+    // Add other objects
+    for (const obj of otherObjects) {
+      const clonedObj = await obj.clone();
+      fabricTempCanvas.add(clonedObj);
+    }
+
+    fabricTempCanvas.renderAll();
+
+    // Export the final result
+    const finalDataUrl = fabricTempCanvas.toDataURL({
+      format: 'jpeg',
+      quality: 0.9,
+      multiplier: 1
+    });
+
+    const blob = await (await fetch(finalDataUrl)).blob();
+    await onSave(blob);
+
+    // Cleanup
+    fabricTempCanvas.dispose();
+  };
+
   // Save handler
   const handleSave = async () => {
     if (!canvas || saving) return;
@@ -346,18 +438,49 @@ export default function ImageEditorModal({
       canvas.discardActiveObject();
       canvas.renderAll();
 
-      // Convert canvas to blob
-      const dataUrl = canvas.toDataURL({
-        format: 'jpeg',
-        quality: 0.9,
-        multiplier: 1
+      // Get all canvas objects
+      const objects = canvas.getObjects();
+
+      // Separate blur rectangles from other objects
+      const blurRegions: Array<{
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+        intensity: number;
+      }> = [];
+
+      const otherObjects: fabric.Object[] = [];
+
+      objects.forEach(obj => {
+        // Check if this is a blur rectangle
+        if ((obj as any).data?.type === 'blur') {
+          blurRegions.push({
+            left: obj.left || 0,
+            top: obj.top || 0,
+            width: (obj.width || 0) * (obj.scaleX || 1),
+            height: (obj.height || 0) * (obj.scaleY || 1),
+            intensity: (obj as any).data.intensity || 10
+          });
+        } else {
+          otherObjects.push(obj);
+        }
       });
 
-      // Convert data URL to blob
-      const blob = await (await fetch(dataUrl)).blob();
+      // If there are blur regions, process them
+      if (blurRegions.length > 0) {
+        await processBlurAndExport(blurRegions, otherObjects);
+      } else {
+        // No blur, just export as before
+        const dataUrl = canvas.toDataURL({
+          format: 'jpeg',
+          quality: 0.9,
+          multiplier: 1
+        });
 
-      // Call parent's save handler
-      await onSave(blob);
+        const blob = await (await fetch(dataUrl)).blob();
+        await onSave(blob);
+      }
 
     } catch (error) {
       console.error('Error saving edited image:', error);
