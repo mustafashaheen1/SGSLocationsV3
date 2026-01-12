@@ -637,7 +637,7 @@ export default function ImageEditorModal({
           fabricTempCanvas.renderAll();
 
           // Export
-          const dataUrl = fabricTempCanvas.toDataURL({ format: 'jpeg', quality: 0.9 });
+          const dataUrl = fabricTempCanvas.toDataURL({ format: 'jpeg', quality: 0.9, multiplier: 1 });
           const blob = await (await fetch(dataUrl)).blob();
           await onSave(blob);
 
@@ -645,7 +645,7 @@ export default function ImageEditorModal({
         }
       } else {
         // No blur, just export normally
-        const dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.9 });
+        const dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.9, multiplier: 1 });
         const blob = await (await fetch(dataUrl)).blob();
         await onSave(blob);
       }
