@@ -797,17 +797,25 @@ export default function ImageEditorModal({
 
           fabricTempCanvas.renderAll();
 
-          // Export
-          const dataUrl = fabricTempCanvas.toDataURL({ format: 'jpeg', quality: 0.9, multiplier: 1 });
-          const blob = await (await fetch(dataUrl)).blob();
-          await onSave(blob);
+          // Export using toBlob() instead of toDataURL() + fetch()
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            fabricTempCanvas.getElement().toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Failed to create blob from canvas'));
+            }, 'image/jpeg', 0.9);
+          });
 
+          await onSave(blob);
           fabricTempCanvas.dispose();
         }
       } else {
-        // No blur, just export normally
-        const dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.9, multiplier: 1 });
-        const blob = await (await fetch(dataUrl)).blob();
+        // No blur, just export normally using toBlob()
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.getElement().toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create blob from canvas'));
+          }, 'image/jpeg', 0.9);
+        });
         await onSave(blob);
       }
 
