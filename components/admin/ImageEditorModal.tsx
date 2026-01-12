@@ -44,6 +44,7 @@ export default function ImageEditorModal({
   const [fillColor, setFillColor] = useState('#ffffff');
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [blurIntensity, setBlurIntensity] = useState(10);
+  const [blurPreviewUrl, setBlurPreviewUrl] = useState<string>('');
 
   // Initialize canvas
   useEffect(() => {
@@ -201,7 +202,7 @@ export default function ImageEditorModal({
     });
   }, [canvas, history, historyStep]);
 
-  // Render blur preview overlay
+  // Generate blur preview for sidebar
   const updateBlurPreview = useCallback(async () => {
     if (!canvas) return;
 
@@ -212,9 +213,8 @@ export default function ImageEditorModal({
     const blurRegions = canvas.getObjects().filter(obj => (obj as any).data?.type === 'blur');
 
     if (blurRegions.length === 0) {
-      // No blur regions, remove preview
-      canvas.overlayImage = undefined;
-      canvas.renderAll();
+      // No blur regions, clear preview
+      setBlurPreviewUrl('');
       return;
     }
 
@@ -223,19 +223,23 @@ export default function ImageEditorModal({
     const tempCtx = tempCanvas.getContext('2d');
     if (!tempCtx) return;
 
-    tempCanvas.width = canvas.width || 800;
-    tempCanvas.height = canvas.height || 600;
+    // Use smaller dimensions for preview (max 300px width)
+    const maxPreviewWidth = 300;
+    const scale = Math.min(1, maxPreviewWidth / (canvas.width || 800));
+
+    tempCanvas.width = (canvas.width || 800) * scale;
+    tempCanvas.height = (canvas.height || 600) * scale;
 
     // Draw the background image
     const img = bgImage.getElement() as HTMLImageElement;
     tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
 
-    // Apply blur to each region
+    // Apply blur to each region (scaled)
     for (const region of blurRegions) {
-      const left = Math.max(0, Math.floor(region.left || 0));
-      const top = Math.max(0, Math.floor(region.top || 0));
-      const width = Math.min(tempCanvas.width - left, Math.ceil((region.width || 0) * (region.scaleX || 1)));
-      const height = Math.min(tempCanvas.height - top, Math.ceil((region.height || 0) * (region.scaleY || 1)));
+      const left = Math.max(0, Math.floor((region.left || 0) * scale));
+      const top = Math.max(0, Math.floor((region.top || 0) * scale));
+      const width = Math.min(tempCanvas.width - left, Math.ceil((region.width || 0) * (region.scaleX || 1) * scale));
+      const height = Math.min(tempCanvas.height - top, Math.ceil((region.height || 0) * (region.scaleY || 1) * scale));
       const intensity = (region as any).data?.intensity || blurIntensity;
 
       if (width <= 0 || height <= 0) continue;
@@ -245,20 +249,9 @@ export default function ImageEditorModal({
       tempCtx.putImageData(imageData, left, top);
     }
 
-    // Set as overlay (so it doesn't interfere with canvas objects)
-    const dataUrl = tempCanvas.toDataURL();
-    const overlayImg = await fabric.FabricImage.fromURL(dataUrl, { crossOrigin: 'anonymous' });
-
-    overlayImg.set({
-      scaleX: bgImage.scaleX,
-      scaleY: bgImage.scaleY,
-      selectable: false,
-      evented: false,
-      opacity: 1
-    });
-
-    canvas.overlayImage = overlayImg;
-    canvas.renderAll();
+    // Generate preview URL for sidebar
+    const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
+    setBlurPreviewUrl(dataUrl);
   }, [canvas, blurIntensity]);
 
   // Tool: Blur
@@ -856,6 +849,21 @@ export default function ImageEditorModal({
               <p className="text-xs text-gray-400">
                 Click and drag on the canvas to create blur regions
               </p>
+
+              {blurPreviewUrl && (
+                <div className="mt-4 border border-gray-600 rounded-lg overflow-hidden">
+                  <div className="bg-gray-700 px-3 py-2 text-xs text-gray-300 font-semibold">
+                    Preview
+                  </div>
+                  <div className="p-2 bg-gray-900">
+                    <img
+                      src={blurPreviewUrl}
+                      alt="Blur preview"
+                      className="w-full h-auto rounded"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
