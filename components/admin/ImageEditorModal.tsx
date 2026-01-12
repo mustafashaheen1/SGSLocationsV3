@@ -461,31 +461,19 @@ export default function ImageEditorModal({
       const maxWidth = (canvas.width || 800) * 0.2;
       const scale = maxWidth / (logoImg.width || 1);
 
-      // Apply washout effect if enabled
-      const filters = logoWashout ? [
-        new fabric.Image.filters.Brightness({ brightness: 0.3 }), // Increase brightness
-        new fabric.Image.filters.Contrast({ contrast: -0.3 }), // Reduce contrast
-      ] : [];
-
       logoImg.set({
         left: (canvas.width || 800) - maxWidth - 20, // Bottom right, 20px padding
         top: (canvas.height || 600) - (logoImg.height || 1) * scale - 20,
         scaleX: scale,
         scaleY: scale,
-        opacity: logoWashout ? 0.3 : 1, // Reduce opacity for washout
+        opacity: logoWashout ? 0.25 : 1, // Reduce opacity for washout effect
         selectable: true,
         hasControls: true, // Enable resize handles
         hasBorders: true,
         lockUniScaling: true, // Maintain aspect ratio when resizing
-        filters: filters,
         //@ts-ignore
         data: { type: 'logo', washout: logoWashout } // Store washout state in object
       });
-
-      // Apply filters
-      if (logoWashout) {
-        logoImg.applyFilters();
-      }
 
       canvas.add(logoImg);
       canvas.setActiveObject(logoImg);
