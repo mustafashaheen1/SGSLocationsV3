@@ -213,7 +213,7 @@ export default function ImageEditorModal({
 
     if (blurRegions.length === 0) {
       // No blur regions, remove preview
-      canvas.overlayImage = null;
+      canvas.overlayImage = undefined;
       canvas.renderAll();
       return;
     }
