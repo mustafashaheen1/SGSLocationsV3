@@ -81,6 +81,7 @@ export default function EditPropertyPage() {
   const [gridIndices, setGridIndices] = useState<number[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
+  const [accessToken, setAccessToken] = useState<string>('');
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -178,11 +179,22 @@ export default function EditPropertyPage() {
     initializePage();
   }, [propertyId]);
 
+  // Fetch and store access token
+  useEffect(() => {
+    async function fetchAccessToken() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        setAccessToken(session.access_token);
+      }
+    }
+    fetchAccessToken();
+  }, []);
+
   // Auto-refresh session every 5 minutes
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
       console.log('🔄 [Property Edit] Auto-refreshing session...');
-      const { error } = await supabase.auth.refreshSession();
+      const { error, data } = await supabase.auth.refreshSession();
 
       if (error) {
         console.error('❌ Session refresh failed:', error);
@@ -190,6 +202,10 @@ export default function EditPropertyPage() {
         alert('Your session has expired. Please save your work and login again.');
       } else {
         console.log('✅ Session refreshed');
+        // Update access token after refresh
+        if (data.session?.access_token) {
+          setAccessToken(data.session.access_token);
+        }
       }
     }, 5 * 60 * 1000);
 
@@ -2993,6 +3009,7 @@ export default function EditPropertyPage() {
           imageUrl={images[editingImageIndex].url}
           originalImageUrl={images[editingImageIndex].originalUrl}
           imageTags={images[editingImageIndex].tags}
+          accessToken={accessToken}
           onSave={async (editedBlob) => {
             try {
               const file = new File([editedBlob], `edited-${Date.now()}.jpg`, { type: 'image/jpeg' });

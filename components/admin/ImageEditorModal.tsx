@@ -17,6 +17,7 @@ interface ImageEditorModalProps {
   onSave: (editedImageBlob: Blob) => Promise<void>;
   onRestore?: () => Promise<void>;
   onCancel: () => void;
+  accessToken?: string; // Optional auth token for fetching settings
 }
 
 type Tool = 'select' | 'blur' | 'text' | 'rectangle' | 'circle' | 'pencil';
@@ -27,7 +28,8 @@ export default function ImageEditorModal({
   imageTags,
   onSave,
   onRestore,
-  onCancel
+  onCancel,
+  accessToken
 }: ImageEditorModalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
@@ -259,13 +261,32 @@ export default function ImageEditorModal({
   useEffect(() => {
     async function fetchSiteLogo() {
       try {
+        const headers: HeadersInit = {
+          'credentials': 'include'
+        };
+
+        // If accessToken is provided, use Bearer authentication
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
         const response = await fetch('/api/admin/settings', {
-          credentials: 'include' // Include cookies for authentication
+          credentials: 'include', // Include cookies for authentication
+          headers
         });
+
+        if (!response.ok) {
+          console.error('Failed to fetch settings:', response.status, response.statusText);
+          return;
+        }
+
         const data = await response.json();
-        const logoSetting = data.settings.find((s: any) => s.setting_key === 'site_logo_url');
-        if (logoSetting?.setting_value) {
-          setSiteLogoUrl(logoSetting.setting_value);
+
+        if (data.settings && Array.isArray(data.settings)) {
+          const logoSetting = data.settings.find((s: any) => s.setting_key === 'site_logo_url');
+          if (logoSetting?.setting_value) {
+            setSiteLogoUrl(logoSetting.setting_value);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch site logo:', error);
@@ -273,7 +294,7 @@ export default function ImageEditorModal({
     }
 
     fetchSiteLogo();
-  }, []);
+  }, [accessToken]);
 
   // Tool: Blur
   const enableBlurMode = useCallback(() => {
