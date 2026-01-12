@@ -464,19 +464,23 @@ export default function ImageEditorModal({
   useEffect(() => {
     if (!canvas) return;
 
-    // Reset canvas state
-    canvas.isDrawingMode = false;
-    canvas.selection = true;
-
     if (selectedTool === 'blur') {
       const cleanup = enableBlurMode();
       return cleanup;
     } else if (selectedTool === 'pencil') {
-      enableDrawingMode(true);
+      // Enable drawing mode for pencil tool
+      canvas.isDrawingMode = true;
+      canvas.selection = false; // Disable selection while drawing
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = strokeColor;
+        canvas.freeDrawingBrush.width = strokeWidth;
+      }
     } else {
-      enableDrawingMode(false);
+      // Reset canvas state for other tools
+      canvas.isDrawingMode = false;
+      canvas.selection = true;
     }
-  }, [selectedTool, canvas, enableBlurMode, enableDrawingMode]);
+  }, [selectedTool, canvas, enableBlurMode, strokeColor, strokeWidth]);
 
   // Process blur regions and export final image
   const processBlurAndExport = async (
