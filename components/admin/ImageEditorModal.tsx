@@ -578,7 +578,7 @@ export default function ImageEditorModal({
         <div className="flex items-center gap-3">
           <Button
             onClick={undo}
-            disabled={historyStep === 0}
+            disabled={historyStep <= 1}
             size="sm"
             className="bg-gray-700 text-white border border-gray-600 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >

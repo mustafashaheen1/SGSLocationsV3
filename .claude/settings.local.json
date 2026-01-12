@@ -39,7 +39,8 @@
       "Bash(supabase db push:*)",
       "Bash(npx:*)",
       "Bash(git show:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
