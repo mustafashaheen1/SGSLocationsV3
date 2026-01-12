@@ -51,6 +51,7 @@ export default function ImageEditorModal({
   const [blurPreviewUrl, setBlurPreviewUrl] = useState<string>('');
   const [siteLogoUrl, setSiteLogoUrl] = useState<string>(initialLogoUrl || '');
   const [logoWashout, setLogoWashout] = useState(false);
+  const [hasLogoOnCanvas, setHasLogoOnCanvas] = useState(false);
 
   // Initialize canvas
   useEffect(() => {
@@ -453,6 +454,13 @@ export default function ImageEditorModal({
       return;
     }
 
+    // Check if logo already exists (shouldn't happen due to disabled icon, but safety check)
+    const existingLogo = canvas.getObjects().find(obj => (obj as any).data?.type === 'logo');
+    if (existingLogo) {
+      alert('Logo watermark already exists on canvas. Delete it first to add a new one.');
+      return;
+    }
+
     try {
       // Load logo image
       const logoImg = await fabric.FabricImage.fromURL(siteLogoUrl, { crossOrigin: 'anonymous' });
@@ -466,17 +474,18 @@ export default function ImageEditorModal({
         top: (canvas.height || 600) - (logoImg.height || 1) * scale - 20,
         scaleX: scale,
         scaleY: scale,
-        opacity: logoWashout ? 0.25 : 1, // Reduce opacity for washout effect
+        opacity: logoWashout ? 0.25 : 1, // Apply current washout state
         selectable: true,
-        hasControls: true, // Enable resize handles
+        hasControls: true,
         hasBorders: true,
-        lockUniScaling: true, // Maintain aspect ratio when resizing
+        lockUniScaling: true,
         //@ts-ignore
-        data: { type: 'logo', washout: logoWashout } // Store washout state in object
+        data: { type: 'logo', washout: logoWashout }
       });
 
       canvas.add(logoImg);
       canvas.setActiveObject(logoImg);
+      setHasLogoOnCanvas(true); // Mark that logo exists
       saveHistory(canvas);
       canvas.renderAll();
     } catch (error) {
@@ -546,6 +555,63 @@ export default function ImageEditorModal({
       canvas.off('object:removed', handleObjectRemoved);
     };
   }, [canvas, updateBlurPreview]);
+
+  // Track logo existence on canvas
+  useEffect(() => {
+    if (!canvas) return;
+
+    const checkLogoExists = () => {
+      const logo = canvas.getObjects().find(obj => (obj as any).data?.type === 'logo');
+      setHasLogoOnCanvas(!!logo);
+    };
+
+    const handleObjectRemoved = () => {
+      checkLogoExists();
+    };
+
+    const handleObjectAdded = () => {
+      checkLogoExists();
+    };
+
+    canvas.on('object:removed', handleObjectRemoved);
+    canvas.on('object:added', handleObjectAdded);
+
+    // Initial check
+    checkLogoExists();
+
+    return () => {
+      canvas.off('object:removed', handleObjectRemoved);
+      canvas.off('object:added', handleObjectAdded);
+    };
+  }, [canvas]);
+
+  // Apply washout effect to existing logo when toggled
+  useEffect(() => {
+    if (!canvas || !selectedObject) return;
+
+    // Check if selected object is the logo
+    if ((selectedObject as any).data?.type === 'logo') {
+      // Update logo opacity
+      selectedObject.set({ opacity: logoWashout ? 0.25 : 1 });
+
+      // Update logo metadata
+      (selectedObject as any).data.washout = logoWashout;
+
+      canvas.renderAll();
+      saveHistory(canvas);
+    }
+  }, [canvas, selectedObject, logoWashout, saveHistory]);
+
+  // Sync washout checkbox with selected logo's state
+  useEffect(() => {
+    if (!selectedObject) return;
+
+    // If selected object is logo, sync washout state
+    if ((selectedObject as any).data?.type === 'logo') {
+      const logoWashoutState = (selectedObject as any).data?.washout || false;
+      setLogoWashout(logoWashoutState);
+    }
+  }, [selectedObject]);
 
   // Tool selection
   useEffect(() => {
@@ -859,13 +925,19 @@ export default function ImageEditorModal({
           {/* Logo Watermark Tool */}
           <button
             onClick={addLogoWatermark}
-            disabled={!siteLogoUrl}
+            disabled={!siteLogoUrl || hasLogoOnCanvas}
             className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
-              !siteLogoUrl
+              (!siteLogoUrl || hasLogoOnCanvas)
                 ? 'text-gray-600 cursor-not-allowed opacity-50'
                 : 'text-gray-400 hover:bg-gray-700 hover:text-white'
             }`}
-            title={siteLogoUrl ? 'Add Logo Watermark' : 'No logo available (upload in Settings)'}
+            title={
+              !siteLogoUrl
+                ? 'No logo available (upload in Settings)'
+                : hasLogoOnCanvas
+                ? 'Logo already on canvas (delete to add new one)'
+                : 'Add Logo Watermark'
+            }
           >
             <ImageIcon className="w-5 h-5" />
           </button>
@@ -1054,8 +1126,8 @@ export default function ImageEditorModal({
             </div>
           )}
 
-          {/* Logo Watermark Settings - Show when no specific tool is selected or in select mode */}
-          {(selectedTool === 'select' || !selectedTool) && siteLogoUrl && (
+          {/* Logo Watermark Settings - Show ONLY when logo is selected */}
+          {selectedObject && (selectedObject as any).data?.type === 'logo' && (
             <div className="space-y-4 mb-6">
               <h4 className="text-sm text-gray-400 font-semibold uppercase tracking-wider">Logo Watermark</h4>
               <div className="flex items-center justify-between py-2 px-3 bg-gray-700 rounded-lg">
@@ -1070,15 +1142,8 @@ export default function ImageEditorModal({
                 </label>
               </div>
               <p className="text-xs text-gray-400">
-                Enable washout to make the logo lighter and more subtle (like Microsoft Word's washout feature)
+                Enable washout to make the logo lighter and more subtle
               </p>
-              <Button
-                onClick={addLogoWatermark}
-                className="w-full bg-brand hover:bg-brand-hover"
-              >
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Add Logo
-              </Button>
             </div>
           )}
 
