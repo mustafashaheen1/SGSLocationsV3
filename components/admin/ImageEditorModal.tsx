@@ -201,6 +201,57 @@ export default function ImageEditorModal({
     });
   }, [canvas, history, historyStep]);
 
+  // Apply blur to a region immediately
+  const applyBlurToRegion = useCallback(async (left: number, top: number, width: number, height: number, intensity: number) => {
+    if (!canvas) return;
+
+    const bgImage = canvas.backgroundImage;
+    if (!bgImage || !(bgImage instanceof fabric.FabricImage)) return;
+
+    // Create a temporary canvas to extract and blur the region
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    if (!tempCtx) return;
+
+    tempCanvas.width = canvas.width || 800;
+    tempCanvas.height = canvas.height || 600;
+
+    // Draw the current background image
+    const img = bgImage.getElement() as HTMLImageElement;
+    tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    // Ensure boundaries are within canvas
+    const blurLeft = Math.max(0, Math.floor(left));
+    const blurTop = Math.max(0, Math.floor(top));
+    const blurWidth = Math.min(tempCanvas.width - blurLeft, Math.ceil(width));
+    const blurHeight = Math.min(tempCanvas.height - blurTop, Math.ceil(height));
+
+    if (blurWidth <= 0 || blurHeight <= 0) return;
+
+    // Extract the region to blur
+    const imageData = tempCtx.getImageData(blurLeft, blurTop, blurWidth, blurHeight);
+
+    // Apply Gaussian blur
+    imageDataRGBA(imageData, 0, 0, blurWidth, blurHeight, intensity);
+
+    // Put the blurred region back
+    tempCtx.putImageData(imageData, blurLeft, blurTop);
+
+    // Convert to data URL and load as new background
+    const newDataUrl = tempCanvas.toDataURL();
+    const newBgImage = await fabric.FabricImage.fromURL(newDataUrl, { crossOrigin: 'anonymous' });
+
+    newBgImage.set({
+      scaleX: bgImage.scaleX,
+      scaleY: bgImage.scaleY,
+      selectable: false,
+      evented: false
+    });
+
+    canvas.backgroundImage = newBgImage;
+    canvas.renderAll();
+  }, [canvas]);
+
   // Tool: Blur
   const enableBlurMode = useCallback(() => {
     if (!canvas) return;
@@ -225,12 +276,12 @@ export default function ImageEditorModal({
         top: startY,
         width: 0,
         height: 0,
-        fill: 'rgba(255, 165, 0, 0.2)',
+        fill: 'rgba(255, 165, 0, 0.3)',
         stroke: '#fe751f',
         strokeWidth: 2,
         strokeDashArray: [5, 5],
-        //@ts-ignore
-        data: { type: 'blur', intensity: blurIntensity }
+        selectable: false,
+        evented: false
       });
 
       canvas.add(blurRect);
@@ -253,13 +304,26 @@ export default function ImageEditorModal({
       canvas.renderAll();
     };
 
-    const mouseUp = () => {
-      if (!canvas) return;
+    const mouseUp = async () => {
+      if (!canvas || !blurRect) return;
       isDrawing = false;
-      if (blurRect) {
+
+      const left = blurRect.left || 0;
+      const top = blurRect.top || 0;
+      const width = (blurRect.width || 0) * (blurRect.scaleX || 1);
+      const height = (blurRect.height || 0) * (blurRect.scaleY || 1);
+
+      // Remove the selection rectangle
+      canvas.remove(blurRect);
+
+      // Apply blur immediately
+      if (width > 10 && height > 10) {
+        await applyBlurToRegion(left, top, width, height, blurIntensity);
         saveHistory(canvas);
       }
+
       blurRect = null;
+      canvas.renderAll();
     };
 
     canvas.on('mouse:down', mouseDown);
@@ -272,7 +336,7 @@ export default function ImageEditorModal({
       canvas.off('mouse:move', mouseMove);
       canvas.off('mouse:up', mouseUp);
     };
-  }, [canvas, blurIntensity, saveHistory]);
+  }, [canvas, blurIntensity, saveHistory, applyBlurToRegion]);
 
   // Tool: Text
   const addText = useCallback(() => {
@@ -494,49 +558,16 @@ export default function ImageEditorModal({
       canvas.discardActiveObject();
       canvas.renderAll();
 
-      // Get all canvas objects
-      const objects = canvas.getObjects();
-
-      // Separate blur rectangles from other objects
-      const blurRegions: Array<{
-        left: number;
-        top: number;
-        width: number;
-        height: number;
-        intensity: number;
-      }> = [];
-
-      const otherObjects: fabric.Object[] = [];
-
-      objects.forEach(obj => {
-        // Check if this is a blur rectangle
-        if ((obj as any).data?.type === 'blur') {
-          blurRegions.push({
-            left: obj.left || 0,
-            top: obj.top || 0,
-            width: (obj.width || 0) * (obj.scaleX || 1),
-            height: (obj.height || 0) * (obj.scaleY || 1),
-            intensity: (obj as any).data.intensity || 10
-          });
-        } else {
-          otherObjects.push(obj);
-        }
+      // Since blur is now applied immediately to the background,
+      // we just export the canvas as-is
+      const dataUrl = canvas.toDataURL({
+        format: 'jpeg',
+        quality: 0.9,
+        multiplier: 1
       });
 
-      // If there are blur regions, process them
-      if (blurRegions.length > 0) {
-        await processBlurAndExport(blurRegions, otherObjects);
-      } else {
-        // No blur, just export as before
-        const dataUrl = canvas.toDataURL({
-          format: 'jpeg',
-          quality: 0.9,
-          multiplier: 1
-        });
-
-        const blob = await (await fetch(dataUrl)).blob();
-        await onSave(blob);
-      }
+      const blob = await (await fetch(dataUrl)).blob();
+      await onSave(blob);
 
     } catch (error) {
       console.error('Error saving edited image:', error);
