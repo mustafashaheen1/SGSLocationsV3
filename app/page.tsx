@@ -93,13 +93,9 @@ export default function HomePage() {
                 console.log('🎥 Fixed video URL:', videoUrl);
               }
 
-              // Use proxy for external videos to bypass hotlinking protection
-              const proxiedUrl = videoUrl.startsWith('http')
-                ? `/api/proxy-video?url=${encodeURIComponent(videoUrl)}`
-                : videoUrl;
-
-              console.log('🎥 Proxied video URL:', proxiedUrl);
-              setHeroVideo(proxiedUrl);
+              // Use CloudFront URL directly for instant streaming
+              console.log('🎥 Using direct video URL:', videoUrl);
+              setHeroVideo(videoUrl);
             }
             if (setting.key === 'hero_video_poster') {
               let posterUrl = setting.value || '';
