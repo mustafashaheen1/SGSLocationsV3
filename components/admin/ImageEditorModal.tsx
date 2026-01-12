@@ -108,7 +108,21 @@ export default function ImageEditorModal({
 
   // History management
   const saveHistory = useCallback((canvas: fabric.Canvas) => {
-    const json = JSON.stringify(canvas.toJSON());
+    // Create custom JSON that includes background image info
+    const canvasData = canvas.toJSON();
+    const bgImage = canvas.backgroundImage;
+
+    const customState = {
+      canvas: canvasData,
+      backgroundImage: bgImage && bgImage instanceof fabric.FabricImage ? {
+        src: (bgImage.getElement() as HTMLImageElement).src,
+        scaleX: bgImage.scaleX,
+        scaleY: bgImage.scaleY
+      } : null
+    };
+
+    const json = JSON.stringify(customState);
+
     setHistory(prev => {
       const newHistory = prev.slice(0, historyStep + 1);
       // Limit history to 50 steps
@@ -121,25 +135,67 @@ export default function ImageEditorModal({
     setHistoryStep(prev => Math.min(prev + 1, 50));
   }, [historyStep]);
 
-  const undo = useCallback(() => {
+  const undo = useCallback(async () => {
     if (historyStep === 0 || !canvas) return;
 
     const newStep = historyStep - 1;
-    const state = history[newStep];
+    const state = JSON.parse(history[newStep]);
 
-    canvas.loadFromJSON(state, () => {
+    // Restore canvas objects
+    canvas.loadFromJSON(state.canvas, async () => {
+      // Restore background image if it exists
+      if (state.backgroundImage) {
+        try {
+          const bgImage = await fabric.FabricImage.fromURL(state.backgroundImage.src, {
+            crossOrigin: 'anonymous'
+          });
+
+          bgImage.set({
+            scaleX: state.backgroundImage.scaleX,
+            scaleY: state.backgroundImage.scaleY,
+            selectable: false,
+            evented: false
+          });
+
+          canvas.backgroundImage = bgImage;
+        } catch (error) {
+          console.error('Error restoring background image:', error);
+        }
+      }
+
       canvas.renderAll();
       setHistoryStep(newStep);
     });
   }, [canvas, history, historyStep]);
 
-  const redo = useCallback(() => {
+  const redo = useCallback(async () => {
     if (historyStep >= history.length - 1 || !canvas) return;
 
     const newStep = historyStep + 1;
-    const state = history[newStep];
+    const state = JSON.parse(history[newStep]);
 
-    canvas.loadFromJSON(state, () => {
+    // Restore canvas objects
+    canvas.loadFromJSON(state.canvas, async () => {
+      // Restore background image if it exists
+      if (state.backgroundImage) {
+        try {
+          const bgImage = await fabric.FabricImage.fromURL(state.backgroundImage.src, {
+            crossOrigin: 'anonymous'
+          });
+
+          bgImage.set({
+            scaleX: state.backgroundImage.scaleX,
+            scaleY: state.backgroundImage.scaleY,
+            selectable: false,
+            evented: false
+          });
+
+          canvas.backgroundImage = bgImage;
+        } catch (error) {
+          console.error('Error restoring background image:', error);
+        }
+      }
+
       canvas.renderAll();
       setHistoryStep(newStep);
     });
