@@ -516,6 +516,11 @@ export default function ImageEditorModal({
     const handleSelection = () => {
       const activeObject = canvas.getActiveObject();
       setSelectedObject(activeObject || null);
+
+      // When an object is selected, switch to select tool
+      if (activeObject && selectedTool !== 'select') {
+        setSelectedTool('select');
+      }
     };
 
     const handleSelectionCleared = () => {
@@ -616,6 +621,12 @@ export default function ImageEditorModal({
   // Tool selection
   useEffect(() => {
     if (!canvas) return;
+
+    // When switching to non-select tools, deselect any active object (including logo)
+    if (selectedTool !== 'select') {
+      canvas.discardActiveObject();
+      canvas.renderAll();
+    }
 
     if (selectedTool === 'blur') {
       const cleanup = enableBlurMode();
