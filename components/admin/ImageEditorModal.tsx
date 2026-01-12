@@ -259,7 +259,9 @@ export default function ImageEditorModal({
   useEffect(() => {
     async function fetchSiteLogo() {
       try {
-        const response = await fetch('/api/admin/settings');
+        const response = await fetch('/api/admin/settings', {
+          credentials: 'include' // Include cookies for authentication
+        });
         const data = await response.json();
         const logoSetting = data.settings.find((s: any) => s.setting_key === 'site_logo_url');
         if (logoSetting?.setting_value) {
