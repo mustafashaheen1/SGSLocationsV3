@@ -163,18 +163,21 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update each setting
-    const updatePromises = settings.map(async (setting: { setting_key: string; setting_value: string }) => {
+    // Upsert each setting (insert if doesn't exist, update if exists)
+    const updatePromises = settings.map(async (setting: { setting_key: string; setting_value: string; description?: string }) => {
       const { error } = await serviceSupabase
         .from('app_settings')
-        .update({
+        .upsert({
+          setting_key: setting.setting_key,
           setting_value: setting.setting_value,
+          description: setting.description || `Setting for ${setting.setting_key}`,
           updated_at: new Date().toISOString()
-        })
-        .eq('setting_key', setting.setting_key);
+        }, {
+          onConflict: 'setting_key'
+        });
 
       if (error) {
-        console.error(`Error updating setting ${setting.setting_key}:`, error);
+        console.error(`Error upserting setting ${setting.setting_key}:`, error);
         throw error;
       }
     });

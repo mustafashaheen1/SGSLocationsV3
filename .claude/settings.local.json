@@ -41,7 +41,9 @@
       "Bash(git show:*)",
       "Bash(head:*)",
       "Bash(git log:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(for region in us-east-1 us-west-2 eu-west-1)",
+      "Bash(timeout 5 curl:*)"
     ],
     "deny": [],
     "ask": []
