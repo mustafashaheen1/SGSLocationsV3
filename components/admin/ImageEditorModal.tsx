@@ -18,6 +18,7 @@ interface ImageEditorModalProps {
   onRestore?: () => Promise<void>;
   onCancel: () => void;
   accessToken?: string; // Optional auth token for fetching settings
+  siteLogoUrl?: string; // Optional pre-fetched logo URL
 }
 
 type Tool = 'select' | 'blur' | 'text' | 'rectangle' | 'circle' | 'pencil';
@@ -29,7 +30,8 @@ export default function ImageEditorModal({
   onSave,
   onRestore,
   onCancel,
-  accessToken
+  accessToken,
+  siteLogoUrl: initialLogoUrl
 }: ImageEditorModalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
@@ -47,7 +49,8 @@ export default function ImageEditorModal({
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [blurIntensity, setBlurIntensity] = useState(10);
   const [blurPreviewUrl, setBlurPreviewUrl] = useState<string>('');
-  const [siteLogoUrl, setSiteLogoUrl] = useState<string>('');
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string>(initialLogoUrl || '');
+  const [logoWashout, setLogoWashout] = useState(false);
 
   // Initialize canvas
   useEffect(() => {
@@ -257,8 +260,11 @@ export default function ImageEditorModal({
     setBlurPreviewUrl(dataUrl);
   }, [canvas, blurIntensity]);
 
-  // Fetch site logo on mount
+  // Fetch site logo on mount (only if not provided as prop)
   useEffect(() => {
+    // If logo URL was already provided, skip fetching
+    if (initialLogoUrl) return;
+
     async function fetchSiteLogo() {
       try {
         const headers: HeadersInit = {
@@ -294,7 +300,7 @@ export default function ImageEditorModal({
     }
 
     fetchSiteLogo();
-  }, [accessToken]);
+  }, [accessToken, initialLogoUrl]);
 
   // Tool: Blur
   const enableBlurMode = useCallback(() => {
@@ -455,16 +461,31 @@ export default function ImageEditorModal({
       const maxWidth = (canvas.width || 800) * 0.2;
       const scale = maxWidth / (logoImg.width || 1);
 
+      // Apply washout effect if enabled
+      const filters = logoWashout ? [
+        new fabric.Image.filters.Brightness({ brightness: 0.3 }), // Increase brightness
+        new fabric.Image.filters.Contrast({ contrast: -0.3 }), // Reduce contrast
+      ] : [];
+
       logoImg.set({
         left: (canvas.width || 800) - maxWidth - 20, // Bottom right, 20px padding
         top: (canvas.height || 600) - (logoImg.height || 1) * scale - 20,
         scaleX: scale,
         scaleY: scale,
+        opacity: logoWashout ? 0.3 : 1, // Reduce opacity for washout
         selectable: true,
         hasControls: true, // Enable resize handles
         hasBorders: true,
         lockUniScaling: true, // Maintain aspect ratio when resizing
+        filters: filters,
+        //@ts-ignore
+        data: { type: 'logo', washout: logoWashout } // Store washout state in object
       });
+
+      // Apply filters
+      if (logoWashout) {
+        logoImg.applyFilters();
+      }
 
       canvas.add(logoImg);
       canvas.setActiveObject(logoImg);
@@ -474,7 +495,7 @@ export default function ImageEditorModal({
       console.error('Failed to add logo watermark:', error);
       alert('Failed to add logo watermark. Please try again.');
     }
-  }, [canvas, siteLogoUrl, saveHistory]);
+  }, [canvas, siteLogoUrl, logoWashout, saveHistory]);
 
   // Tool: Pencil
   const enableDrawingMode = useCallback((enable: boolean) => {
@@ -1042,6 +1063,34 @@ export default function ImageEditorModal({
               <p className="text-xs text-gray-400">
                 Draw directly on the canvas with your mouse
               </p>
+            </div>
+          )}
+
+          {/* Logo Watermark Settings - Show when no specific tool is selected or in select mode */}
+          {(selectedTool === 'select' || !selectedTool) && siteLogoUrl && (
+            <div className="space-y-4 mb-6">
+              <h4 className="text-sm text-gray-400 font-semibold uppercase tracking-wider">Logo Watermark</h4>
+              <div className="flex items-center justify-between py-2 px-3 bg-gray-700 rounded-lg">
+                <label className="text-sm text-gray-300 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={logoWashout}
+                    onChange={(e) => setLogoWashout(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-600 text-brand focus:ring-brand"
+                  />
+                  Washout Effect
+                </label>
+              </div>
+              <p className="text-xs text-gray-400">
+                Enable washout to make the logo lighter and more subtle (like Microsoft Word's washout feature)
+              </p>
+              <Button
+                onClick={addLogoWatermark}
+                className="w-full bg-brand hover:bg-brand-hover"
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Add Logo
+              </Button>
             </div>
           )}
 

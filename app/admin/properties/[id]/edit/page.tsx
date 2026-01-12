@@ -82,6 +82,7 @@ export default function EditPropertyPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [accessToken, setAccessToken] = useState<string>('');
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string>('');
   const [availableTags, setAvailableTags] = useState<FilterTag[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -179,15 +180,36 @@ export default function EditPropertyPage() {
     initializePage();
   }, [propertyId]);
 
-  // Fetch and store access token
+  // Fetch and store access token and logo URL
   useEffect(() => {
-    async function fetchAccessToken() {
+    async function fetchAuthAndLogo() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
         setAccessToken(session.access_token);
+
+        // Fetch logo URL for image editor
+        try {
+          const response = await fetch('/api/admin/settings', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.settings && Array.isArray(data.settings)) {
+              const logoSetting = data.settings.find((s: any) => s.setting_key === 'site_logo_url');
+              if (logoSetting?.setting_value) {
+                setSiteLogoUrl(logoSetting.setting_value);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch site logo:', error);
+        }
       }
     }
-    fetchAccessToken();
+    fetchAuthAndLogo();
   }, []);
 
   // Auto-refresh session every 5 minutes
@@ -3010,6 +3032,7 @@ export default function EditPropertyPage() {
           originalImageUrl={images[editingImageIndex].originalUrl}
           imageTags={images[editingImageIndex].tags}
           accessToken={accessToken}
+          siteLogoUrl={siteLogoUrl}
           onSave={async (editedBlob) => {
             try {
               const file = new File([editedBlob], `edited-${Date.now()}.jpg`, { type: 'image/jpeg' });
