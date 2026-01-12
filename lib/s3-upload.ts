@@ -24,6 +24,10 @@ const s3Client = new S3Client({
     accessKeyId: AWS_ACCESS_KEY_ID,
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
+  requestHandler: {
+    requestTimeout: 120000, // 2 minutes timeout (was default ~30s)
+  },
+  maxAttempts: 3, // Retry failed requests up to 3 times
 });
 
 function generateUniqueFileName(originalName: string): string {
@@ -38,6 +42,7 @@ export async function uploadImageToS3(file: File, folder: string = 'properties')
     validateS3Config();
 
     const fileName = `${folder}/${generateUniqueFileName(file.name)}`;
+    console.log(`📤 Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) to S3...`);
 
     const buffer = await file.arrayBuffer();
 
@@ -50,6 +55,7 @@ export async function uploadImageToS3(file: File, folder: string = 'properties')
     });
 
     await s3Client.send(command);
+    console.log(`✓ Upload successful: ${fileName}`);
 
     if (CLOUDFRONT_URL) {
       // Ensure CloudFront URL has https:// prefix
@@ -61,7 +67,19 @@ export async function uploadImageToS3(file: File, folder: string = 'properties')
 
     return `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileName}`;
   } catch (error: any) {
-    console.error('Error uploading to S3:', error);
+    console.error('❌ Error uploading to S3:', {
+      fileName: file.name,
+      fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+      error: error.message,
+      code: error.code,
+      statusCode: error.$metadata?.httpStatusCode
+    });
+
+    // Provide more helpful error messages
+    if (error.name === 'NetworkingError' || error.message?.includes('fetch')) {
+      throw new Error(`Network timeout uploading ${file.name}. Please check your internet connection and try again.`);
+    }
+
     throw new Error(error.message || 'Failed to upload image');
   }
 }

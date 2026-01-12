@@ -40,7 +40,8 @@
       "Bash(npx:*)",
       "Bash(git show:*)",
       "Bash(head:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []
