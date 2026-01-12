@@ -339,6 +339,7 @@ export default function EditPropertyPage() {
       // Convert to ImageWithTags format
       const loadedImages: ImageWithTags[] = (propertyImages || []).map((img: any) => ({
         url: img.image_url,
+        originalUrl: img.original_image_url || img.image_url, // Load from DB with fallback
         tags: img.tags || [],
         isSmugmug: false
       }));
@@ -1016,6 +1017,47 @@ export default function EditPropertyPage() {
     }
   }
 
+  async function handleRestoreOriginal(index: number) {
+    const image = images[index];
+
+    if (!image.originalUrl || image.url === image.originalUrl) {
+      return; // Nothing to restore
+    }
+
+    if (!confirm('Restore this image to its original version? The edited version will be deleted.')) {
+      return;
+    }
+
+    try {
+      const editedUrlToDelete = image.url;
+
+      // Delete edited file from S3
+      try {
+        console.log(`🗑️ Deleting edited file: ${editedUrlToDelete}`);
+        await deleteImageFromS3(editedUrlToDelete);
+        console.log('✓ Deleted successfully');
+      } catch (error) {
+        console.error('⚠️ Failed to delete (non-critical):', error);
+      }
+
+      // Restore to original
+      setImages(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...image,
+          url: image.originalUrl!,
+          file: undefined
+        };
+        return updated;
+      });
+
+      alert('✓ Image restored to original successfully!');
+    } catch (error) {
+      console.error('Error restoring image:', error);
+      alert('Failed to restore image. Please try again.');
+    }
+  }
+
   function toggleImageTag(imageIndex: number, tagName: string) {
     setImages(prev => {
       const updated = prev.map((img, i) => {
@@ -1319,6 +1361,7 @@ export default function EditPropertyPage() {
       const imageRecords = reorderedImages.map((img, index) => ({
         property_id: propertyId,
         image_url: img.url,
+        original_image_url: img.originalUrl || img.url, // Persist original URL
         display_order: index,
         tags: img.tags || []
       }));
@@ -1875,6 +1918,20 @@ export default function EditPropertyPage() {
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
+                              {/* Restore Button - Only show if image has been edited */}
+                              {img.originalUrl && img.url !== img.originalUrl && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRestoreOriginal(index);
+                                  }}
+                                  className="absolute top-1 right-20 bg-yellow-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-yellow-600"
+                                  title="Restore Original"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               {/* Delete Button */}
                               <button
                                 type="button"
@@ -2939,29 +2996,34 @@ export default function EditPropertyPage() {
           onSave={async (editedBlob) => {
             try {
               const file = new File([editedBlob], `edited-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+              const currentImage = images[editingImageIndex];
+              const previousEditedUrl = currentImage.url;
+              const isFirstEdit = !currentImage.originalUrl;
+
+              // Upload new edited version
               const uploadedUrl = await uploadImageToS3(file, 'properties');
 
+              // DELETE OLD EDITED FILE (if not first edit)
+              if (!isFirstEdit && previousEditedUrl !== currentImage.originalUrl) {
+                try {
+                  console.log(`🗑️ Deleting old edited file: ${previousEditedUrl}`);
+                  await deleteImageFromS3(previousEditedUrl);
+                  console.log('✓ Deleted successfully');
+                } catch (error) {
+                  console.error('⚠️ Failed to delete (non-critical):', error);
+                }
+              }
+
+              // Update state
               setImages(prev => {
                 const updated = [...prev];
-                const currentImage = updated[editingImageIndex];
-
-                // Store original URL if this is first edit
-                if (!currentImage.originalUrl) {
-                  updated[editingImageIndex] = {
-                    ...currentImage,
-                    url: uploadedUrl,
-                    originalUrl: currentImage.url,  // Save original
-                    file
-                  };
-                } else {
-                  // Already has original, just update URL
-                  updated[editingImageIndex] = {
-                    ...currentImage,
-                    url: uploadedUrl,
-                    file
-                  };
-                }
-
+                updated[editingImageIndex] = {
+                  ...currentImage,
+                  url: uploadedUrl,
+                  originalUrl: currentImage.originalUrl || currentImage.url,
+                  file
+                };
                 return updated;
               });
 
@@ -2972,19 +3034,31 @@ export default function EditPropertyPage() {
               alert('Failed to upload edited image. Please try again.');
             }
           }}
-          onRestore={images[editingImageIndex].originalUrl ? async () => {
+          onRestore={images[editingImageIndex].originalUrl &&
+                     images[editingImageIndex].url !== images[editingImageIndex].originalUrl ? async () => {
             try {
-              // Restore original URL
+              const currentImage = images[editingImageIndex];
+              const editedUrlToDelete = currentImage.url;
+
+              // Delete edited file from S3
+              if (editedUrlToDelete !== currentImage.originalUrl) {
+                try {
+                  console.log(`🗑️ Deleting edited file: ${editedUrlToDelete}`);
+                  await deleteImageFromS3(editedUrlToDelete);
+                  console.log('✓ Deleted successfully');
+                } catch (error) {
+                  console.error('⚠️ Failed to delete (non-critical):', error);
+                }
+              }
+
+              // Restore to original
               setImages(prev => {
                 const updated = [...prev];
-                const currentImage = updated[editingImageIndex];
-
                 updated[editingImageIndex] = {
                   ...currentImage,
                   url: currentImage.originalUrl!,
-                  originalUrl: undefined  // Clear original marker
+                  file: undefined
                 };
-
                 return updated;
               });
 

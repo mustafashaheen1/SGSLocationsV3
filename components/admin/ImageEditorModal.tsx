@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as fabric from 'fabric';
 import {
   X, Undo2, Redo2, Type, Square, Circle,
-  MousePointer2, Pencil, Trash2, Loader2, Blend, RotateCcw
+  MousePointer2, Pencil, Trash2, Loader2, Blend, RotateCcw, Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,7 @@ export default function ImageEditorModal({
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [blurIntensity, setBlurIntensity] = useState(10);
   const [blurPreviewUrl, setBlurPreviewUrl] = useState<string>('');
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string>('');
 
   // Initialize canvas
   useEffect(() => {
@@ -254,6 +255,24 @@ export default function ImageEditorModal({
     setBlurPreviewUrl(dataUrl);
   }, [canvas, blurIntensity]);
 
+  // Fetch site logo on mount
+  useEffect(() => {
+    async function fetchSiteLogo() {
+      try {
+        const response = await fetch('/api/admin/settings');
+        const data = await response.json();
+        const logoSetting = data.settings.find((s: any) => s.setting_key === 'site_logo_url');
+        if (logoSetting?.setting_value) {
+          setSiteLogoUrl(logoSetting.setting_value);
+        }
+      } catch (error) {
+        console.error('Failed to fetch site logo:', error);
+      }
+    }
+
+    fetchSiteLogo();
+  }, []);
+
   // Tool: Blur
   const enableBlurMode = useCallback(() => {
     if (!canvas) return;
@@ -397,6 +416,42 @@ export default function ImageEditorModal({
     canvas.renderAll();
     saveHistory(canvas);
   }, [canvas, fillColor, strokeColor, strokeWidth, saveHistory]);
+
+  // Tool: Logo Watermark
+  const addLogoWatermark = useCallback(async () => {
+    if (!canvas || !siteLogoUrl) {
+      alert('No logo available. Please upload a logo in Settings first.');
+      return;
+    }
+
+    try {
+      // Load logo image
+      const logoImg = await fabric.FabricImage.fromURL(siteLogoUrl, { crossOrigin: 'anonymous' });
+
+      // Calculate size (max 20% of canvas width)
+      const maxWidth = (canvas.width || 800) * 0.2;
+      const scale = maxWidth / (logoImg.width || 1);
+
+      logoImg.set({
+        left: (canvas.width || 800) - maxWidth - 20, // Bottom right, 20px padding
+        top: (canvas.height || 600) - (logoImg.height || 1) * scale - 20,
+        scaleX: scale,
+        scaleY: scale,
+        selectable: true,
+        hasControls: true, // Enable resize handles
+        hasBorders: true,
+        lockUniScaling: true, // Maintain aspect ratio when resizing
+      });
+
+      canvas.add(logoImg);
+      canvas.setActiveObject(logoImg);
+      saveHistory(canvas);
+      canvas.renderAll();
+    } catch (error) {
+      console.error('Failed to add logo watermark:', error);
+      alert('Failed to add logo watermark. Please try again.');
+    }
+  }, [canvas, siteLogoUrl, saveHistory]);
 
   // Tool: Pencil
   const enableDrawingMode = useCallback((enable: boolean) => {
@@ -765,6 +820,23 @@ export default function ImageEditorModal({
               <tool.icon className="w-5 h-5" />
             </button>
           ))}
+
+          {/* Separator */}
+          <div className="w-10 h-px bg-gray-600 my-2" />
+
+          {/* Logo Watermark Tool */}
+          <button
+            onClick={addLogoWatermark}
+            disabled={!siteLogoUrl}
+            className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+              !siteLogoUrl
+                ? 'text-gray-600 cursor-not-allowed opacity-50'
+                : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+            }`}
+            title={siteLogoUrl ? 'Add Logo Watermark' : 'No logo available (upload in Settings)'}
+          >
+            <ImageIcon className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Center - Canvas */}
