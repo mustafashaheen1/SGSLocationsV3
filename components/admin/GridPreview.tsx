@@ -12,6 +12,8 @@ interface GridPreviewProps {
 
 export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPreviewProps) {
   const [showSelector, setShowSelector] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const missingCount = Math.max(0, 6 - gridIndices.length);
 
   const handleImageSelect = (index: number) => {
@@ -40,6 +42,59 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     }
     const imageIndex = gridIndices[gridIndex];
     onGridIndicesChange(gridIndices.filter(i => i !== imageIndex));
+  };
+
+  // Drag and drop handlers for reordering grid images
+  const handleDragStart = (e: React.DragEvent, imageIndex: number) => {
+    const selectionOrder = gridIndices.indexOf(imageIndex) + 1;
+    if (selectionOrder > 6) return; // Only allow dragging first 6 selected images
+
+    setDraggedIndex(imageIndex);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', imageIndex.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, imageIndex: number) => {
+    e.preventDefault();
+
+    const selectionOrder = gridIndices.indexOf(imageIndex) + 1;
+    if (selectionOrder > 6 || selectionOrder < 1) return;
+    if (imageIndex === draggedIndex) return;
+
+    setDragOverIndex(imageIndex);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropTargetIndex: number) => {
+    e.preventDefault();
+
+    if (draggedIndex === null) return;
+
+    const draggedPosition = gridIndices.indexOf(draggedIndex);
+    const targetPosition = gridIndices.indexOf(dropTargetIndex);
+
+    if (draggedPosition === -1 || targetPosition === -1) return;
+    if (draggedPosition >= 6 || targetPosition >= 6) return; // Only reorder first 6
+
+    // Swap positions in array
+    const newGridIndices = [...gridIndices];
+    newGridIndices[draggedPosition] = dropTargetIndex;
+    newGridIndices[targetPosition] = draggedIndex;
+
+    onGridIndicesChange(newGridIndices);
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   return (
@@ -109,32 +164,52 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
 
       {showSelector && (
         <div className="border-t pt-4">
-          <h4 className="text-sm font-semibold mb-3">Select Grid Images (Choose 6)</h4>
+          <h4 className="text-sm font-semibold mb-3">
+            Select Grid Images (Choose 6) - Drag to reorder positions
+          </h4>
           <div className="grid grid-cols-4 gap-2 max-h-[400px] overflow-y-auto p-2 bg-gray-50 rounded">
             {images.map((image, index) => {
               const isSelected = gridIndices.includes(index);
               const selectionOrder = isSelected ? gridIndices.indexOf(index) + 1 : null;
+              const isDragging = draggedIndex === index;
+              const isDropTarget = dragOverIndex === index;
+              const isDraggable = isSelected && selectionOrder !== null && selectionOrder <= 6;
 
               return (
                 <div
                   key={index}
+                  draggable={isDraggable}
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => handleImageSelect(index)}
-                  className={`relative aspect-square bg-gray-100 rounded overflow-hidden cursor-pointer border-2 transition-all ${
-                    isSelected
+                  className={`relative aspect-square bg-gray-100 rounded overflow-hidden border-2 transition-all
+                    ${isSelected
                       ? 'border-green-500 ring-2 ring-green-200'
                       : 'border-gray-200 hover:border-gray-400'
-                  }`}
+                    }
+                    ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
+                    ${isDragging ? 'opacity-50 scale-95' : ''}
+                    ${isDropTarget ? 'ring-4 ring-blue-400 border-blue-500' : ''}
+                  `}
                 >
                   <Image
                     src={image.url}
                     alt={`Image ${index + 1}`}
                     fill
-                    className="object-cover"
+                    className="object-cover pointer-events-none"
                     sizes="150px"
                   />
                   {isSelected && selectionOrder && selectionOrder <= 6 && (
                     <div className="absolute top-1 right-1 bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                      <Check className="w-4 h-4" />
+                      {selectionOrder}
+                    </div>
+                  )}
+                  {isDraggable && !isDragging && (
+                    <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow-sm">
+                      Drag
                     </div>
                   )}
                   <div className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
@@ -145,7 +220,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
             })}
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Click on any image to add it to the grid. If 6 are already selected, the oldest selection will be replaced.
+            Click to add/remove images. Drag selected grid images to reorder their positions.
           </p>
         </div>
       )}
