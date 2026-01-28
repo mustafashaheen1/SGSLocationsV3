@@ -45,10 +45,10 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     onGridIndicesChange(gridIndices.filter(i => i !== imageIndex));
   };
 
-  // Drag and drop handlers for reordering grid images
+  // Drag and drop handlers for reordering all images
   const handleDragStart = (e: React.DragEvent, imageIndex: number) => {
     const selectionOrder = gridIndices.indexOf(imageIndex) + 1;
-    if (selectionOrder > 6) return; // Only allow dragging first 6 selected images
+    if (selectionOrder < 1) return; // Only allow dragging selected images
 
     setDraggedIndex(imageIndex);
     e.dataTransfer.effectAllowed = 'move';
@@ -59,7 +59,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     e.preventDefault();
 
     const selectionOrder = gridIndices.indexOf(imageIndex) + 1;
-    if (selectionOrder > 6 || selectionOrder < 1) return;
+    if (selectionOrder < 1) return; // Only allow dropping on selected images
     if (imageIndex === draggedIndex) return;
 
     setDragOverIndex(imageIndex);
@@ -80,16 +80,15 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     const targetPosition = gridIndices.indexOf(dropTargetIndex);
 
     if (draggedPosition === -1 || targetPosition === -1) return;
-    if (draggedPosition >= 6 || targetPosition >= 6) return; // Only reorder first 6
 
-    // Swap positions in array
+    // Swap positions in array (works for all images, not just grid)
     const newGridIndices = [...gridIndices];
     newGridIndices[draggedPosition] = dropTargetIndex;
     newGridIndices[targetPosition] = draggedIndex;
 
     onGridIndicesChange(newGridIndices);
 
-    // Highlight the swapped images
+    // Highlight the swapped images (first 6 positions are grid images)
     setRecentlySwapped([draggedIndex, dropTargetIndex]);
     setTimeout(() => setRecentlySwapped([]), 1500); // Clear highlight after 1.5s
 
@@ -192,8 +191,9 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
                 const selectionOrder = isSelected ? gridIndices.indexOf(index) + 1 : null;
                 const isDragging = draggedIndex === index;
                 const isDropTarget = dragOverIndex === index;
-                const isDraggable = isSelected && selectionOrder !== null && selectionOrder <= 6;
+                const isDraggable = isSelected && selectionOrder !== null; // All selected images are draggable
                 const isSwapped = recentlySwapped.includes(index);
+                const isGridImage = selectionOrder !== null && selectionOrder <= 6;
 
                 return (
                 <div
@@ -223,8 +223,10 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
                     className="object-cover pointer-events-none"
                     sizes="150px"
                   />
-                  {isSelected && selectionOrder && selectionOrder <= 6 && (
-                    <div className="absolute top-1 right-1 bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                  {isSelected && selectionOrder && (
+                    <div className={`absolute top-1 right-1 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold ${
+                      isGridImage ? 'bg-green-600' : 'bg-gray-600'
+                    }`}>
                       {selectionOrder}
                     </div>
                   )}
@@ -242,7 +244,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
             })()}
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Click to add/remove images. Drag selected grid images to reorder their positions.
+            Click to add/remove images. Drag any image to reorder. Green numbers (1-6) are grid images, gray numbers (7+) are additional images.
           </p>
         </div>
       )}
