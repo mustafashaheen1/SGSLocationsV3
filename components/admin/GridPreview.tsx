@@ -14,6 +14,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
   const [showSelector, setShowSelector] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [recentlySwapped, setRecentlySwapped] = useState<number[]>([]);
   const missingCount = Math.max(0, 6 - gridIndices.length);
 
   const handleImageSelect = (index: number) => {
@@ -88,6 +89,10 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
 
     onGridIndicesChange(newGridIndices);
 
+    // Highlight the swapped images
+    setRecentlySwapped([draggedIndex, dropTargetIndex]);
+    setTimeout(() => setRecentlySwapped([]), 1500); // Clear highlight after 1.5s
+
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
@@ -121,11 +126,15 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-4">
-        {gridIndices.slice(0, 6).map((imageIndex, gridIndex) => (
-          <div
-            key={gridIndex}
-            className="relative aspect-[4/3] bg-gray-100 rounded overflow-hidden border-2 border-gray-300 group"
-          >
+        {gridIndices.slice(0, 6).map((imageIndex, gridIndex) => {
+          const isSwapped = recentlySwapped.includes(imageIndex);
+          return (
+            <div
+              key={gridIndex}
+              className={`relative aspect-[4/3] bg-gray-100 rounded overflow-hidden border-2 group transition-all duration-300
+                ${isSwapped ? 'border-blue-500 ring-4 ring-blue-300 scale-105' : 'border-gray-300'}
+              `}
+            >
             <Image
               src={images[imageIndex]?.url || ''}
               alt={`Grid image ${gridIndex + 1}`}
@@ -146,7 +155,8 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
               </button>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {/* Placeholder boxes for missing images */}
         {Array.from({ length: missingCount }).map((_, index) => (
@@ -174,6 +184,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
               const isDragging = draggedIndex === index;
               const isDropTarget = dragOverIndex === index;
               const isDraggable = isSelected && selectionOrder !== null && selectionOrder <= 6;
+              const isSwapped = recentlySwapped.includes(index);
 
               return (
                 <div
@@ -185,7 +196,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
                   onClick={() => handleImageSelect(index)}
-                  className={`relative aspect-square bg-gray-100 rounded overflow-hidden border-2 transition-all
+                  className={`relative aspect-square bg-gray-100 rounded overflow-hidden border-2 transition-all group
                     ${isSelected
                       ? 'border-green-500 ring-2 ring-green-200'
                       : 'border-gray-200 hover:border-gray-400'
@@ -193,6 +204,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
                     ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
                     ${isDragging ? 'opacity-50 scale-95' : ''}
                     ${isDropTarget ? 'ring-4 ring-blue-400 border-blue-500' : ''}
+                    ${isSwapped ? 'ring-4 ring-blue-300 scale-105' : ''}
                   `}
                 >
                   <Image
@@ -208,7 +220,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
                     </div>
                   )}
                   {isDraggable && !isDragging && (
-                    <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow-sm">
+                    <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
                       Drag
                     </div>
                   )}
