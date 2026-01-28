@@ -178,12 +178,12 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
           </h4>
           <div className="grid grid-cols-4 gap-2 max-h-[400px] overflow-y-auto p-2 bg-gray-50 rounded">
             {(() => {
-              // Create sorted array: grid images first (in grid order), then non-grid images
-              const gridImageIndices = gridIndices.slice(0, 6);
-              const nonGridImageIndices = images
+              // Create sorted array: ALL selected images first (in selection order), then unselected
+              const selectedIndices = gridIndices; // All selected images in order (grid + additional)
+              const unselectedIndices = images
                 .map((_, idx) => idx)
-                .filter(idx => !gridImageIndices.includes(idx));
-              const sortedIndices = [...gridImageIndices, ...nonGridImageIndices];
+                .filter(idx => !gridIndices.includes(idx));
+              const sortedIndices = [...selectedIndices, ...unselectedIndices];
 
               return sortedIndices.map((index) => {
                 const image = images[index];
