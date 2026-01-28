@@ -178,15 +178,24 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
             Select Grid Images (Choose 6) - Drag to reorder positions
           </h4>
           <div className="grid grid-cols-4 gap-2 max-h-[400px] overflow-y-auto p-2 bg-gray-50 rounded">
-            {images.map((image, index) => {
-              const isSelected = gridIndices.includes(index);
-              const selectionOrder = isSelected ? gridIndices.indexOf(index) + 1 : null;
-              const isDragging = draggedIndex === index;
-              const isDropTarget = dragOverIndex === index;
-              const isDraggable = isSelected && selectionOrder !== null && selectionOrder <= 6;
-              const isSwapped = recentlySwapped.includes(index);
+            {(() => {
+              // Create sorted array: grid images first (in grid order), then non-grid images
+              const gridImageIndices = gridIndices.slice(0, 6);
+              const nonGridImageIndices = images
+                .map((_, idx) => idx)
+                .filter(idx => !gridImageIndices.includes(idx));
+              const sortedIndices = [...gridImageIndices, ...nonGridImageIndices];
 
-              return (
+              return sortedIndices.map((index) => {
+                const image = images[index];
+                const isSelected = gridIndices.includes(index);
+                const selectionOrder = isSelected ? gridIndices.indexOf(index) + 1 : null;
+                const isDragging = draggedIndex === index;
+                const isDropTarget = dragOverIndex === index;
+                const isDraggable = isSelected && selectionOrder !== null && selectionOrder <= 6;
+                const isSwapped = recentlySwapped.includes(index);
+
+                return (
                 <div
                   key={index}
                   draggable={isDraggable}
@@ -229,7 +238,8 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
                   </div>
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
           <p className="text-xs text-gray-500 mt-2">
             Click to add/remove images. Drag selected grid images to reorder their positions.
