@@ -47,9 +47,15 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
 
   // Drag and drop handlers for reordering all images
   const handleDragStart = (e: React.DragEvent, imageIndex: number) => {
+    console.log('🔵 DragStart - imageIndex:', imageIndex, 'gridIndices:', gridIndices);
     const selectionOrder = gridIndices.indexOf(imageIndex) + 1;
-    if (selectionOrder < 1) return; // Only allow dragging selected images
+    console.log('🔵 selectionOrder:', selectionOrder);
+    if (selectionOrder < 1) {
+      console.log('❌ DragStart blocked - not selected');
+      return;
+    }
 
+    console.log('✅ DragStart allowed');
     setDraggedIndex(imageIndex);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', imageIndex.toString());
@@ -73,19 +79,28 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
 
   const handleDrop = (e: React.DragEvent, dropTargetIndex: number) => {
     e.preventDefault();
+    console.log('🟢 Drop - draggedIndex:', draggedIndex, 'dropTargetIndex:', dropTargetIndex);
 
-    if (draggedIndex === null) return;
+    if (draggedIndex === null) {
+      console.log('❌ Drop blocked - draggedIndex is null');
+      return;
+    }
 
     const draggedPosition = gridIndices.indexOf(draggedIndex);
     const targetPosition = gridIndices.indexOf(dropTargetIndex);
+    console.log('🟢 Positions - dragged:', draggedPosition, 'target:', targetPosition);
 
-    if (draggedPosition === -1 || targetPosition === -1) return;
+    if (draggedPosition === -1 || targetPosition === -1) {
+      console.log('❌ Drop blocked - invalid positions');
+      return;
+    }
 
     // Swap positions in array (works for all images, not just grid)
     const newGridIndices = [...gridIndices];
     newGridIndices[draggedPosition] = dropTargetIndex;
     newGridIndices[targetPosition] = draggedIndex;
 
+    console.log('✅ Swapping - old gridIndices:', gridIndices, 'new:', newGridIndices);
     onGridIndicesChange(newGridIndices);
 
     // Highlight the swapped images (first 6 positions are grid images)
