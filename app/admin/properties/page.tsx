@@ -510,8 +510,7 @@ export default function AdminPropertiesPage() {
           <p className="text-gray-600 mt-1">{filteredProperties.length} total properties</p>
         </div>
         <div className="flex gap-3">
-          {/* Bulk AI Update button - hidden for now */}
-          {/* <Button
+          <Button
             variant="outline"
             onClick={handleBulkAIUpdate}
             disabled={bulkUpdating || loading}
@@ -528,7 +527,7 @@ export default function AdminPropertiesPage() {
                 Bulk AI Update
               </>
             )}
-          </Button> */}
+          </Button>
           <Button
             variant="outline"
             onClick={handleBulkImportProperties}

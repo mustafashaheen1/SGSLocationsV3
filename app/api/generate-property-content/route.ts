@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
 Generate:
 1. A sub-heading (max 180 characters): A catchy, SEO-friendly title that highlights the property's unique selling points
-2. A description (150-300 words): An engaging, detailed description that makes the property attractive for filmmakers and photographers
+2. A description (75-150 words): An engaging, detailed description that makes the property attractive for filmmakers and photographers
 
 Requirements:
 - Be specific and descriptive

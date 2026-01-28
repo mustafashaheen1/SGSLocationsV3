@@ -47,7 +47,6 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
 
   // Drag and drop handlers for reordering all images
   const handleDragStart = (e: React.DragEvent, imageIndex: number) => {
-    console.log('🔵 DragStart - imageIndex:', imageIndex, 'gridIndices:', gridIndices);
     setDraggedIndex(imageIndex);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', imageIndex.toString());
@@ -68,28 +67,23 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
 
   const handleDrop = (e: React.DragEvent, dropTargetIndex: number) => {
     e.preventDefault();
-    console.log('🟢 Drop - draggedIndex:', draggedIndex, 'dropTargetIndex:', dropTargetIndex);
 
     if (draggedIndex === null || draggedIndex === dropTargetIndex) {
-      console.log('❌ Drop blocked - null or same image');
       return;
     }
 
     const draggedPosition = gridIndices.indexOf(draggedIndex);
     const targetPosition = gridIndices.indexOf(dropTargetIndex);
-    console.log('🟢 Positions - dragged:', draggedPosition, 'target:', targetPosition);
 
     let newGridIndices = [...gridIndices];
 
     // Case 1: Both images are in gridIndices - just swap them
     if (draggedPosition !== -1 && targetPosition !== -1) {
-      console.log('✅ Case 1: Swapping positions', draggedPosition, 'and', targetPosition);
       newGridIndices[draggedPosition] = dropTargetIndex;
       newGridIndices[targetPosition] = draggedIndex;
     }
     // Case 2: Dragged is NOT in gridIndices, but target IS
     else if (draggedPosition === -1 && targetPosition !== -1) {
-      console.log('✅ Case 2: Swapping unselected dragged with selected target');
       // Swap: put dragged at target position, move target to end (becomes unselected from grid)
       const oldTargetImage = newGridIndices[targetPosition];
       newGridIndices[targetPosition] = draggedIndex;
@@ -97,7 +91,6 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     }
     // Case 3: Dragged IS in gridIndices, but target is NOT
     else if (draggedPosition !== -1 && targetPosition === -1) {
-      console.log('✅ Case 3: Swapping selected dragged with unselected target');
       // Swap: put target at dragged position, move dragged to end
       const oldDraggedImage = newGridIndices[draggedPosition];
       newGridIndices[draggedPosition] = dropTargetIndex;
@@ -105,13 +98,11 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     }
     // Case 4: Both images are NOT in gridIndices - add both to track their order
     else {
-      console.log('✅ Case 4: Both unselected - adding both to gridIndices in swapped order');
       // Add both images to gridIndices (they stay unselected but now have tracked positions)
       newGridIndices.push(dropTargetIndex); // Add target first
       newGridIndices.push(draggedIndex);    // Add dragged second (swapped visual order)
     }
 
-    console.log('✅ New gridIndices:', newGridIndices);
     onGridIndicesChange(newGridIndices);
 
     // Highlight the affected images
