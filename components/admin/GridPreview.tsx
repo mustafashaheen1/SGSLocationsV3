@@ -48,14 +48,6 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
   // Drag and drop handlers for reordering all images
   const handleDragStart = (e: React.DragEvent, imageIndex: number) => {
     console.log('🔵 DragStart - imageIndex:', imageIndex, 'gridIndices:', gridIndices);
-    const selectionOrder = gridIndices.indexOf(imageIndex) + 1;
-    console.log('🔵 selectionOrder:', selectionOrder);
-    if (selectionOrder < 1) {
-      console.log('❌ DragStart blocked - not selected');
-      return;
-    }
-
-    console.log('✅ DragStart allowed');
     setDraggedIndex(imageIndex);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', imageIndex.toString());
@@ -63,9 +55,6 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
 
   const handleDragOver = (e: React.DragEvent, imageIndex: number) => {
     e.preventDefault();
-
-    const selectionOrder = gridIndices.indexOf(imageIndex) + 1;
-    if (selectionOrder < 1) return; // Only allow dropping on selected images
     if (imageIndex === draggedIndex) return;
 
     setDragOverIndex(imageIndex);
@@ -81,8 +70,8 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     e.preventDefault();
     console.log('🟢 Drop - draggedIndex:', draggedIndex, 'dropTargetIndex:', dropTargetIndex);
 
-    if (draggedIndex === null) {
-      console.log('❌ Drop blocked - draggedIndex is null');
+    if (draggedIndex === null || draggedIndex === dropTargetIndex) {
+      console.log('❌ Drop blocked - null or same image');
       return;
     }
 
@@ -90,22 +79,44 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
     const targetPosition = gridIndices.indexOf(dropTargetIndex);
     console.log('🟢 Positions - dragged:', draggedPosition, 'target:', targetPosition);
 
-    if (draggedPosition === -1 || targetPosition === -1) {
-      console.log('❌ Drop blocked - invalid positions');
-      return;
+    let newGridIndices = [...gridIndices];
+
+    // Case 1: Both images are in gridIndices - just swap them
+    if (draggedPosition !== -1 && targetPosition !== -1) {
+      console.log('✅ Case 1: Swapping positions', draggedPosition, 'and', targetPosition);
+      newGridIndices[draggedPosition] = dropTargetIndex;
+      newGridIndices[targetPosition] = draggedIndex;
+    }
+    // Case 2: Dragged is NOT in gridIndices, but target IS
+    else if (draggedPosition === -1 && targetPosition !== -1) {
+      console.log('✅ Case 2: Swapping unselected dragged with selected target');
+      // Swap: put dragged at target position, move target to end (becomes unselected from grid)
+      const oldTargetImage = newGridIndices[targetPosition];
+      newGridIndices[targetPosition] = draggedIndex;
+      newGridIndices.push(oldTargetImage); // Target moves to end, out of grid
+    }
+    // Case 3: Dragged IS in gridIndices, but target is NOT
+    else if (draggedPosition !== -1 && targetPosition === -1) {
+      console.log('✅ Case 3: Swapping selected dragged with unselected target');
+      // Swap: put target at dragged position, move dragged to end
+      const oldDraggedImage = newGridIndices[draggedPosition];
+      newGridIndices[draggedPosition] = dropTargetIndex;
+      newGridIndices.push(oldDraggedImage); // Dragged moves to end
+    }
+    // Case 4: Both images are NOT in gridIndices - add both to track their order
+    else {
+      console.log('✅ Case 4: Both unselected - adding both to gridIndices in swapped order');
+      // Add both images to gridIndices (they stay unselected but now have tracked positions)
+      newGridIndices.push(dropTargetIndex); // Add target first
+      newGridIndices.push(draggedIndex);    // Add dragged second (swapped visual order)
     }
 
-    // Swap positions in array (works for all images, not just grid)
-    const newGridIndices = [...gridIndices];
-    newGridIndices[draggedPosition] = dropTargetIndex;
-    newGridIndices[targetPosition] = draggedIndex;
-
-    console.log('✅ Swapping - old gridIndices:', gridIndices, 'new:', newGridIndices);
+    console.log('✅ New gridIndices:', newGridIndices);
     onGridIndicesChange(newGridIndices);
 
-    // Highlight the swapped images (first 6 positions are grid images)
+    // Highlight the affected images
     setRecentlySwapped([draggedIndex, dropTargetIndex]);
-    setTimeout(() => setRecentlySwapped([]), 1500); // Clear highlight after 1.5s
+    setTimeout(() => setRecentlySwapped([]), 1500);
 
     setDraggedIndex(null);
     setDragOverIndex(null);
@@ -206,7 +217,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
                 const selectionOrder = isSelected ? gridIndices.indexOf(index) + 1 : null;
                 const isDragging = draggedIndex === index;
                 const isDropTarget = dragOverIndex === index;
-                const isDraggable = isSelected && selectionOrder !== null; // All selected images are draggable
+                const isDraggable = true; // All images are draggable (selected or not)
                 const isSwapped = recentlySwapped.includes(index);
                 const isGridImage = selectionOrder !== null && selectionOrder <= 6;
 
