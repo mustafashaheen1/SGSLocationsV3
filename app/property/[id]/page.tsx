@@ -1235,10 +1235,10 @@ export default function PropertyDetailPage() {
                       setShowContactModal(true);
                     }}
                     style={{
-                      background: 'rgb(225, 25, 33)',
-                      backgroundColor: 'rgb(225, 25, 33)',
+                      background: '#e65a00',
+                      backgroundColor: '#e65a00',
                       color: 'rgb(255, 255, 255)',
-                      border: '1px solid rgb(225, 25, 33)',
+                      border: '1px solid #e65a00',
                       borderRadius: '3.2px',
                       padding: '4px 8px',
                       fontSize: '14px',
@@ -1257,14 +1257,14 @@ export default function PropertyDetailPage() {
                       boxSizing: 'border-box'
                     }}
                     onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#cc5200';
+                      e.currentTarget.style.backgroundColor = '#cc5200';
+                      e.currentTarget.style.borderColor = '#cc5200';
+                    }}
+                    onMouseLeave={(e) => {
                       e.currentTarget.style.background = '#e65a00';
                       e.currentTarget.style.backgroundColor = '#e65a00';
                       e.currentTarget.style.borderColor = '#e65a00';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgb(225, 25, 33)';
-                      e.currentTarget.style.backgroundColor = 'rgb(225, 25, 33)';
-                      e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
                     }}
                   >
                     Inquire About {property.name}
@@ -1277,13 +1277,13 @@ export default function PropertyDetailPage() {
             <div className="property-right-column">
               {/* Action Buttons - Single Row */}
               <div className="action-buttons-container">
-                {/* Share Button - White with Red Border */}
+                {/* Share Button */}
                 <button
                   onClick={() => setShowShareModal(true)}
                   style={{
-                    background: '#fff',
-                    color: 'rgb(33, 37, 41)',
-                    border: '2px solid rgb(225, 25, 33)',
+                    background: '#e65a00',
+                    color: '#fff',
+                    border: '1px solid #e65a00',
                     borderRadius: '3.2px',
                     padding: '8px 12px',
                     fontSize: '13px',
@@ -1298,12 +1298,12 @@ export default function PropertyDetailPage() {
                     minWidth: 'auto'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgb(225, 25, 33)';
-                    e.currentTarget.style.color = '#fff';
+                    e.currentTarget.style.background = '#cc5200';
+                    e.currentTarget.style.borderColor = '#cc5200';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#fff';
-                    e.currentTarget.style.color = 'rgb(33, 37, 41)';
+                    e.currentTarget.style.background = '#e65a00';
+                    e.currentTarget.style.borderColor = '#e65a00';
                   }}
                 >
                   <Share2 style={{ width: '14px', height: '14px' }} />
@@ -1341,9 +1341,9 @@ export default function PropertyDetailPage() {
                         else if (btn.text === 'LOCATION PDF') handleDownloadPDF();
                       }}
                       style={{
-                        background: isDisabled ? '#999' : 'rgb(225, 25, 33)',
+                        background: isDisabled ? '#999' : '#e65a00',
                         color: '#fff',
-                        border: isDisabled ? '1px solid #999' : '1px solid rgb(225, 25, 33)',
+                        border: isDisabled ? '1px solid #999' : '1px solid #e65a00',
                         borderRadius: '3.2px',
                         padding: '8px 12px',
                         fontSize: '13px',
@@ -1360,14 +1360,14 @@ export default function PropertyDetailPage() {
                       }}
                       onMouseEnter={(e) => {
                         if (!isDisabled) {
-                          e.currentTarget.style.background = '#e65a00';
-                          e.currentTarget.style.borderColor = '#e65a00';
+                          e.currentTarget.style.background = '#cc5200';
+                          e.currentTarget.style.borderColor = '#cc5200';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isDisabled) {
-                          e.currentTarget.style.background = 'rgb(225, 25, 33)';
-                          e.currentTarget.style.borderColor = 'rgb(225, 25, 33)';
+                          e.currentTarget.style.background = '#e65a00';
+                          e.currentTarget.style.borderColor = '#e65a00';
                         }
                       }}
                     >

@@ -478,7 +478,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="firstName"
                     type="text"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="First name *"
                     value={formData.firstName}
                     onChange={handleChange}
@@ -492,7 +492,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="lastName"
                     type="text"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="Last name *"
                     value={formData.lastName}
                     onChange={handleChange}
@@ -506,7 +506,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="email"
                     type="email"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="Email *"
                     value={formData.email}
                     onChange={handleChange}
@@ -520,7 +520,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="company"
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                     placeholder="Company *"
                     value={formData.company}
                     onChange={handleChange}
@@ -532,7 +532,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="message"
                     rows={6}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
                     placeholder="Message *"
                     value={formData.message}
                     onChange={handleChange}
@@ -546,7 +546,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   <input
                     name="phone"
                     type="tel"
-                    className={`w-full px-4 py-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${
+                    className={`w-full px-4 py-2 border rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${
                       phoneError ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Phone (XXX) XXX-XXXX"
@@ -563,7 +563,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   <input
                     name="crewSize"
                     type="number"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                     placeholder="Cast / Crew Size"
                     value={formData.crewSize}
                     onChange={handleChange}
@@ -574,7 +574,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   <input
                     name="locations"
                     type="text"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${
+                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${
                       propertyId ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Locations"
@@ -595,7 +595,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     ref={inputRef}
                     name="shootingDate"
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none cursor-pointer"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none cursor-pointer"
                     placeholder="Shooting Date"
                     value={formData.shootingDate}
                     onClick={() => setShowPicker(true)}
@@ -626,10 +626,10 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                               className={`p-1 rounded ${
                                 isPastDate(date)
                                   ? 'text-gray-300 cursor-not-allowed'
-                                  : 'hover:bg-red-100'
+                                  : 'hover:bg-orange-100'
                               } ${
-                                isSelected(date) ? 'bg-red-500 text-white' : ''
-                              } ${isInRange(date) ? 'bg-red-100' : ''}`}
+                                isSelected(date) ? 'bg-orange-500 text-white' : ''
+                              } ${isInRange(date) ? 'bg-orange-100' : ''}`}
                             >
                               {date.getDate()}
                             </button>
@@ -664,7 +664,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     <select
                       required={question.is_required}
                       name={question.field_name}
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                       value={dynamicAnswers[question.field_name] || ''}
                       onChange={(e) => {
                         setDynamicAnswers(prev => ({
@@ -736,7 +736,20 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="px-6 py-2 text-white rounded transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: isSubmitting ? '#999' : '#e65a00'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSubmitting) {
+                    e.currentTarget.style.backgroundColor = '#cc5200';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSubmitting) {
+                    e.currentTarget.style.backgroundColor = '#e65a00';
+                  }
+                }}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Submitting...' : 'Send Inquiry'}
