@@ -247,27 +247,6 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Location Categories */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Location Categories</h3>
-            <ul className="space-y-2">
-              {categories.length > 0 ? (
-                categories.map(cat => (
-                  <li key={cat.id}>
-                    <Link
-                      href={`/search?category=${cat.slug}`}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))
-              ) : (
-                <li className="text-gray-400">No categories available</li>
-              )}
-            </ul>
-          </div>
-
           {/* Contact Info */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
