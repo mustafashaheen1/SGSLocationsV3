@@ -466,17 +466,29 @@ export default function DocumentDirectoryPage() {
                    previewDoc.file_type === 'application/vnd.ms-excel' ||
                    previewDoc.file_type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
                    previewDoc.file_type === 'application/vnd.ms-powerpoint' ? (
-                <div className="h-full flex flex-col">
-                  <div className="flex items-center justify-between bg-gray-100 p-2 rounded-t">
-                    <p className="text-xs text-gray-600">
-                      Using Google Docs Viewer for better reliability
-                    </p>
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <FileText size={64} className="mb-4 text-blue-500" />
+                  <p className="text-lg font-medium mb-2 text-gray-900">Office Document</p>
+                  <p className="text-sm mb-2 text-center max-w-md">
+                    {previewDoc.file_type.includes('word') ? 'Word Document' :
+                     previewDoc.file_type.includes('excel') || previewDoc.file_type.includes('sheet') ? 'Excel Spreadsheet' :
+                     'PowerPoint Presentation'}
+                  </p>
+                  <p className="text-xs mb-6 text-center max-w-md text-gray-600">
+                    Preview not available. Download to view the document.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleDownload(previewDoc)}
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
+                    >
+                      <Download size={20} />
+                      Download to View
+                    </button>
                   </div>
-                  <iframe
-                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewDoc.file_url)}&embedded=true`}
-                    className="w-full flex-1 min-h-[600px] border-0 rounded-b bg-white"
-                    title={previewDoc.title}
-                  />
+                  <div className="mt-4 text-xs text-gray-500">
+                    File size: {formatFileSize(previewDoc.file_size)}
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
