@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Search, ChevronDown, X, Bookmark } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
@@ -264,6 +264,11 @@ export default function SearchPage() {
   const [userType, setUserType] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 8;
+
+  // Memoized handler for dropdown search input changes
+  const handleSearchTermChange = useCallback((key: string, value: string) => {
+    setSearchTerms(prev => ({ ...prev, [key]: value }));
+  }, []);
 
   const FILTER_CACHE_KEY = 'sgs_search_filters_cache';
   const CACHE_DURATION = 5 * 60 * 1000;
@@ -975,6 +980,9 @@ export default function SearchPage() {
 
 
   useEffect(() => {
+    // Only add listener when a dropdown is open
+    if (!openDropdown) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenDropdown(null);
@@ -2046,13 +2054,11 @@ export default function SearchPage() {
               const hasActive = activeFilters.find(f => f.category === category.name)?.values.length || 0;
               const filteredOptions = getFilteredOptions(key, category.options);
 
-              const containerRef = openDropdown === key ? dropdownRef : null;
-
               return (
                 <div
                   key={key}
                   className="filter-dropdown"
-                  ref={containerRef}
+                  ref={openDropdown === key ? dropdownRef : null}
                 >
                   <button
                     type="button"
@@ -2078,7 +2084,7 @@ export default function SearchPage() {
                               type="text"
                               placeholder="Search..."
                               value={searchTerms[key] || ''}
-                              onChange={(e) => setSearchTerms(prev => ({ ...prev, [key]: e.target.value }))}
+                              onChange={(e) => handleSearchTermChange(key, e.target.value)}
                               onClick={(e) => e.stopPropagation()}
                             />
                           </div>
