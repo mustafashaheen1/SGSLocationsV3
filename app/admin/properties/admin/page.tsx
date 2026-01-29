@@ -233,12 +233,42 @@ export default function AdminPropertiesPage() {
 
   const filteredProperties = properties.filter(property => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+
+    // Check existing fields
+    if (
       property.name?.toLowerCase().includes(searchLower) ||
       (property.real_name || '')?.toLowerCase().includes(searchLower) ||
       property.city?.toLowerCase().includes(searchLower) ||
-      (property.zipcode || '')?.toLowerCase().includes(searchLower)
-    );
+      (property.zipcode || '')?.toLowerCase().includes(searchLower) ||
+      (property.description || '')?.toLowerCase().includes(searchLower) ||
+      (property.address || '')?.toLowerCase().includes(searchLower)
+    ) {
+      return true;
+    }
+
+    // Check property tags
+    if (property.property_tags?.some(tag =>
+      tag.toLowerCase().includes(searchLower)
+    )) {
+      return true;
+    }
+
+    // Check property contacts (JSONB array)
+    if (property.contacts && Array.isArray(property.contacts)) {
+      const contactMatch = property.contacts.some((contact: any) =>
+        contact.name?.toLowerCase().includes(searchLower) ||
+        contact.email?.toLowerCase().includes(searchLower) ||
+        contact.cell_number?.toLowerCase().includes(searchLower) ||
+        contact.home_number?.toLowerCase().includes(searchLower) ||
+        contact.office_number?.toLowerCase().includes(searchLower)
+      );
+      if (contactMatch) return true;
+    }
+
+    // Note: Admin-created properties have no owner (owner_id is null)
+    // so no owner information search needed
+
+    return false;
   });
 
   return (

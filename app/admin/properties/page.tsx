@@ -121,7 +121,7 @@ export default function AdminPropertiesPage() {
       if (ownerIds.length > 0 && session) {
         const { directFetch } = await import('@/lib/supabase');
         const { data: owners } = await directFetch('users', {
-          select: 'id,full_name,email',
+          select: 'id,full_name,email,phone',
           in: { id: ownerIds },
           authToken: session.access_token
         });
@@ -139,6 +139,7 @@ export default function AdminPropertiesPage() {
         ...property,
         owner_name: property.owner_id ? ownersMap[property.owner_id]?.full_name || null : null,
         owner_email: property.owner_id ? ownersMap[property.owner_id]?.email || null : null,
+        owner_phone: property.owner_id ? ownersMap[property.owner_id]?.phone || null : null,
       })) || [];
 
       console.log('Fetched properties with owners:', transformedData);
@@ -493,13 +494,49 @@ export default function AdminPropertiesPage() {
   }
 
   const filteredProperties = properties.filter(property => {
-    const matchesSearch =
-      property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (property.real_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (property.zipcode || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
 
-    return matchesSearch;
+    // Check existing fields
+    if (
+      property.name?.toLowerCase().includes(searchLower) ||
+      (property.real_name || '')?.toLowerCase().includes(searchLower) ||
+      property.city?.toLowerCase().includes(searchLower) ||
+      (property.zipcode || '')?.toLowerCase().includes(searchLower) ||
+      (property.description || '')?.toLowerCase().includes(searchLower) ||
+      (property.address || '')?.toLowerCase().includes(searchLower)
+    ) {
+      return true;
+    }
+
+    // Check property tags
+    if (property.property_tags?.some(tag =>
+      tag.toLowerCase().includes(searchLower)
+    )) {
+      return true;
+    }
+
+    // Check property contacts (JSONB array)
+    if (property.contacts && Array.isArray(property.contacts)) {
+      const contactMatch = property.contacts.some((contact: any) =>
+        contact.name?.toLowerCase().includes(searchLower) ||
+        contact.email?.toLowerCase().includes(searchLower) ||
+        contact.cell_number?.toLowerCase().includes(searchLower) ||
+        contact.home_number?.toLowerCase().includes(searchLower) ||
+        contact.office_number?.toLowerCase().includes(searchLower)
+      );
+      if (contactMatch) return true;
+    }
+
+    // Check owner information
+    if (
+      (property.owner_name || '')?.toLowerCase().includes(searchLower) ||
+      (property.owner_email || '')?.toLowerCase().includes(searchLower) ||
+      (property.owner_phone || '')?.toLowerCase().includes(searchLower)
+    ) {
+      return true;
+    }
+
+    return false;
   });
 
   return (

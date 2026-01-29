@@ -82,11 +82,36 @@ export default function PendingPropertiesPage() {
         }
       }
 
-      // Transform the data to add category information
+      // Get unique owner IDs that are not null
+      const ownerIds = Array.from(new Set(
+        data?.filter((p: any) => p.owner_id).map((p: any) => p.owner_id) || []
+      ));
+
+      // Fetch owner information using directFetch with auth token
+      let ownersMap: Record<string, any> = {};
+      if (ownerIds.length > 0 && session) {
+        const { data: owners } = await directFetch('users', {
+          select: 'id,full_name,email,phone',
+          in: { id: ownerIds },
+          authToken: session.access_token
+        });
+
+        // Create a map of owner_id to owner data
+        if (owners) {
+          (owners as any[]).forEach((owner: any) => {
+            ownersMap[owner.id] = owner;
+          });
+        }
+      }
+
+      // Transform the data to add category and owner information
       const transformedData = data?.map((property: any) => ({
         ...property,
         main_category: property.category_id ? categoriesMap[property.category_id] : null,
         sub_category: property.sub_category_id ? subCategoriesMap[property.sub_category_id] : null,
+        owner_name: property.owner_id ? ownersMap[property.owner_id]?.full_name || null : null,
+        owner_email: property.owner_id ? ownersMap[property.owner_id]?.email || null : null,
+        owner_phone: property.owner_id ? ownersMap[property.owner_id]?.phone || null : null,
       })) || [];
 
       setProperties(transformedData);
@@ -316,12 +341,48 @@ export default function PendingPropertiesPage() {
 
   const filteredProperties = properties.filter(property => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+
+    // Check existing fields
+    if (
       property.name?.toLowerCase().includes(searchLower) ||
       (property.real_name || '')?.toLowerCase().includes(searchLower) ||
       property.city?.toLowerCase().includes(searchLower) ||
-      (property.zipcode || '')?.toLowerCase().includes(searchLower)
-    );
+      (property.zipcode || '')?.toLowerCase().includes(searchLower) ||
+      (property.description || '')?.toLowerCase().includes(searchLower) ||
+      (property.address || '')?.toLowerCase().includes(searchLower)
+    ) {
+      return true;
+    }
+
+    // Check property tags
+    if (property.property_tags?.some(tag =>
+      tag.toLowerCase().includes(searchLower)
+    )) {
+      return true;
+    }
+
+    // Check property contacts (JSONB array)
+    if (property.contacts && Array.isArray(property.contacts)) {
+      const contactMatch = property.contacts.some((contact: any) =>
+        contact.name?.toLowerCase().includes(searchLower) ||
+        contact.email?.toLowerCase().includes(searchLower) ||
+        contact.cell_number?.toLowerCase().includes(searchLower) ||
+        contact.home_number?.toLowerCase().includes(searchLower) ||
+        contact.office_number?.toLowerCase().includes(searchLower)
+      );
+      if (contactMatch) return true;
+    }
+
+    // Check owner information
+    if (
+      (property.owner_name || '')?.toLowerCase().includes(searchLower) ||
+      (property.owner_email || '')?.toLowerCase().includes(searchLower) ||
+      (property.owner_phone || '')?.toLowerCase().includes(searchLower)
+    ) {
+      return true;
+    }
+
+    return false;
   });
 
   return (
