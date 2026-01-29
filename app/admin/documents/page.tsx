@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Download, Trash2, FileText } from 'lucide-react';
+import { Search, Download, Trash2, FileText, Eye, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { deleteDocumentFromS3 } from '@/lib/s3-upload';
 import Link from 'next/link';
@@ -39,6 +39,7 @@ export default function DocumentDirectoryPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -225,6 +226,14 @@ export default function DocumentDirectoryPage() {
     window.open(doc.file_url, '_blank');
   };
 
+  const handlePreview = (doc: Document) => {
+    setPreviewDoc(doc);
+  };
+
+  const closePreview = () => {
+    setPreviewDoc(null);
+  };
+
   const filteredDocuments = documents.filter(doc => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -334,6 +343,13 @@ export default function DocumentDirectoryPage() {
                         <td className="py-4 px-4">
                           <div className="flex justify-end gap-2">
                             <button
+                              onClick={() => handlePreview(doc)}
+                              className="p-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                              title="Preview"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
                               onClick={() => handleDownload(doc)}
                               className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                               title="Download"
@@ -375,6 +391,98 @@ export default function DocumentDirectoryPage() {
               {deleteProgress && (
                 <div className="bg-gray-50 rounded p-3 text-sm font-mono text-left">
                   {deleteProgress}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 truncate">{previewDoc.title}</h3>
+                <p className="text-sm text-gray-500 truncate">{previewDoc.file_name}</p>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={() => handleDownload(previewDoc)}
+                  className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                  title="Download"
+                >
+                  <Download size={20} />
+                </button>
+                <button
+                  onClick={closePreview}
+                  className="p-2 hover:bg-gray-100 text-gray-600 rounded transition-colors"
+                  title="Close"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-auto p-4 bg-gray-50">
+              {previewDoc.file_type === 'application/pdf' ? (
+                <iframe
+                  src={previewDoc.file_url}
+                  className="w-full h-full min-h-[600px] border-0 rounded bg-white"
+                  title={previewDoc.title}
+                />
+              ) : previewDoc.file_type.startsWith('image/') ? (
+                <div className="flex items-center justify-center h-full">
+                  <img
+                    src={previewDoc.file_url}
+                    alt={previewDoc.title}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : previewDoc.file_type.startsWith('video/') ? (
+                <div className="flex items-center justify-center h-full">
+                  <video
+                    src={previewDoc.file_url}
+                    controls
+                    className="max-w-full max-h-full"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              ) : previewDoc.file_type.startsWith('text/') ||
+                 previewDoc.file_type === 'application/json' ||
+                 previewDoc.file_type === 'application/xml' ? (
+                <iframe
+                  src={previewDoc.file_url}
+                  className="w-full h-full min-h-[600px] border-0 rounded bg-white"
+                  title={previewDoc.title}
+                />
+              ) : previewDoc.file_type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                   previewDoc.file_type === 'application/msword' ||
+                   previewDoc.file_type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                   previewDoc.file_type === 'application/vnd.ms-excel' ||
+                   previewDoc.file_type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+                   previewDoc.file_type === 'application/vnd.ms-powerpoint' ? (
+                <iframe
+                  src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewDoc.file_url)}`}
+                  className="w-full h-full min-h-[600px] border-0 rounded bg-white"
+                  title={previewDoc.title}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <FileText size={64} className="mb-4" />
+                  <p className="text-lg font-medium mb-2">Preview not available</p>
+                  <p className="text-sm mb-4">This file type ({previewDoc.file_type}) cannot be previewed.</p>
+                  <button
+                    onClick={() => handleDownload(previewDoc)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center gap-2"
+                  >
+                    <Download size={16} />
+                    Download to view
+                  </button>
                 </div>
               )}
             </div>
