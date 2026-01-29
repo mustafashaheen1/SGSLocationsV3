@@ -466,11 +466,18 @@ export default function DocumentDirectoryPage() {
                    previewDoc.file_type === 'application/vnd.ms-excel' ||
                    previewDoc.file_type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
                    previewDoc.file_type === 'application/vnd.ms-powerpoint' ? (
-                <iframe
-                  src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewDoc.file_url)}`}
-                  className="w-full h-full min-h-[600px] border-0 rounded bg-white"
-                  title={previewDoc.title}
-                />
+                <div className="h-full flex flex-col">
+                  <div className="flex items-center justify-between bg-gray-100 p-2 rounded-t">
+                    <p className="text-xs text-gray-600">
+                      Using Google Docs Viewer for better reliability
+                    </p>
+                  </div>
+                  <iframe
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewDoc.file_url)}&embedded=true`}
+                    className="w-full flex-1 min-h-[600px] border-0 rounded-b bg-white"
+                    title={previewDoc.title}
+                  />
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
                   <FileText size={64} className="mb-4" />
