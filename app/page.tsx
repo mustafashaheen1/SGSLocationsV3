@@ -451,7 +451,7 @@ export default function HomePage() {
                 <img
                   src={item.logo_url}
                   alt={item.name}
-                  className="max-h-48 max-w-[480px] w-auto object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                  className="max-h-48 max-w-[480px] w-auto object-contain transition-all duration-300"
                   onError={(e) => {
                     e.currentTarget.src = `https://via.placeholder.com/480x192/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`;
                   }}
