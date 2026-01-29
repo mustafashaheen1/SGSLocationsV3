@@ -30,6 +30,11 @@ interface Property {
   created_at: string;
   owner_name?: string;
   owner_email?: string;
+  owner_phone?: string;
+  description?: string;
+  address?: string;
+  property_tags?: string[];
+  contacts?: any[];
 }
 
 export default function AdminPropertiesPage() {
@@ -509,7 +514,7 @@ export default function AdminPropertiesPage() {
     }
 
     // Check property tags
-    if (property.property_tags?.some(tag =>
+    if (property.property_tags?.some((tag: string) =>
       tag.toLowerCase().includes(searchLower)
     )) {
       return true;

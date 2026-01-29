@@ -355,7 +355,7 @@ export default function PendingPropertiesPage() {
     }
 
     // Check property tags
-    if (property.property_tags?.some(tag =>
+    if (property.property_tags?.some((tag: string) =>
       tag.toLowerCase().includes(searchLower)
     )) {
       return true;
