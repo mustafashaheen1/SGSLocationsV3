@@ -193,7 +193,7 @@ export function Footer() {
 
       <footer className="bg-gray-900 text-white">
         <div className="container mx-auto px-8 py-12">
-        <div className="flex flex-col lg:flex-row lg:justify-between gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Company Info */}
           <div>
             <Link href="/" className="inline-block mb-4">
@@ -233,7 +233,7 @@ export function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="text-center">
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li><Link href="/search" className="text-gray-400 hover:text-white">Search Locations</Link></li>
@@ -248,7 +248,7 @@ export function Footer() {
           </div>
 
           {/* Contact Info */}
-          <div>
+          <div className="text-right">
             <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
             <div className="space-y-3">
               {footerContent.address && (
