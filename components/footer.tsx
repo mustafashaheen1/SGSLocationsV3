@@ -248,9 +248,9 @@ export function Footer() {
           </div>
 
           {/* Contact Info */}
-          <div>
+          <div className="text-right">
             <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
-            <div className="space-y-3">
+            <div className="space-y-3 flex flex-col items-end">
               {footerContent.address && (
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
