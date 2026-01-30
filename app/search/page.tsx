@@ -2028,6 +2028,7 @@ export default function SearchPage() {
               className="category-select"
               disabled={!selectedCategory}
               style={{
+                display: 'none',
                 padding: '8px 12px',
                 background: selectedSubCategory ? '#fe751f' : 'white',
                 border: '1px solid #ced4da',
