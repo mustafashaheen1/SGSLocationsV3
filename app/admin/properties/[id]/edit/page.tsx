@@ -97,6 +97,7 @@ export default function EditPropertyPage() {
   const [formData, setFormData] = useState({
     name: '', // Obfuscated public name (readonly in edit mode)
     real_name: '', // Actual property name (editable)
+    public_name: '', // AI-generated public display name (editable)
     sub_heading: '', // Custom sub-heading for the property
     description: '',
     address: '',
@@ -315,6 +316,7 @@ export default function EditPropertyPage() {
       setFormData({
         name: prop.name || '',
         real_name: prop.real_name || prop.name || '', // Fallback to name if real_name doesn't exist yet
+        public_name: prop.public_name || '', // AI-generated public name
         sub_heading: prop.sub_heading || '',
         description: prop.description || '',
         address: prop.address || '',
@@ -1268,13 +1270,14 @@ export default function EditPropertyPage() {
         // Update form data with AI-generated content
         setFormData(prev => ({
           ...prev,
+          public_name: data.public_name,
           sub_heading: data.sub_heading,
           description: data.description
         }));
 
         console.log('✓ AI content generated');
         console.log('Tokens used:', data.tokensUsed);
-        alert('AI content generated successfully! Review the sub-heading and description before saving.');
+        alert('AI content generated successfully! Review the public name, sub-heading, and description before saving.');
       } else {
         throw new Error(data.error || 'AI generation failed');
       }
@@ -1341,6 +1344,7 @@ export default function EditPropertyPage() {
       const propertyData: any = {
         // name: DO NOT UPDATE - keeps the original obfuscated name
         real_name: formData.real_name, // Actual property name (admin only)
+        public_name: formData.public_name || null, // AI-generated public display name
         sub_heading: formData.sub_heading,
         description: formData.description || '',
         address: formData.address,
@@ -1612,15 +1616,32 @@ export default function EditPropertyPage() {
 
                 <div className="col-span-2">
                   <label className="block text-sm font-medium mb-2">
-                    Public Display Name
-                    <span className="text-gray-500 text-xs ml-2">(Auto-generated - Not editable)</span>
+                    Internal Code
+                    <span className="text-gray-500 text-xs ml-2">(Admin only - Auto-generated)</span>
                   </label>
                   <Input
                     value={formData.name}
                     disabled
                     className="bg-gray-100 cursor-not-allowed"
-                    placeholder="Generated automatically from real name"
+                    placeholder="Generated automatically (e.g., COM-0060)"
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Public Name
+                    <span className="text-gray-500 text-xs ml-2">(Shown on website - Max 30 characters)</span>
+                  </label>
+                  <Input
+                    name="public_name"
+                    value={formData.public_name}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Modern Downtown Loft"
+                    maxLength={30}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This name will be displayed on the website instead of the internal code. Use "Bulk AI Update" to generate for all properties.
+                  </p>
                 </div>
 
                 {/* Public URL - Read-only clickable link */}

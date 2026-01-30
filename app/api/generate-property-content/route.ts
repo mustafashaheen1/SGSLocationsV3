@@ -48,25 +48,30 @@ export async function POST(request: NextRequest) {
     const openai = getOpenAI();
 
     // Build the prompt
-    const systemPrompt = `You are an expert real estate copywriter specializing in film and photography location names. Your task is to create a compelling, memorable public name for property listings.
+    const systemPrompt = `You are an expert real estate copywriter specializing in film and photography location descriptions. Your task is to create compelling content for property listings.
 
 Generate:
 1. A public name (max 30 characters): A catchy, descriptive name that captures the property's essence
+2. A sub-heading (max 180 characters): A catchy, SEO-friendly title that highlights the property's unique selling points
+3. A description (75-150 words): An engaging, detailed description that makes the property attractive for filmmakers and photographers
 
 Requirements:
-- Must be 30 characters or less
+- Public name must be 30 characters or less, using proper title case
+- Sub-heading must be 180 characters or less
 - Be specific and memorable
-- Highlight key features or architectural style
-- Use proper title case
-- Make it suitable for filming/photography contexts
-- Emphasize unique characteristics visible in images
-- DO NOT use generic phrases or clichés
+- Highlight key features or architectural style visible in images
+- Emphasize suitability for filming/photography
+- Use professional, engaging language
+- Focus on visual appeal and versatility
+- DO NOT use generic phrases like "nestled in" or "testament to"
 - Be authentic and specific to this property
-- Examples: "Modern Loft Downtown", "Victorian Garden Estate", "Industrial Warehouse Space"
+- Examples of public names: "Modern Loft Downtown", "Victorian Garden Estate", "Industrial Warehouse Space"
 
 Return ONLY a JSON object with this exact structure:
 {
-  "public_name": "your public name here"
+  "public_name": "your public name here",
+  "sub_heading": "your sub-heading here",
+  "description": "your description here"
 }`;
 
     const userPrompt = `Create a public display name for this property:
@@ -124,8 +129,8 @@ Analyze the property details${gridImageUrls && gridImageUrls.length > 0 ? ', exi
     const result = JSON.parse(content);
 
     // Validate response structure
-    if (!result.public_name) {
-      throw new Error('Invalid response format from AI - missing public_name');
+    if (!result.public_name || !result.sub_heading || !result.description) {
+      throw new Error('Invalid response format from AI - missing required fields');
     }
 
     // Ensure public_name is within character limit
@@ -133,13 +138,21 @@ Analyze the property details${gridImageUrls && gridImageUrls.length > 0 ? ', exi
       result.public_name = result.public_name.substring(0, 30).trim();
     }
 
-    console.log('✓ Public name generated successfully');
-    console.log('Public name:', result.public_name);
-    console.log('Length:', result.public_name.length);
+    // Ensure sub_heading is within character limit
+    if (result.sub_heading.length > 200) {
+      result.sub_heading = result.sub_heading.substring(0, 197) + '...';
+    }
+
+    console.log('✓ Content generated successfully');
+    console.log('Public name:', result.public_name, `(${result.public_name.length} chars)`);
+    console.log('Sub-heading length:', result.sub_heading.length);
+    console.log('Description length:', result.description.length);
 
     return jsonResponseNoCache({
       success: true,
       public_name: result.public_name,
+      sub_heading: result.sub_heading,
+      description: result.description,
       tokensUsed: response.usage?.total_tokens || 0,
     });
 

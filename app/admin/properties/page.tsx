@@ -441,7 +441,7 @@ export default function AdminPropertiesPage() {
             throw new Error(data.error || 'AI generation failed - no public_name returned');
           }
 
-          // Update property in database
+          // Update property in database - ONLY save public_name for bulk update
           const updateResult = await supabase
             .from('properties')
             // @ts-expect-error - Supabase type inference issue with update
@@ -674,13 +674,18 @@ export default function AdminPropertiesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div
-                      className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                      className="cursor-pointer hover:text-blue-600 transition-colors"
                       onClick={() => router.push(`/admin/properties/${property.id}/edit`)}
                       title="View property details"
                     >
-                      {property.name}
+                      <div className="font-medium text-gray-900">
+                        {property.name}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-0.5">
+                        {property.public_name || <span className="italic text-gray-400">No public name</span>}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">{property.images?.length || 0} images</div>
                     </div>
-                    <div className="text-sm text-gray-500">{property.images?.length || 0} images</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {property.owner_name || 'Admin'}
