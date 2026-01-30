@@ -17,7 +17,7 @@ function PropertyCard({ property }: { property: Property }) {
         <div className="relative w-full property-image-container">
           <Image
             src={images[0]}
-            alt={property.name}
+            alt={property.public_name || property.name}
             width={400}
             height={300}
             className="property-image w-full"
@@ -26,7 +26,7 @@ function PropertyCard({ property }: { property: Property }) {
         </div>
         <div className="p-3">
           <h5 className="text-lg font-light text-gray-900 mb-1 property-title">
-            {property.name}
+            {property.public_name || property.name}
           </h5>
           <p className="text-sm text-gray-600">
             {property.city}

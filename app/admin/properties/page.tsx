@@ -325,7 +325,8 @@ export default function AdminPropertiesPage() {
   async function handleBulkAIUpdate() {
     // Step 1: Confirmation dialog
     const confirmed = confirm(
-      'This will regenerate AI content (sub-heading and description) for ALL properties in the database.\n\n' +
+      'This will generate AI-powered public names for ALL properties in the database.\n\n' +
+      'Public names will be displayed on the website instead of internal codes (e.g., COM-0060).\n\n' +
       'This operation may take several minutes and will consume OpenAI API credits.\n\n' +
       'Continue?'
     );
@@ -360,7 +361,8 @@ export default function AdminPropertiesPage() {
           sub_category_id,
           property_tags,
           images,
-          sub_heading
+          sub_heading,
+          description
         `,
         order: 'created_at',
         ascending: true,
@@ -423,6 +425,8 @@ export default function AdminPropertiesPage() {
               address: property.address || '',
               propertyTags: property.property_tags || [],
               gridImageUrls: gridImageUrls,
+              subHeading: property.sub_heading || '',
+              description: property.description || '',
             }),
           });
 
@@ -432,8 +436,8 @@ export default function AdminPropertiesPage() {
 
           const data = await response.json();
 
-          if (!data.success) {
-            throw new Error(data.error || 'AI generation failed');
+          if (!data.success || !data.public_name) {
+            throw new Error(data.error || 'AI generation failed - no public_name returned');
           }
 
           // Update property in database
@@ -441,8 +445,7 @@ export default function AdminPropertiesPage() {
             .from('properties')
             // @ts-expect-error - Supabase type inference issue with update
             .update({
-              sub_heading: data.sub_heading,
-              description: data.description,
+              public_name: data.public_name,
               updated_at: new Date().toISOString(),
             })
             .eq('id', property.id);
@@ -453,7 +456,7 @@ export default function AdminPropertiesPage() {
             throw new Error(`Database update failed: ${updateError.message}`);
           }
 
-          console.log(`✅ Updated: ${property.real_name || property.name}`);
+          console.log(`✅ Saved: ${property.real_name || property.name} -> "${data.public_name}"`);
           successCount++;
 
           // Update stats
@@ -505,6 +508,7 @@ export default function AdminPropertiesPage() {
     if (
       property.name?.toLowerCase().includes(searchLower) ||
       (property.real_name || '')?.toLowerCase().includes(searchLower) ||
+      (property.public_name || '')?.toLowerCase().includes(searchLower) ||
       property.city?.toLowerCase().includes(searchLower) ||
       (property.zipcode || '')?.toLowerCase().includes(searchLower) ||
       (property.description || '')?.toLowerCase().includes(searchLower) ||

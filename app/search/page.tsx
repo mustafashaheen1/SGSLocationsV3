@@ -80,7 +80,7 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
                   <Link href={`/property/${property.id}`} style={{ position: 'relative', display: 'block', width: '100%', height: '100%' }}>
                     <Image
                       src={img}
-                      alt={`${property.name} - ${idx + 1}`}
+                      alt={`${property.public_name || property.name} - ${idx + 1}`}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       style={{
@@ -115,7 +115,7 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
                   href={`/property/${property.id}`}
                   style={{ color: '#212529', textDecoration: 'none' }}
                 >
-                  {property.name}
+                  {property.public_name || property.name}
                 </Link>
               </h5>
               <p style={{
@@ -195,7 +195,7 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
               marginBottom: '30px',
               fontFamily: 'acumin-pro-wide, sans-serif'
             }}>
-              {property.name}
+              {property.public_name || property.name}
             </h2>
 
             <div style={{
@@ -208,7 +208,7 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
                   <div style={{ position: 'relative', width: '100%', height: '140px', marginBottom: '8px' }}>
                     <Image
                       src={img}
-                      alt={`${property.name} ${idx + 1}`}
+                      alt={`${property.public_name || property.name} ${idx + 1}`}
                       fill
                       sizes="140px"
                       style={{

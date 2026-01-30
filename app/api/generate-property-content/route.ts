@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
       address,
       propertyTags,
       gridImageUrls,  // Array of 6 primary image URLs
+      subHeading,     // Existing sub-heading for context
+      description,    // Existing description for context
     } = await request.json();
 
     console.log('=== PROPERTY CONTENT GENERATION REQUEST ===');
@@ -46,39 +48,40 @@ export async function POST(request: NextRequest) {
     const openai = getOpenAI();
 
     // Build the prompt
-    const systemPrompt = `You are an expert real estate copywriter specializing in film and photography location descriptions. Your task is to create compelling, professional content for property listings.
+    const systemPrompt = `You are an expert real estate copywriter specializing in film and photography location names. Your task is to create a compelling, memorable public name for property listings.
 
 Generate:
-1. A sub-heading (max 180 characters): A catchy, SEO-friendly title that highlights the property's unique selling points
-2. A description (75-150 words): An engaging, detailed description that makes the property attractive for filmmakers and photographers
+1. A public name (max 30 characters): A catchy, descriptive name that captures the property's essence
 
 Requirements:
-- Be specific and descriptive
-- Highlight unique architectural features visible in images
-- Emphasize suitability for filming/photography
-- Use professional, engaging language
-- Focus on visual appeal and versatility
-- Mention location advantages when relevant
-- DO NOT use generic phrases like "nestled in" or "testament to"
-- Be authentic and specific
+- Must be 30 characters or less
+- Be specific and memorable
+- Highlight key features or architectural style
+- Use proper title case
+- Make it suitable for filming/photography contexts
+- Emphasize unique characteristics visible in images
+- DO NOT use generic phrases or clichés
+- Be authentic and specific to this property
+- Examples: "Modern Loft Downtown", "Victorian Garden Estate", "Industrial Warehouse Space"
 
 Return ONLY a JSON object with this exact structure:
 {
-  "sub_heading": "your sub-heading here",
-  "description": "your description here"
+  "public_name": "your public name here"
 }`;
 
-    const userPrompt = `Create content for this property:
+    const userPrompt = `Create a public display name for this property:
 
-**Property Name**: ${propertyName}
+**Current Internal Code**: ${propertyName}
 **Type**: ${subCategoryName || categoryName}
 **Category**: ${categoryName}
 **Location**: ${city}${address ? `, ${address}` : ''}
 **Features/Tags**: ${propertyTags?.join(', ') || 'None specified'}
+${subHeading ? `**Sub-heading**: ${subHeading}` : ''}
+${description ? `**Description**: ${description}` : ''}
 
 ${gridImageUrls && gridImageUrls.length > 0 ? `**Images**: ${gridImageUrls.length} images provided for visual analysis` : '**Images**: No images provided'}
 
-Analyze the property details${gridImageUrls && gridImageUrls.length > 0 ? ' and images' : ''} to create compelling content.`;
+Analyze the property details${gridImageUrls && gridImageUrls.length > 0 ? ', existing content, and images' : ' and existing content'} to create a compelling public name.`;
 
     // Build messages array
     const messages: any[] = [
@@ -121,23 +124,22 @@ Analyze the property details${gridImageUrls && gridImageUrls.length > 0 ? ' and 
     const result = JSON.parse(content);
 
     // Validate response structure
-    if (!result.sub_heading || !result.description) {
-      throw new Error('Invalid response format from AI');
+    if (!result.public_name) {
+      throw new Error('Invalid response format from AI - missing public_name');
     }
 
-    // Ensure sub-heading is within character limit
-    if (result.sub_heading.length > 200) {
-      result.sub_heading = result.sub_heading.substring(0, 197) + '...';
+    // Ensure public_name is within character limit
+    if (result.public_name.length > 30) {
+      result.public_name = result.public_name.substring(0, 30).trim();
     }
 
-    console.log('✓ Content generated successfully');
-    console.log('Sub-heading length:', result.sub_heading.length);
-    console.log('Description length:', result.description.length);
+    console.log('✓ Public name generated successfully');
+    console.log('Public name:', result.public_name);
+    console.log('Length:', result.public_name.length);
 
     return jsonResponseNoCache({
       success: true,
-      sub_heading: result.sub_heading,
-      description: result.description,
+      public_name: result.public_name,
       tokensUsed: response.usage?.total_tokens || 0,
     });
 

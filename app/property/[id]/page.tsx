@@ -511,7 +511,7 @@ export default function PropertyDetailPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${property.name.replace(/[^a-z0-9]/gi, '-')}-images.zip`;
+      a.download = `${(property.public_name || property.name).replace(/[^a-z0-9]/gi, '-')}-images.zip`;
       document.body.appendChild(a);
       a.click();
 
@@ -562,7 +562,7 @@ export default function PropertyDetailPage() {
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${data.property.name.replace(/[^a-z0-9]/gi, '-')}.pdf`;
+      a.download = `${(data.property.public_name || data.property.name).replace(/[^a-z0-9]/gi, '-')}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -909,7 +909,7 @@ export default function PropertyDetailPage() {
                   >
                     <Image
                       src={img || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
-                      alt={`${property.name} - Image ${index + 1}`}
+                      alt={`${property.public_name || property.name} - Image ${index + 1}`}
                       fill
                       style={{ objectFit: 'cover' }}
                       unoptimized={img.includes('unsplash.com') || img.includes('placeholder.com')}
@@ -948,7 +948,7 @@ export default function PropertyDetailPage() {
                 >
                   <Image
                     src={imgData.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
-                    alt={`${property.name} - Image ${index + 1}`}
+                    alt={`${property.public_name || property.name} - Image ${index + 1}`}
                     width={900}
                     height={600}
                     style={{
@@ -1079,7 +1079,7 @@ export default function PropertyDetailPage() {
             <div style={{ position: 'relative', width: '90%', height: '90%' }}>
               <Image
                 src={displayedImages[currentImageIndex]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
-                alt={property.name}
+                alt={property.public_name || property.name}
                 fill
                 style={{ objectFit: 'contain' }}
                 priority
@@ -1177,7 +1177,7 @@ export default function PropertyDetailPage() {
                   letterSpacing: '-0.56px',
                   lineHeight: '36.4px'
                 }}>
-                  {property.name}
+                  {property.public_name || property.name}
                 </h1>
 
                 {/* Vertical Separator */}
@@ -1218,7 +1218,7 @@ export default function PropertyDetailPage() {
                   marginBottom: '0.5rem',
                   fontFamily: 'acumin-pro-wide, sans-serif'
                 }}>
-                  {property.sub_heading || `${property.name}: An Architectural Marvel in ${property.city} for Filmmakers and Photographers`}
+                  {property.sub_heading || `${property.public_name || property.name}: An Architectural Marvel in ${property.city} for Filmmakers and Photographers`}
                 </h2>
                 <p>
                   {property.description || 'Nestled in the vibrant city, this location stands as a testament to innovative design and modern architecture. A unique blend of functional space and striking visual appeal, this building offers an exciting backdrop for filming, photography, and various production activities.'}
@@ -1267,7 +1267,7 @@ export default function PropertyDetailPage() {
                       e.currentTarget.style.borderColor = '#e65a00';
                     }}
                   >
-                    Inquire About {property.name}
+                    Inquire About {property.public_name || property.name}
                   </a>
                 </div>
               )}
@@ -1621,7 +1621,7 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
       <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', borderRadius: '0.5rem', marginBottom: '0.75rem' }}>
         <Image
           src={image}
-          alt={property.name}
+          alt={property.public_name || property.name}
           fill
           style={{ objectFit: 'cover', transition: 'transform 0.3s' }}
           unoptimized={image.includes('unsplash.com') || image.includes('placeholder.com')}
@@ -1645,7 +1645,7 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
       </div>
 
       <h3 style={{ fontSize: '1.125rem', fontWeight: 300, color: '#212529', marginBottom: '0.25rem' }}>
-        {property.name}
+        {property.public_name || property.name}
       </h3>
       <p style={{ fontSize: '0.875rem', fontWeight: 300, color: '#6b7280' }}>
         {property.city}

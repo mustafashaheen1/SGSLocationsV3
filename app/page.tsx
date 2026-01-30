@@ -384,14 +384,14 @@ export default function HomePage() {
                 <div className="aspect-[3/2] relative overflow-hidden">
                   <Image
                     src={property.primary_image || property.images?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80'}
-                    alt={property.name}
+                    alt={property.public_name || property.name}
                     fill
                     unoptimized={(property.primary_image || property.images?.[0] || '').includes('unsplash.com') || (property.primary_image || property.images?.[0] || '').includes('placeholder.com')}
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="text-xl mb-1" style={{fontWeight: 300, color: '#212529'}}>{property.name}</h3>
+                  <h3 className="text-xl mb-1" style={{fontWeight: 300, color: '#212529'}}>{property.public_name || property.name}</h3>
                   <p className="text-sm flex items-center gap-1" style={{fontWeight: 300, color: '#6c757d'}}>
                     <MapPin className="w-4 h-4" />
                     {property.city}, Texas

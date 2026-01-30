@@ -532,6 +532,7 @@ export interface Property {
   id: string;
   name: string;
   real_name?: string;
+  public_name?: string;
   sub_heading?: string;
   description: string | null;
   address: string;
