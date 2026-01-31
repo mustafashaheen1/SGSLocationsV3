@@ -16,22 +16,58 @@ export default function ResetPasswordPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if we have a valid recovery session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setIsValidSession(true);
-      } else {
+    // Handle auth state changes and token exchange
+    const handleAuthState = async () => {
+      try {
+        // First, listen for auth state changes (this handles token exchange from URL)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('Auth state change:', event, session?.user?.id);
+
+          if (event === 'PASSWORD_RECOVERY') {
+            // Valid password recovery session
+            setIsValidSession(true);
+          } else if (session) {
+            // Any other valid session
+            setIsValidSession(true);
+          }
+        });
+
+        // Also check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          setIsValidSession(true);
+        } else {
+          // Wait a bit for token exchange to complete before showing error
+          setTimeout(async () => {
+            const { data: { session: retrySession } } = await supabase.auth.getSession();
+
+            if (!retrySession) {
+              toast({
+                title: 'Invalid or expired link',
+                description: 'Please request a new password reset link.',
+                variant: 'destructive'
+              });
+              setTimeout(() => router.push('/forgot-password'), 3000);
+            }
+          }, 1000);
+        }
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error handling auth state:', error);
         toast({
-          title: 'Invalid or expired link',
-          description: 'Please request a new password reset link.',
+          title: 'An error occurred',
+          description: 'Please try again or request a new reset link.',
           variant: 'destructive'
         });
         setTimeout(() => router.push('/forgot-password'), 3000);
       }
     };
 
-    checkSession();
+    handleAuthState();
   }, [router, toast]);
 
   const handleResetPassword = async (e: React.FormEvent) => {

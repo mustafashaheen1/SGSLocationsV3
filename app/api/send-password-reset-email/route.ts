@@ -46,12 +46,12 @@ export async function POST(request: NextRequest) {
     // Generate password reset link
     // This will fail if user doesn't exist in Supabase Auth
     console.log('[Password Reset] Generating password reset link');
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sgslocations.com';
     const { data, error } = await adminClient.auth.admin.generateLink({
       type: 'recovery',
       email: email,
       options: {
-        // Use production URL directly to avoid localhost issues
-        redirectTo: 'https://sgs-locations-v3.vercel.app/reset-password'
+        redirectTo: `${siteUrl}/reset-password`
       }
     });
 
