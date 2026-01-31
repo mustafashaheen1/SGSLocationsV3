@@ -158,12 +158,12 @@ export default function ResetPasswordPage() {
       } else {
         toast({
           title: 'Password reset successful!',
-          description: 'Your password has been updated. Redirecting to login...'
+          description: 'Your password has been updated. Redirecting to home page...'
         });
 
-        // Sign out and redirect to login
+        // Sign out and redirect to home page
         await supabase.auth.signOut();
-        setTimeout(() => router.push('/admin/login'), 2000);
+        setTimeout(() => router.push('/'), 2000);
       }
     } catch (error: any) {
       console.error('Unexpected error:', error);
