@@ -19,47 +19,79 @@ export default function ResetPasswordPage() {
     let subscription: any;
     let timeoutId: any;
 
-    // Log URL hash for debugging
-    if (typeof window !== 'undefined') {
-      console.log('Current URL hash:', window.location.hash);
-      console.log('Current URL search:', window.location.search);
-    }
-
     // Handle auth state changes and token exchange
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, 'User ID:', session?.user?.id);
+    const handlePasswordReset = async () => {
+      // Log URL hash for debugging
+      if (typeof window !== 'undefined') {
+        console.log('Current URL hash:', window.location.hash);
 
-      if (event === 'PASSWORD_RECOVERY') {
-        console.log('✅ PASSWORD_RECOVERY event detected');
-        setIsValidSession(true);
-        // Clear any pending timeout
-        if (timeoutId) clearTimeout(timeoutId);
-      } else if (event === 'SIGNED_IN' && session) {
-        console.log('✅ SIGNED_IN event detected');
-        setIsValidSession(true);
-        // Clear any pending timeout
-        if (timeoutId) clearTimeout(timeoutId);
-      } else if (event === 'INITIAL_SESSION' && session) {
-        console.log('✅ INITIAL_SESSION with valid session detected');
-        setIsValidSession(true);
-        // Clear any pending timeout
-        if (timeoutId) clearTimeout(timeoutId);
+        // Check if hash contains recovery tokens
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+
+        console.log('Hash params - type:', type, 'has access_token:', !!accessToken, 'has refresh_token:', !!refreshToken);
+
+        // If we have recovery tokens in the hash, manually set the session
+        if (type === 'recovery' && accessToken && refreshToken) {
+          console.log('🔄 Manually setting session from hash tokens');
+
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (error) {
+            console.error('❌ Error setting session:', error);
+            toast({
+              title: 'Invalid or expired link',
+              description: 'Please request a new password reset link.',
+              variant: 'destructive'
+            });
+            setTimeout(() => router.push('/forgot-password'), 3000);
+            return;
+          }
+
+          if (data.session) {
+            console.log('✅ Session set successfully from hash tokens');
+            setIsValidSession(true);
+            return;
+          }
+        }
       }
-    });
 
-    subscription = authSubscription;
+      // Listen for auth state changes
+      const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state change:', event, 'User ID:', session?.user?.id);
 
-    // Check for existing session
-    const checkSession = async () => {
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log('✅ PASSWORD_RECOVERY event detected');
+          setIsValidSession(true);
+          if (timeoutId) clearTimeout(timeoutId);
+        } else if (event === 'SIGNED_IN' && session) {
+          console.log('✅ SIGNED_IN event detected');
+          setIsValidSession(true);
+          if (timeoutId) clearTimeout(timeoutId);
+        } else if (event === 'INITIAL_SESSION' && session) {
+          console.log('✅ INITIAL_SESSION with valid session detected');
+          setIsValidSession(true);
+          if (timeoutId) clearTimeout(timeoutId);
+        }
+      });
+
+      subscription = authSubscription;
+
+      // Check for existing session
       const { data: { session }, error } = await supabase.auth.getSession();
       console.log('Current session check - User ID:', session?.user?.id, 'Error:', error);
 
       if (session) {
-        console.log('✅ Valid session found immediately');
+        console.log('✅ Valid session found');
         setIsValidSession(true);
       } else {
         // Wait for token exchange to complete
-        console.log('⏳ No session found, waiting for token exchange...');
+        console.log('⏳ No session found, waiting...');
         timeoutId = setTimeout(async () => {
           const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
           console.log('Retry session check - User ID:', retrySession?.user?.id, 'Error:', retryError);
@@ -80,7 +112,7 @@ export default function ResetPasswordPage() {
       }
     };
 
-    checkSession();
+    handlePasswordReset();
 
     return () => {
       subscription?.unsubscribe();
