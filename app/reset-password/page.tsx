@@ -16,58 +16,76 @@ export default function ResetPasswordPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    let subscription: any;
+    let timeoutId: any;
+
+    // Log URL hash for debugging
+    if (typeof window !== 'undefined') {
+      console.log('Current URL hash:', window.location.hash);
+      console.log('Current URL search:', window.location.search);
+    }
+
     // Handle auth state changes and token exchange
-    const handleAuthState = async () => {
-      try {
-        // First, listen for auth state changes (this handles token exchange from URL)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('Auth state change:', event, session?.user?.id);
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, 'User ID:', session?.user?.id);
 
-          if (event === 'PASSWORD_RECOVERY') {
-            // Valid password recovery session
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('✅ PASSWORD_RECOVERY event detected');
+        setIsValidSession(true);
+        // Clear any pending timeout
+        if (timeoutId) clearTimeout(timeoutId);
+      } else if (event === 'SIGNED_IN' && session) {
+        console.log('✅ SIGNED_IN event detected');
+        setIsValidSession(true);
+        // Clear any pending timeout
+        if (timeoutId) clearTimeout(timeoutId);
+      } else if (event === 'INITIAL_SESSION' && session) {
+        console.log('✅ INITIAL_SESSION with valid session detected');
+        setIsValidSession(true);
+        // Clear any pending timeout
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    });
+
+    subscription = authSubscription;
+
+    // Check for existing session
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('Current session check - User ID:', session?.user?.id, 'Error:', error);
+
+      if (session) {
+        console.log('✅ Valid session found immediately');
+        setIsValidSession(true);
+      } else {
+        // Wait for token exchange to complete
+        console.log('⏳ No session found, waiting for token exchange...');
+        timeoutId = setTimeout(async () => {
+          const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
+          console.log('Retry session check - User ID:', retrySession?.user?.id, 'Error:', retryError);
+
+          if (retrySession) {
+            console.log('✅ Valid session found after retry');
             setIsValidSession(true);
-          } else if (session) {
-            // Any other valid session
-            setIsValidSession(true);
+          } else {
+            console.log('❌ No valid session found');
+            toast({
+              title: 'Invalid or expired link',
+              description: 'Please request a new password reset link.',
+              variant: 'destructive'
+            });
+            setTimeout(() => router.push('/forgot-password'), 3000);
           }
-        });
-
-        // Also check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (session) {
-          setIsValidSession(true);
-        } else {
-          // Wait a bit for token exchange to complete before showing error
-          setTimeout(async () => {
-            const { data: { session: retrySession } } = await supabase.auth.getSession();
-
-            if (!retrySession) {
-              toast({
-                title: 'Invalid or expired link',
-                description: 'Please request a new password reset link.',
-                variant: 'destructive'
-              });
-              setTimeout(() => router.push('/forgot-password'), 3000);
-            }
-          }, 1000);
-        }
-
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Error handling auth state:', error);
-        toast({
-          title: 'An error occurred',
-          description: 'Please try again or request a new reset link.',
-          variant: 'destructive'
-        });
-        setTimeout(() => router.push('/forgot-password'), 3000);
+        }, 2000);
       }
     };
 
-    handleAuthState();
+    checkSession();
+
+    return () => {
+      subscription?.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [router, toast]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
