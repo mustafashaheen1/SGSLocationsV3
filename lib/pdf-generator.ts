@@ -7,10 +7,12 @@ interface PropertyImage {
 }
 
 interface PropertyData {
-  name: string;
+  public_name: string;
+  sub_heading: string;
   city: string;
   description: string;
-  address: string;
+  main_category: string;
+  sub_category: string;
 }
 
 const MAX_IMAGES = 50;
@@ -22,7 +24,7 @@ export async function generateLocationPDF(
 ): Promise<Blob> {
   const limitedImages = images.slice(0, MAX_IMAGES);
 
-  console.log(`Starting PDF generation for ${property.name}`);
+  console.log(`Starting PDF generation for ${property.public_name}`);
   console.log(`Total images: ${images.length}, Using: ${limitedImages.length}`);
 
   const pdf = new jsPDF({
@@ -38,7 +40,8 @@ export async function generateLocationPDF(
 
   let currentY = margin;
 
-  pdf.setFillColor(225, 25, 33);
+  // Orange header with SGS LOCATIONS (brand color #fe751f)
+  pdf.setFillColor(254, 117, 31);
   pdf.rect(0, 0, pageWidth, 25, 'F');
 
   pdf.setTextColor(255, 255, 255);
@@ -48,17 +51,52 @@ export async function generateLocationPDF(
 
   currentY = 35;
 
+  // 1. Public Name (replaces internal code)
   pdf.setTextColor(0, 0, 0);
   pdf.setFontSize(24);
   pdf.setFont('helvetica', 'bold');
-  const nameLines = pdf.splitTextToSize(property.name, contentWidth);
+  const nameLines = pdf.splitTextToSize(property.public_name, contentWidth);
   pdf.text(nameLines, margin, currentY);
   currentY += (nameLines.length * 10);
 
-  pdf.setFontSize(14);
+  // 2. Sub-Heading (new)
+  if (property.sub_heading) {
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setTextColor(60, 60, 60);
+    const subHeadingLines = pdf.splitTextToSize(property.sub_heading, contentWidth);
+    pdf.text(subHeadingLines, margin, currentY);
+    currentY += (subHeadingLines.length * 7) + 5;
+  }
+
+  // 3. City and Category Info
+  pdf.setFontSize(12);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(property.city, margin, currentY);
-  currentY += 15;
+  pdf.setTextColor(0, 0, 0);
+
+  let locationLine = property.city;
+  if (property.main_category) {
+    locationLine += ` | ${property.main_category}`;
+    if (property.sub_category) {
+      locationLine += ` > ${property.sub_category}`;
+    }
+  }
+
+  pdf.text(locationLine, margin, currentY);
+  currentY += 10;
+
+  // 4. Description (new)
+  if (property.description) {
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(40, 40, 40);
+    const descLines = pdf.splitTextToSize(property.description, contentWidth);
+    pdf.text(descLines, margin, currentY);
+    currentY += (descLines.length * 6) + 10;
+  }
+
+  // Add spacing before images
+  currentY += 5;
 
   console.log('Fetching images in parallel...');
   const imageDataPromises = fetchImagesInBatches(limitedImages, PARALLEL_FETCHES);
@@ -122,7 +160,7 @@ export async function generateLocationPDF(
     pdf.setFontSize(10);
     pdf.setTextColor(128, 128, 128);
     pdf.text(
-      `www.sgslocations.com | ${property.address}`,
+      'www.sgslocations.com',
       pageWidth / 2,
       pageHeight - 10,
       { align: 'center' }
