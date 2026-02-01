@@ -1480,7 +1480,7 @@ export default function PropertyDetailPage() {
         <ContactFormModal
           isOpen={showContactModal}
           onClose={() => setShowContactModal(false)}
-          propertyName={property?.name}
+          propertyName={property?.public_name || property?.name}
           propertyId={property?.id}
         />
 
