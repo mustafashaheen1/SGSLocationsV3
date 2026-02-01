@@ -485,12 +485,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[95vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-light text-gray-900">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+          <h2 className="text-xl font-light text-gray-900">
             {propertyName ? `Inquire About ${propertyName}` : 'Contact Us'}
           </h2>
           <button
@@ -503,25 +503,25 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
 
         {/* Contact Info Banner */}
         {contactPhone && (
-          <div className="px-6 pt-6 pb-2">
-            <p className="text-gray-700 text-base">
+          <div className="px-6 pt-4 pb-1">
+            <p className="text-gray-700 text-sm">
               Call us at <a href={`tel:${contactPhone}`} className="text-brand hover:text-brand-hover font-medium">{contactPhone}</a> or fill in the following:
             </p>
           </div>
         )}
 
         {/* Form Content */}
-        <div className={contactPhone ? "px-6 pb-6" : "p-6"}>
+        <div className={contactPhone ? "px-6 pb-6 pt-3" : "p-6"}>
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left Column */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <input
                     required
                     name="firstName"
                     type="text"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="First name *"
                     value={formData.firstName}
                     onChange={handleChange}
@@ -535,7 +535,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="lastName"
                     type="text"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="Last name *"
                     value={formData.lastName}
                     onChange={handleChange}
@@ -549,7 +549,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="email"
                     type="email"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${user ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="Email *"
                     value={formData.email}
                     onChange={handleChange}
@@ -563,7 +563,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     required
                     name="company"
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                    className="w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                     placeholder="Company *"
                     value={formData.company}
                     onChange={handleChange}
@@ -574,8 +574,8 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   <textarea
                     required
                     name="message"
-                    rows={6}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
+                    rows={4}
+                    className="w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
                     placeholder="Message *"
                     value={formData.message}
                     onChange={handleChange}
@@ -584,12 +584,12 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
               </div>
 
               {/* Right Column */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <input
                     name="phone"
                     type="tel"
-                    className={`w-full px-4 py-2 border rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${
+                    className={`w-full px-4 py-1.5 border rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${
                       phoneError ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Phone (XXX) XXX-XXXX"
@@ -606,7 +606,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   <input
                     name="crewSize"
                     type="number"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                    className="w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                     placeholder="Cast / Crew Size"
                     value={formData.crewSize}
                     onChange={handleChange}
@@ -617,7 +617,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                   <input
                     name="locations"
                     type="text"
-                    className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${
+                    className={`w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none ${
                       propertyId ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Locations"
@@ -638,7 +638,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     ref={inputRef}
                     name="shootingDate"
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none cursor-pointer"
+                    className="w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none cursor-pointer"
                     placeholder="Shooting Date"
                     value={formData.shootingDate}
                     onClick={() => setShowPicker(true)}
@@ -707,7 +707,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
                     <select
                       required={question.is_required}
                       name={question.field_name}
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                      className="w-full px-4 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                       value={dynamicAnswers[question.field_name] || ''}
                       onChange={(e) => {
                         setDynamicAnswers(prev => ({
@@ -732,19 +732,19 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
 
             {/* Error/Success Messages */}
             {submitError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+              <div className="mt-3 p-2 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
                 {submitError}
               </div>
             )}
 
             {submitSuccess && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded text-sm">
+              <div className="mt-3 p-2 bg-green-50 border border-green-200 text-green-600 rounded text-sm">
                 Inquiry submitted successfully! We'll get back to you soon.
               </div>
             )}
 
             {/* reCAPTCHA */}
-            <div className="mt-6 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <ReCaptcha
                 ref={recaptchaRef}
                 onVerify={(token) => {
@@ -768,7 +768,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
             </div>
 
             {/* Submit Button */}
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-4 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
