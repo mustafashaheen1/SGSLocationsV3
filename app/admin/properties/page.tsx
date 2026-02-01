@@ -561,7 +561,7 @@ export default function AdminPropertiesPage() {
             variant="outline"
             onClick={handleBulkAIUpdate}
             disabled={bulkUpdating || loading}
-            className="border-purple-600 text-purple-600 hover:bg-purple-50"
+            className="border-purple-600 text-purple-600 hover:bg-purple-50 hidden"
           >
             {bulkUpdating ? (
               <>

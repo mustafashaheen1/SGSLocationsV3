@@ -1637,7 +1637,7 @@ export default function EditPropertyPage() {
                     maxLength={30}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    This name will be displayed on the website instead of the internal code. Use "Bulk AI Update" to generate for all properties.
+                    This name will be displayed on the website instead of the internal code.
                   </p>
                 </div>
 
