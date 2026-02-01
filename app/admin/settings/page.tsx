@@ -589,7 +589,7 @@ export default function SettingsPage() {
               value={emailSettings.propertyInquiryEmail}
               onChange={handleEmailSettingChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-              placeholder="email@example.com"
+              
               required
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -607,7 +607,7 @@ export default function SettingsPage() {
               value={emailSettings.generalInquiryEmail}
               onChange={handleEmailSettingChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-              placeholder="email@example.com"
+              
               required
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -709,7 +709,7 @@ export default function SettingsPage() {
               value={passwordData.currentPassword}
               onChange={handlePasswordChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-              placeholder="Enter current password"
+              
               required
             />
           </div>
@@ -724,7 +724,7 @@ export default function SettingsPage() {
               value={passwordData.newPassword}
               onChange={handlePasswordChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-              placeholder="Enter new password (min. 6 characters)"
+              
               required
             />
           </div>
@@ -739,7 +739,7 @@ export default function SettingsPage() {
               value={passwordData.confirmPassword}
               onChange={handlePasswordChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-              placeholder="Re-enter new password"
+              
               required
             />
           </div>

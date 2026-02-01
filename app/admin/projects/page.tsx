@@ -366,7 +366,7 @@ export default function AdminProjectsPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Billi Ellish - WSJ - Mid Century Exotic"
+                  
                 />
               </div>
 
@@ -398,7 +398,7 @@ export default function AdminProjectsPage() {
                     value={formData.banner_image}
                     onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://..."
+                    
                     disabled={uploading}
                   />
                 </div>
@@ -447,7 +447,7 @@ export default function AdminProjectsPage() {
                   value={formData.display_order}
                   onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 1 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="1"
+                  
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Position in portfolio (1 = first). Changes will automatically shift other projects.

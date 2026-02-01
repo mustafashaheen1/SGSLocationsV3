@@ -663,7 +663,7 @@ export default function EditPropertyPage() {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="e.g., Modern Downtown Loft"
+              
               required
             />
           </div>
@@ -674,7 +674,7 @@ export default function EditPropertyPage() {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Detailed property description..."
+              
               rows={4}
             />
           </div>
@@ -687,7 +687,7 @@ export default function EditPropertyPage() {
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="Start typing address..."
+              
               required
               autoComplete="off"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
@@ -703,7 +703,7 @@ export default function EditPropertyPage() {
               name="city"
               value={formData.city}
               onChange={handleInputChange}
-              placeholder="Dallas"
+              
               required
             />
           </div>
@@ -729,7 +729,7 @@ export default function EditPropertyPage() {
               name="zipcode"
               value={formData.zipcode}
               onChange={handleInputChange}
-              placeholder="75201"
+              
             />
           </div>
 

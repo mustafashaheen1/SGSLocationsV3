@@ -1848,7 +1848,7 @@ export default function ContentManagementPage() {
                         value={heroVideo}
                         disabled
                         className="flex-1 bg-gray-50"
-                        placeholder="No video uploaded"
+                        
                       />
                       <Button
                         onClick={() => document.getElementById('videoUpload')?.click()}
@@ -1999,7 +1999,7 @@ export default function ContentManagementPage() {
                   <Input
                     value={heroTitle}
                     onChange={(e) => setHeroTitle(e.target.value)}
-                    placeholder="Dallas Fort Worth's Largest Location Database"
+                    
                   />
                 </div>
 
@@ -2008,7 +2008,7 @@ export default function ContentManagementPage() {
                   <Input
                     value={heroSubtitle}
                     onChange={(e) => setHeroSubtitle(e.target.value)}
-                    placeholder="65+ filming locations across North and Central Texas"
+                    
                   />
                 </div>
 
@@ -2042,7 +2042,7 @@ export default function ContentManagementPage() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Production Name</label>
                         <Input
-                          placeholder="e.g. Yellowstone, Netflix"
+                          
                           id="new-logo-name"
                         />
                       </div>
@@ -2165,7 +2165,7 @@ export default function ContentManagementPage() {
                           <Input
                             value={editingLogo.name}
                             onChange={(e) => setEditingLogo({...editingLogo, name: e.target.value})}
-                            placeholder="Production Name"
+                            
                           />
 
                           <div>
@@ -2366,7 +2366,7 @@ export default function ContentManagementPage() {
                                 <Input
                                   value={editingService.title}
                                   onChange={(e) => setEditingService({...editingService, title: e.target.value})}
-                                  placeholder="Service Title"
+                                  
                                 />
                               </div>
 
@@ -2375,7 +2375,7 @@ export default function ContentManagementPage() {
                                 <Textarea
                                   value={editingService.description}
                                   onChange={(e) => setEditingService({...editingService, description: e.target.value})}
-                                  placeholder="Service Description"
+                                  
                                   rows={3}
                                 />
                               </div>
@@ -2530,7 +2530,7 @@ export default function ContentManagementPage() {
                     <div>
                       <label className="block text-sm font-medium mb-1">Project Name</label>
                       <Input
-                        placeholder="e.g. Selena Gomez - Vanity Fair - Hermosa House"
+                        
                         id="new-project-name"
                       />
                     </div>
@@ -2558,7 +2558,7 @@ export default function ContentManagementPage() {
                               <div className="relative">
                                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <Input
-                                  placeholder="Search properties..."
+                                  
                                   value={propertySearchQuery}
                                   onChange={(e) => setPropertySearchQuery(e.target.value)}
                                   className="pl-8 text-sm"
@@ -2723,7 +2723,7 @@ export default function ContentManagementPage() {
                         <Input
                           value={editingProject.name}
                           onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
-                          placeholder="Project Name"
+                          
                         />
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Display Position</label>
@@ -2732,7 +2732,7 @@ export default function ContentManagementPage() {
                             min="1"
                             value={editingProject.display_order}
                             onChange={(e) => setEditingProject({...editingProject, display_order: parseInt(e.target.value) || 1})}
-                            placeholder="Position (1, 2, 3...)"
+                            
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             Position in portfolio (1 = first). Changes will automatically shift other projects.
@@ -2758,7 +2758,7 @@ export default function ContentManagementPage() {
                                 <div className="relative">
                                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                   <Input
-                                    placeholder="Search properties..."
+                                    
                                     value={propertySearchQuery}
                                     onChange={(e) => setPropertySearchQuery(e.target.value)}
                                     className="pl-8 text-sm"
@@ -3076,7 +3076,7 @@ export default function ContentManagementPage() {
                   value={footerDescription}
                   onChange={(e) => setFooterDescription(e.target.value)}
                   rows={3}
-                  placeholder="Dallas Fort Worth's largest location database..."
+                  
                 />
               </div>
 
@@ -3086,7 +3086,7 @@ export default function ContentManagementPage() {
                   <Input
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
-                    placeholder="(214) 555-0100"
+                    
                   />
                 </div>
                 <div>
@@ -3094,7 +3094,7 @@ export default function ContentManagementPage() {
                   <Input
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="info@sgslocations.com"
+                    
                   />
                 </div>
               </div>
@@ -3104,7 +3104,7 @@ export default function ContentManagementPage() {
                 <Input
                   value={contactAddress}
                   onChange={(e) => setContactAddress(e.target.value)}
-                  placeholder="123 Main Street, Dallas, TX 75201"
+                  
                 />
               </div>
 
@@ -3114,7 +3114,7 @@ export default function ContentManagementPage() {
                   value={officeHours}
                   onChange={(e) => setOfficeHours(e.target.value)}
                   rows={4}
-                  placeholder="Monday - Friday: 9:00 AM - 6:00 PM&#10;Saturday: 10:00 AM - 4:00 PM&#10;Sunday: Closed"
+                  
                 />
                 <p className="text-xs text-gray-500 mt-1">Use line breaks for each day/time period</p>
               </div>
@@ -3163,7 +3163,7 @@ export default function ContentManagementPage() {
                       updated[index].url = e.target.value;
                       setSocialLinks(updated);
                     }}
-                    placeholder={`https://${link.platform.toLowerCase()}.com/...`}
+                    
                   />
                 </div>
               ))}
@@ -3222,7 +3222,7 @@ export default function ContentManagementPage() {
                   type="email"
                   value={generalContactEmail}
                   onChange={(e) => setGeneralContactEmail(e.target.value)}
-                  placeholder="paul@imagelocations.com"
+                  
                 />
               </div>
               <div>
@@ -3231,7 +3231,7 @@ export default function ContentManagementPage() {
                   type="tel"
                   value={generalContactPhone}
                   onChange={(e) => setGeneralContactPhone(e.target.value)}
-                  placeholder="(310) 871-8004"
+                  
                 />
               </div>
               <div>
@@ -3239,7 +3239,7 @@ export default function ContentManagementPage() {
                 <Textarea
                   value={generalContactAddress}
                   onChange={(e) => setGeneralContactAddress(e.target.value)}
-                  placeholder="9663 Santa Monica Blvd. Suite 842,&#10;Beverly Hills, CA 90210"
+                  
                   rows={3}
                 />
                 <p className="text-xs text-gray-500 mt-1">Use line breaks to separate address lines</p>
@@ -3364,7 +3364,7 @@ export default function ContentManagementPage() {
                         {entry.entry_type === 'team' && (
                           <>
                             <Input
-                              placeholder="Name"
+                              
                               value={entry.name || ''}
                               onChange={(e) => {
                                 const newGrid = [...contactGrid];
@@ -3374,7 +3374,7 @@ export default function ContentManagementPage() {
                               className="mb-1 text-sm"
                             />
                             <Input
-                              placeholder="Title"
+                              
                               value={entry.title || ''}
                               onChange={(e) => {
                                 const newGrid = [...contactGrid];
@@ -3384,7 +3384,7 @@ export default function ContentManagementPage() {
                               className="mb-1 text-sm"
                             />
                             <Input
-                              placeholder="Email"
+                              
                               type="email"
                               value={entry.email || ''}
                               onChange={(e) => {
@@ -3401,7 +3401,7 @@ export default function ContentManagementPage() {
                         {entry.entry_type === 'company' && (
                           <>
                             <Input
-                              placeholder="Company Name"
+                              
                               value={entry.company_name || ''}
                               onChange={(e) => {
                                 const newGrid = [...contactGrid];
@@ -3411,7 +3411,7 @@ export default function ContentManagementPage() {
                               className="mb-1 text-sm"
                             />
                             <Input
-                              placeholder="External URL"
+                              
                               type="url"
                               value={entry.external_url || ''}
                               onChange={(e) => {
@@ -3484,7 +3484,7 @@ export default function ContentManagementPage() {
                           }}
                           onBlur={() => updateContactFormQuestion(question.id, { question_text: question.question_text })}
                           className="font-medium"
-                          placeholder="Question text"
+                          
                         />
                         <label className="flex items-center gap-2 text-sm whitespace-nowrap">
                           <input
@@ -3523,7 +3523,7 @@ export default function ContentManagementPage() {
                               setContactFormQuestions(updated);
                             }}
                             onBlur={() => updateQuestionOption(option.id, option.option_label)}
-                            placeholder="Option text (e.g., Motion Picture)"
+                            
                             className="flex-1"
                           />
                           <div className="text-xs text-gray-500 w-32 truncate" title={option.option_value}>
@@ -3546,7 +3546,7 @@ export default function ContentManagementPage() {
                     <div className="flex gap-2 mt-2">
                       <Input
                         id={`new-option-label-${question.id}`}
-                        placeholder="New option (e.g., Motion Picture)"
+                        
                         className="flex-1"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
@@ -3585,7 +3585,7 @@ export default function ContentManagementPage() {
                     <Input
                       value={newQuestionText}
                       onChange={(e) => setNewQuestionText(e.target.value)}
-                      placeholder="Question text (e.g., Project Type)"
+                      
                     />
                     <div className="flex items-center gap-2">
                       <input
@@ -3877,7 +3877,7 @@ export default function ContentManagementPage() {
                           newSections[index].title = e.target.value;
                           setAboutSections(newSections);
                         }}
-                        placeholder="Enter section title..."
+                        
                       />
                     </div>
 
@@ -3892,7 +3892,7 @@ export default function ContentManagementPage() {
                           newSections[index].subtitle = e.target.value;
                           setAboutSections(newSections);
                         }}
-                        placeholder="Enter subtitle..."
+                        
                       />
                     </div>
 
@@ -3911,7 +3911,7 @@ export default function ContentManagementPage() {
                           setAboutSections(newSections);
                         }}
                         rows={5}
-                        placeholder="Enter section content..."
+                        
                         className="font-mono text-sm"
                       />
                     </div>
@@ -3930,7 +3930,7 @@ export default function ContentManagementPage() {
                               newSections[index].linkText = e.target.value;
                               setAboutSections(newSections);
                             }}
-                            placeholder="e.g., Learn More →"
+                            
                           />
                         </div>
                         <div>
@@ -3943,7 +3943,7 @@ export default function ContentManagementPage() {
                               newSections[index].linkUrl = e.target.value;
                               setAboutSections(newSections);
                             }}
-                            placeholder="e.g., /search or https://..."
+                            
                             disabled={uploadingPdfForSection === index}
                           />
                         </div>
@@ -4068,7 +4068,7 @@ export default function ContentManagementPage() {
                 <Input
                   value={propertyFooterPhone}
                   onChange={(e) => setPropertyFooterPhone(e.target.value)}
-                  placeholder="(310) 871-8004"
+                  
                 />
                 <p className="text-xs text-gray-500 mt-1">Displayed with phone icon at the bottom of property pages</p>
               </div>
@@ -4078,7 +4078,7 @@ export default function ContentManagementPage() {
                 <Input
                   value={propertyFooterPartnerText}
                   onChange={(e) => setPropertyFooterPartnerText(e.target.value)}
-                  placeholder="American Express Preferred Partner"
+                  
                 />
                 <p className="text-xs text-gray-500 mt-1">Partnership or certification text</p>
               </div>
@@ -4088,7 +4088,7 @@ export default function ContentManagementPage() {
                 <Input
                   value={propertyFooterLicense}
                   onChange={(e) => setPropertyFooterLicense(e.target.value)}
-                  placeholder="CalDRE #01234567"
+                  
                 />
                 <p className="text-xs text-gray-500 mt-1">Professional license or certification number</p>
               </div>
@@ -4098,7 +4098,7 @@ export default function ContentManagementPage() {
                 <Input
                   value={propertyFooterCompanyName}
                   onChange={(e) => setPropertyFooterCompanyName(e.target.value)}
-                  placeholder="Image Locations"
+                  
                 />
                 <p className="text-xs text-gray-500 mt-1">Used in copyright text: "© {new Date().getFullYear()} [Company Name]. All rights reserved."</p>
               </div>
@@ -4216,7 +4216,7 @@ export default function ContentManagementPage() {
                         ...editingQuestion,
                         question_text: e.target.value
                       })}
-                      placeholder="Enter your question"
+                      
                       rows={3}
                     />
                   </div>
@@ -4269,7 +4269,7 @@ export default function ContentManagementPage() {
                             <Input
                               value={option}
                               onChange={(e) => updateOption(editingQuestion, index, e.target.value)}
-                              placeholder={`Option ${index + 1}`}
+                              
                             />
                             <Button
                               onClick={() => removeOption(editingQuestion, index)}
@@ -4349,7 +4349,7 @@ export default function ContentManagementPage() {
                     onChange={(e) => setTermsContent(e.target.value)}
                     rows={20}
                     className="font-mono text-sm"
-                    placeholder="Enter terms and conditions..."
+                    
                   />
                 </div>
               </div>

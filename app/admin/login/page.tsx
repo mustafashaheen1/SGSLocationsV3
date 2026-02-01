@@ -117,7 +117,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-brand focus:border-brand focus:z-10 sm:text-sm"
-                placeholder="admin@sgslocations.com"
+                
                 disabled={isLoading}
               />
             </div>
@@ -134,7 +134,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-brand focus:border-brand focus:z-10 sm:text-sm"
-                placeholder="Enter your password"
+                
                 disabled={isLoading}
               />
             </div>

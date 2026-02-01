@@ -1338,7 +1338,6 @@ export default function AddPropertyPage() {
               name="real_name"
               value={formData.real_name}
               onChange={handleInputChange}
-              placeholder="e.g., 4608 Alta Dr. or Dallas Medical Center"
               required
             />
           </div>
@@ -1376,7 +1375,6 @@ export default function AddPropertyPage() {
               name="sub_heading"
               value={formData.sub_heading}
               onChange={handleInputChange}
-              placeholder={aiGenerateContent ? "AI will generate sub-heading..." : "e.g., A Modern Architectural Marvel in Fort Worth"}
               maxLength={200}
               required={!aiGenerateContent}
               disabled={aiGenerateContent}
@@ -1402,7 +1400,6 @@ export default function AddPropertyPage() {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder={aiGenerateContent ? "AI will generate detailed description..." : "Detailed property description..."}
               rows={4}
               disabled={aiGenerateContent}
               className={aiGenerateContent ? "bg-gray-100 cursor-not-allowed" : ""}
@@ -1422,7 +1419,6 @@ export default function AddPropertyPage() {
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="Start typing address..."
               required
               autoComplete="off"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
@@ -1438,7 +1434,6 @@ export default function AddPropertyPage() {
               name="city"
               value={formData.city}
               onChange={handleInputChange}
-              placeholder="Dallas"
               required
             />
           </div>
@@ -1464,7 +1459,6 @@ export default function AddPropertyPage() {
               name="zipcode"
               value={formData.zipcode}
               onChange={handleInputChange}
-              placeholder="75201"
             />
           </div>
 
@@ -1562,7 +1556,6 @@ export default function AddPropertyPage() {
                         <Input
                           value={contact.name}
                           onChange={(e) => updateContact(index, 'name', e.target.value)}
-                          placeholder="Contact name"
                         />
                       </div>
                       <div>
@@ -1571,7 +1564,6 @@ export default function AddPropertyPage() {
                           type="email"
                           value={contact.email}
                           onChange={(e) => updateContact(index, 'email', e.target.value)}
-                          placeholder="email@example.com"
                         />
                       </div>
                       <div>
@@ -1580,7 +1572,6 @@ export default function AddPropertyPage() {
                           type="tel"
                           value={contact.cell_number}
                           onChange={(e) => updateContact(index, 'cell_number', e.target.value)}
-                          placeholder="(555) 123-4567"
                         />
                       </div>
                       <div>
@@ -1589,7 +1580,6 @@ export default function AddPropertyPage() {
                           type="tel"
                           value={contact.home_number}
                           onChange={(e) => updateContact(index, 'home_number', e.target.value)}
-                          placeholder="(555) 123-4567"
                         />
                       </div>
                       <div>
@@ -1598,7 +1588,6 @@ export default function AddPropertyPage() {
                           type="tel"
                           value={contact.office_number}
                           onChange={(e) => updateContact(index, 'office_number', e.target.value)}
-                          placeholder="(555) 123-4567"
                         />
                       </div>
                     </div>
@@ -1620,7 +1609,6 @@ export default function AddPropertyPage() {
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add internal notes about this property..."
                 rows={6}
                 className="w-full"
               />
@@ -1790,7 +1778,6 @@ export default function AddPropertyPage() {
                       SmugMug Album URL or Album Key
                     </label>
                     <Input
-                      placeholder="Full URL or just the album key (e.g., ABC123xyz)"
                       value={smugmugUrl}
                       onChange={(e) => setSmugmugUrl(e.target.value)}
                     />

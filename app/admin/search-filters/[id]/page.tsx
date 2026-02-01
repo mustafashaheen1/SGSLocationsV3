@@ -295,7 +295,6 @@ export default function FilterDetailPage() {
               <Input
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="e.g., Swimming Pool"
                 onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
               />
               <Button onClick={handleAddTag}>Add</Button>

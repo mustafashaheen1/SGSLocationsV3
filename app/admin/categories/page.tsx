@@ -739,7 +739,7 @@ export default function CategoriesPage() {
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Modern Homes"
+                  
                 />
               </div>
 
@@ -800,7 +800,7 @@ export default function CategoriesPage() {
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Category description..."
+                  
                   rows={3}
                 />
               </div>
@@ -858,7 +858,7 @@ export default function CategoriesPage() {
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Agriculture, Healthcare, Education"
+                  
                 />
               </div>
 
@@ -878,7 +878,7 @@ export default function CategoriesPage() {
                     value={generatedPrefix || ''}
                     readOnly
                     className="bg-gray-100 pr-10"
-                    placeholder="Will auto-generate..."
+                    
                   />
                   {prefixLoading && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">

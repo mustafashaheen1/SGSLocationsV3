@@ -272,7 +272,6 @@ export default function SearchFiltersPage() {
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Outdoor Spaces"
               />
             </div>
             <div>

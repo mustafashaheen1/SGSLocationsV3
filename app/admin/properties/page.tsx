@@ -606,7 +606,6 @@ export default function AdminPropertiesPage() {
       <div className="flex gap-4 mb-6">
         <div className="flex-1">
           <Input
-            placeholder="Search properties or cities..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
@@ -614,7 +613,7 @@ export default function AdminPropertiesPage() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="All Status" />
+            <SelectValue  />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
