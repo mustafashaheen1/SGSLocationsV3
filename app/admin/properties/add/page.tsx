@@ -92,6 +92,7 @@ export default function AddPropertyPage() {
   const [generatingContent, setGeneratingContent] = useState(false);
   const [formData, setFormData] = useState({
     real_name: '', // The actual property name (admin only)
+    public_name: '', // Public-facing display name
     sub_heading: '', // Custom sub-heading for the property
     description: '',
     address: '',
@@ -1002,13 +1003,18 @@ export default function AddPropertyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // Validate required fields
     if (!formData.real_name || !formData.address || !formData.city) {
       alert('Please fill in all required fields (Real Property Name, Address, City)');
       return;
     }
 
-    // Validate sub-heading (only if NOT using AI generation)
+    // Validate public_name and sub-heading (only if NOT using AI generation)
     if (!aiGenerateContent) {
+      if (!formData.public_name || !formData.public_name.trim()) {
+        alert('Please provide a public name for this property');
+        return;
+      }
       if (!formData.sub_heading || !formData.sub_heading.trim()) {
         alert('Please provide a sub-heading for this property');
         return;
@@ -1081,6 +1087,7 @@ export default function AddPropertyPage() {
       console.log(`🔒 Generated property name: "${formData.real_name}" → "${propertyName}"`);
 
       // Generate AI content if enabled
+      let finalPublicName = formData.public_name;
       let finalSubHeading = formData.sub_heading;
       let finalDescription = formData.description;
 
@@ -1117,9 +1124,11 @@ export default function AddPropertyPage() {
           const data = await response.json();
 
           if (data.success) {
+            finalPublicName = data.public_name;
             finalSubHeading = data.sub_heading;
             finalDescription = data.description;
             console.log('✓ AI content generated');
+            console.log('Public name:', finalPublicName);
             console.log('Tokens used:', data.tokensUsed);
           } else {
             throw new Error(data.error || 'AI generation failed');
@@ -1139,7 +1148,8 @@ export default function AddPropertyPage() {
       // Prepare property data with CORRECT schema
       const propertyData: any = {
         name: propertyName, // Category-based sequential name (e.g., COM-0001)
-        real_name: formData.real_name, // Actual property name (admin only)
+        real_name: formData.real_name, // Actual property name (admin-facing)
+        public_name: finalPublicName, // Public display name (AI-generated or manual)
         sub_heading: finalSubHeading, // Use AI-generated or manual
         description: finalDescription || '', // Use AI-generated or manual
         address: formData.address,
@@ -1331,8 +1341,7 @@ export default function AddPropertyPage() {
         <div className="grid grid-cols-2 gap-6">
           <div className="col-span-2">
             <label className="block text-sm font-medium mb-2">
-              Real Property Name *
-              <span className="text-gray-500 text-xs ml-2">(Admin only - A random name will be generated for public display)</span>
+              Real Property Name <span className="text-red-500">*</span>
             </label>
             <Input
               name="real_name"
@@ -1340,6 +1349,34 @@ export default function AddPropertyPage() {
               onChange={handleInputChange}
               required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Admin-facing property name (e.g., "Quicktrip Alliance")
+            </p>
+          </div>
+
+          <div className="col-span-2">
+            <label className="block text-sm font-medium mb-2">
+              Public Name <span className="text-red-500">*</span>
+              {aiGenerateContent && (
+                <span className="ml-2 text-sm text-blue-600 font-normal">
+                  (AI will generate)
+                </span>
+              )}
+            </label>
+            <Input
+              name="public_name"
+              value={formData.public_name}
+              onChange={handleInputChange}
+              maxLength={30}
+              required={!aiGenerateContent}
+              disabled={aiGenerateContent}
+              className={aiGenerateContent ? "bg-gray-100 cursor-not-allowed" : ""}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {aiGenerateContent
+                ? "AI will generate a catchy public name (max 30 chars)"
+                : "Public-facing display name shown on the website (max 30 characters)"}
+            </p>
           </div>
 
           <div className="col-span-2 mb-4">
