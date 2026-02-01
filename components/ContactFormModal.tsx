@@ -42,6 +42,7 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
   const [phoneError, setPhoneError] = useState('');
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [recaptchaError, setRecaptchaError] = useState('');
+  const [contactPhone, setContactPhone] = useState<string>('');
   const pickerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -156,6 +157,39 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
       checkAuthAndFetchUser();
     }
   }, [isOpen, propertyId]);
+
+  // Fetch contact phone from site_settings
+  useEffect(() => {
+    async function fetchContactPhone() {
+      try {
+        const { data } = await (supabase
+          .from('site_settings') as any)
+          .select('value')
+          .eq('key', 'contact_phone')
+          .single();
+
+        if (data?.value) {
+          // Parse the nested JSON string
+          let phone = data.value;
+          try {
+            // The value might be double-encoded JSON, so we need to parse it multiple times
+            while (typeof phone === 'string') {
+              phone = JSON.parse(phone);
+            }
+            setContactPhone(phone || '');
+          } catch {
+            setContactPhone(data.value || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching contact phone:', error);
+      }
+    }
+
+    if (isOpen) {
+      fetchContactPhone();
+    }
+  }, [isOpen]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -467,8 +501,17 @@ export default function ContactFormModal({ isOpen, onClose, propertyName, proper
           </button>
         </div>
 
+        {/* Contact Info Banner */}
+        {contactPhone && (
+          <div className="px-6 pt-6 pb-2">
+            <p className="text-gray-700 text-base">
+              Call us at <a href={`tel:${contactPhone}`} className="text-brand hover:text-brand-hover font-medium">{contactPhone}</a> or fill in the following:
+            </p>
+          </div>
+        )}
+
         {/* Form Content */}
-        <div className="p-6">
+        <div className={contactPhone ? "px-6 pb-6" : "p-6"}>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column */}
