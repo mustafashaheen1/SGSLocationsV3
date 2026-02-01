@@ -166,19 +166,38 @@ export default function SettingsPage() {
   const handleSaveAiPhotoAnalysis = async () => {
     setSavingAiSetting(true);
     try {
-      const { error } = await (supabase
+      // Check if the setting already exists
+      const { data: existingSetting } = await (supabase
         .from('site_settings') as any)
-        .upsert({
-          key: 'ai_photo_analysis_enabled',
-          value: JSON.stringify(aiPhotoAnalysisEnabled),
-          page: 'admin',
-          section: 'settings',
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'key'
-        });
+        .select('id')
+        .eq('key', 'ai_photo_analysis_enabled')
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingSetting) {
+        // Update existing setting
+        const { error } = await (supabase
+          .from('site_settings') as any)
+          .update({
+            value: JSON.stringify(aiPhotoAnalysisEnabled),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('key', 'ai_photo_analysis_enabled');
+
+        if (error) throw error;
+      } else {
+        // Insert new setting
+        const { error } = await (supabase
+          .from('site_settings') as any)
+          .insert({
+            key: 'ai_photo_analysis_enabled',
+            value: JSON.stringify(aiPhotoAnalysisEnabled),
+            page: 'admin',
+            section: 'settings',
+            updated_at: new Date().toISOString(),
+          });
+
+        if (error) throw error;
+      }
 
       showMessage('success', 'AI Photo Analysis setting updated successfully!');
     } catch (error: any) {
