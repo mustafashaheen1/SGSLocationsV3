@@ -1609,7 +1609,6 @@ export default function EditPropertyPage() {
                     name="real_name"
                     value={formData.real_name}
                     onChange={handleInputChange}
-                    placeholder="e.g., 4608 Alta Dr. or Dallas Medical Center"
                     required
                   />
                 </div>
@@ -1623,7 +1622,6 @@ export default function EditPropertyPage() {
                     value={formData.name}
                     disabled
                     className="bg-gray-100 cursor-not-allowed"
-                    placeholder="Generated automatically (e.g., COM-0060)"
                   />
                 </div>
 
@@ -1636,7 +1634,6 @@ export default function EditPropertyPage() {
                     name="public_name"
                     value={formData.public_name}
                     onChange={handleInputChange}
-                    placeholder="e.g., Modern Downtown Loft"
                     maxLength={30}
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -1679,7 +1676,6 @@ export default function EditPropertyPage() {
                     name="sub_heading"
                     value={formData.sub_heading}
                     onChange={handleInputChange}
-                    placeholder="e.g., A Modern Architectural Marvel in Fort Worth"
                     maxLength={200}
                     required
                   />
@@ -1699,7 +1695,6 @@ export default function EditPropertyPage() {
                       name="albumkey"
                       value={formData.albumkey}
                       onChange={handleInputChange}
-                      placeholder={formData.albumkey ? "" : "Enter SmugMug album key if available"}
                       disabled={!!formData.albumkey}
                       className={formData.albumkey ? "bg-gray-100 cursor-not-allowed" : ""}
                     />
@@ -1734,7 +1729,6 @@ export default function EditPropertyPage() {
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    placeholder="Detailed property description..."
                     rows={4}
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -1750,7 +1744,6 @@ export default function EditPropertyPage() {
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    placeholder="Start typing address..."
                     required
                     autoComplete="off"
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
@@ -1766,7 +1759,6 @@ export default function EditPropertyPage() {
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    placeholder="Dallas"
                     required
                   />
                 </div>
@@ -1792,7 +1784,6 @@ export default function EditPropertyPage() {
                     name="zipcode"
                     value={formData.zipcode}
                     onChange={handleInputChange}
-                    placeholder="75201"
                   />
                 </div>
 
@@ -2306,7 +2297,6 @@ export default function EditPropertyPage() {
                           <Input
                             value={contact.name}
                             onChange={(e) => updateContact(index, 'name', e.target.value)}
-                            placeholder="Contact name"
                           />
                         </div>
                         <div>
@@ -2315,7 +2305,6 @@ export default function EditPropertyPage() {
                             type="email"
                             value={contact.email}
                             onChange={(e) => updateContact(index, 'email', e.target.value)}
-                            placeholder="email@example.com"
                           />
                         </div>
                         <div>
@@ -2324,7 +2313,6 @@ export default function EditPropertyPage() {
                             type="tel"
                             value={contact.cell_number}
                             onChange={(e) => updateContact(index, 'cell_number', e.target.value)}
-                            placeholder="(555) 123-4567"
                           />
                         </div>
                         <div>
@@ -2333,7 +2321,6 @@ export default function EditPropertyPage() {
                             type="tel"
                             value={contact.home_number}
                             onChange={(e) => updateContact(index, 'home_number', e.target.value)}
-                            placeholder="(555) 123-4567"
                           />
                         </div>
                         <div>
@@ -2342,7 +2329,6 @@ export default function EditPropertyPage() {
                             type="tel"
                             value={contact.office_number}
                             onChange={(e) => updateContact(index, 'office_number', e.target.value)}
-                            placeholder="(555) 123-4567"
                           />
                         </div>
                       </div>
@@ -2379,7 +2365,6 @@ export default function EditPropertyPage() {
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add internal notes about this property..."
                     rows={6}
                     className="w-full"
                   />
@@ -2739,7 +2724,6 @@ export default function EditPropertyPage() {
                       <Textarea
                         value={termsContent}
                         onChange={(e) => setTermsContent(e.target.value)}
-                        placeholder="Enter the terms and conditions that will be sent to the property owner..."
                         rows={12}
                         className="w-full"
                       />
@@ -2943,7 +2927,6 @@ export default function EditPropertyPage() {
               type="text"
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="e.g., Summer 2024 Production"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent outline-none mb-6"
               autoFocus
               onKeyDown={(e) => {
