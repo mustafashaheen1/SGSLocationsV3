@@ -313,6 +313,13 @@ export default function AddPropertyPage() {
 
       console.log('Imported URLs:', imageUrls);
 
+      // Save albumkey to formData so it's saved when property is created
+      setFormData(prev => ({
+        ...prev,
+        albumkey: albumKey
+      }));
+      console.log('✓ Saved albumkey to formData:', albumKey);
+
       if (imported > 0 && imageUrls.length > 0) {
         const fullUrls = imageUrls.map((url: string) => normalizeUrl(url));
 
@@ -954,6 +961,13 @@ export default function AddPropertyPage() {
           if (albumKey) {
             console.log('📋 Fetching album metadata...');
             setImportProgress(`Fetching album details...`);
+
+            // Save albumkey to formData so it's saved when property is created
+            setFormData(prev => ({
+              ...prev,
+              albumkey: albumKey
+            }));
+            console.log('✓ Saved albumkey to formData:', albumKey);
 
             const metadataResponse = await fetch(`/api/smugmug-album-metadata?albumKey=${albumKey}`);
             const metadata = await metadataResponse.json();
