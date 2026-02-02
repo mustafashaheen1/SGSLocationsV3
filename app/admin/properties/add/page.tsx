@@ -643,6 +643,29 @@ export default function AddPropertyPage() {
   // SIMPLIFIED analyze function - no waiting logic
   async function analyzeImageAndTag(imageUrl: string, imageIndex: number, totalImages: number, tagsToUse?: FilterTag[]): Promise<string[]> {
     try {
+      // Check if AI Photo Analysis is enabled in settings
+      const { data: aiSetting } = await (supabase
+        .from('site_settings') as any)
+        .select('value')
+        .eq('key', 'ai_photo_analysis_enabled')
+        .maybeSingle();
+
+      let isAiEnabled = false;
+      if (aiSetting && aiSetting.value !== null && aiSetting.value !== undefined) {
+        const value = typeof aiSetting.value === 'string' ? JSON.parse(aiSetting.value) : aiSetting.value;
+        isAiEnabled = value === true || value === 'true';
+      }
+
+      if (!isAiEnabled) {
+        console.log(`⚙️ AI Photo Analysis is disabled - skipping analysis for image ${imageIndex + 1}/${totalImages}`);
+        setAnalysisProgress({
+          current: imageIndex + 1,
+          total: totalImages,
+          status: `Skipped AI analysis for image ${imageIndex + 1} (AI disabled)`
+        });
+        return [];
+      }
+
       const tags = tagsToUse || availableTags;
 
       console.log(`\n🤖 Starting analysis for image ${imageIndex + 1}/${totalImages}`);
