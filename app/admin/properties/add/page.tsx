@@ -66,6 +66,8 @@ export default function AddPropertyPage() {
   const isBulkImport = searchParams.get('bulk_import') === 'true';
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [mainCategories, setMainCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<ImageWithTags[]>([]);
   const [gridIndices, setGridIndices] = useState<number[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -103,6 +105,7 @@ export default function AddPropertyPage() {
     longitude: null as number | null,
     albumkey: null as string | null,
     category_id: '',
+    sub_category_id: '',
     is_featured: false,
     is_exclusive: false,
   });
@@ -438,10 +441,17 @@ export default function AddPropertyPage() {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .order('name');
+      .order('display_order');
 
     if (!error && data) {
       setCategories(data);
+
+      // Separate main categories (parent_id is null) and sub-categories (parent_id is not null)
+      const mainCats = data.filter((cat: any) => !cat.parent_id);
+      const subCats = data.filter((cat: any) => cat.parent_id);
+
+      setMainCategories(mainCats);
+      setSubCategories(subCats);
     }
   }
 
@@ -1093,8 +1103,9 @@ export default function AddPropertyPage() {
       const nonGridImages = images.filter((_, i) => !gridIndices.slice(0, 6).includes(i));
       const reorderedImages = [...gridImages, ...nonGridImages];
 
-      // Get the selected category name
-      const selectedCategory = categories.find(c => c.id === formData.category_id);
+      // Get the selected category and sub-category names
+      const selectedMainCategory = categories.find(c => c.id === formData.category_id);
+      const selectedSubCategory = categories.find(c => c.id === formData.sub_category_id);
 
       // Generate property name using category-based sequential numbering
       const { data: nameResult, error: nameError } = await (supabase as any)
@@ -1119,9 +1130,6 @@ export default function AddPropertyPage() {
         setGeneratingContent(true);
 
         try {
-          // Get selected category name
-          const selectedCategory = categories.find(c => c.id === formData.category_id);
-
           // Prepare grid image URLs (first 6 images)
           const gridImages = gridIndices.slice(0, 6).map(i => images[i]);
           const gridImageUrls = gridImages.map(img => img.url).filter(Boolean);
@@ -1131,8 +1139,8 @@ export default function AddPropertyPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               propertyName: formData.real_name,
-              categoryName: selectedCategory?.name || '',
-              subCategoryName: '', // Sub-category not used in add form yet
+              categoryName: selectedMainCategory?.name || '',
+              subCategoryName: selectedSubCategory?.name || '',
               city: formData.city,
               address: formData.address,
               propertyTags: propertyTags,
@@ -1187,8 +1195,12 @@ export default function AddPropertyPage() {
         status: 'active',
         property_type: 'Residential',
         category_id: formData.category_id, // Main category ID for naming
-        // Use categories ARRAY for backward compatibility
-        categories: selectedCategory ? [selectedCategory.name] : [],
+        sub_category_id: formData.sub_category_id || null, // Sub-category ID
+        // Use categories ARRAY for backward compatibility - include both main and sub-category names
+        categories: [
+          selectedMainCategory?.name,
+          selectedSubCategory?.name
+        ].filter(Boolean), // Remove null/undefined values
         // Add property-level tags
         property_tags: propertyTags,
         // Set primary_image to first grid image
@@ -1523,21 +1535,49 @@ export default function AddPropertyPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Category *</label>
+            <label className="block text-sm font-medium mb-2">Main Category *</label>
             <select
               name="category_id"
               value={formData.category_id}
-              onChange={handleInputChange}
+              onChange={(e) => {
+                handleInputChange(e);
+                // Reset sub-category when main category changes
+                setFormData(prev => ({ ...prev, sub_category_id: '' }));
+              }}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
               required
             >
-              <option value="">Select a category</option>
-              {categories.map(category => (
+              <option value="">Select a main category</option>
+              {mainCategories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Sub-Category *</label>
+            <select
+              name="sub_category_id"
+              value={formData.sub_category_id}
+              onChange={handleInputChange}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-brand focus:border-brand"
+              required
+              disabled={!formData.category_id}
+            >
+              <option value="">Select a sub-category</option>
+              {subCategories
+                .filter((subCat: any) => subCat.parent_id === formData.category_id)
+                .map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+            </select>
+            {!formData.category_id && (
+              <p className="text-xs text-gray-500 mt-1">Select a main category first</p>
+            )}
           </div>
 
           <div className="col-span-2 grid grid-cols-2 gap-6">
