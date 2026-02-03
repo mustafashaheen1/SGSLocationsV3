@@ -85,10 +85,11 @@ export default function LocationLibraryPage() {
       .select('*')
       .eq('show_in_location_library', true)
       .eq('is_active', true)
-      .not('parent_id', 'is', null) // Only sub-categories
       .order('display_order');
 
-    setSubCategories(data || []);
+    // Filter to get only sub-categories (those with parent_id)
+    const subCats = (data || []).filter((cat: any) => cat.parent_id !== null);
+    setSubCategories(subCats as Category[]);
   };
 
   useEffect(() => {

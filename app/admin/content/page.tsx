@@ -1772,14 +1772,15 @@ export default function ContentManagementPage() {
 
   async function fetchLocationLibrarySettings() {
     try {
-      const { data: subCats } = await supabase
+      const { data: allCats } = await supabase
         .from('categories')
         .select('*')
-        .not('parent_id', 'is', null) // Only sub-categories
         .eq('is_active', true)
         .order('display_order');
 
-      const categories = (subCats || []) as Category[];
+      // Filter to get only sub-categories (those with parent_id)
+      const subCats = (allCats || []).filter((cat: any) => cat.parent_id !== null);
+      const categories = subCats as Category[];
       setLocationLibrarySubCategories(categories);
 
       // Build set of enabled IDs
