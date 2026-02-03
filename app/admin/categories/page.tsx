@@ -21,6 +21,7 @@ interface Category {
   parent_id: string | null;
   property_count: number;
   prefix: string | null;
+  show_in_location_library?: boolean;
 }
 
 interface Property {

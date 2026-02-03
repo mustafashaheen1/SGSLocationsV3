@@ -68,6 +68,20 @@ interface FormQuestion {
   options: string[];
 }
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image: string;
+  display_order: number;
+  is_active: boolean;
+  is_top: boolean;
+  parent_id: string | null;
+  prefix: string | null;
+  show_in_location_library?: boolean;
+}
+
 async function uploadVideoToS3(file: File): Promise<string> {
   try {
     // Step 1: Get presigned URL from your API
@@ -158,7 +172,7 @@ export default function ContentManagementPage() {
   const [termsContent, setTermsContent] = useState('');
 
   // Location Library State
-  const [locationLibrarySubCategories, setLocationLibrarySubCategories] = useState<any[]>([]);
+  const [locationLibrarySubCategories, setLocationLibrarySubCategories] = useState<Category[]>([]);
   const [enabledSubCategoryIds, setEnabledSubCategoryIds] = useState<Set<string>>(new Set());
 
   // Contact Page Grid States
@@ -1765,11 +1779,12 @@ export default function ContentManagementPage() {
         .eq('is_active', true)
         .order('display_order');
 
-      setLocationLibrarySubCategories(subCats || []);
+      const categories = (subCats || []) as Category[];
+      setLocationLibrarySubCategories(categories);
 
       // Build set of enabled IDs
       const enabled = new Set(
-        (subCats || [])
+        categories
           .filter(cat => cat.show_in_location_library)
           .map(cat => cat.id)
       );

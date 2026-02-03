@@ -8,6 +8,20 @@ import { Menu, X } from 'lucide-react';
 import { supabase, Property } from '@/lib/supabase';
 import { sortLocationsByExclusivity } from '@/lib/utils';
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image: string;
+  display_order: number;
+  is_active: boolean;
+  is_top: boolean;
+  parent_id: string | null;
+  prefix: string | null;
+  show_in_location_library?: boolean;
+}
+
 function PropertyCard({ property }: { property: Property }) {
   const images = property.images.length > 0 ? property.images : [property.primary_image || ''];
 
@@ -45,7 +59,7 @@ export default function LocationLibraryPage() {
   const [activeCategory, setActiveCategory] = useState('exclusives');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [topCategories, setTopCategories] = useState<any[]>([]);
-  const [subCategories, setSubCategories] = useState<any[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
 
   // Permanent tabs (always shown)
   const permanentCategories = [
