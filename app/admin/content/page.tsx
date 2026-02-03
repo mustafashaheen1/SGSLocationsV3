@@ -4438,6 +4438,20 @@ export default function ContentManagementPage() {
                 Permanent tabs (Exclusives, New, Most Viewed) are always shown.
               </p>
 
+              <div className="mb-4">
+                <Button
+                  type="button"
+                  onClick={handleSelectAllToggle}
+                  disabled={locationLibrarySubCategories.length === 0}
+                  variant="outline"
+                  className="border-brand text-brand hover:bg-brand hover:text-white"
+                >
+                  {locationLibrarySubCategories.every(cat => enabledSubCategoryIds.has(cat.id))
+                    ? 'Deselect All'
+                    : 'Select All'}
+                </Button>
+              </div>
+
               <div className="space-y-3">
                 {locationLibrarySubCategories.length === 0 ? (
                   <p className="text-sm text-gray-500">No active sub-categories found.</p>
@@ -4470,18 +4484,7 @@ export default function ContentManagementPage() {
                 )}
               </div>
 
-              <div className="mt-6 flex gap-3">
-                <Button
-                  type="button"
-                  onClick={handleSelectAllToggle}
-                  disabled={locationLibrarySubCategories.length === 0}
-                  variant="outline"
-                  className="border-brand text-brand hover:bg-brand hover:text-white"
-                >
-                  {locationLibrarySubCategories.every(cat => enabledSubCategoryIds.has(cat.id))
-                    ? 'Deselect All'
-                    : 'Select All'}
-                </Button>
+              <div className="mt-6">
                 <Button
                   onClick={saveLocationLibrarySettings}
                   disabled={saving}
