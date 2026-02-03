@@ -4438,7 +4438,7 @@ export default function ContentManagementPage() {
                 Permanent tabs (Exclusives, New, Most Viewed) are always shown.
               </p>
 
-              <div className="mb-4">
+              <div className="mb-4 flex justify-between items-center">
                 <Button
                   type="button"
                   onClick={handleSelectAllToggle}
@@ -4449,6 +4449,14 @@ export default function ContentManagementPage() {
                   {locationLibrarySubCategories.every(cat => enabledSubCategoryIds.has(cat.id))
                     ? 'Deselect All'
                     : 'Select All'}
+                </Button>
+                <Button
+                  onClick={saveLocationLibrarySettings}
+                  disabled={saving}
+                  className="bg-brand hover:bg-brand-hover"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
 
@@ -4482,17 +4490,6 @@ export default function ContentManagementPage() {
                     </div>
                   ))
                 )}
-              </div>
-
-              <div className="mt-6">
-                <Button
-                  onClick={saveLocationLibrarySettings}
-                  disabled={saving}
-                  className="bg-brand hover:bg-brand-hover"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
               </div>
             </CardContent>
           </Card>
