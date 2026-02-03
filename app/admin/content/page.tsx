@@ -1807,6 +1807,19 @@ export default function ContentManagementPage() {
     });
   }
 
+  function handleSelectAllToggle() {
+    const allSelected = locationLibrarySubCategories.every(cat => enabledSubCategoryIds.has(cat.id));
+
+    if (allSelected) {
+      // Deselect all
+      setEnabledSubCategoryIds(new Set());
+    } else {
+      // Select all
+      const allIds = new Set(locationLibrarySubCategories.map(cat => cat.id));
+      setEnabledSubCategoryIds(allIds);
+    }
+  }
+
   async function saveLocationLibrarySettings() {
     setSaving(true);
     try {
@@ -4457,7 +4470,18 @@ export default function ContentManagementPage() {
                 )}
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 flex gap-3">
+                <Button
+                  type="button"
+                  onClick={handleSelectAllToggle}
+                  disabled={locationLibrarySubCategories.length === 0}
+                  variant="outline"
+                  className="border-brand text-brand hover:bg-brand hover:text-white"
+                >
+                  {locationLibrarySubCategories.every(cat => enabledSubCategoryIds.has(cat.id))
+                    ? 'Deselect All'
+                    : 'Select All'}
+                </Button>
                 <Button
                   onClick={saveLocationLibrarySettings}
                   disabled={saving}
