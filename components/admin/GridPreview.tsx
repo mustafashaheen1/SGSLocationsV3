@@ -126,7 +126,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
           <button
             type="button"
             onClick={() => setShowSelector(!showSelector)}
-            className="text-sm bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+            className="text-sm bg-brand text-white px-4 py-2 rounded hover:bg-brand-hover transition-colors"
           >
             {showSelector ? 'Close Selector' : 'Change Grid Images'}
           </button>
@@ -158,7 +158,7 @@ export function GridPreview({ images, gridIndices, onGridIndicesChange }: GridPr
               className="object-cover"
               sizes="(max-width: 768px) 33vw, 200px"
             />
-            <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+            <div className="absolute top-2 left-2 bg-brand text-white text-xs font-bold px-2 py-1 rounded">
               #{gridIndex + 1}
             </div>
             {showSelector && (
