@@ -157,6 +157,10 @@ export default function ContentManagementPage() {
   // Terms & Conditions State
   const [termsContent, setTermsContent] = useState('');
 
+  // Location Library State
+  const [locationLibrarySubCategories, setLocationLibrarySubCategories] = useState<any[]>([]);
+  const [enabledSubCategoryIds, setEnabledSubCategoryIds] = useState<Set<string>>(new Set());
+
   // Contact Page Grid States
   const [contactGrid, setContactGrid] = useState<any[]>([]);
 
@@ -255,6 +259,8 @@ export default function ContentManagementPage() {
       fetchPortfolioVisibility();
       fetchProjects();
       fetchProperties();
+    } else if (activeTab === 'location-library') {
+      fetchLocationLibrarySettings();
     }
   }, [activeTab]);
 
@@ -1750,6 +1756,83 @@ export default function ContentManagementPage() {
     }
   }
 
+  async function fetchLocationLibrarySettings() {
+    try {
+      const { data: subCats } = await supabase
+        .from('categories')
+        .select('*')
+        .not('parent_id', 'is', null) // Only sub-categories
+        .eq('is_active', true)
+        .order('display_order');
+
+      setLocationLibrarySubCategories(subCats || []);
+
+      // Build set of enabled IDs
+      const enabled = new Set(
+        (subCats || [])
+          .filter(cat => cat.show_in_location_library)
+          .map(cat => cat.id)
+      );
+      setEnabledSubCategoryIds(enabled);
+    } catch (error) {
+      console.error('Error fetching location library settings:', error);
+    }
+  }
+
+  function handleSubCategoryToggle(categoryId: string, enabled: boolean) {
+    setEnabledSubCategoryIds(prev => {
+      const newSet = new Set(prev);
+      if (enabled) {
+        newSet.add(categoryId);
+      } else {
+        newSet.delete(categoryId);
+      }
+      return newSet;
+    });
+  }
+
+  async function saveLocationLibrarySettings() {
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
+      // Update each sub-category's visibility
+      for (const subCat of locationLibrarySubCategories) {
+        const shouldShow = enabledSubCategoryIds.has(subCat.id);
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/categories?id=eq.${subCat.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({
+            show_in_location_library: shouldShow,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to update ${subCat.name}: ${errorText}`);
+        }
+      }
+
+      alert('Location Library settings saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving location library settings:', error);
+      alert(`Error saving settings: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleContactImageUpload(position: number, file: File) {
     try {
       const url = await uploadImageToS3(file);
@@ -1766,7 +1849,7 @@ export default function ContentManagementPage() {
       <h1 className="text-3xl font-bold mb-6">Content Management System</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-8 mb-6">
+        <TabsList className="grid w-full grid-cols-9 mb-6">
           <TabsTrigger value="home">
             <Home className="w-4 h-4 mr-2" />
             Home Page
@@ -1794,6 +1877,10 @@ export default function ContentManagementPage() {
           <TabsTrigger value="list-property">
             <ClipboardList className="w-4 h-4 mr-2" />
             List Property
+          </TabsTrigger>
+          <TabsTrigger value="location-library">
+            <MapPin className="w-4 h-4 mr-2" />
+            Location Library
           </TabsTrigger>
           <TabsTrigger value="other">
             <FileText className="w-4 h-4 mr-2" />
@@ -4311,6 +4398,63 @@ export default function ContentManagementPage() {
         </TabsContent>
 
         {/* OTHER PAGES TAB */}
+        <TabsContent value="location-library" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Location Library Sub-Category Tabs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-4">
+                Select which sub-categories should appear as tabs in the Location Library page.
+                Permanent tabs (Exclusives, New, Most Viewed) are always shown.
+              </p>
+
+              <div className="space-y-3">
+                {locationLibrarySubCategories.length === 0 ? (
+                  <p className="text-sm text-gray-500">No active sub-categories found.</p>
+                ) : (
+                  locationLibrarySubCategories.map(subCat => (
+                    <div key={subCat.id} className="flex items-center space-x-3 p-3 border rounded">
+                      <input
+                        type="checkbox"
+                        id={`subcategory-${subCat.id}`}
+                        checked={enabledSubCategoryIds.has(subCat.id)}
+                        onChange={(e) => handleSubCategoryToggle(subCat.id, e.target.checked)}
+                        className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                      />
+                      <label
+                        htmlFor={`subcategory-${subCat.id}`}
+                        className="flex-1 text-sm font-medium cursor-pointer"
+                      >
+                        {subCat.name}
+                        <span className="text-gray-500 ml-2">({subCat.slug})</span>
+                      </label>
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        enabledSubCategoryIds.has(subCat.id)
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {enabledSubCategoryIds.has(subCat.id) ? 'Visible' : 'Hidden'}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-6">
+                <Button
+                  onClick={saveLocationLibrarySettings}
+                  disabled={saving}
+                  className="bg-brand hover:bg-brand-hover"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="other" className="space-y-6">
           <Card>
             <CardHeader>

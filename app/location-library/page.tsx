@@ -45,18 +45,57 @@ export default function LocationLibraryPage() {
   const [activeCategory, setActiveCategory] = useState('exclusives');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [topCategories, setTopCategories] = useState<any[]>([]);
+  const [subCategories, setSubCategories] = useState<any[]>([]);
 
-  const categories = [
-    { id: 'exclusives', label: 'Exclusives' },
-    { id: 'new', label: 'New' },
-    { id: 'most-viewed', label: 'Most Viewed' },
+  // Permanent tabs (always shown)
+  const permanentCategories = [
+    { id: 'exclusives', label: 'Exclusives', type: 'permanent' },
+    { id: 'new', label: 'New', type: 'permanent' },
+    { id: 'most-viewed', label: 'Most Viewed', type: 'permanent' },
   ];
+
+  // Convert sub-categories to tab format
+  const subCategoryTabs = subCategories.map(cat => ({
+    id: cat.slug,
+    label: cat.name,
+    type: 'subcategory',
+    categoryId: cat.id,
+  }));
+
+  // Merge: permanent tabs first, then sub-categories
+  const categories = [...permanentCategories, ...subCategoryTabs];
+
+  const fetchEnabledSubCategories = async () => {
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('show_in_location_library', true)
+      .eq('is_active', true)
+      .not('parent_id', 'is', null) // Only sub-categories
+      .order('display_order');
+
+    setSubCategories(data || []);
+  };
+
+  useEffect(() => {
+    fetchEnabledSubCategories();
+  }, []);
 
   useEffect(() => {
     const category = searchParams.get('category') || 'exclusives';
+
+    // Validate category exists after sub-categories are loaded
+    if (subCategories.length > 0) {
+      const validCategory = categories.find(c => c.id === category);
+      if (!validCategory) {
+        router.push('/location-library?category=exclusives');
+        return;
+      }
+    }
+
     setActiveCategory(category);
     fetchProperties(category);
-  }, [searchParams]);
+  }, [searchParams, subCategories]);
 
   const fetchProperties = async (category: string) => {
     setLoading(true);
@@ -85,8 +124,14 @@ export default function LocationLibraryPage() {
       setLoading(false);
       return;
     } else {
-      // For 'all' categories, show all properties alphabetically
-      query = query.order('name', { ascending: true });
+      // Handle sub-category filtering
+      const subCat = subCategories.find(sc => sc.slug === category);
+      if (subCat) {
+        query = query.eq('sub_category_id', subCat.id).order('name', { ascending: true });
+      } else {
+        // Fallback to exclusives if invalid category
+        query = query.eq('is_exclusive', true).order('name', { ascending: true });
+      }
     }
 
     const { data } = await query;

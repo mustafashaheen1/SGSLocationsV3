@@ -43,7 +43,9 @@
       "Bash(git log:*)",
       "Bash(lsof:*)",
       "Bash(for region in us-east-1 us-west-2 eu-west-1)",
-      "Bash(timeout 5 curl:*)"
+      "Bash(timeout 5 curl:*)",
+      "Bash(for f in /Users/mustafashaheen/Desktop/SGSLocationsV3/supabase/migrations/*.sql)",
+      "Bash(do grep -l \"CREATE TABLE.*categor\" \"$f\")"
     ],
     "deny": [],
     "ask": []
