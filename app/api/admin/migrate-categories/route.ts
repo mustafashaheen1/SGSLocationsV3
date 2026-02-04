@@ -103,12 +103,17 @@ export async function POST(request: NextRequest) {
     // Step 4: Convert existing categories to sub-categories
     console.log('Converting existing categories to sub-categories...');
 
-    const { data: existingCategories } = await supabase
+    const { data: allCategories } = await supabase
       .from('categories')
       .select('id, name, slug, display_order')
-      .not('slug', 'in', `(residential,commercial,industrial)`)
       .is('parent_id', null) // Only get categories that aren't already sub-categories
       .order('display_order');
+
+    // Filter out the main categories in JavaScript (since .not() is not supported)
+    const excludedSlugs = ['residential', 'commercial', 'industrial'];
+    const existingCategories = (allCategories || []).filter(
+      (cat: any) => !excludedSlugs.includes(cat.slug)
+    );
 
     if (existingCategories && existingCategories.length > 0) {
       const mainCatArray = [

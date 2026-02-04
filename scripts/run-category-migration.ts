@@ -142,11 +142,16 @@ async function runMigrationStepByStep() {
   };
 
   // Get all existing categories (excluding the new main ones)
-  const { data: existingCategories } = await supabase
+  const { data: allCategories } = await supabase
     .from('categories')
     .select('id, name, slug')
-    .not('slug', 'in', `(residential,commercial,industrial)`)
     .order('display_order');
+
+  // Filter out the main categories in JavaScript (since .not() is not supported)
+  const excludedSlugs = ['residential', 'commercial', 'industrial'];
+  const existingCategories = (allCategories || []).filter(
+    (cat: any) => !excludedSlugs.includes(cat.slug)
+  );
 
   if (existingCategories && existingCategories.length > 0) {
     const mainCatArray = [

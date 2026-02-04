@@ -238,15 +238,17 @@ export async function GET(request: NextRequest) {
     const { data: existingProperties, error: dbError } = await supabase
       .from('properties')
       .select('albumkey')
-      .in('albumkey', albumKeys)
-      .not('albumkey', 'is', null);
+      .in('albumkey', albumKeys);
 
     if (dbError) {
       console.error('Error checking existing albumkeys:', dbError);
     }
 
+    // Filter out null albumkeys in JavaScript (since .not() is not supported)
     const existingAlbumKeys = new Set(
-      (existingProperties || []).map((p: any) => p.albumkey)
+      (existingProperties || [])
+        .filter((p: any) => p.albumkey !== null)
+        .map((p: any) => p.albumkey)
     );
 
     const newAlbums = validAlbums.filter(
