@@ -33,10 +33,9 @@ export default function AdminDashboard() {
 
       const { directFetch } = await import('@/lib/supabase');
 
-      // Fetch active properties count
-      const { data: activeProperties } = await directFetch('properties', {
+      // Fetch ALL properties count (for total)
+      const { data: allProperties } = await directFetch('properties', {
         select: 'id',
-        eq: { status: 'active' },
         authToken: session.access_token
       });
 
@@ -75,7 +74,7 @@ export default function AdminDashboard() {
       });
 
       setStats({
-        totalProperties: (activeProperties as any[])?.length || 0,
+        totalProperties: (allProperties as any[])?.length || 0,
         pendingProperties: (pendingProperties as any[])?.length || 0,
         totalUsers: (users as any[])?.length || 0,
         totalInquiries: (inquiries as any[])?.length || 0,
