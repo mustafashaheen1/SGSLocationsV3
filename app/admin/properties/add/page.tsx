@@ -1277,8 +1277,8 @@ export default function AddPropertyPage() {
         alert('✓ All properties imported successfully!');
         router.push('/admin/properties');
       } else {
-        // Single property add - redirect to property page
-        router.push(`/property/${property.id}`);
+        // Single property add - redirect to admin property edit page
+        router.push(`/admin/properties/${property.id}/edit`);
       }
 
     } catch (error: any) {

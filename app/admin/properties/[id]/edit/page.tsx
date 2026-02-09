@@ -1420,7 +1420,8 @@ export default function EditPropertyPage() {
       console.log(`✓ Updated ${imageRecords.length} images with tags`);
 
       alert('✓ Property updated successfully!');
-      router.push(`/property/${propertyId}`);
+      // Stay on the admin edit page after saving
+      router.push(`/admin/properties/${propertyId}/edit`);
 
     } catch (error: any) {
       console.error('Error updating property:', error);
