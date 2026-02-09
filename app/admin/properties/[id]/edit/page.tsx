@@ -1420,7 +1420,7 @@ export default function EditPropertyPage() {
       console.log(`✓ Updated ${imageRecords.length} images with tags`);
 
       alert('✓ Property updated successfully!');
-      router.push('/admin/properties');
+      router.push(`/property/${propertyId}`);
 
     } catch (error: any) {
       console.error('Error updating property:', error);
