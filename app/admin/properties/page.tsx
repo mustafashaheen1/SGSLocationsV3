@@ -27,6 +27,7 @@ interface Property {
   primary_image: string;
   images: string[];
   is_featured: boolean;
+  is_exclusive?: boolean;
   owner_id: string | null;
   created_at: string;
   owner_name?: string;
@@ -46,7 +47,7 @@ export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'featured-first' | 'exclusive-first'>('newest');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [filterCategories, setFilterCategories] = useState<Record<string, any>>({});
@@ -668,6 +669,15 @@ export default function AdminPropertiesPage() {
       if (!aMatchesCategory && bMatchesCategory) return 1;
     }
 
+    // Handle sort order
+    if (sortOrder === 'featured-first') {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+    } else if (sortOrder === 'exclusive-first') {
+      if (a.is_exclusive && !b.is_exclusive) return -1;
+      if (!a.is_exclusive && b.is_exclusive) return 1;
+    }
+
     // Otherwise maintain the existing order (already sorted by created_at from the query)
     return 0;
   });
@@ -815,13 +825,15 @@ export default function AdminPropertiesPage() {
             </div>
           )}
         </div>
-        <Select value={sortOrder} onValueChange={(value: 'newest' | 'oldest') => setSortOrder(value)}>
+        <Select value={sortOrder} onValueChange={(value: 'newest' | 'oldest' | 'featured-first' | 'exclusive-first') => setSortOrder(value)}>
           <SelectTrigger className="w-48">
             <SelectValue  />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="newest">Recently Added</SelectItem>
             <SelectItem value="oldest">Oldest Added</SelectItem>
+            <SelectItem value="featured-first">Featured First</SelectItem>
+            <SelectItem value="exclusive-first">Exclusive First</SelectItem>
           </SelectContent>
         </Select>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
