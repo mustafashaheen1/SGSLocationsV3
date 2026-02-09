@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, Edit, Trash2, Eye, Star, Upload, Plus, Sparkles } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Star, Upload, Plus, Sparkles, ChevronDown, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { deleteImageFromS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ interface Property {
   contacts?: any[];
   category_id?: string;
   sub_category_id?: string;
+  property_images?: Array<{ tags: string[] }>;
 }
 
 export default function AdminPropertiesPage() {
@@ -49,6 +50,10 @@ export default function AdminPropertiesPage() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [filterCategories, setFilterCategories] = useState<Record<string, any>>({});
+  const [activeTagFilters, setActiveTagFilters] = useState<{ category: string; values: string[] }[]>([]);
+  const [tagSearchTerm, setTagSearchTerm] = useState('');
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
@@ -60,6 +65,7 @@ export default function AdminPropertiesPage() {
   useEffect(() => {
     checkAdminAccess();
     fetchCategories();
+    fetchFilterTags();
     fetchProperties();
   }, [statusFilter, sortOrder]);
 
@@ -101,6 +107,44 @@ export default function AdminPropertiesPage() {
     }
   }
 
+  async function fetchFilterTags() {
+    try {
+      const { data: filters } = await supabase
+        .from('search_filters')
+        .select(`
+          id,
+          name,
+          slug,
+          has_search,
+          display_order,
+          search_filter_tags (
+            id,
+            name,
+            slug,
+            display_order
+          )
+        `)
+        .eq('is_active', true)
+        .order('display_order');
+
+      // Transform to format: { slug: { name, hasSearch, options[] } }
+      const categoriesMap: Record<string, any> = {};
+      (filters || []).forEach((filter: any) => {
+        categoriesMap[filter.slug] = {
+          name: filter.name,
+          hasSearch: filter.has_search,
+          options: (filter.search_filter_tags || [])
+            .sort((a: any, b: any) => a.display_order - b.display_order)
+            .map((tag: any) => tag.name)
+        };
+      });
+
+      setFilterCategories(categoriesMap);
+    } catch (error) {
+      console.error('Error fetching filter tags:', error);
+    }
+  }
+
   async function fetchProperties() {
     setLoading(true);
 
@@ -118,7 +162,7 @@ export default function AdminPropertiesPage() {
       const { directFetch } = await import('@/lib/supabase');
 
       let queryParams: any = {
-        select: '*',
+        select: '*, property_images(tags)',
         order: 'created_at',
         ascending: sortOrder === 'oldest',
         authToken: session.access_token
@@ -320,6 +364,38 @@ export default function AdminPropertiesPage() {
       setDeletingPropertyId(null);
       setDeleteProgress('');
     }
+  }
+
+  function toggleTagFilter(category: string, value: string) {
+    setActiveTagFilters(prev => {
+      const existingFilter = prev.find(f => f.category === category);
+
+      if (existingFilter) {
+        // Toggle: add or remove the value
+        const newValues = existingFilter.values.includes(value)
+          ? existingFilter.values.filter(v => v !== value)  // Remove
+          : [...existingFilter.values, value];               // Add
+
+        if (newValues.length === 0) {
+          return prev.filter(f => f.category !== category);  // Remove category if empty
+        }
+
+        return prev.map(f =>
+          f.category === category ? { ...f, values: newValues } : f
+        );
+      }
+
+      return [...prev, { category, values: [value] }];       // Add new category
+    });
+  }
+
+  function isTagFilterActive(category: string, value: string): boolean {
+    const filter = activeTagFilters.find(f => f.category === category);
+    return filter ? filter.values.includes(value) : false;
+  }
+
+  function clearAllTagFilters() {
+    setActiveTagFilters([]);
   }
 
   async function handleBulkImportProperties() {
@@ -526,49 +602,52 @@ export default function AdminPropertiesPage() {
   const filteredProperties = properties.filter(property => {
     const searchLower = searchTerm.toLowerCase();
 
-    // Check existing fields
-    if (
-      property.name?.toLowerCase().includes(searchLower) ||
-      (property.real_name || '')?.toLowerCase().includes(searchLower) ||
-      (property.public_name || '')?.toLowerCase().includes(searchLower) ||
-      property.city?.toLowerCase().includes(searchLower) ||
-      (property.zipcode || '')?.toLowerCase().includes(searchLower) ||
-      (property.description || '')?.toLowerCase().includes(searchLower) ||
-      (property.address || '')?.toLowerCase().includes(searchLower)
-    ) {
-      return true;
+    // Search term filter
+    let matchesSearch = !searchTerm;
+    if (searchTerm) {
+      matchesSearch =
+        property.name?.toLowerCase().includes(searchLower) ||
+        (property.real_name || '')?.toLowerCase().includes(searchLower) ||
+        (property.public_name || '')?.toLowerCase().includes(searchLower) ||
+        property.city?.toLowerCase().includes(searchLower) ||
+        (property.zipcode || '')?.toLowerCase().includes(searchLower) ||
+        (property.description || '')?.toLowerCase().includes(searchLower) ||
+        (property.address || '')?.toLowerCase().includes(searchLower) ||
+        property.property_tags?.some((tag: string) =>
+          tag.toLowerCase().includes(searchLower)
+        ) ||
+        (property.contacts && Array.isArray(property.contacts) &&
+          property.contacts.some((contact: any) =>
+            contact.name?.toLowerCase().includes(searchLower) ||
+            contact.email?.toLowerCase().includes(searchLower) ||
+            contact.cell_number?.toLowerCase().includes(searchLower) ||
+            contact.home_number?.toLowerCase().includes(searchLower) ||
+            contact.office_number?.toLowerCase().includes(searchLower)
+          )) ||
+        (property.owner_name || '')?.toLowerCase().includes(searchLower) ||
+        (property.owner_email || '')?.toLowerCase().includes(searchLower) ||
+        (property.owner_phone || '')?.toLowerCase().includes(searchLower);
     }
 
-    // Check property tags
-    if (property.property_tags?.some((tag: string) =>
-      tag.toLowerCase().includes(searchLower)
-    )) {
-      return true;
-    }
-
-    // Check property contacts (JSONB array)
-    if (property.contacts && Array.isArray(property.contacts)) {
-      const contactMatch = property.contacts.some((contact: any) =>
-        contact.name?.toLowerCase().includes(searchLower) ||
-        contact.email?.toLowerCase().includes(searchLower) ||
-        contact.cell_number?.toLowerCase().includes(searchLower) ||
-        contact.home_number?.toLowerCase().includes(searchLower) ||
-        contact.office_number?.toLowerCase().includes(searchLower)
-      );
-      if (contactMatch) return true;
-    }
-
-    // Check owner information
-    if (
-      (property.owner_name || '')?.toLowerCase().includes(searchLower) ||
-      (property.owner_email || '')?.toLowerCase().includes(searchLower) ||
-      (property.owner_phone || '')?.toLowerCase().includes(searchLower)
-    ) {
-      return true;
-    }
-
-    return false;
+    // Only filter by search term - tags are used for prioritization in sort
+    return matchesSearch;
   }).sort((a, b) => {
+    // If tag filters are selected, prioritize properties with matching tags
+    if (activeTagFilters.length > 0) {
+      const selectedTags = activeTagFilters.flatMap(f => f.values);
+
+      const aMatchesTags = a.property_images?.some(img =>
+        img.tags.some(tag => selectedTags.includes(tag))
+      ) || false;
+
+      const bMatchesTags = b.property_images?.some(img =>
+        img.tags.some(tag => selectedTags.includes(tag))
+      ) || false;
+
+      if (aMatchesTags && !bMatchesTags) return -1;
+      if (!aMatchesTags && bMatchesTags) return 1;
+    }
+
     // If a category filter is selected, prioritize properties with that category
     if (categoryFilter !== 'all') {
       const aMatchesCategory = a.category_id === categoryFilter;
@@ -636,6 +715,24 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
 
+      {/* Status Filter Pills */}
+      <div className="flex gap-2 mb-4">
+        <span className="text-sm text-gray-600 self-center">Status:</span>
+        {['all', 'active', 'pending', 'inactive'].map(status => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
+              statusFilter === status
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {status === 'all' ? 'All Status' : status}
+          </button>
+        ))}
+      </div>
+
       <div className="flex gap-4 mb-6">
         <div className="flex-1">
           <Input
@@ -644,17 +741,87 @@ export default function AdminPropertiesPage() {
             className="w-full"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue  />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <button
+            onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+            className="w-48 px-4 py-2 border border-gray-300 rounded-md bg-white text-left flex items-center justify-between hover:border-gray-400"
+          >
+            <span className="text-sm">
+              {activeTagFilters.length > 0
+                ? `${activeTagFilters.reduce((sum, f) => sum + f.values.length, 0)} filters`
+                : 'Search Filters'}
+            </span>
+            <ChevronDown className="w-4 h-4" />
+          </button>
+
+          {filterDropdownOpen && (
+            <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b p-3">
+                <input
+                  type="text"
+                  placeholder="Search filters..."
+                  value={tagSearchTerm}
+                  onChange={(e) => setTagSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              <div className="p-3">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Search Filters</h3>
+
+                {Object.entries(filterCategories).map(([slug, filterData]) => {
+                  const filteredOptions = filterData.options.filter((option: string) =>
+                    option.toLowerCase().includes(tagSearchTerm.toLowerCase())
+                  );
+
+                  if (filteredOptions.length === 0) return null;
+
+                  return (
+                    <div key={slug} className="mb-4">
+                      <h4 className="text-xs font-medium text-gray-600 mb-2">{filterData.name}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {filteredOptions.map((option: string) => {
+                          const isActive = isTagFilterActive(filterData.name, option);
+                          return (
+                            <button
+                              key={option}
+                              onClick={() => toggleTagFilter(filterData.name, option)}
+                              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                isActive
+                                  ? 'bg-orange-500 text-white hover:bg-red-700'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {option}
+                              {isActive && (
+                                <span className="ml-1">×</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="sticky bottom-0 bg-gray-50 border-t p-3 flex justify-between">
+                <button
+                  onClick={clearAllTagFilters}
+                  className="text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setFilterDropdownOpen(false)}
+                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <Select value={sortOrder} onValueChange={(value: 'newest' | 'oldest') => setSortOrder(value)}>
           <SelectTrigger className="w-48">
             <SelectValue  />
@@ -678,6 +845,37 @@ export default function AdminPropertiesPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Active Tag Filters Pills */}
+      {activeTagFilters.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {activeTagFilters.map(filter => (
+            <div key={filter.category} className="flex flex-wrap gap-2">
+              <span className="text-xs text-gray-600 self-center">{filter.category}:</span>
+              {filter.values.map(value => (
+                <span
+                  key={value}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-500 text-white"
+                >
+                  {value}
+                  <button
+                    onClick={() => toggleTagFilter(filter.category, value)}
+                    className="hover:bg-red-700 rounded-full p-0.5"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          ))}
+          <button
+            onClick={clearAllTagFilters}
+            className="text-xs text-gray-600 hover:text-gray-800 underline ml-2"
+          >
+            Clear All
+          </button>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <div className="min-w-[800px]">
