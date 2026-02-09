@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Search, Edit, Trash2, Eye, Star, Upload, Plus, Sparkles, ChevronDown, X } from 'lucide-react';
@@ -46,7 +46,6 @@ export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
@@ -61,13 +60,30 @@ export default function AdminPropertiesPage() {
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [bulkStats, setBulkStats] = useState({ success: 0, failed: 0, skipped: 0 });
   const [bulkErrors, setBulkErrors] = useState<Array<{ property: string, error: string }>>([]);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkAdminAccess();
     fetchCategories();
     fetchFilterTags();
     fetchProperties();
-  }, [statusFilter, sortOrder]);
+  }, [sortOrder]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+        setFilterDropdownOpen(false);
+      }
+    }
+
+    if (filterDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [filterDropdownOpen]);
 
   async function checkAdminAccess() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -167,11 +183,6 @@ export default function AdminPropertiesPage() {
         ascending: sortOrder === 'oldest',
         authToken: session.access_token
       };
-
-      // Apply status filter
-      if (statusFilter !== 'all') {
-        queryParams.eq = { status: statusFilter };
-      }
 
       const { data, error } = await directFetch('properties', queryParams);
 
@@ -715,24 +726,6 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
 
-      {/* Status Filter Pills */}
-      <div className="flex gap-2 mb-4">
-        <span className="text-sm text-gray-600 self-center">Status:</span>
-        {['all', 'active', 'pending', 'inactive'].map(status => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
-              statusFilter === status
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {status === 'all' ? 'All Status' : status}
-          </button>
-        ))}
-      </div>
-
       <div className="flex gap-4 mb-6">
         <div className="flex-1">
           <Input
@@ -741,7 +734,7 @@ export default function AdminPropertiesPage() {
             className="w-full"
           />
         </div>
-        <div className="relative">
+        <div className="relative" ref={filterDropdownRef}>
           <button
             onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
             className="w-48 px-4 py-2 border border-gray-300 rounded-md bg-white text-left flex items-center justify-between hover:border-gray-400"
