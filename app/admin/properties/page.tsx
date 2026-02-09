@@ -44,6 +44,7 @@ export default function AdminPropertiesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
@@ -55,7 +56,7 @@ export default function AdminPropertiesPage() {
   useEffect(() => {
     checkAdminAccess();
     fetchProperties();
-  }, [statusFilter]);
+  }, [statusFilter, sortOrder]);
 
   async function checkAdminAccess() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -99,7 +100,7 @@ export default function AdminPropertiesPage() {
       let queryParams: any = {
         select: '*',
         order: 'created_at',
-        ascending: false,
+        ascending: sortOrder === 'oldest',
         authToken: session.access_token
       };
 
@@ -620,6 +621,15 @@ export default function AdminPropertiesPage() {
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortOrder} onValueChange={(value: 'newest' | 'oldest') => setSortOrder(value)}>
+          <SelectTrigger className="w-48">
+            <SelectValue  />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Recently Added</SelectItem>
+            <SelectItem value="oldest">Oldest Added</SelectItem>
           </SelectContent>
         </Select>
       </div>
