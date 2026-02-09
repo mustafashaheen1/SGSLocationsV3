@@ -36,6 +36,8 @@ interface Property {
   address?: string;
   property_tags?: string[];
   contacts?: any[];
+  category_id?: string;
+  sub_category_id?: string;
 }
 
 export default function AdminPropertiesPage() {
@@ -45,6 +47,8 @@ export default function AdminPropertiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [deleteProgress, setDeleteProgress] = useState<string>('');
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
@@ -55,6 +59,7 @@ export default function AdminPropertiesPage() {
 
   useEffect(() => {
     checkAdminAccess();
+    fetchCategories();
     fetchProperties();
   }, [statusFilter, sortOrder]);
 
@@ -78,6 +83,21 @@ export default function AdminPropertiesPage() {
     if (!admin) {
       console.log('User not found in admins table');
       router.push('/admin/login');
+    }
+  }
+
+  async function fetchCategories() {
+    try {
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name')
+        .is('parent_id', null)
+        .eq('is_active', true)
+        .order('display_order');
+
+      setCategories(categoriesData || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
     }
   }
 
@@ -548,6 +568,18 @@ export default function AdminPropertiesPage() {
     }
 
     return false;
+  }).sort((a, b) => {
+    // If a category filter is selected, prioritize properties with that category
+    if (categoryFilter !== 'all') {
+      const aMatchesCategory = a.category_id === categoryFilter;
+      const bMatchesCategory = b.category_id === categoryFilter;
+
+      if (aMatchesCategory && !bMatchesCategory) return -1;
+      if (!aMatchesCategory && bMatchesCategory) return 1;
+    }
+
+    // Otherwise maintain the existing order (already sorted by created_at from the query)
+    return 0;
   });
 
   return (
@@ -630,6 +662,19 @@ export default function AdminPropertiesPage() {
           <SelectContent>
             <SelectItem value="newest">Recently Added</SelectItem>
             <SelectItem value="oldest">Oldest Added</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue  />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
