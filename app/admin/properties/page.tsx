@@ -641,44 +641,46 @@ export default function AdminPropertiesPage() {
         (property.owner_phone || '')?.toLowerCase().includes(searchLower);
     }
 
-    // Only filter by search term - tags are used for prioritization in sort
+    // Only filter by search term - tags, category, and sort are used for prioritization
     return matchesSearch;
   }).sort((a, b) => {
-    // If tag filters are selected, prioritize properties with matching tags
-    if (activeTagFilters.length > 0) {
-      const selectedTags = activeTagFilters.flatMap(f => f.values);
+    // Calculate match score for each property (how many criteria it matches)
+    const calculateMatchScore = (property: Property) => {
+      let score = 0;
 
-      const aMatchesTags = a.property_images?.some(img =>
-        img.tags.some(tag => selectedTags.includes(tag))
-      ) || false;
+      // Check if matches tags (if any tags are selected)
+      if (activeTagFilters.length > 0) {
+        const selectedTags = activeTagFilters.flatMap(f => f.values);
+        const matchesTags = property.property_images?.some(img =>
+          img.tags.some(tag => selectedTags.includes(tag))
+        ) || false;
+        if (matchesTags) score++;
+      }
 
-      const bMatchesTags = b.property_images?.some(img =>
-        img.tags.some(tag => selectedTags.includes(tag))
-      ) || false;
+      // Check if matches category (if a specific category is selected)
+      if (categoryFilter !== 'all') {
+        if (property.category_id === categoryFilter) score++;
+      }
 
-      if (aMatchesTags && !bMatchesTags) return -1;
-      if (!aMatchesTags && bMatchesTags) return 1;
+      // Check if matches sort order criteria
+      if (sortOrder === 'featured-first') {
+        if (property.is_featured) score++;
+      } else if (sortOrder === 'exclusive-first') {
+        if (property.is_exclusive) score++;
+      }
+
+      return score;
+    };
+
+    const aScore = calculateMatchScore(a);
+    const bScore = calculateMatchScore(b);
+
+    // Sort by match score descending (higher score = better match = appears first)
+    if (aScore !== bScore) {
+      return bScore - aScore;
     }
 
-    // If a category filter is selected, prioritize properties with that category
-    if (categoryFilter !== 'all') {
-      const aMatchesCategory = a.category_id === categoryFilter;
-      const bMatchesCategory = b.category_id === categoryFilter;
-
-      if (aMatchesCategory && !bMatchesCategory) return -1;
-      if (!aMatchesCategory && bMatchesCategory) return 1;
-    }
-
-    // Handle sort order
-    if (sortOrder === 'featured-first') {
-      if (a.is_featured && !b.is_featured) return -1;
-      if (!a.is_featured && b.is_featured) return 1;
-    } else if (sortOrder === 'exclusive-first') {
-      if (a.is_exclusive && !b.is_exclusive) return -1;
-      if (!a.is_exclusive && b.is_exclusive) return 1;
-    }
-
-    // Otherwise maintain the existing order (already sorted by created_at from the query)
+    // If scores are equal, maintain the existing order (already sorted by created_at from the query)
     return 0;
   });
 
