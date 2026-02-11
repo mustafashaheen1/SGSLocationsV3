@@ -867,6 +867,44 @@ export default function ContactPage() {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
           }
+
+          .form-control {
+            font-size: 16px !important; /* Prevents zoom on iOS */
+          }
+
+          textarea.form-control {
+            min-height: 150px !important;
+          }
+        }
+
+        /* Additional mobile responsive improvements */
+        @media (max-width: 480px) {
+          .contact-form h1 {
+            font-size: 1.875rem !important; /* 30px instead of text-4xl */
+            padding-top: 1rem !important;
+            padding-bottom: 1.5rem !important;
+          }
+
+          .btn-primary {
+            font-size: 1rem !important;
+            padding: 0.625rem 1.5rem !important;
+          }
+
+          .il-profile-card {
+            padding-bottom: 100% !important; /* Square aspect ratio on very small screens */
+          }
+
+          .col-xl-2, .col-lg-3, .col-md-4, .col-sm-6 {
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .col-xl-2, .col-lg-3, .col-md-4, .col-sm-6 {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+          }
         }
       `}</style>
 

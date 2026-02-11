@@ -734,10 +734,10 @@ export default function ListYourPropertyPage() {
       />
 
       <main className="min-h-screen bg-white">
-        <div className="max-w-7xl mx-auto px-6 pt-3 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 pb-8">
         <div className="mb-6">
-          <h1 className="text-4xl font-bold text-brand mb-2 mt-0">List Your Property</h1>
-          <p className="text-lg text-gray-600">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-brand mb-2 mt-0">List Your Property</h1>
+          <p className="text-base sm:text-lg text-gray-600">
             Be a part of the largest location database in the Dallas-Fort Worth area
           </p>
         </div>
@@ -751,7 +751,7 @@ export default function ListYourPropertyPage() {
               <section className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h2>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label htmlFor="firstName" className="block font-medium text-gray-700 text-sm mb-1">
                       First Name <span className="text-brand">*</span>
@@ -875,7 +875,7 @@ export default function ListYourPropertyPage() {
                   {errors.streetAddress && <p className="text-brand text-sm mt-1">{errors.streetAddress}</p>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label htmlFor="city" className="block font-medium text-gray-700 text-sm mb-1">
                       City <span className="text-brand">*</span>
@@ -943,7 +943,7 @@ export default function ListYourPropertyPage() {
                     </label>
 
                     {question.question_type === 'radio' && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {question.options.map((option: string, index: number) => (
                           <label key={index} className="flex items-center cursor-pointer">
                             <input
@@ -961,7 +961,7 @@ export default function ListYourPropertyPage() {
                     )}
 
                     {question.question_type === 'checkbox' && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {question.options.map((option: string, index: number) => (
                           <label key={index} className="flex items-center cursor-pointer">
                             <input
@@ -1111,7 +1111,7 @@ export default function ListYourPropertyPage() {
                   </div>
                 )}
 
-                <div className="space-y-1.5 max-h-64 overflow-y-auto border rounded">
+                <div className="space-y-1.5 max-h-48 md:max-h-64 overflow-y-auto border rounded">
                   {Object.entries(tagsByFilter).map(([filterName, tags]) => (
                     <div key={filterName} className="border-b last:border-b-0">
                       <button
@@ -1178,7 +1178,7 @@ export default function ListYourPropertyPage() {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onClick={() => document.getElementById('fileInput')?.click()}
-                  className={`border-2 border-dashed rounded bg-gray-50 min-h-[350px] flex flex-col items-center justify-center p-8 cursor-pointer transition-colors ${
+                  className={`border-2 border-dashed rounded bg-gray-50 min-h-[200px] md:min-h-[350px] flex flex-col items-center justify-center p-8 cursor-pointer transition-colors ${
                     isDragging ? 'border-blue-500 bg-blue-50' : errors.files ? 'border-brand' : 'border-gray-300'
                   }`}
                 >
@@ -1260,7 +1260,7 @@ export default function ListYourPropertyPage() {
               {/* Terms and Conditions */}
               <section className="mb-6">
                 <label className="block font-semibold text-gray-700 mb-2">Terms and Conditions</label>
-                <div className="max-h-[300px] overflow-y-auto border border-gray-300 rounded p-4 bg-gray-50 text-sm leading-relaxed whitespace-pre-line">
+                <div className="max-h-[200px] md:max-h-[300px] overflow-y-auto border border-gray-300 rounded p-4 bg-gray-50 text-sm leading-relaxed whitespace-pre-line">
                   {termsContent || 'Loading terms and conditions...'}
                 </div>
               </section>
@@ -1306,7 +1306,7 @@ export default function ListYourPropertyPage() {
                 isSubmitting
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-brand hover:bg-brand-hover'
-              } text-white font-semibold py-3 px-12 rounded text-lg transition-colors flex items-center gap-2`}
+              } text-white font-semibold py-2 md:py-3 px-6 md:px-12 rounded text-base md:text-lg transition-colors flex items-center gap-2`}
             >
               {isSubmitting ? (
                 <>

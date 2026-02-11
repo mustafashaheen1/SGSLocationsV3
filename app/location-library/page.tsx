@@ -402,13 +402,88 @@ export default function LocationLibraryPage() {
             padding: 0.75rem 1.5rem;
           }
         }
+
+        /* Mobile Responsive Fixes */
+        @media (max-width: 479px) {
+          .property-grid {
+            gap: 0.5rem;
+          }
+
+          .property-grid-container {
+            padding: 0.5rem;
+          }
+
+          .content-area-padding {
+            padding: 0.5rem;
+          }
+
+          .section-header {
+            padding: 0.5rem 0.75rem;
+          }
+
+          .library-title {
+            font-size: 1.5rem;
+          }
+
+          .library-subtitle {
+            font-size: 0.875rem;
+          }
+
+          .mobile-drawer {
+            width: min(16rem, 80vw) !important;
+          }
+
+          .category-button-text {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+          }
+        }
+
+        @media (min-width: 480px) and (max-width: 639px) {
+          .property-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+          }
+
+          .property-grid-container {
+            padding: 0.75rem;
+          }
+
+          .content-area-padding {
+            padding: 0.75rem;
+          }
+        }
+
+        /* Category button overflow handling */
+        .category-nav {
+          overflow-x: auto;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .category-nav::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .category-nav::-webkit-scrollbar-track {
+          background: #f1f1f1;
+        }
+
+        .category-nav::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 2px;
+        }
+
+        .category-nav::-webkit-scrollbar-thumb:hover {
+          background: #555;
+        }
       `}</style>
 
       <main className="location-library-main">
         <div className="location-library-flex">
           {/* Sidebar - Desktop only, flush to left */}
           <aside className="location-sidebar">
-            <nav style={{ display: 'flex', flexDirection: 'column' }}>
+            <nav className="category-nav" style={{ display: 'flex', flexDirection: 'column' }}>
               {categories.map(category => (
                 <CategoryButton key={category.id} category={category} />
               ))}
@@ -435,15 +510,18 @@ export default function LocationLibraryPage() {
                   style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }}
                   onClick={() => setMobileMenuOpen(false)}
                 />
-                <div style={{
-                  position: 'fixed',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: '16rem',
-                  background: 'white',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-                }}>
+                <div
+                  className="mobile-drawer"
+                  style={{
+                    position: 'fixed',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 'min(16rem, 80vw)',
+                    background: 'white',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                  }}
+                >
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -459,7 +537,7 @@ export default function LocationLibraryPage() {
                       <X style={{ width: '1.25rem', height: '1.25rem' }} />
                     </button>
                   </div>
-                  <nav style={{ display: 'flex', flexDirection: 'column' }}>
+                  <nav className="category-nav" style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
                     {categories.map(category => (
                       <CategoryButton key={category.id} category={category} />
                     ))}

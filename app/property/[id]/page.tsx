@@ -706,6 +706,35 @@ export default function PropertyDetailPage() {
           .nav-arrow {
             width: 48px;
           }
+
+          .carousel-container {
+            height: 350px !important;
+          }
+
+          .property-title {
+            font-size: 20px !important;
+            line-height: 26px !important;
+          }
+
+          .property-footer {
+            padding: 1.5rem 0 !important;
+          }
+
+          .property-footer-container {
+            padding: 0 1rem !important;
+          }
+
+          .thumbnails-modal-container {
+            padding: 1.5rem 1rem !important;
+          }
+
+          .thumbnails-modal-heading {
+            font-size: 1.5rem !important;
+          }
+
+          .thumbnails-close-btn {
+            font-size: 2rem !important;
+          }
         }
 
         .nav-arrow-left {
@@ -1168,7 +1197,7 @@ export default function PropertyDetailPage() {
                 flexWrap: 'wrap'
               }}>
                 {/* Property Name */}
-                <h1 style={{
+                <h1 className="property-title" style={{
                   fontSize: '28px',
                   fontWeight: 300,
                   margin: 0,
@@ -1246,7 +1275,8 @@ export default function PropertyDetailPage() {
                       fontFamily: 'acumin-pro-wide, sans-serif',
                       lineHeight: '21px',
                       height: '31px',
-                      width: '266.07px',
+                      width: '100%',
+                      maxWidth: '266.07px',
                       textAlign: 'center',
                       display: 'inline-block',
                       cursor: 'pointer',
@@ -1396,11 +1426,12 @@ export default function PropertyDetailPage() {
             zIndex: 9999,
             overflowY: 'auto'
           }}>
-            <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem 2rem' }}>
+            <div className="thumbnails-modal-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem 2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '2rem', fontWeight: 300, color: '#fff' }}>All Images</h2>
+                <h2 className="thumbnails-modal-heading" style={{ fontSize: '2rem', fontWeight: 300, color: '#fff' }}>All Images</h2>
                 <button
                   onClick={() => setShowThumbnails(false)}
+                  className="thumbnails-close-btn"
                   style={{
                     background: 'none',
                     border: 'none',
@@ -1413,7 +1444,7 @@ export default function PropertyDetailPage() {
                   ×
                 </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {displayedImages.map((imgData, index) => (
                   <button
                     key={index}
@@ -1656,8 +1687,8 @@ function PropertyCard({ property, distance }: { property: Property; distance?: s
 
 function Footer({ phone, partnerText, license, companyName }: { phone: string; partnerText: string; license: string; companyName: string }) {
   return (
-    <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 0', textAlign: 'center' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+    <footer className="property-footer" style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 0', textAlign: 'center' }}>
+      <div className="property-footer-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <span style={{ fontSize: '1.5rem', fontWeight: 300, color: '#212529' }}>SGS LOCATIONS</span>
         </div>

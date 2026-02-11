@@ -174,6 +174,7 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
         >
           <button
             onClick={() => setShowLightbox(false)}
+            className="lightbox-close-btn"
             style={{
               position: 'fixed',
               top: '20px',
@@ -198,11 +199,14 @@ function PropertyCard({ property }: { property: Property & { matchingImages?: st
               {property.public_name || property.name}
             </h2>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-              gap: '16px'
-            }}>
+            <div
+              className="thumbnail-grid-container"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                gap: '16px'
+              }}
+            >
               {images.map((img, idx) => (
                 <div key={idx} style={{ textAlign: 'center' }}>
                   <div style={{ position: 'relative', width: '100%', height: '140px', marginBottom: '8px' }}>
@@ -1979,6 +1983,78 @@ export default function SearchPage() {
           font-weight: 300;
           font-family: acumin-pro-wide, sans-serif;
           margin: 0;
+        }
+
+        /* Mobile Responsive Fixes */
+        @media (max-width: 479px) {
+          .filter-bar {
+            padding: 10px;
+          }
+
+          .filter-row {
+            gap: 6px;
+          }
+
+          .dropdown-menu {
+            width: calc(100vw - 60px) !important;
+            min-width: calc(100vw - 60px) !important;
+            max-width: calc(100vw - 40px) !important;
+          }
+
+          .dropdown-toggle {
+            padding: 6px 10px;
+            font-size: 13px;
+          }
+
+          .main-search-container {
+            padding: 10px;
+          }
+
+          .main-search-wrapper {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .save-search-btn {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .save-search-btn span {
+            display: inline !important;
+          }
+
+          .property-grid {
+            padding: 10px;
+            gap: 10px;
+          }
+
+          .filter-pills {
+            padding: 10px;
+          }
+
+          .results-count {
+            padding: 10px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .lightbox-close-btn {
+            top: 10px !important;
+            right: 10px !important;
+          }
+
+          .thumbnail-grid-container {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+          }
+
+          .swiper-container-wrapper {
+            height: 250px !important;
+          }
+
+          .swiper-container-wrapper .swiper {
+            height: 250px !important;
+          }
         }
       `}</style>
 
