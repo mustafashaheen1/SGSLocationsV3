@@ -30,6 +30,7 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
+  const [siteLogo, setSiteLogo] = useState<string>('');
   const hasCheckedAuth = useRef(false);
 
   useEffect(() => {
@@ -44,6 +45,27 @@ export default function AdminLayout({
     hasCheckedAuth.current = true;
 
     const supabase = createClient();
+
+    const fetchSiteLogo = async () => {
+      try {
+        const { data, error } = await (supabase
+          .from('app_settings') as any)
+          .select('setting_value')
+          .eq('setting_key', 'site_logo_url')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching site logo:', error);
+          return;
+        }
+
+        if (data && data.setting_value) {
+          setSiteLogo(data.setting_value);
+        }
+      } catch (error) {
+        console.error('Error fetching site logo:', error);
+      }
+    };
 
     const checkAuth = async () => {
       try {
@@ -97,6 +119,7 @@ export default function AdminLayout({
       }
     };
 
+    fetchSiteLogo();
     checkAuth();
 
     // Set up automatic session refresh every 5 minutes
@@ -194,9 +217,23 @@ export default function AdminLayout({
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-bold text-brand" style={{ fontFamily: 'acumin-pro-wide' }}>
-              SGS Locations Admin
-            </h1>
+            <div className="flex items-center gap-3">
+              {siteLogo && (
+                <img
+                  src={siteLogo}
+                  alt="SGS Locations"
+                  className="h-8 w-auto object-contain"
+                  onError={(e) => {
+                    console.error('Admin logo failed to load:', siteLogo);
+                    e.currentTarget.style.display = 'none';
+                    setSiteLogo('');
+                  }}
+                />
+              )}
+              <h1 className="text-xl font-bold text-brand" style={{ fontFamily: 'geometric sans-serif' }}>
+                SGS Locations Admin
+              </h1>
+            </div>
           </div>
           <button
             onClick={handleLogout}
