@@ -49,11 +49,23 @@ export default function AdminLayout({
     const fetchSiteLogo = async () => {
       try {
         console.log('[Admin Layout] Fetching site logo...');
-        const { data, error } = await (supabase
-          .from('app_settings') as any)
-          .select('setting_value')
-          .eq('setting_key', 'site_logo_url')
-          .maybeSingle();
+
+        // Get the current session to use the auth token
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          console.log('[Admin Layout] No session found, cannot fetch logo');
+          return;
+        }
+
+        // Use directFetch with auth token like we do for admin check
+        const { directFetch } = await import('@/lib/supabase');
+        const { data, error } = await directFetch('app_settings', {
+          select: 'setting_value',
+          eq: { setting_key: 'site_logo_url' },
+          single: true,
+          authToken: session.access_token
+        });
 
         if (error) {
           console.error('[Admin Layout] Error fetching site logo:', error);
