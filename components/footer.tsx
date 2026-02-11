@@ -18,9 +18,11 @@ export function Footer() {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
+  const [siteLogo, setSiteLogo] = useState<string>('');
 
   useEffect(() => {
     fetchFooterContent();
+    fetchSiteLogo();
     checkAuth();
   }, []);
 
@@ -38,6 +40,27 @@ export function Footer() {
       setUserType(userData?.user_type || null);
     } else {
       setUserType(null);
+    }
+  }
+
+  async function fetchSiteLogo() {
+    try {
+      const { data, error } = await (supabase
+        .from('app_settings') as any)
+        .select('setting_value')
+        .eq('setting_key', 'site_logo_url')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching site logo:', error);
+        return;
+      }
+
+      if (data && data.setting_value) {
+        setSiteLogo(data.setting_value);
+      }
+    } catch (error) {
+      console.error('Error fetching site logo:', error);
     }
   }
 
@@ -197,12 +220,25 @@ export function Footer() {
           {/* Company Info */}
           <div>
             <Link href="/" className="inline-block mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-brand rounded flex items-center justify-center">
-                  <span className="text-white font-bold">S</span>
+              {siteLogo ? (
+                <img
+                  src={siteLogo}
+                  alt="SGS Locations"
+                  className="h-10 w-auto object-contain"
+                  onError={(e) => {
+                    console.error('Footer logo failed to load:', siteLogo);
+                    e.currentTarget.style.display = 'none';
+                    setSiteLogo('');
+                  }}
+                />
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-brand rounded flex items-center justify-center">
+                    <span className="text-white font-bold">S</span>
+                  </div>
+                  <span className="text-xl font-bold">SGS LOCATIONS®</span>
                 </div>
-                <span className="text-xl font-bold">SGS LOCATIONS®</span>
-              </div>
+              )}
             </Link>
             {footerContent.description && (
               <p className="text-gray-400 mb-4">

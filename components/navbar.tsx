@@ -80,14 +80,22 @@ export function Navbar() {
 
   async function fetchSiteLogo() {
     try {
-      const { data } = await (supabase
+      const { data, error } = await (supabase
         .from('app_settings') as any)
         .select('setting_value')
         .eq('setting_key', 'site_logo_url')
         .maybeSingle();
 
+      if (error) {
+        console.error('Error fetching site logo:', error);
+        return;
+      }
+
       if (data && data.setting_value) {
+        console.log('Logo URL fetched:', data.setting_value); // Debug log
         setSiteLogo(data.setting_value);
+      } else {
+        console.log('No logo URL found in database');
       }
     } catch (error) {
       console.error('Error fetching site logo:', error);
@@ -180,8 +188,12 @@ export function Navbar() {
                 alt="SGS Locations"
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
+                  console.error('Logo image failed to load:', siteLogo);
                   e.currentTarget.style.display = 'none';
                   setSiteLogo('');
+                }}
+                onLoad={() => {
+                  console.log('Logo image loaded successfully');
                 }}
               />
             ) : (
