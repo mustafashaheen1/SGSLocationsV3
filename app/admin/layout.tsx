@@ -48,6 +48,7 @@ export default function AdminLayout({
 
     const fetchSiteLogo = async () => {
       try {
+        console.log('[Admin Layout] Fetching site logo...');
         const { data, error } = await (supabase
           .from('app_settings') as any)
           .select('setting_value')
@@ -55,15 +56,18 @@ export default function AdminLayout({
           .maybeSingle();
 
         if (error) {
-          console.error('Error fetching site logo:', error);
+          console.error('[Admin Layout] Error fetching site logo:', error);
           return;
         }
 
         if (data && data.setting_value) {
+          console.log('[Admin Layout] Logo URL fetched:', data.setting_value);
           setSiteLogo(data.setting_value);
+        } else {
+          console.log('[Admin Layout] No logo URL found in database');
         }
       } catch (error) {
-        console.error('Error fetching site logo:', error);
+        console.error('[Admin Layout] Exception fetching site logo:', error);
       }
     };
 
@@ -223,8 +227,11 @@ export default function AdminLayout({
                   src={siteLogo}
                   alt="SGS Locations"
                   className="h-8 w-auto object-contain"
+                  onLoad={() => {
+                    console.log('[Admin Layout] Logo image loaded successfully');
+                  }}
                   onError={(e) => {
-                    console.error('Admin logo failed to load:', siteLogo);
+                    console.error('[Admin Layout] Logo image failed to load:', siteLogo);
                     e.currentTarget.style.display = 'none';
                     setSiteLogo('');
                   }}
