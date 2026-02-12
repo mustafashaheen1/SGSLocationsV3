@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
                   <!-- Main Content -->
                   <tr>
                     <td class="mobile-padding" style="padding: 40px 30px; background-color: #ffffff;">
-                      <h1 class="mobile-heading" style="color: #fe751f; margin: 0 0 20px 0; font-size: 28px; font-weight: bold;">Inquiry Received</h1>
+                      <h1 class="mobile-heading" style="color: #cc5500; margin: 0 0 20px 0; font-size: 28px; font-weight: bold;">Inquiry Received</h1>
 
                       <p class="mobile-text" style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                         Dear ${name},
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
                       </p>
 
                       ${propertyName ? `
-                        <div class="mobile-padding-small" style="background-color: #f8f8f8; border-left: 4px solid #fe751f; padding: 15px; margin: 20px 0; border-radius: 0 5px 5px 0;">
+                        <div class="mobile-padding-small" style="background-color: #f8f8f8; border-left: 4px solid #cc5500; padding: 15px; margin: 20px 0; border-radius: 0 5px 5px 0;">
                           <p class="mobile-text" style="color: #333333; font-size: 14px; margin: 0 0 5px 0;"><strong>Property:</strong></p>
                           <p class="mobile-text" style="color: #555555; font-size: 14px; margin: 0; word-wrap: break-word;">${propertyName}</p>
                           ${propertyAddress ? `<p class="mobile-small-text" style="color: #777777; font-size: 13px; margin: 5px 0 0 0; word-wrap: break-word;">${propertyAddress}</p>` : ''}
@@ -159,9 +159,9 @@ export async function POST(request: NextRequest) {
                         SGS Locations - Dallas-Fort Worth's Premier Location Service
                       </p>
                       <p class="mobile-small-text" style="color: #999999; font-size: 12px; margin: 0; line-height: 1.6;">
-                        <a href="https://sgslocations.com" style="color: #fe751f; text-decoration: none;">Visit our website</a>
+                        <a href="https://sgslocations.com" style="color: #cc5500; text-decoration: none;">Visit our website</a>
                         <span style="color: #666666; padding: 0 5px;">|</span>
-                        <a href="mailto:info@sgslocations.com" style="color: #fe751f; text-decoration: none;">Contact us</a>
+                        <a href="mailto:info@sgslocations.com" style="color: #cc5500; text-decoration: none;">Contact us</a>
                       </p>
                     </td>
                   </tr>

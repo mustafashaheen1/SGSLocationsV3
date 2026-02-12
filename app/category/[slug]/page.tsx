@@ -178,7 +178,7 @@ export default function CategoryPage() {
           }
 
           .property-title:hover {
-            color: #fe751f;
+            color: #cc5500;
           }
         `}</style>
 
@@ -248,7 +248,7 @@ export default function CategoryPage() {
                 display: 'inline-block',
                 marginTop: '2rem',
                 padding: '0.75rem 1.5rem',
-                background: '#fe751f',
+                background: '#cc5500',
                 color: 'white',
                 borderRadius: '0.375rem',
                 textDecoration: 'none',
@@ -354,7 +354,7 @@ export default function CategoryPage() {
         }
 
         .property-title:hover {
-          color: #fe751f;
+          color: #cc5500;
         }
 
         .category-banner {

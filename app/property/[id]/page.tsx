@@ -1589,7 +1589,7 @@ function ActionButton({ icon, text, onClick }: { icon: React.ReactNode; text: st
         alignItems: 'center',
         justifyContent: 'center',
         gap: '0.5rem',
-        background: '#fe751f',
+        background: '#cc5500',
         color: '#fff',
         border: 'none',
         padding: '0.75rem 1.5rem',
@@ -1601,7 +1601,7 @@ function ActionButton({ icon, text, onClick }: { icon: React.ReactNode; text: st
         transition: 'background 0.2s'
       }}
       onMouseEnter={(e) => e.currentTarget.style.background = '#e65a00'}
-      onMouseLeave={(e) => e.currentTarget.style.background = '#fe751f'}
+      onMouseLeave={(e) => e.currentTarget.style.background = '#cc5500'}
     >
       {icon}
       {text}

@@ -345,7 +345,7 @@ export default function ContactPage() {
         .form-control:focus {
           color: #495057;
           background-color: #fff;
-          border-color: #fe751f;
+          border-color: #cc5500;
           outline: 0;
           box-shadow: 0 0 0 0.2rem rgba(254, 117, 31, 0.25);
         }
@@ -475,7 +475,7 @@ export default function ContactPage() {
 
         .day-item.is-start-date,
         .day-item.is-end-date {
-          background-color: #fe751f;
+          background-color: #cc5500;
           color: white;
           border-radius: 3px;
         }
@@ -503,8 +503,8 @@ export default function ContactPage() {
 
         .btn-primary {
           color: #fff;
-          background-color: #fe751f;
-          border-color: #fe751f;
+          background-color: #cc5500;
+          border-color: #cc5500;
           padding: 0.75rem 2rem;
           font-size: 1.25rem;
           line-height: 1.5;
@@ -680,7 +680,7 @@ export default function ContactPage() {
         }
 
         .bg-primary {
-          background-color: #fe751f !important;
+          background-color: #cc5500 !important;
         }
 
         .h6 {
@@ -806,7 +806,7 @@ export default function ContactPage() {
         }
 
         .il-profile-info-overlay a {
-          color: #fe751f;
+          color: #cc5500;
           font-size: 13px;
           text-decoration: none;
         }
@@ -1027,10 +1027,10 @@ export default function ContactPage() {
                     placeholder="Phone (e.g., (555) 123-4567)"
                     value={formData.phone}
                     onChange={handleChange}
-                    style={phoneError ? { borderColor: '#fe751f' } : {}}
+                    style={phoneError ? { borderColor: '#cc5500' } : {}}
                   />
                   {phoneError && (
-                    <p style={{ color: '#fe751f', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    <p style={{ color: '#cc5500', fontSize: '0.875rem', marginTop: '0.25rem' }}>
                       {phoneError}
                     </p>
                   )}
@@ -1241,7 +1241,7 @@ export default function ContactPage() {
                 ))}
 
                 <div className="mt-4">
-                  <h6 className="text-xl mb-2" style={{ color: '#fe751f', fontWeight: 500 }}>
+                  <h6 className="text-xl mb-2" style={{ color: '#cc5500', fontWeight: 500 }}>
                     General Contact:
                   </h6>
                   <p style={{ lineHeight: 1.5, fontSize: '14px' }}>
@@ -1276,7 +1276,7 @@ export default function ContactPage() {
                     }}
                   />
                   {recaptchaError && (
-                    <p style={{ color: '#fe751f', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                    <p style={{ color: '#cc5500', fontSize: '0.875rem', marginTop: '0.5rem' }}>
                       {recaptchaError}
                     </p>
                   )}
@@ -1290,8 +1290,8 @@ export default function ContactPage() {
                   disabled={isSubmitting}
                   className="btn btn-primary btn-lg il-submit-btn w-100 mb-4"
                   style={{
-                    backgroundColor: '#fe751f',
-                    borderColor: '#fe751f',
+                    backgroundColor: '#cc5500',
+                    borderColor: '#cc5500',
                     fontSize: '1.25rem',
                     padding: '0.75rem',
                     fontWeight: 400,

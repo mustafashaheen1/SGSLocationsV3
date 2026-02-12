@@ -140,7 +140,7 @@ export function getPasswordResetEmailTemplate(userName: string, resetLink: strin
         <title>Reset Your Password</title>
       </head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background-color: #fe751f; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+        <div style="background-color: #cc5500; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset Request</h1>
         </div>
 
@@ -163,7 +163,7 @@ export function getPasswordResetEmailTemplate(userName: string, resetLink: strin
 
           <div style="text-align: center; margin: 30px 0;">
             <a href="${resetLink}"
-               style="background-color: #fe751f; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+               style="background-color: #cc5500; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
               Reset Password
             </a>
           </div>

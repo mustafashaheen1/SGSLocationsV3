@@ -138,14 +138,14 @@ export async function POST(request: NextRequest) {
                 <table class="email-container" role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                   <tr>
                     <td class="mobile-padding" style="padding: 40px 30px; background-color: #ffffff;">
-                      <h1 class="mobile-heading" style="color: #fe751f; margin: 0 0 20px 0; font-size: 28px; font-weight: bold;">New Contact Form Inquiry</h1>
+                      <h1 class="mobile-heading" style="color: #cc5500; margin: 0 0 20px 0; font-size: 28px; font-weight: bold;">New Contact Form Inquiry</h1>
 
                       <p class="mobile-text" style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                         A new inquiry has been submitted through the contact form.
                       </p>
 
-                      <div class="mobile-padding-small" style="background-color: #f8f8f8; border-left: 4px solid #fe751f; padding: 20px; margin: 20px 0; border-radius: 0 5px 5px 0;">
-                        <h2 class="mobile-subheading" style="color: #fe751f; margin: 0 0 15px 0; font-size: 20px;">Contact Information</h2>
+                      <div class="mobile-padding-small" style="background-color: #f8f8f8; border-left: 4px solid #cc5500; padding: 20px; margin: 20px 0; border-radius: 0 5px 5px 0;">
+                        <h2 class="mobile-subheading" style="color: #cc5500; margin: 0 0 15px 0; font-size: 20px;">Contact Information</h2>
 
                         <table class="mobile-table" style="width: 100%; border-collapse: collapse;">
                           <tr>
@@ -155,14 +155,14 @@ export async function POST(request: NextRequest) {
                           <tr>
                             <td class="mobile-text" style="padding: 8px 0; color: #555555; font-size: 14px; font-weight: bold;">Email:</td>
                             <td class="mobile-text" style="padding: 8px 0; color: #333333; font-size: 14px; word-wrap: break-word;">
-                              <a href="mailto:${email}" style="color: #fe751f; text-decoration: none; word-wrap: break-word;">${email}</a>
+                              <a href="mailto:${email}" style="color: #cc5500; text-decoration: none; word-wrap: break-word;">${email}</a>
                             </td>
                           </tr>
                           ${phone ? `
                           <tr>
                             <td class="mobile-text" style="padding: 8px 0; color: #555555; font-size: 14px; font-weight: bold;">Phone:</td>
                             <td class="mobile-text" style="padding: 8px 0; color: #333333; font-size: 14px;">
-                              <a href="tel:${phone}" style="color: #fe751f; text-decoration: none; white-space: nowrap;">${phone}</a>
+                              <a href="tel:${phone}" style="color: #cc5500; text-decoration: none; white-space: nowrap;">${phone}</a>
                             </td>
                           </tr>
                           ` : ''}

@@ -61,7 +61,7 @@ const config: Config = {
           '5': 'hsl(var(--chart-5))',
         },
         brand: {
-          DEFAULT: '#fe751f',
+          DEFAULT: '#cc5500',
           hover: '#e65a00',
         },
       },

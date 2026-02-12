@@ -1303,9 +1303,9 @@ export default function SearchPage() {
         }
 
         .dropdown-toggle.has-active {
-          background: #fe751f;
+          background: #cc5500;
           color: white;
-          border-color: #fe751f;
+          border-color: #cc5500;
         }
 
         .dropdown-menu {
@@ -1391,8 +1391,8 @@ export default function SearchPage() {
         }
 
         .done-btn {
-          background: #fe751f;
-          border: 1px solid #fe751f;
+          background: #cc5500;
+          border: 1px solid #cc5500;
           color: white;
         }
 
@@ -1402,8 +1402,8 @@ export default function SearchPage() {
 
         .clear-all-btn {
           padding: 6px 12px;
-          background: #fe751f;
-          border: 1px solid #fe751f;
+          background: #cc5500;
+          border: 1px solid #cc5500;
           color: white;
           border-radius: 3px;
           font-size: 14px;
@@ -1455,7 +1455,7 @@ export default function SearchPage() {
         }
 
         .toggle-switch.active {
-          background-color: #fe751f;
+          background-color: #cc5500;
         }
 
         .toggle-switch::after {
@@ -1531,7 +1531,7 @@ export default function SearchPage() {
           align-items: center;
           gap: 8px;
           padding: 12px;
-          background: #fe751f;
+          background: #cc5500;
           color: white;
           border: none;
           border-radius: 3px;
@@ -1639,7 +1639,7 @@ export default function SearchPage() {
 
         .save-modal-body input:focus {
           outline: none;
-          border-color: #fe751f;
+          border-color: #cc5500;
           box-shadow: 0 0 0 3px rgba(225, 25, 33, 0.1);
         }
 
@@ -1692,8 +1692,8 @@ export default function SearchPage() {
         }
 
         .save-btn {
-          background: #fe751f;
-          border: 1px solid #fe751f;
+          background: #cc5500;
+          border: 1px solid #cc5500;
           color: white;
         }
 
@@ -1745,7 +1745,7 @@ export default function SearchPage() {
         .filter-remove {
           background: none;
           border: none;
-          color: #fe751f;
+          color: #cc5500;
           cursor: pointer;
           padding: 0;
           display: flex;
@@ -1754,7 +1754,7 @@ export default function SearchPage() {
 
         .filter-tag,
         .active-filter-tag {
-          background-color: #fe751f !important;
+          background-color: #cc5500 !important;
           color: white !important;
           padding: 6px 12px !important;
           border-radius: 20px !important;
@@ -1922,7 +1922,7 @@ export default function SearchPage() {
           width: 40px;
           height: 40px;
           border: 3px solid #f3f4f6;
-          border-top: 3px solid #fe751f;
+          border-top: 3px solid #cc5500;
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }
@@ -2074,7 +2074,7 @@ export default function SearchPage() {
               className="category-select"
               style={{
                 padding: '8px 12px',
-                background: selectedCategory ? '#fe751f' : 'white',
+                background: selectedCategory ? '#cc5500' : 'white',
                 border: '1px solid #ced4da',
                 borderRadius: '3px',
                 cursor: 'pointer',
@@ -2106,7 +2106,7 @@ export default function SearchPage() {
               style={{
                 display: 'none',
                 padding: '8px 12px',
-                background: selectedSubCategory ? '#fe751f' : 'white',
+                background: selectedSubCategory ? '#cc5500' : 'white',
                 border: '1px solid #ced4da',
                 borderRadius: '3px',
                 cursor: selectedCategory ? 'pointer' : 'not-allowed',
@@ -2312,7 +2312,7 @@ export default function SearchPage() {
                           }}
                           style={{
                             padding: '0.5rem 1rem',
-                            background: '#fe751f',
+                            background: '#cc5500',
                             color: 'white',
                             border: 'none',
                             borderRadius: '3px',
@@ -2340,8 +2340,8 @@ export default function SearchPage() {
                           style={{
                             padding: '0.5rem 1rem',
                             background: 'white',
-                            color: '#fe751f',
-                            border: '2px solid #fe751f',
+                            color: '#cc5500',
+                            border: '2px solid #cc5500',
                             borderRadius: '3px',
                             cursor: 'pointer',
                             fontSize: '14px',

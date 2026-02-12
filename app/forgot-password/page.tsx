@@ -83,7 +83,7 @@ export default function ForgotPasswordPage() {
         }
 
         .forgot-password-page button[type="submit"] {
-          background-color: #fe751f;
+          background-color: #cc5500;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.1em;

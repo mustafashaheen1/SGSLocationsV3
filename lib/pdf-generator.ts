@@ -40,8 +40,8 @@ export async function generateLocationPDF(
 
   let currentY = margin;
 
-  // Orange header with SGS LOCATIONS (brand color #fe751f)
-  pdf.setFillColor(254, 117, 31);
+  // Orange header with SGS LOCATIONS (brand color #cc5500)
+  pdf.setFillColor(204, 85, 0);
   pdf.rect(0, 0, pageWidth, 25, 'F');
 
   pdf.setTextColor(255, 255, 255);

@@ -223,7 +223,7 @@ export default function RegisterPage() {
         }
 
         .register-page button[type="submit"] {
-          background-color: #fe751f;
+          background-color: #cc5500;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
