@@ -1264,10 +1264,10 @@ export default function PropertyDetailPage() {
                       setShowContactModal(true);
                     }}
                     style={{
-                      background: '#e65a00',
-                      backgroundColor: '#e65a00',
+                      background: '#cc5500',
+                      backgroundColor: '#cc5500',
                       color: 'rgb(255, 255, 255)',
-                      border: '1px solid #e65a00',
+                      border: '1px solid #cc5500',
                       borderRadius: '3.2px',
                       padding: '4px 8px',
                       fontSize: '14px',
@@ -1287,14 +1287,14 @@ export default function PropertyDetailPage() {
                       boxSizing: 'border-box'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#cc5200';
-                      e.currentTarget.style.backgroundColor = '#cc5200';
-                      e.currentTarget.style.borderColor = '#cc5200';
-                    }}
-                    onMouseLeave={(e) => {
                       e.currentTarget.style.background = '#e65a00';
                       e.currentTarget.style.backgroundColor = '#e65a00';
                       e.currentTarget.style.borderColor = '#e65a00';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#cc5500';
+                      e.currentTarget.style.backgroundColor = '#cc5500';
+                      e.currentTarget.style.borderColor = '#cc5500';
                     }}
                   >
                     Inquire About {property.public_name || property.name}
@@ -1311,9 +1311,9 @@ export default function PropertyDetailPage() {
                 <button
                   onClick={() => setShowShareModal(true)}
                   style={{
-                    background: '#e65a00',
+                    background: '#cc5500',
                     color: '#fff',
-                    border: '1px solid #e65a00',
+                    border: '1px solid #cc5500',
                     borderRadius: '3.2px',
                     padding: '8px 12px',
                     fontSize: '13px',
@@ -1328,12 +1328,12 @@ export default function PropertyDetailPage() {
                     minWidth: 'auto'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#cc5200';
-                    e.currentTarget.style.borderColor = '#cc5200';
-                  }}
-                  onMouseLeave={(e) => {
                     e.currentTarget.style.background = '#e65a00';
                     e.currentTarget.style.borderColor = '#e65a00';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#cc5500';
+                    e.currentTarget.style.borderColor = '#cc5500';
                   }}
                 >
                   <Share2 style={{ width: '14px', height: '14px' }} />
@@ -1371,9 +1371,9 @@ export default function PropertyDetailPage() {
                         else if (btn.text === 'LOCATION PDF') handleDownloadPDF();
                       }}
                       style={{
-                        background: isDisabled ? '#999' : '#e65a00',
+                        background: isDisabled ? '#999' : '#cc5500',
                         color: '#fff',
-                        border: isDisabled ? '1px solid #999' : '1px solid #e65a00',
+                        border: isDisabled ? '1px solid #999' : '1px solid #cc5500',
                         borderRadius: '3.2px',
                         padding: '8px 12px',
                         fontSize: '13px',
@@ -1390,14 +1390,14 @@ export default function PropertyDetailPage() {
                       }}
                       onMouseEnter={(e) => {
                         if (!isDisabled) {
-                          e.currentTarget.style.background = '#cc5200';
-                          e.currentTarget.style.borderColor = '#cc5200';
+                          e.currentTarget.style.background = '#e65a00';
+                          e.currentTarget.style.borderColor = '#e65a00';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isDisabled) {
-                          e.currentTarget.style.background = '#e65a00';
-                          e.currentTarget.style.borderColor = '#e65a00';
+                          e.currentTarget.style.background = '#cc5500';
+                          e.currentTarget.style.borderColor = '#cc5500';
                         }
                       }}
                     >
