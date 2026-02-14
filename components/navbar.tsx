@@ -182,17 +182,6 @@ export function Navbar() {
       <div className="mx-auto px-4">
         <div className="flex items-center justify-between h-[60px]">
           <Link href="/" className="flex items-center gap-3">
-            {/* SGS LOCATIONS text - always visible */}
-            <span
-              className="text-xl tracking-tight"
-              style={{
-                fontWeight: 300,
-                color: isHomepage ? '#ffffff' : '#cc5500'
-              }}
-            >
-              SGS LOCATIONS
-            </span>
-
             {/* Logo - conditional on siteLogo */}
             {siteLogo && (
               <img
@@ -209,6 +198,17 @@ export function Navbar() {
                 }}
               />
             )}
+
+            {/* SGS LOCATIONS text - always visible */}
+            <span
+              className="text-xl tracking-tight"
+              style={{
+                fontWeight: 300,
+                color: isHomepage ? '#ffffff' : '#cc5500'
+              }}
+            >
+              SGS LOCATIONS
+            </span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-3">
