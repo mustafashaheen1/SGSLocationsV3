@@ -249,7 +249,7 @@ export default function AdminLayout({
                   }}
                 />
               )}
-              <h1 className="text-xl font-bold text-brand" style={{ fontFamily: 'geometric sans-serif' }}>
+              <h1 className="text-xl text-brand" style={{ fontFamily: 'geometric sans-serif', fontWeight: 300 }}>
                 SGS Locations Admin
               </h1>
             </div>
