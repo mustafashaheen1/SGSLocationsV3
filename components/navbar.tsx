@@ -181,11 +181,23 @@ export function Navbar() {
     >
       <div className="mx-auto px-4">
         <div className="flex items-center justify-between h-[60px]">
-          <Link href="/" className="flex items-center gap-2">
-            {siteLogo ? (
+          <Link href="/" className="flex items-center gap-3">
+            {/* SGS LOCATIONS text - always visible */}
+            <span
+              className="text-xl tracking-tight"
+              style={{
+                fontWeight: 300,
+                color: isHomepage ? '#ffffff' : '#cc5500'
+              }}
+            >
+              SGS LOCATIONS
+            </span>
+
+            {/* Logo - conditional on siteLogo */}
+            {siteLogo && (
               <img
                 src={siteLogo}
-                alt="SGS Locations"
+                alt="SGS Locations Logo"
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
                   console.error('Logo image failed to load:', siteLogo);
@@ -196,10 +208,6 @@ export function Navbar() {
                   console.log('Logo image loaded successfully');
                 }}
               />
-            ) : (
-              <span className="text-xl tracking-tight" style={{fontWeight: 300}}>
-                SGS LOCATIONS<sup className="text-xs">®</sup>
-              </span>
             )}
           </Link>
 
