@@ -232,7 +232,7 @@ export default function UsersPage() {
                           className={`p-2 ${
                             user.is_banned
                               ? 'bg-green-600 hover:bg-green-700'
-                              : 'bg-orange-600 hover:bg-orange-700'
+                              : 'bg-brand hover:bg-brand-hover'
                           } text-white rounded transition-colors disabled:opacity-50`}
                           title={user.is_banned ? 'Unban User' : 'Ban User'}
                         >

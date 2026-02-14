@@ -2107,7 +2107,7 @@ export default function EditPropertyPage() {
                                                 type="checkbox"
                                                 checked={images[selectedImageIndex].tags.includes(tag.name)}
                                                 onChange={() => toggleImageTag(selectedImageIndex, tag.name)}
-                                                className="rounded text-brand focus:ring-red-500"
+                                                className="rounded text-brand focus:ring-brand"
                                               />
                                               <span className="text-sm">{tag.name}</span>
                                             </label>

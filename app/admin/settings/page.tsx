@@ -607,7 +607,7 @@ export default function SettingsPage() {
               name="propertyInquiryEmail"
               value={emailSettings.propertyInquiryEmail}
               onChange={handleEmailSettingChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-red-500 outline-none"
               
               required
             />
@@ -625,7 +625,7 @@ export default function SettingsPage() {
               name="generalInquiryEmail"
               value={emailSettings.generalInquiryEmail}
               onChange={handleEmailSettingChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-red-500 outline-none"
               
               required
             />
@@ -677,7 +677,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setAiPhotoAnalysisEnabled(!aiPhotoAnalysisEnabled)}
-              className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ml-4 ${
+              className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 ml-4 ${
                 aiPhotoAnalysisEnabled ? 'bg-brand' : 'bg-gray-300'
               }`}
               role="switch"
@@ -727,7 +727,7 @@ export default function SettingsPage() {
               name="currentPassword"
               value={passwordData.currentPassword}
               onChange={handlePasswordChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-red-500 outline-none"
               
               required
             />
@@ -742,7 +742,7 @@ export default function SettingsPage() {
               name="newPassword"
               value={passwordData.newPassword}
               onChange={handlePasswordChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-red-500 outline-none"
               
               required
             />
@@ -757,7 +757,7 @@ export default function SettingsPage() {
               name="confirmPassword"
               value={passwordData.confirmPassword}
               onChange={handlePasswordChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-red-500 outline-none"
               
               required
             />

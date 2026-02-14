@@ -767,7 +767,7 @@ export default function AdminPropertiesPage() {
                   placeholder="Search filters..."
                   value={tagSearchTerm}
                   onChange={(e) => setTagSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
@@ -793,7 +793,7 @@ export default function AdminPropertiesPage() {
                               onClick={() => toggleTagFilter(filterData.name, option)}
                               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                                 isActive
-                                  ? 'bg-orange-500 text-white hover:bg-red-700'
+                                  ? 'bg-brand text-white hover:bg-brand-hover'
                                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                               }`}
                             >
@@ -819,7 +819,7 @@ export default function AdminPropertiesPage() {
                 </button>
                 <button
                   onClick={() => setFilterDropdownOpen(false)}
-                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                  className="text-sm text-brand hover:text-brand-hover font-medium"
                 >
                   Done
                 </button>
@@ -862,7 +862,7 @@ export default function AdminPropertiesPage() {
               {filter.values.map(value => (
                 <span
                   key={value}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-500 text-white"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-brand text-white"
                 >
                   {value}
                   <button

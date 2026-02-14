@@ -1937,7 +1937,7 @@ export default function ContentManagementPage() {
                         value="video"
                         checked={heroMediaType === 'video'}
                         onChange={(e) => setHeroMediaType(e.target.value as 'video' | 'photo')}
-                        className="w-4 h-4 text-brand focus:ring-red-500"
+                        className="w-4 h-4 text-brand focus:ring-brand"
                       />
                       <span className="ml-2 text-sm">Video</span>
                     </label>
@@ -1948,7 +1948,7 @@ export default function ContentManagementPage() {
                         value="photo"
                         checked={heroMediaType === 'photo'}
                         onChange={(e) => setHeroMediaType(e.target.value as 'video' | 'photo')}
-                        className="w-4 h-4 text-brand focus:ring-red-500"
+                        className="w-4 h-4 text-brand focus:ring-brand"
                       />
                       <span className="ml-2 text-sm">Photo</span>
                     </label>
@@ -4471,7 +4471,7 @@ export default function ContentManagementPage() {
                         id={`subcategory-${subCat.id}`}
                         checked={enabledSubCategoryIds.has(subCat.id)}
                         onChange={(e) => handleSubCategoryToggle(subCat.id, e.target.checked)}
-                        className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                        className="w-4 h-4 text-brand rounded focus:ring-brand"
                       />
                       <label
                         htmlFor={`subcategory-${subCat.id}`}
