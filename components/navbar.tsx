@@ -199,16 +199,6 @@ export function Navbar() {
               />
             )}
 
-            {/* SGS LOCATIONS text - always visible */}
-            <span
-              className="text-xl tracking-tight"
-              style={{
-                fontWeight: 300,
-                color: isHomepage ? '#ffffff' : '#cc5500'
-              }}
-            >
-              SGS LOCATIONS
-            </span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-3">
