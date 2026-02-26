@@ -267,6 +267,7 @@ export default function SearchPage() {
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
   const [userType, setUserType] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
   const ITEMS_PER_PAGE = 8;
 
   // Memoized handler for dropdown search input changes
@@ -596,14 +597,15 @@ export default function SearchPage() {
   }
 
   const loadMoreProperties = async () => {
-    if (loading || !hasMore) {
-      console.log('Skipping load - loading:', loading, 'hasMore:', hasMore);
+    if (loadingRef.current || !hasMore) {
+      console.log('Skipping load - loading:', loadingRef.current, 'hasMore:', hasMore);
       return;
     }
 
     console.log('loadMoreProperties called with activeFilters:', activeFilters);
     console.log('Number of active filters:', activeFilters.length);
 
+    loadingRef.current = true;
     setLoading(true);
 
     // Add a timeout to prevent infinite loading
@@ -649,7 +651,10 @@ export default function SearchPage() {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          setProperties(prev => [...prev, ...data]);
+          setProperties(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            return [...prev, ...data.filter((p: Property) => !existingIds.has(p.id))];
+          });
           setPage(prev => prev + 1);
           if (data.length < ITEMS_PER_PAGE) {
             setHasMore(false);
@@ -691,7 +696,10 @@ export default function SearchPage() {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          setProperties(prev => [...prev, ...data]);
+          setProperties(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            return [...prev, ...data.filter((p: Property) => !existingIds.has(p.id))];
+          });
           setPage(prev => prev + 1);
           if (data.length < ITEMS_PER_PAGE) {
             setHasMore(false);
@@ -840,7 +848,10 @@ export default function SearchPage() {
 
           const paginatedData = dataWithMatchingImages.slice(from, to + 1);
 
-          setProperties(prev => [...prev, ...paginatedData]);
+          setProperties(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            return [...prev, ...paginatedData.filter((p: Property) => !existingIds.has(p.id))];
+          });
           setPage(prev => prev + 1);
           if (paginatedData.length < ITEMS_PER_PAGE) {
             setHasMore(false);
@@ -869,7 +880,10 @@ export default function SearchPage() {
 
         if (filteredData && filteredData.length > 0) {
           const paginatedData = filteredData.slice(from, to + 1);
-          setProperties(prev => [...prev, ...paginatedData]);
+          setProperties(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            return [...prev, ...paginatedData.filter((p: Property) => !existingIds.has(p.id))];
+          });
           setPage(prev => prev + 1);
           if (paginatedData.length < ITEMS_PER_PAGE) {
             setHasMore(false);
@@ -897,7 +911,10 @@ export default function SearchPage() {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          setProperties(prev => [...prev, ...data]);
+          setProperties(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            return [...prev, ...data.filter((p: Property) => !existingIds.has(p.id))];
+          });
           setPage(prev => prev + 1);
           if (data.length < ITEMS_PER_PAGE) {
             setHasMore(false);
@@ -910,6 +927,7 @@ export default function SearchPage() {
       console.error('Error loading properties:', error);
     } finally {
       clearTimeout(loadTimeout);
+      loadingRef.current = false;
       setLoading(false);
     }
   };
@@ -972,7 +990,7 @@ export default function SearchPage() {
       const documentHeight = document.documentElement.scrollHeight;
 
       if (scrollTop + windowHeight >= documentHeight - 500) {
-        if (!loading && hasMore) {
+        if (!loadingRef.current && hasMore) {
           loadMoreProperties();
         }
       }
