@@ -49,13 +49,26 @@ export default function HomePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
 
-  // Play video from the beginning once loading completes
+  // Play video only after the page fade-in animation completes (so video starts from frame 0 when visible)
   useEffect(() => {
-    if (contentLoaded && videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Silently ignore if browser blocks autoplay
-      });
+    if (!contentLoaded) return;
+
+    const mainEl = document.querySelector('main');
+    if (!mainEl) {
+      // No animation element — play immediately as fallback
+      videoRef.current?.play().catch(() => {});
+      return;
     }
+
+    const onAnimationEnd = () => {
+      videoRef.current?.play().catch(() => {});
+    };
+
+    mainEl.addEventListener('animationend', onAnimationEnd, { once: true });
+
+    return () => {
+      mainEl.removeEventListener('animationend', onAnimationEnd);
+    };
   }, [contentLoaded]);
 
   useEffect(() => {
