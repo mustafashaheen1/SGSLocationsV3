@@ -47,28 +47,24 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoReadyToPlay, setVideoReadyToPlay] = useState(false);
   const router = useRouter();
 
-  // Play video only after the page fade-in animation completes (so video starts from frame 0 when visible)
+  // Play video only after the page fade-in completes and video is made visible
+  // Uses setTimeout instead of animationend (which bubbles unreliably from child elements)
   useEffect(() => {
     if (!contentLoaded) return;
 
-    const mainEl = document.querySelector('main');
-    if (!mainEl) {
-      // No animation element — play immediately as fallback
-      videoRef.current?.play().catch(() => {});
-      return;
-    }
+    // 600ms = 500ms (animate-fadeIn duration in globals.css) + 100ms buffer
+    const timer = setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0; // Explicitly reset to frame 0
+        videoRef.current.play().catch(() => {});
+      }
+      setVideoReadyToPlay(true); // Make video visible
+    }, 600);
 
-    const onAnimationEnd = () => {
-      videoRef.current?.play().catch(() => {});
-    };
-
-    mainEl.addEventListener('animationend', onAnimationEnd, { once: true });
-
-    return () => {
-      mainEl.removeEventListener('animationend', onAnimationEnd);
-    };
+    return () => clearTimeout(timer);
   }, [contentLoaded]);
 
   useEffect(() => {
@@ -302,38 +298,49 @@ export default function HomePage() {
     <main className="min-h-screen animate-fadeIn">
       <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
         {heroVideo ? (
-          <video
-            ref={videoRef}
-            key={heroVideo}
-            src={heroVideo}
-            poster={heroPoster}
-            loop
-            muted
-            playsInline
-            preload="auto"
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectFit: 'cover' }}
-            onLoadedData={() => {
-              console.log('✅ Video loaded successfully');
-            }}
-            onError={(e) => {
-              console.error('❌ Video failed to load:', heroVideo);
-              const videoElement = e.currentTarget as HTMLVideoElement;
-              if (videoElement.error) {
-                console.error('Video error code:', videoElement.error.code);
-                console.error('Video error message:', videoElement.error.message);
-              }
-              console.error('Video error details:', {
-                networkState: videoElement.networkState,
-                readyState: videoElement.readyState,
-              });
-            }}
-            onCanPlay={() => {
-              console.log('🎬 Video can play');
-            }}
-          >
-            Your browser does not support the video tag.
-          </video>
+          <>
+            {/* Poster image visible during fade-in while video is hidden */}
+            {!videoReadyToPlay && heroPoster && (
+              <img
+                src={heroPoster}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectFit: 'cover' }}
+              />
+            )}
+            <video
+              ref={videoRef}
+              key={heroVideo}
+              src={heroVideo}
+              poster={heroPoster}
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ objectFit: 'cover', opacity: videoReadyToPlay ? 1 : 0, transition: 'opacity 0.3s ease' }}
+              onLoadedData={() => {
+                console.log('✅ Video loaded successfully');
+              }}
+              onError={(e) => {
+                console.error('❌ Video failed to load:', heroVideo);
+                const videoElement = e.currentTarget as HTMLVideoElement;
+                if (videoElement.error) {
+                  console.error('Video error code:', videoElement.error.code);
+                  console.error('Video error message:', videoElement.error.message);
+                }
+                console.error('Video error details:', {
+                  networkState: videoElement.networkState,
+                  readyState: videoElement.readyState,
+                });
+              }}
+              onCanPlay={() => {
+                console.log('🎬 Video can play');
+              }}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-700" />
         )}
