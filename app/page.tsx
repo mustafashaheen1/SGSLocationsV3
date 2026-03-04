@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, MapPin, Award, Users, Briefcase, FileCheck, Image as ImageIcon, Camera } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, Property } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -46,7 +46,17 @@ export default function HomePage() {
   const [contentLoaded, setContentLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
+
+  // Play video from the beginning once loading completes
+  useEffect(() => {
+    if (contentLoaded && videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Silently ignore if browser blocks autoplay
+      });
+    }
+  }, [contentLoaded]);
 
   useEffect(() => {
     let isMounted = true;
@@ -257,7 +267,7 @@ export default function HomePage() {
   // Show full-page loader while content is loading
   if (!contentLoaded) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="fixed inset-0 z-[200] bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-flex items-center space-x-2 mb-4">
             <div className="w-10 h-10 bg-brand rounded flex items-center justify-center">
@@ -280,14 +290,14 @@ export default function HomePage() {
       <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
         {heroVideo ? (
           <video
+            ref={videoRef}
             key={heroVideo}
             src={heroVideo}
             poster={heroPoster}
-            autoPlay
             loop
             muted
             playsInline
-            preload="metadata"
+            preload="auto"
             className="absolute inset-0 w-full h-full object-cover"
             style={{ objectFit: 'cover' }}
             onLoadedData={() => {
