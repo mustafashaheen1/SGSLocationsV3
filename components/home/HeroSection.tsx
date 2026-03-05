@@ -23,17 +23,28 @@ export function HeroSection({ videoUrl, posterUrl, title, subtitle }: HeroSectio
   const { userType } = useAuth();
 
   useEffect(() => {
-    // 600ms = 500ms (animate-fadeIn duration) + 100ms buffer
-    const timer = setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(() => {});
-      }
-      setVideoReadyToPlay(true);
-    }, 600);
+    if (!videoUrl || !videoRef.current) return;
 
-    return () => clearTimeout(timer);
-  }, []);
+    const video = videoRef.current;
+
+    const handleCanPlay = () => {
+      // Reset to frame 0 so video starts from the beginning when visible
+      video.currentTime = 0;
+      video.play().then(() => {
+        setVideoReadyToPlay(true);
+      }).catch(() => {
+        // Autoplay may be blocked — poster stays visible
+      });
+    };
+
+    video.addEventListener('canplay', handleCanPlay, { once: true });
+    // Start downloading the video now (preload="none" prevents automatic buffering)
+    video.load();
+
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+    };
+  }, [videoUrl]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,38 +56,37 @@ export function HeroSection({ videoUrl, posterUrl, title, subtitle }: HeroSectio
   };
 
   return (
-    <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
-      {videoUrl ? (
-        <>
-          {!videoReadyToPlay && posterUrl && (
-            <Image
-              src={posterUrl}
-              alt=""
-              fill
-              priority
-              className="object-cover"
-              sizes="100vw"
-            />
-          )}
-          <video
-            ref={videoRef}
-            key={videoUrl}
-            src={videoUrl}
-            poster={posterUrl}
-            loop
-            muted
-            playsInline
-            preload="auto"
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectFit: 'cover', opacity: videoReadyToPlay ? 1 : 0, transition: 'opacity 0.3s ease' }}
-            onError={(e) => {
-              console.error('Video failed to load:', videoUrl);
-            }}
-          >
-            Your browser does not support the video tag.
-          </video>
-        </>
-      ) : (
+    <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden bg-gray-900">
+      {/* Poster always rendered underneath — video covers it when playing */}
+      {posterUrl && (
+        <Image
+          src={posterUrl}
+          alt=""
+          fill
+          priority
+          className="absolute inset-0 object-cover"
+          sizes="100vw"
+        />
+      )}
+      {videoUrl && (
+        <video
+          ref={videoRef}
+          key={videoUrl}
+          src={videoUrl}
+          loop
+          muted
+          playsInline
+          preload="none"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectFit: 'cover', opacity: videoReadyToPlay ? 1 : 0, transition: 'opacity 0.5s ease' }}
+          onError={() => {
+            console.error('Video failed to load:', videoUrl);
+          }}
+        >
+          Your browser does not support the video tag.
+        </video>
+      )}
+      {!videoUrl && !posterUrl && (
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-700" />
       )}
       <div className="absolute inset-0 bg-black/40" />
