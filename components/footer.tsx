@@ -1,149 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Facebook, Instagram, Twitter, Linkedin, Youtube, MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 
-export function Footer() {
-  const [footerContent, setFooterContent] = useState({
-    description: '',
-    phone: '',
-    email: '',
-    address: '',
-    officeHours: ''
-  });
-  const [socialLinks, setSocialLinks] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState<string | null>(null);
-  const [siteLogo, setSiteLogo] = useState<string>('');
-
-  useEffect(() => {
-    fetchFooterContent();
-    fetchSiteLogo();
-    checkAuth();
-  }, []);
-
-  async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsAuthenticated(!!session);
-
-    if (session?.user) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('user_type')
-        .eq('id', session.user.id)
-        .maybeSingle() as { data: { user_type: string } | null };
-
-      setUserType(userData?.user_type || null);
-    } else {
-      setUserType(null);
-    }
-  }
-
-  async function fetchSiteLogo() {
-    try {
-      const { data, error } = await (supabase
-        .from('app_settings') as any)
-        .select('setting_value')
-        .eq('setting_key', 'site_logo_url')
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching site logo:', error);
-        return;
-      }
-
-      if (data && data.setting_value) {
-        setSiteLogo(data.setting_value);
-      }
-    } catch (error) {
-      console.error('Error fetching site logo:', error);
-    }
-  }
-
-  // Helper function to parse JSON values with multiple layers of escaping
-  const parseValue = (value: any): string => {
-    if (!value) return '';
-    if (typeof value === 'string') {
-      try {
-        // Keep parsing until we get a plain string
-        let parsed = value;
-        while (typeof parsed === 'string' && (parsed.startsWith('"') || parsed.startsWith('\\"'))) {
-          parsed = JSON.parse(parsed);
-        }
-        return parsed;
-      } catch (e) {
-        // If parsing fails, just remove outer quotes
-        return value.replace(/^"|"$/g, '');
-      }
-    }
-    return String(value);
+interface FooterProps {
+  siteLogo: string;
+  footerContent: {
+    description: string;
+    phone: string;
+    email: string;
+    address: string;
+    officeHours: string;
   };
+  socialLinks: any[];
+  categories: any[];
+}
 
-  async function fetchFooterContent() {
-    try {
-      // Fetch footer settings from site_settings table
-      const { data: settings } = await (supabase
-        .from('site_settings') as any)
-        .select('*')
-        .in('key', ['footer_description', 'contact_phone', 'contact_email', 'contact_address', 'office_hours']);
-
-      if (settings) {
-        const description = (settings as any[]).find((s: any) => s.key === 'footer_description')?.value;
-        const phone = (settings as any[]).find((s: any) => s.key === 'contact_phone')?.value;
-        const email = (settings as any[]).find((s: any) => s.key === 'contact_email')?.value;
-        const address = (settings as any[]).find((s: any) => s.key === 'contact_address')?.value;
-        const officeHours = (settings as any[]).find((s: any) => s.key === 'office_hours')?.value;
-
-        setFooterContent({
-          description: parseValue(description) || '',
-          phone: parseValue(phone) || '',
-          email: parseValue(email) || '',
-          address: parseValue(address) || '',
-          officeHours: parseValue(officeHours) || ''
-        });
-      }
-
-      // Fetch social links - ONLY show those with URLs
-      const { data: social } = await (supabase
-        .from('social_links') as any)
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (social) {
-        // Filter out links with empty or null URLs
-        const activeSocial = (social as any[]).filter((link: any) => link.url && link.url.trim() !== '');
-        setSocialLinks(activeSocial);
-      }
-
-      // Fetch categories from database
-      const { data: cats } = await (supabase
-        .from('categories') as any)
-        .select('id, name, slug')
-        .eq('is_active', true)
-        .order('display_order')
-        .limit(10);
-
-      if (cats) setCategories(cats);
-
-    } catch (error) {
-      console.error('Error fetching footer content:', error);
-      // Keep empty values on error
-      setFooterContent({
-        description: '',
-        phone: '',
-        email: '',
-        address: '',
-        officeHours: ''
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
+export function Footer({ siteLogo: initialLogo, footerContent, socialLinks, categories }: FooterProps) {
+  const [siteLogo, setSiteLogo] = useState<string>(initialLogo);
+  const { isAuthenticated, userType } = useAuth();
 
   const getSocialIcon = (platform: string) => {
     const icons: { [key: string]: any } = {
@@ -155,27 +32,6 @@ export function Footer() {
     };
     return icons[platform.toLowerCase()] || null;
   };
-
-  if (loading) {
-    return (
-      <footer className="bg-gray-900 text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="space-y-4">
-                <div className="h-6 bg-gray-800 rounded animate-pulse w-3/4" />
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-800 rounded animate-pulse" />
-                  <div className="h-4 bg-gray-800 rounded animate-pulse w-5/6" />
-                  <div className="h-4 bg-gray-800 rounded animate-pulse w-4/6" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </footer>
-    );
-  }
 
   return (
     <>
@@ -226,7 +82,6 @@ export function Footer() {
                   alt="SGS Locations"
                   className="h-10 w-auto object-contain"
                   onError={(e) => {
-                    console.error('Footer logo failed to load:', siteLogo);
                     e.currentTarget.style.display = 'none';
                     setSiteLogo('');
                   }}

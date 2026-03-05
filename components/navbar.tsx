@@ -4,140 +4,26 @@ import Link from 'next/link';
 import { Search, Menu, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import LoginModal from '@/components/LoginModal';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/components/AuthProvider';
 
-export function Navbar() {
+interface NavbarProps {
+  siteLogo: string;
+  portfolioVisible: boolean;
+}
+
+export function Navbar({ siteLogo: initialLogo, portfolioVisible }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userType, setUserType] = useState<string | null>(null);
-  const [showPortfolio, setShowPortfolio] = useState(true);
-  const [siteLogo, setSiteLogo] = useState<string>('');
+  const [siteLogo, setSiteLogo] = useState<string>(initialLogo);
   const pathname = usePathname();
   const router = useRouter();
   const isHomepage = pathname === '/';
-
-  useEffect(() => {
-    checkAuth();
-    fetchPortfolioVisibility();
-    fetchSiteLogo();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        // Check if user exists in USERS table (not just auth)
-        const { directFetch } = await import('@/lib/supabase');
-        const { data: userData } = await directFetch('users', {
-          select: 'user_type',
-          eq: { id: session.user.id },
-          single: true,
-          authToken: session.access_token
-        });
-
-        // Only show as authenticated if they're in the users table
-        if (userData) {
-          setIsAuthenticated(true);
-          setUserEmail(session.user.email || null);
-          setUserType(userData.user_type || null);
-        } else {
-          // User is in auth but NOT in users table (admin-only account)
-          setIsAuthenticated(false);
-          setUserEmail(null);
-          setUserType(null);
-        }
-      } else {
-        setIsAuthenticated(false);
-        setUserEmail(null);
-        setUserType(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  async function fetchPortfolioVisibility() {
-    try {
-      const { data } = await (supabase
-        .from('site_settings') as any)
-        .select('value')
-        .eq('key', 'portfolio_visible')
-        .maybeSingle();
-
-      if (data && data.value) {
-        const value = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-        setShowPortfolio(value === true || value === 'true');
-      }
-    } catch (error) {
-      console.error('Error fetching portfolio visibility:', error);
-    }
-  }
-
-  async function fetchSiteLogo() {
-    try {
-      const { data, error } = await (supabase
-        .from('app_settings') as any)
-        .select('setting_value')
-        .eq('setting_key', 'site_logo_url')
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching site logo:', error);
-        return;
-      }
-
-      if (data && data.setting_value) {
-        console.log('Logo URL fetched:', data.setting_value); // Debug log
-        setSiteLogo(data.setting_value);
-      } else {
-        console.log('No logo URL found in database');
-      }
-    } catch (error) {
-      console.error('Error fetching site logo:', error);
-    }
-  }
-
-
-  async function checkAuth() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        // Check if user exists in USERS table
-        const { directFetch } = await import('@/lib/supabase');
-        const { data: userData } = await directFetch('users', {
-          select: 'user_type',
-          eq: { id: session.user.id },
-          single: true,
-          authToken: session.access_token
-        });
-
-        // Only show as authenticated if they're in the users table
-        if (userData) {
-          setIsAuthenticated(true);
-          setUserEmail(session.user.email || null);
-          setUserType(userData.user_type || null);
-        } else {
-          // Admin-only account - don't show as logged in on main site
-          setIsAuthenticated(false);
-          setUserEmail(null);
-          setUserType(null);
-        }
-      } else {
-        setIsAuthenticated(false);
-        setUserEmail(null);
-        setUserType(null);
-      }
-    } catch (error) {
-      console.error('Error checking auth:', error);
-      setIsAuthenticated(false);
-    }
-  }
+  const { isAuthenticated, userEmail, userType } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,18 +35,15 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setIsAuthenticated(false);
-    setUserEmail(null);
     router.push('/');
   };
 
   const navItems: Array<{ label: string; href: string; isButton?: boolean }> = [
     { label: 'SEARCH', href: '/search' },
-    ...(showPortfolio ? [{ label: 'PORTFOLIO', href: '/portfolio' }] : []),
+    ...(portfolioVisible ? [{ label: 'PORTFOLIO', href: '/portfolio' }] : []),
     { label: 'LOCATION LIBRARY', href: '/location-library' },
     { label: 'ABOUT US', href: '/about' },
     { label: 'CONTACT', href: '/contact' },
-    // Only show "List Your Property" if user is not logged in OR is a property_owner
     ...(!isAuthenticated || userType === 'property_owner' ? [{ label: 'LIST YOUR PROPERTY', href: '/list-your-property' }] : []),
   ];
 
@@ -182,23 +65,17 @@ export function Navbar() {
       <div className="mx-auto px-4">
         <div className="flex items-center justify-between h-[60px]">
           <Link href="/" className="flex items-center gap-3">
-            {/* Logo - conditional on siteLogo */}
             {siteLogo && (
               <img
                 src={siteLogo}
                 alt="SGS Locations Logo"
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
-                  console.error('Logo image failed to load:', siteLogo);
                   e.currentTarget.style.display = 'none';
                   setSiteLogo('');
                 }}
-                onLoad={() => {
-                  console.log('Logo image loaded successfully');
-                }}
               />
             )}
-
           </Link>
 
           <div className="hidden lg:flex items-center gap-3">
