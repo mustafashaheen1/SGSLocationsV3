@@ -37,10 +37,12 @@ export default async function HomePage() {
     ]);
 
   // Process settings into a simple map
+  const urlKeys = new Set(['hero_video', 'hero_video_poster']);
   const settingsMap: Record<string, string> = {};
   (settingsResult.data || []).forEach((s: any) => {
     let val = (s.value || '').trim().replace(/^["']|["']$/g, '');
-    if (val && !val.startsWith('http') && !val.startsWith('/')) {
+    // Only add https:// prefix for URL settings, not text like title/subtitle
+    if (urlKeys.has(s.key) && val && !val.startsWith('http') && !val.startsWith('/')) {
       val = `https://${val}`;
     }
     settingsMap[s.key] = val;
