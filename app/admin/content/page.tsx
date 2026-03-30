@@ -1976,10 +1976,15 @@ export default function ContentManagementPage() {
                       <input
                         id="videoUpload"
                         type="file"
-                        accept="video/mp4,video/webm"
+                        accept="video/mp4,.mp4"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                            if (!file.name.match(/\.mp4$/i) && file.type !== 'video/mp4') {
+                              alert('Only MP4 files are allowed for the hero video.');
+                              e.target.value = '';
+                              return;
+                            }
                             setSelectedVideoFile(file);
                           }
                         }}
@@ -1999,7 +2004,7 @@ export default function ContentManagementPage() {
                         </div>
                       </div>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">MP4 or WebM format recommended</p>
+                    <p className="text-xs text-gray-500 mt-1">MP4 format only</p>
 
                     {/* Video Poster Upload */}
                     <div className="mt-4">
