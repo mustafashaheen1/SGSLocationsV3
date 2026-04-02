@@ -966,6 +966,7 @@ export default function PropertyDetailPage() {
                   style={{
                     position: 'relative',
                     height: '100%',
+                    width: '100%',
                     flexShrink: 0,
                     cursor: 'pointer'
                   }}
@@ -981,7 +982,7 @@ export default function PropertyDetailPage() {
                     height={600}
                     style={{
                       height: '100%',
-                      width: 'auto',
+                      width: '100%',
                       objectFit: 'cover'
                     }}
                     unoptimized={imgData.url.includes('unsplash.com') || imgData.url.includes('placeholder.com')}
@@ -1012,7 +1013,7 @@ export default function PropertyDetailPage() {
               className="nav-arrow nav-arrow-left"
               onClick={() => {
                 if (carouselRef.current) {
-                  carouselRef.current.scrollBy({ left: -800, behavior: 'smooth' });
+                  carouselRef.current.scrollBy({ left: -carouselRef.current.clientWidth, behavior: 'smooth' });
                 }
               }}
             >
@@ -1037,7 +1038,7 @@ export default function PropertyDetailPage() {
               if (viewMode === 'grid') {
                 setViewMode('carousel');
               } else if (carouselRef.current) {
-                carouselRef.current.scrollBy({ left: 800, behavior: 'smooth' });
+                carouselRef.current.scrollBy({ left: carouselRef.current.clientWidth, behavior: 'smooth' });
               }
             }}
           >
