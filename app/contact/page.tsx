@@ -91,11 +91,11 @@ export default function ContactPage() {
         const { data: settings } = await (supabase
           .from('site_settings') as any)
           .select('*')
-          .in('key', ['general_contact_email', 'general_contact_phone', 'general_contact_address']);
+          .in('key', ['general_contact_email', 'contact_phone', 'general_contact_address']);
 
         if (settings) {
           const email = (settings as any[]).find((s: any) => s.key === 'general_contact_email')?.value;
-          const phone = (settings as any[]).find((s: any) => s.key === 'general_contact_phone')?.value;
+          const phone = (settings as any[]).find((s: any) => s.key === 'contact_phone')?.value;
           const address = (settings as any[]).find((s: any) => s.key === 'general_contact_address')?.value;
 
           const parseValue = (value: any): string => {

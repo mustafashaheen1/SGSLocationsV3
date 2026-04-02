@@ -180,7 +180,6 @@ export default function ContentManagementPage() {
 
   // General Contact Information States
   const [generalContactEmail, setGeneralContactEmail] = useState('');
-  const [generalContactPhone, setGeneralContactPhone] = useState('');
   const [generalContactAddress, setGeneralContactAddress] = useState('');
 
   // Contact Form Questions State
@@ -193,7 +192,6 @@ export default function ContentManagementPage() {
   const [portfolioVisible, setPortfolioVisible] = useState(true);
 
   // Property Footer States
-  const [propertyFooterPhone, setPropertyFooterPhone] = useState('');
   const [propertyFooterPartnerText, setPropertyFooterPartnerText] = useState('');
   const [propertyFooterLicense, setPropertyFooterLicense] = useState('');
   const [propertyFooterCompanyName, setPropertyFooterCompanyName] = useState('');
@@ -365,7 +363,6 @@ export default function ContentManagementPage() {
             case 'contact_email': setContactEmail(value); break;
             case 'contact_address': setContactAddress(value); break;
             case 'office_hours': setOfficeHours(value); break;
-            case 'property_footer_phone': setPropertyFooterPhone(value); break;
             case 'property_footer_partner_text': setPropertyFooterPartnerText(value); break;
             case 'property_footer_license': setPropertyFooterLicense(value); break;
             case 'property_footer_company_name': setPropertyFooterCompanyName(value); break;
@@ -599,7 +596,6 @@ export default function ContentManagementPage() {
     setSaving(true);
     try {
       await Promise.all([
-        saveSiteSetting('property_footer_phone', propertyFooterPhone, 'property', 'footer'),
         saveSiteSetting('property_footer_partner_text', propertyFooterPartnerText, 'property', 'footer'),
         saveSiteSetting('property_footer_license', propertyFooterLicense, 'property', 'footer'),
         saveSiteSetting('property_footer_company_name', propertyFooterCompanyName, 'property', 'footer'),
@@ -1160,7 +1156,7 @@ export default function ContentManagementPage() {
       const { data: settings } = await (supabase
         .from('site_settings') as any)
         .select('*')
-        .in('key', ['general_contact_email', 'general_contact_phone', 'general_contact_address']);
+        .in('key', ['general_contact_email', 'general_contact_address']);
 
       if (settings) {
         const parseValue = (value: any): string => {
@@ -1180,11 +1176,9 @@ export default function ContentManagementPage() {
         };
 
         const email = (settings as any[]).find((s: any) => s.key === 'general_contact_email')?.value;
-        const phone = (settings as any[]).find((s: any) => s.key === 'general_contact_phone')?.value;
         const address = (settings as any[]).find((s: any) => s.key === 'general_contact_address')?.value;
 
         setGeneralContactEmail(parseValue(email) || 'paul@imagelocations.com');
-        setGeneralContactPhone(parseValue(phone) || '(310) 871-8004');
         setGeneralContactAddress(parseValue(address) || '9663 Santa Monica Blvd. Suite 842,\nBeverly Hills, CA 90210');
       }
     } catch (error) {
@@ -1401,7 +1395,6 @@ export default function ContentManagementPage() {
     try {
       const settings = [
         { key: 'general_contact_email', value: generalContactEmail },
-        { key: 'general_contact_phone', value: generalContactPhone },
         { key: 'general_contact_address', value: generalContactAddress },
       ];
 
@@ -3347,15 +3340,6 @@ export default function ContentManagementPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Contact Phone</label>
-                <Input
-                  type="tel"
-                  value={generalContactPhone}
-                  onChange={(e) => setGeneralContactPhone(e.target.value)}
-                  
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium mb-2">Contact Address</label>
                 <Textarea
                   value={generalContactAddress}
@@ -4185,16 +4169,6 @@ export default function ContentManagementPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Contact Phone Number</label>
-                <Input
-                  value={propertyFooterPhone}
-                  onChange={(e) => setPropertyFooterPhone(e.target.value)}
-                  
-                />
-                <p className="text-xs text-gray-500 mt-1">Displayed with phone icon at the bottom of property pages</p>
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium mb-2">Partner Text</label>
                 <Input
                   value={propertyFooterPartnerText}
@@ -4229,7 +4203,7 @@ export default function ContentManagementPage() {
                 <div className="space-y-2 text-center text-sm text-gray-600">
                   <div className="flex items-center justify-center gap-2">
                     <Phone className="w-4 h-4" />
-                    <span>{propertyFooterPhone || '(310) 871-8004'}</span>
+                    <span>{contactPhone}</span>
                   </div>
                   <div>{propertyFooterPartnerText || 'American Express Preferred Partner'}</div>
                   <div>{propertyFooterLicense || 'CalDRE #01234567'}</div>

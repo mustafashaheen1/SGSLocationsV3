@@ -284,8 +284,7 @@ export default function PropertyDetailPage() {
       const { data: footerSettings } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('page', 'property')
-        .eq('section', 'footer');
+        .in('key', ['contact_phone', 'property_footer_partner_text', 'property_footer_license', 'property_footer_company_name']);
 
       if (footerSettings) {
         footerSettings.forEach((setting: any) => {
@@ -301,7 +300,7 @@ export default function PropertyDetailPage() {
           }
 
           switch(setting.key) {
-            case 'property_footer_phone': setFooterPhone(value); break;
+            case 'contact_phone': setFooterPhone(value); break;
             case 'property_footer_partner_text': setFooterPartnerText(value); break;
             case 'property_footer_license': setFooterLicense(value); break;
             case 'property_footer_company_name': setFooterCompanyName(value); break;
