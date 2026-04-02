@@ -102,23 +102,26 @@ export default function ListYourPropertyPage() {
       console.log('Found pending listing, processing...');
 
       try {
-        // Restore form data
+        // Restore UI state so the form looks right if there's an error
         setFormData(pendingListing.formData);
         setSelectedCategoryId(pendingListing.selectedCategoryId);
         setSelectedSubCategoryId(pendingListing.selectedSubCategoryId || '');
         setPropertyTags(pendingListing.propertyTags);
-
-        // Restore image files
-        const imagesWithTags: ImageWithTags[] = pendingListing.imageFiles.map((file) => ({
+        setUploadedFiles(pendingListing.imageFiles.map((file) => ({
           file,
           preview: URL.createObjectURL(file),
           tags: [],
-        }));
-        setUploadedFiles(imagesWithTags);
+        })));
 
-        // Submit the property
+        // Pass data directly to avoid React async state bug (setState is not synchronous)
         setIsSubmitting(true);
-        await submitPropertyToDatabase(userId);
+        await submitPropertyToDatabase(userId, {
+          formData: pendingListing.formData,
+          selectedCategoryId: pendingListing.selectedCategoryId,
+          selectedSubCategoryId: pendingListing.selectedSubCategoryId || '',
+          propertyTags: pendingListing.propertyTags,
+          imageFiles: pendingListing.imageFiles,
+        });
       } catch (error) {
         console.error('Error processing pending submission:', error);
         alert('There was an error submitting your property. Please try again.');
@@ -617,15 +620,27 @@ export default function ListYourPropertyPage() {
     }
   };
 
-  const submitPropertyToDatabase = async (userId: string) => {
+  const submitPropertyToDatabase = async (userId: string, overrides?: {
+    formData: typeof formData;
+    selectedCategoryId: string;
+    selectedSubCategoryId: string;
+    propertyTags: string[];
+    imageFiles: File[];
+  }) => {
+    // Use overrides when called from guest listing path (avoids async state bug)
+    const activeFormData = overrides?.formData ?? formData;
+    const activeCategoryId = overrides?.selectedCategoryId ?? selectedCategoryId;
+    const activeSubCategoryId = overrides?.selectedSubCategoryId ?? selectedSubCategoryId;
+    const activePropertyTags = overrides?.propertyTags ?? propertyTags;
+
     try {
       const { uploadMultipleImages } = await import('@/lib/s3-upload');
-      const imageFiles = uploadedFiles.map(img => img.file);
+      const imageFiles = overrides?.imageFiles ?? uploadedFiles.map(img => img.file);
       const uploadedImageUrls = await uploadMultipleImages(imageFiles, 'properties');
 
       // Generate property name using the same category-based sequential numbering as admin
       const { data: propertyName, error: nameError } = await (supabase as any)
-        .rpc('get_next_property_name', { cat_id: selectedCategoryId });
+        .rpc('get_next_property_name', { cat_id: activeCategoryId });
 
       if (nameError || !propertyName) {
         console.error('Error generating property name:', nameError);
@@ -638,19 +653,19 @@ export default function ListYourPropertyPage() {
         .from('properties') as any)
         .insert([{
           name: propertyName, // Use category-based sequential name (e.g., RES-0001, COM-0002)
-          real_name: `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
-          sub_heading: `${propertyName}: An Architectural Marvel in ${formData.city} for Filmmakers and Photographers`,
-          description: `Submitted by ${formData.firstName} ${formData.lastName} (${formData.email})`,
-          address: formData.streetAddress,
-          city: formData.city,
-          county: formData.state,
-          zipcode: formData.zipCode,
+          real_name: `${activeFormData.streetAddress}, ${activeFormData.city}, ${activeFormData.state} ${activeFormData.zipCode}`,
+          sub_heading: `${propertyName}: An Architectural Marvel in ${activeFormData.city} for Filmmakers and Photographers`,
+          description: `Submitted by ${activeFormData.firstName} ${activeFormData.lastName} (${activeFormData.email})`,
+          address: activeFormData.streetAddress,
+          city: activeFormData.city,
+          county: activeFormData.state,
+          zipcode: activeFormData.zipCode,
           owner_id: userId,
           property_type: 'Residential',
           daily_rate: '0',
-          category_id: selectedCategoryId,
-          sub_category_id: selectedSubCategoryId || null,
-          property_tags: propertyTags,
+          category_id: activeCategoryId,
+          sub_category_id: activeSubCategoryId || null,
+          property_tags: activePropertyTags,
           images: uploadedImageUrls,
           primary_image: uploadedImageUrls[0],
           status: 'pending',
@@ -678,14 +693,14 @@ export default function ListYourPropertyPage() {
 
       // Send property submission confirmation email
       try {
-        const propertyAddress = `${formData.streetAddress}, ${formData.city}, ${formData.state} ${formData.zipCode}`;
-        const ownerName = `${formData.firstName} ${formData.lastName}`;
+        const propertyAddress = `${activeFormData.streetAddress}, ${activeFormData.city}, ${activeFormData.state} ${activeFormData.zipCode}`;
+        const ownerName = `${activeFormData.firstName} ${activeFormData.lastName}`;
 
         await fetch('/api/send-property-submission-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: formData.email,
+            email: activeFormData.email,
             name: ownerName,
             propertyAddress: propertyAddress
           })
