@@ -134,7 +134,6 @@ export function Footer({ siteLogo: initialLogo, footerContent, socialLinks, cate
               <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
               <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
               <li><Link href="/register" className="text-gray-400 hover:text-white">Register</Link></li>
-              <li><Link href="/admin/login" className="text-gray-400 hover:text-white">Admin Panel</Link></li>
             </ul>
           </div>
 
