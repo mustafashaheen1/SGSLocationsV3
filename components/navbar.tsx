@@ -78,25 +78,6 @@ export function Navbar({ siteLogo: initialLogo, portfolioVisible }: NavbarProps)
             )}
           </Link>
 
-          <div className="hidden lg:flex items-center gap-3">
-            <form onSubmit={handleSearch} className="flex items-center">
-              <Input
-                type="text"
-                placeholder="Search locations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full max-w-[350px] ${isHomepage ? 'bg-white/90 text-gray-900' : 'bg-white'}`}
-              />
-              <Button
-                type="submit"
-                size="sm"
-                className="ml-2 bg-brand hover:bg-[#e65a00] rounded" style={{fontWeight: 300, padding: '0.375rem 0.75rem'}}
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-            </form>
-
-          </div>
 
           <button
             className="lg:hidden"
@@ -149,21 +130,6 @@ export function Navbar({ siteLogo: initialLogo, portfolioVisible }: NavbarProps)
           </div>
 
           <div className="flex flex-col items-start gap-4 px-6 py-8">
-            <form onSubmit={handleSearch} className="w-full flex gap-2 mb-4">
-              <Input
-                type="text"
-                placeholder="Search locations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                type="submit"
-                className="bg-brand hover:bg-[#e65a00] rounded" style={{fontWeight: 300}}
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-            </form>
 
 
             {navItems.map((item) => (

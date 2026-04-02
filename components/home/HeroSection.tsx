@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/components/AuthProvider';
 
 interface HeroSectionProps {
@@ -15,7 +13,6 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ videoUrl, posterUrl, title, subtitle }: HeroSectionProps) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
@@ -49,15 +46,6 @@ export function HeroSection({ videoUrl, posterUrl, title, subtitle }: HeroSectio
       clearTimeout(timeout);
     };
   }, [videoUrl]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    } else {
-      router.push('/search');
-    }
-  };
 
   return (
     <>
@@ -138,25 +126,6 @@ export function HeroSection({ videoUrl, posterUrl, title, subtitle }: HeroSectio
             )}
           </div>
 
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-            <div className="flex gap-3 bg-white rounded-lg p-2">
-              <Input
-                type="text"
-                placeholder="Search by location, property type, or features..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 border-0 text-gray-900 text-lg"
-              />
-              <Button
-                type="submit"
-                size="lg"
-                className="bg-brand hover:bg-[#e65a00] rounded" style={{fontWeight: 300}}
-              >
-                <Search className="w-5 h-5 mr-2" />
-                Search
-              </Button>
-            </div>
-          </form>
         </div>
       </section>
     </>
