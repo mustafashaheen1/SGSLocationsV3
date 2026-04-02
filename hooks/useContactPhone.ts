@@ -13,12 +13,12 @@ export function useContactPhone() {
       setContactPhone(cachedPhone);
       return;
     }
-    supabase
-      .from('site_settings')
+    (supabase
+      .from('site_settings') as any)
       .select('value')
       .eq('key', 'contact_phone')
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (data?.value) {
           let v = data.value;
           try {
