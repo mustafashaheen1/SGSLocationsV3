@@ -13,6 +13,7 @@ import { Upload, ChevronDown, X, Tag as TagIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import LoginModal from '@/components/LoginModal';
 import { saveGuestListing, getGuestListing, clearGuestListing } from '@/lib/guest-listing';
+import { useContactPhone } from '@/hooks/useContactPhone';
 
 interface Category {
   id: string;
@@ -48,6 +49,7 @@ const US_STATES = [
 
 export default function ListYourPropertyPage() {
   const router = useRouter();
+  const { friendlyError } = useContactPhone();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isProcessingPendingSubmission, setIsProcessingPendingSubmission] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -124,7 +126,7 @@ export default function ListYourPropertyPage() {
         });
       } catch (error) {
         console.error('Error processing pending submission:', error);
-        alert('There was an error submitting your property. Please try again.');
+        alert(friendlyError());
         clearGuestListing();
         setIsProcessingPendingSubmission(false);
         setIsSubmitting(false);
@@ -615,7 +617,7 @@ export default function ListYourPropertyPage() {
 
     } catch (error: any) {
       console.error('Error submitting property:', error);
-      alert('Error submitting property: ' + error.message);
+      alert(friendlyError());
       setIsSubmitting(false);
     }
   };
@@ -715,7 +717,7 @@ export default function ListYourPropertyPage() {
 
     } catch (error: any) {
       console.error('Error submitting property:', error);
-      alert('Error submitting property: ' + error.message);
+      alert(friendlyError());
       throw error;
     } finally {
       setIsSubmitting(false);

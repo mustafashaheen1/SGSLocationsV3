@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useContactPhone } from '@/hooks/useContactPhone';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -14,6 +15,7 @@ export default function ResetPasswordPage() {
   const [isValidSession, setIsValidSession] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { friendlyError } = useContactPhone();
 
   useEffect(() => {
     let subscription: any;
@@ -152,7 +154,7 @@ export default function ResetPasswordPage() {
         console.error('Password reset error:', error);
         toast({
           title: 'Failed to reset password',
-          description: error.message,
+          description: friendlyError(),
           variant: 'destructive'
         });
       } else {

@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Eye, Edit, Trash2, Search, Bookmark, Calendar, Heart, X, MapPin, Home, DollarSign } from 'lucide-react';
 import { getGuestListing, clearGuestListing } from '@/lib/guest-listing';
 import MasterCalendar from '@/components/MasterCalendar';
+import { useContactPhone } from '@/hooks/useContactPhone';
 
 export default function ProductionDashboard() {
   const router = useRouter();
+  const { friendlyError } = useContactPhone();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userType, setUserType] = useState<'production' | 'property_owner'>('production');
@@ -190,7 +192,7 @@ export default function ProductionDashboard() {
       console.error('Error submitting pending property:', error);
       setMessage({
         type: 'error',
-        text: 'Failed to submit property: ' + error.message
+        text: friendlyError()
       });
       clearGuestListing();
     } finally {
@@ -383,7 +385,7 @@ export default function ProductionDashboard() {
       await fetchFavoriteProperties();
     } catch (error: any) {
       console.error('Error removing favorite:', error);
-      alert('Failed to remove favorite: ' + error.message);
+      setMessage({ type: 'error', text: friendlyError() });
     } finally {
       setDeletingItemId(null);
       setDeletingItemType(null);
@@ -421,7 +423,7 @@ export default function ProductionDashboard() {
       await fetchSavedSearches();
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: 'Failed to delete search: ' + error.message });
+      setMessage({ type: 'error', text: friendlyError() });
     } finally {
       setDeletingItemId(null);
       setDeletingItemType(null);
@@ -494,7 +496,7 @@ export default function ProductionDashboard() {
       setShowPropertyModal(true);
     } catch (error) {
       console.error('Error fetching property details:', error);
-      alert('Failed to load property details');
+      setMessage({ type: 'error', text: friendlyError() });
     }
   }
 
@@ -528,7 +530,7 @@ export default function ProductionDashboard() {
       await fetchUserProperties();
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: 'Failed to delete property: ' + error.message });
+      setMessage({ type: 'error', text: friendlyError() });
     } finally {
       setDeletingItemId(null);
       setDeletingItemType(null);
@@ -560,7 +562,7 @@ export default function ProductionDashboard() {
 
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to update profile' });
+      setMessage({ type: 'error', text: friendlyError() });
     } finally {
       setSaving(false);
     }
