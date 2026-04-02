@@ -1013,7 +1013,11 @@ export default function PropertyDetailPage() {
               className="nav-arrow nav-arrow-left"
               onClick={() => {
                 if (carouselRef.current) {
-                  carouselRef.current.scrollBy({ left: -carouselRef.current.clientWidth, behavior: 'smooth' });
+                  if (carouselRef.current.scrollLeft < 10) {
+                    setViewMode('grid');
+                  } else {
+                    carouselRef.current.scrollBy({ left: -carouselRef.current.clientWidth, behavior: 'smooth' });
+                  }
                 }
               }}
             >
@@ -1038,7 +1042,12 @@ export default function PropertyDetailPage() {
               if (viewMode === 'grid') {
                 setViewMode('carousel');
               } else if (carouselRef.current) {
-                carouselRef.current.scrollBy({ left: carouselRef.current.clientWidth, behavior: 'smooth' });
+                const el = carouselRef.current;
+                if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 10) {
+                  setViewMode('grid');
+                } else {
+                  el.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+                }
               }
             }}
           >
