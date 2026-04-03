@@ -1243,7 +1243,7 @@ export default function ListYourPropertyPage() {
                           onClick={() => {
                             setUploadedFiles(prev => prev.filter((_, i) => i !== index));
                           }}
-                          className="absolute top-1.5 right-1.5 bg-brand text-white p-0.5 rounded-full hover:bg-brand-hover opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1.5 right-1.5 bg-brand text-white p-0.5 rounded-full hover:bg-brand-hover transition-opacity opacity-100 md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto"
                         >
                           <X className="w-3 h-3" />
                         </button>
