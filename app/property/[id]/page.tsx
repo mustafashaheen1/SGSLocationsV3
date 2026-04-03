@@ -957,7 +957,8 @@ export default function PropertyDetailPage() {
                 display: 'flex',
                 height: '600px',
                 overflowX: 'auto',
-                scrollBehavior: 'smooth'
+                scrollBehavior: 'smooth',
+                scrollSnapType: 'x mandatory'
               }}
             >
               {displayedImages.map((imgData, index) => (
@@ -968,7 +969,8 @@ export default function PropertyDetailPage() {
                     height: '100%',
                     width: '100%',
                     flexShrink: 0,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    scrollSnapAlign: 'start'
                   }}
                   onClick={() => {
                     setCurrentImageIndex(index);
