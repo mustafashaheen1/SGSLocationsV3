@@ -570,7 +570,7 @@ export default function ListYourPropertyPage() {
 
     if (!selectedCategoryId) newErrors.category = 'Please select a category';
     if (subCategories.length > 0 && !selectedSubCategoryId) newErrors.subCategory = 'Please select a sub-category';
-    if (uploadedFiles.length < 10) newErrors.files = 'Minimum 10 images required';
+    if (uploadedFiles.length < 6) newErrors.files = 'Minimum 6 images required';
     if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms and conditions';
 
     setErrors(newErrors);
@@ -1186,9 +1186,9 @@ export default function ListYourPropertyPage() {
               {/* Image Upload */}
               <section className="mb-6">
                 <label className="block font-medium text-gray-700 text-sm mb-1">
-                  Please Include At Least 10 Images
+                  Please Include At Least 6 Images
                 </label>
-                <p className="text-sm text-gray-600 mb-2">Minimum 10 images required. No maximum limit.</p>
+                <p className="text-sm text-gray-600 mb-2">Minimum 6 images required. No maximum limit.</p>
                 <p className="text-sm text-gray-500 mb-2">(Only JPGs and PNGs accepted.)</p>
                 <div
                   onDragOver={handleDragOver}
