@@ -280,6 +280,7 @@ export default function ProductionDashboard() {
           properties (
             id,
             name,
+            public_name,
             city,
             county,
             address,
@@ -897,7 +898,7 @@ export default function ProductionDashboard() {
                                   onClick={() => handleViewProperty(property.id)}
                                   className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
                                 >
-                                  {property.name}
+                                  {property.public_name || property.name}
                                 </button>
                               </div>
                             </td>
@@ -980,7 +981,7 @@ export default function ProductionDashboard() {
                               onClick={() => handleViewProperty(property.id)}
                               className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block text-left w-full"
                             >
-                              {property.name}
+                              {property.public_name || property.name}
                             </button>
                             <p className="text-sm text-gray-600 truncate">{property.address}</p>
                             <p className="text-sm text-gray-500">{property.city}, {property.county}</p>
@@ -1290,7 +1291,7 @@ export default function ProductionDashboard() {
                           <div className="p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900 mb-1">{property.name}</h3>
+                                <h3 className="font-semibold text-gray-900 mb-1">{property.public_name || property.name}</h3>
                                 <p className="text-sm text-gray-600">{property.city}, {property.county}</p>
                                 {property.address && (
                                   <p className="text-xs text-gray-500 mt-1">{property.address}</p>
@@ -1311,7 +1312,7 @@ export default function ProductionDashboard() {
                                 View Property
                               </Button>
                               <button
-                                onClick={() => handleDeleteFavorite(favorite.id, property.name)}
+                                onClick={() => handleDeleteFavorite(favorite.id, property.public_name || property.name)}
                                 className="px-3 py-2 border border-gray-300 text-gray-700 hover:bg-red-50 hover:text-brand hover:border-red-300 rounded transition-colors"
                                 title="Remove from favorites"
                               >
