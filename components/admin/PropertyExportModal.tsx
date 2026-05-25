@@ -96,94 +96,110 @@ function exportCSV(properties: Property[], fields: ExportField[]) {
   downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `properties-${Date.now()}.csv`);
 }
 
-function truncateText(text: string, maxChars: number): string {
-  if (text.length <= maxChars) return text;
-  return text.slice(0, maxChars - 1) + '…';
-}
-
 function exportPDF(properties: Property[], fields: ExportField[]) {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 10;
+  const margin = 15;
   const usableW = pageW - margin * 2;
-  const colW = Math.max(15, usableW / fields.length);
-  const headerH = 6;
-  const rowH = 5;
+  const labelW = 48;
+  const valueW = usableW - labelW;
   const exportDate = new Date().toLocaleDateString();
+  let currentPage = 1;
+  let y = margin;
 
   const drawPageHeader = () => {
     doc.setFillColor(204, 85, 0);
-    doc.rect(0, 0, pageW, 18, 'F');
+    doc.rect(0, 0, pageW, 20, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('SGS LOCATIONS — Properties Export', margin, 12);
+    doc.text('SGS LOCATIONS — Properties Export', margin, 13);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(exportDate, pageW - margin, 13, { align: 'right' });
+    y = 26;
+  };
+
+  const drawFooter = () => {
+    doc.setTextColor(160, 160, 160);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text(exportDate, pageW - margin, 12, { align: 'right' });
+    doc.text(`Total: ${properties.length} properties`, margin, pageH - 6);
+    doc.text(`Page ${currentPage}`, pageW - margin, pageH - 6, { align: 'right' });
   };
 
-  const drawTableHeader = (y: number) => {
-    doc.setFillColor(243, 244, 246);
-    doc.rect(margin, y, usableW, headerH, 'F');
-    doc.setTextColor(50, 50, 50);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    fields.forEach((f, i) => {
-      const x = margin + i * colW;
-      doc.text(truncateText(f.label, Math.floor(colW / 2)), x + 1, y + 4);
-    });
-    return y + headerH;
-  };
-
-  const drawFooter = (pageNum: number, totalPages: number) => {
-    doc.setTextColor(150, 150, 150);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Page ${pageNum} of ${totalPages}`, pageW - margin, pageH - 4, { align: 'right' });
-    doc.text(`Total: ${properties.length} properties`, margin, pageH - 4);
-  };
-
-  // Pre-calculate total pages (approximate)
-  const rowsPerPage = Math.floor((pageH - 18 - headerH - 10) / rowH);
-  const totalPages = Math.ceil(properties.length / rowsPerPage) || 1;
-
-  drawPageHeader();
-  let currentPage = 1;
-  let y = drawTableHeader(20);
-
-  properties.forEach((prop, idx) => {
-    if (y + rowH > pageH - 10) {
-      drawFooter(currentPage, totalPages);
+  const checkPageBreak = (neededH: number) => {
+    if (y + neededH > pageH - 14) {
+      drawFooter();
       doc.addPage();
       currentPage++;
       drawPageHeader();
-      y = drawTableHeader(20);
     }
+  };
 
-    // Alternating row background
-    if (idx % 2 === 1) {
-      doc.setFillColor(250, 250, 250);
-      doc.rect(margin, y, usableW, rowH, 'F');
-    }
+  drawPageHeader();
 
-    doc.setTextColor(30, 30, 30);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    fields.forEach((f, i) => {
-      const val = getCellValue(f, prop);
-      const x = margin + i * colW;
-      doc.text(truncateText(val, Math.floor(colW / 2.5)), x + 1, y + 3.5);
+  properties.forEach((prop, idx) => {
+    // Property section header bar
+    const displayName =
+      getCellValue(fields.find(f => f.key === 'public_name') ?? EXPORT_FIELDS.find(f => f.key === 'public_name')!, prop) ||
+      prop.real_name ||
+      prop.name ||
+      `Property ${idx + 1}`;
+
+    checkPageBreak(12);
+
+    // Accent bar + light background
+    doc.setFillColor(255, 243, 235);
+    doc.rect(margin, y, usableW, 9, 'F');
+    doc.setFillColor(204, 85, 0);
+    doc.rect(margin, y, 3, 9, 'F');
+
+    doc.setTextColor(140, 50, 0);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${idx + 1}.  ${displayName}`, margin + 6, y + 6);
+    y += 12;
+
+    // Key-value rows
+    doc.setFontSize(9);
+    fields.forEach(field => {
+      const val = getCellValue(field, prop);
+      if (!val) return;
+
+      const lines: string[] = doc.splitTextToSize(val, valueW);
+      const blockH = lines.length * 5 + 1;
+
+      checkPageBreak(blockH);
+
+      // Label
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(90, 90, 90);
+      doc.text(`${field.label}:`, margin, y + 4);
+
+      // Value
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(20, 20, 20);
+      doc.text(lines, margin + labelW, y + 4);
+
+      y += blockH;
     });
 
-    y += rowH;
+    y += 4;
+
+    // Thin divider between properties (skip after last)
+    if (idx < properties.length - 1) {
+      checkPageBreak(6);
+      doc.setDrawColor(220, 220, 220);
+      doc.line(margin, y - 1, pageW - margin, y - 1);
+      y += 3;
+    }
   });
 
-  drawFooter(currentPage, totalPages);
+  drawFooter();
 
-  const blob = doc.output('blob');
-  downloadBlob(blob, `properties-${Date.now()}.pdf`);
+  downloadBlob(doc.output('blob'), `properties-${Date.now()}.pdf`);
 }
 
 interface Props {
