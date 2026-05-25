@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, Edit, Trash2, Eye, Star, Upload, Plus, Sparkles, ChevronDown, X } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Star, Upload, Plus, Sparkles, ChevronDown, X, Download } from 'lucide-react';
+import PropertyExportModal from '@/components/admin/PropertyExportModal';
 import { supabase } from '@/lib/supabase';
 import { deleteImageFromS3 } from '@/lib/s3-upload';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,7 @@ export default function AdminPropertiesPage() {
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [bulkStats, setBulkStats] = useState({ success: 0, failed: 0, skipped: 0 });
   const [bulkErrors, setBulkErrors] = useState<Array<{ property: string, error: string }>>([]);
+  const [showExport, setShowExport] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -712,6 +714,14 @@ export default function AdminPropertiesPage() {
           </Button>
           <Button
             variant="outline"
+            onClick={() => setShowExport(true)}
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+          <Button
+            variant="outline"
             onClick={handleBulkImportProperties}
             disabled={bulkImportLoading}
             className="border-brand text-brand hover:bg-red-50"
@@ -1097,6 +1107,12 @@ export default function AdminPropertiesPage() {
           </div>
         </div>
       )}
+
+      <PropertyExportModal
+        properties={filteredProperties}
+        isOpen={showExport}
+        onClose={() => setShowExport(false)}
+      />
     </div>
   );
 }
