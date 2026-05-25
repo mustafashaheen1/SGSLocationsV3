@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { supabase } from '@/lib/supabase';
 
 interface Property {
   id: string;
@@ -42,35 +43,65 @@ interface ExportField {
 }
 
 const EXPORT_FIELDS: ExportField[] = [
+  // Identity
+  { label: 'ID',               key: 'id' },
   { label: 'Public Name',      key: 'public_name',    defaultOn: true },
   { label: 'Internal Code',    key: 'name' },
   { label: 'Real Name',        key: 'real_name' },
+  { label: 'Public URL',       key: 'public_url' },
+  // Content
   { label: 'Sub Heading',      key: 'sub_heading' },
   { label: 'Description',      key: 'description' },
+  // Location
   { label: 'Address',          key: 'address',        defaultOn: true },
   { label: 'City',             key: 'city',           defaultOn: true },
   { label: 'State',            key: 'county',         defaultOn: true },
   { label: 'Zip Code',         key: 'zipcode',        defaultOn: true },
+  { label: 'Latitude',         key: 'latitude' },
+  { label: 'Longitude',        key: 'longitude' },
+  // Classification
+  { label: 'Property Type',    key: 'property_type' },
+  { label: 'Category',         key: 'category_id' },
+  { label: 'Sub-Category',     key: 'sub_category_id' },
+  { label: 'Tags',             key: 'property_tags',  format: (v) => Array.isArray(v) ? v.join(', ') : '' },
+  // Status & flags
   { label: 'Status',           key: 'status',         defaultOn: true },
   { label: 'Featured',         key: 'is_featured',    format: (v) => v ? 'Yes' : 'No' },
   { label: 'Exclusive',        key: 'is_exclusive',   format: (v) => v ? 'Yes' : 'No' },
   { label: 'View Count',       key: 'view_count' },
-  { label: 'Tags',             key: 'property_tags',  format: (v) => Array.isArray(v) ? v.join(', ') : '' },
-  { label: 'Notes',            key: 'notes' },
-  { label: 'Latitude',         key: 'latitude' },
-  { label: 'Longitude',        key: 'longitude' },
-  { label: 'Album Key',        key: 'albumkey' },
-  { label: 'Created At',       key: 'created_at',     defaultOn: true, format: (v) => v ? new Date(v).toLocaleDateString() : '' },
+  // Owner
+  { label: 'Owner ID',         key: 'owner_id' },
   { label: 'Owner Name',       key: 'owner_name',     defaultOn: true },
   { label: 'Owner Email',      key: 'owner_email' },
   { label: 'Owner Phone',      key: 'owner_phone' },
+  // Media
   { label: 'Primary Image URL',key: 'primary_image' },
   { label: 'Image Count',      key: '_image_count',   format: (_, p) => String(p.images?.length ?? 0) },
+  { label: 'Album Key',        key: 'albumkey' },
+  // Terms
+  { label: 'Terms Type',       key: 'terms_type' },
+  { label: 'Terms Content',    key: 'terms_content' },
+  { label: 'Terms PDF URL',    key: 'terms_pdf_url' },
+  { label: 'Terms Sent At',    key: 'terms_sent_at',  format: (v) => v ? new Date(v).toLocaleDateString() : '' },
+  { label: 'Terms Sent By',    key: 'terms_sent_by' },
+  // Misc
+  { label: 'Contacts',         key: 'contacts',       format: (v) => {
+    if (!v || v === '[]') return '';
+    try { return JSON.stringify(typeof v === 'string' ? JSON.parse(v) : v); } catch { return String(v); }
+  }},
+  { label: 'Notes',            key: 'notes' },
+  // Timestamps
+  { label: 'Created At',       key: 'created_at',     defaultOn: true, format: (v) => v ? new Date(v).toLocaleDateString() : '' },
+  { label: 'Updated At',       key: 'updated_at',     format: (v) => v ? new Date(v).toLocaleDateString() : '' },
 ];
 
-function getCellValue(field: ExportField, prop: Property): string {
+function getCellValue(field: ExportField, prop: Property, categoryMap: Record<string, string> = {}): string {
   const raw = field.key === '_image_count' ? null : prop[field.key];
   if (field.format) return field.format(raw, prop);
+  // Resolve category/sub-category UUIDs to names
+  if (field.key === 'category_id' || field.key === 'sub_category_id') {
+    return categoryMap[raw] || raw || '';
+  }
   if (Array.isArray(raw)) return raw.join(', ');
   if (raw === null || raw === undefined) return '';
   return String(raw);
@@ -85,10 +116,10 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function exportCSV(properties: Property[], fields: ExportField[]) {
+function exportCSV(properties: Property[], fields: ExportField[], categoryMap: Record<string, string>) {
   const rows = [
     fields.map(f => f.label),
-    ...properties.map(p => fields.map(f => getCellValue(f, p))),
+    ...properties.map(p => fields.map(f => getCellValue(f, p, categoryMap))),
   ];
   const csv = rows
     .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
@@ -96,7 +127,7 @@ function exportCSV(properties: Property[], fields: ExportField[]) {
   downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `properties-${Date.now()}.csv`);
 }
 
-function exportPDF(properties: Property[], fields: ExportField[]) {
+function exportPDF(properties: Property[], fields: ExportField[], categoryMap: Record<string, string>) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -143,7 +174,7 @@ function exportPDF(properties: Property[], fields: ExportField[]) {
   properties.forEach((prop, idx) => {
     // Property section header bar
     const displayName =
-      getCellValue(fields.find(f => f.key === 'public_name') ?? EXPORT_FIELDS.find(f => f.key === 'public_name')!, prop) ||
+      getCellValue(fields.find(f => f.key === 'public_name') ?? EXPORT_FIELDS.find(f => f.key === 'public_name')!, prop, categoryMap) ||
       prop.real_name ||
       prop.name ||
       `Property ${idx + 1}`;
@@ -165,7 +196,7 @@ function exportPDF(properties: Property[], fields: ExportField[]) {
     // Key-value rows
     doc.setFontSize(9);
     fields.forEach(field => {
-      const val = getCellValue(field, prop);
+      const val = getCellValue(field, prop, categoryMap);
       if (!val) return;
 
       const lines: string[] = doc.splitTextToSize(val, valueW);
@@ -214,6 +245,21 @@ export default function PropertyExportModal({ properties, isOpen, onClose }: Pro
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(DEFAULT_FIELDS));
   const [format, setFormat] = useState<'csv' | 'pdf'>('csv');
   const [exporting, setExporting] = useState(false);
+  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    supabase
+      .from('categories')
+      .select('id, name')
+      .then(({ data }) => {
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach((c: { id: string; name: string }) => { map[c.id] = c.name; });
+          setCategoryMap(map);
+        }
+      });
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -234,9 +280,9 @@ export default function PropertyExportModal({ properties, isOpen, onClose }: Pro
     try {
       const fields = EXPORT_FIELDS.filter(f => selectedFields.has(f.key));
       if (format === 'csv') {
-        exportCSV(properties, fields);
+        exportCSV(properties, fields, categoryMap);
       } else {
-        exportPDF(properties, fields);
+        exportPDF(properties, fields, categoryMap);
       }
     } finally {
       setExporting(false);
