@@ -617,9 +617,8 @@ export default function AdminPropertiesPage() {
     const searchLower = searchTerm.toLowerCase();
 
     // Search term filter
-    let matchesSearch = !searchTerm;
     if (searchTerm) {
-      matchesSearch =
+      const matchesSearch =
         property.name?.toLowerCase().includes(searchLower) ||
         (property.real_name || '')?.toLowerCase().includes(searchLower) ||
         (property.public_name || '')?.toLowerCase().includes(searchLower) ||
@@ -641,48 +640,32 @@ export default function AdminPropertiesPage() {
         (property.owner_name || '')?.toLowerCase().includes(searchLower) ||
         (property.owner_email || '')?.toLowerCase().includes(searchLower) ||
         (property.owner_phone || '')?.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
     }
 
-    // Only filter by search term - tags, category, and sort are used for prioritization
-    return matchesSearch;
+    // Category filter
+    if (categoryFilter !== 'all' && property.category_id !== categoryFilter) {
+      return false;
+    }
+
+    // Tag filters — property must match at least one tag from each active filter group
+    if (activeTagFilters.length > 0) {
+      const selectedTags = activeTagFilters.flatMap(f => f.values);
+      const matchesTags = property.property_images?.some(img =>
+        img.tags.some(tag => selectedTags.includes(tag))
+      ) || false;
+      if (!matchesTags) return false;
+    }
+
+    return true;
   }).sort((a, b) => {
-    // Calculate match score for each property (how many criteria it matches)
-    const calculateMatchScore = (property: Property) => {
-      let score = 0;
-
-      // Check if matches tags (if any tags are selected)
-      if (activeTagFilters.length > 0) {
-        const selectedTags = activeTagFilters.flatMap(f => f.values);
-        const matchesTags = property.property_images?.some(img =>
-          img.tags.some(tag => selectedTags.includes(tag))
-        ) || false;
-        if (matchesTags) score++;
-      }
-
-      // Check if matches category (if a specific category is selected)
-      if (categoryFilter !== 'all') {
-        if (property.category_id === categoryFilter) score++;
-      }
-
-      // Check if matches sort order criteria
-      if (sortOrder === 'featured-first') {
-        if (property.is_featured) score++;
-      } else if (sortOrder === 'exclusive-first') {
-        if (property.is_exclusive) score++;
-      }
-
-      return score;
-    };
-
-    const aScore = calculateMatchScore(a);
-    const bScore = calculateMatchScore(b);
-
-    // Sort by match score descending (higher score = better match = appears first)
-    if (aScore !== bScore) {
-      return bScore - aScore;
+    if (sortOrder === 'featured-first') {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+    } else if (sortOrder === 'exclusive-first') {
+      if (a.is_exclusive && !b.is_exclusive) return -1;
+      if (!a.is_exclusive && b.is_exclusive) return 1;
     }
-
-    // If scores are equal, maintain the existing order (already sorted by created_at from the query)
     return 0;
   });
 
